@@ -31,6 +31,15 @@ public class TracesAdapterTest {
   @Test void getTraces_doesntReturnEmptyElements() throws Exception {
     storage.accept(TestObjects.TRACE).execute();
 
+    assertThat(adapter.getTraces(asList()).execute())
+      .isEmpty();
+
+    assertThat(adapter.getTraces(asList("1")).execute())
+      .isEmpty();
+
+    assertThat(adapter.getTraces(asList("1", "2")).execute())
+      .isEmpty();
+
     assertThat(adapter.getTraces(asList("1", TestObjects.TRACE.get(0).traceId(), "3")).execute())
       .containsExactly(TestObjects.TRACE);
   }
