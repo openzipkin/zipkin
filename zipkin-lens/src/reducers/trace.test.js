@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -35,17 +35,20 @@ describe('trace reducer', () => {
 
   it('should handle TRACE_LOAD_SUCCESS', () => {
     expect(
-      reducer({
-        isLoading: true,
-        traceSummary: {
-          traceId: 'd050e0d52326cf81',
+      reducer(
+        {
+          isLoading: true,
+          traceSummary: {
+            traceId: 'd050e0d52326cf81',
+          },
         },
-      }, {
-        type: types.TRACE_LOAD_SUCCESS,
-        traceSummary: {
-          traceId: 'c020e0d52326cf84',
+        {
+          type: types.TRACE_LOAD_SUCCESS,
+          traceSummary: {
+            traceId: 'c020e0d52326cf84',
+          },
         },
-      }),
+      ),
     ).toEqual({
       isLoading: false,
       traceSummary: {
@@ -56,14 +59,17 @@ describe('trace reducer', () => {
 
   it('should handle TRACE_LOAD_FAILURE', () => {
     expect(
-      reducer({
-        isLoading: true,
-        traceSummary: {
-          traceId: 'c020e0d52326cf84',
+      reducer(
+        {
+          isLoading: true,
+          traceSummary: {
+            traceId: 'c020e0d52326cf84',
+          },
         },
-      }, {
-        type: types.TRACE_LOAD_FAILURE,
-      }),
+        {
+          type: types.TRACE_LOAD_FAILURE,
+        },
+      ),
     ).toEqual({
       isLoading: false,
       traceSummary: null,

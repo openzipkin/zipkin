@@ -21,8 +21,12 @@ describe('<DiscoverPage />', () => {
   it('renders search box with default config', () => {
     const { getByText, queryByText } = render(<DiscoverPage />);
     expect(getByText('Search Traces')).toBeInTheDocument();
-    expect(queryByText('Searching has been disabled via the searchEnabled property', { exact: false }))
-      .not.toBeInTheDocument();
+    expect(
+      queryByText(
+        'Searching has been disabled via the searchEnabled property',
+        { exact: false },
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it('does not render search box with searchEnabled=false config', () => {
@@ -30,7 +34,10 @@ describe('<DiscoverPage />', () => {
       uiConfig: { searchEnabled: false },
     });
     expect(queryByText('Search Traces')).not.toBeInTheDocument();
-    expect(getByText('Searching has been disabled via the searchEnabled property', { exact: false }))
-      .toBeInTheDocument();
+    expect(
+      getByText('Searching has been disabled via the searchEnabled property', {
+        exact: false,
+      }),
+    ).toBeInTheDocument();
   });
 });

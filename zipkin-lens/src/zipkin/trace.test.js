@@ -99,61 +99,63 @@ const cleanedHttpTrace = treeCorrectedForClockSkew(httpTrace);
 
 describe('traceSummary', () => {
   it('should classify durations local to the endpoint', () => {
-    expect(traceSummary(cleanedHttpTrace).groupedTimestamps).toEqual(
-      {
-        frontend: [
-          { timestamp: 1541138169255688, duration: 168731 },
-          { timestamp: 1541138169297572, duration: 111121 },
-        ],
-        backend: [
-          { timestamp: 1541138169377997, duration: 26326 },
-        ],
-      },
-    );
+    expect(traceSummary(cleanedHttpTrace).groupedTimestamps).toEqual({
+      frontend: [
+        { timestamp: 1541138169255688, duration: 168731 },
+        { timestamp: 1541138169297572, duration: 111121 },
+      ],
+      backend: [{ timestamp: 1541138169377997, duration: 26326 }],
+    });
   });
 
   // Ex netflix sometimes add annotations with no duration
   it('should backfill incomplete duration as zero instead of undefined', () => {
-    const testTrace = new SpanNode(clean({
-      traceId: '2480ccca8df0fca5',
-      id: '2480ccca8df0fca5',
-      kind: 'CLIENT',
-      timestamp: 1541138169297572,
-      duration: 111121,
-      localEndpoint: frontend,
-    }));
-    testTrace.addChild(new SpanNode(clean({
-      traceId: '2480ccca8df0fca5',
-      parentId: '2480ccca8df0fca5',
-      id: 'bf396325699c84bf',
-      timestamp: 1541138169377997,
-      localEndpoint: backend,
-    })));
-
-    expect(traceSummary(testTrace).groupedTimestamps).toEqual(
-      {
-        frontend: [
-          { timestamp: 1541138169297572, duration: 111121 },
-        ],
-        backend: [
-          { timestamp: 1541138169377997, duration: 0 },
-        ],
-      },
+    const testTrace = new SpanNode(
+      clean({
+        traceId: '2480ccca8df0fca5',
+        id: '2480ccca8df0fca5',
+        kind: 'CLIENT',
+        timestamp: 1541138169297572,
+        duration: 111121,
+        localEndpoint: frontend,
+      }),
     );
+    testTrace.addChild(
+      new SpanNode(
+        clean({
+          traceId: '2480ccca8df0fca5',
+          parentId: '2480ccca8df0fca5',
+          id: 'bf396325699c84bf',
+          timestamp: 1541138169377997,
+          localEndpoint: backend,
+        }),
+      ),
+    );
+
+    expect(traceSummary(testTrace).groupedTimestamps).toEqual({
+      frontend: [{ timestamp: 1541138169297572, duration: 111121 }],
+      backend: [{ timestamp: 1541138169377997, duration: 0 }],
+    });
   });
 
   it('should throw error on trace missing timestamp', () => {
     let error;
     try {
-      traceSummary(new SpanNode(clean({
-        traceId: '1e223ff1f80f1c69',
-        id: 'bf396325699c84bf',
-      })));
+      traceSummary(
+        new SpanNode(
+          clean({
+            traceId: '1e223ff1f80f1c69',
+            id: 'bf396325699c84bf',
+          }),
+        ),
+      );
     } catch (err) {
       error = err;
     }
 
-    expect(error.message).toEqual('Trace 1e223ff1f80f1c69 is missing a timestamp');
+    expect(error.message).toEqual(
+      'Trace 1e223ff1f80f1c69 is missing a timestamp',
+    );
   });
 
   it('calculates timestamp and duration', () => {
@@ -183,7 +185,11 @@ describe('traceSummariesToMustache', () => {
   it('should get service summaries, ordered descending by max span duration', () => {
     const model = traceSummaries(null, [summary]);
     expect(model[0].serviceSummaries).toEqual([
-      { serviceName: 'frontend', spanCount: 2, maxSpanDurationStr: '168.731ms' },
+      {
+        serviceName: 'frontend',
+        spanCount: 2,
+        maxSpanDurationStr: '168.731ms',
+      },
       { serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '26.326ms' },
     ]);
   });
@@ -248,27 +254,39 @@ describe('traceSummariesToMustache', () => {
     const traceId1 = '9ed44141f679130b';
     const traceId2 = '6ff1c14161f7bde1';
     const traceId3 = '1234561234561234';
-    const summary1 = traceSummary(new SpanNode(clean({
-      traceId: traceId1,
-      name: 'get',
-      id: '6ff1c14161f7bde1',
-      timestamp: 1457186441657000,
-      duration: 4000,
-    })));
-    const summary2 = traceSummary(new SpanNode(clean({
-      traceId: traceId2,
-      name: 'get',
-      id: '9ed44141f679130b',
-      timestamp: 1457186568026000,
-      duration: 4000,
-    })));
-    const summary3 = traceSummary(new SpanNode(clean({
-      traceId: traceId3,
-      name: 'get',
-      id: '6677567324735',
-      timestamp: 1457186568027000,
-      duration: 3000,
-    })));
+    const summary1 = traceSummary(
+      new SpanNode(
+        clean({
+          traceId: traceId1,
+          name: 'get',
+          id: '6ff1c14161f7bde1',
+          timestamp: 1457186441657000,
+          duration: 4000,
+        }),
+      ),
+    );
+    const summary2 = traceSummary(
+      new SpanNode(
+        clean({
+          traceId: traceId2,
+          name: 'get',
+          id: '9ed44141f679130b',
+          timestamp: 1457186568026000,
+          duration: 4000,
+        }),
+      ),
+    );
+    const summary3 = traceSummary(
+      new SpanNode(
+        clean({
+          traceId: traceId3,
+          name: 'get',
+          id: '6677567324735',
+          timestamp: 1457186568027000,
+          duration: 3000,
+        }),
+      ),
+    );
 
     const model = traceSummaries(null, [summary1, summary2, summary3]);
     expect(model[0].traceId).toBe(traceId2);
@@ -328,7 +346,7 @@ describe('totalDuration', () => {
       { timestamp: 390, duration: 20 },
       { timestamp: 400, duration: 30 }, // overlaps with above
     ];
-    expect(totalDuration(asyncTrace)).toBe(300 + ((400 + 30) - 390));
+    expect(totalDuration(asyncTrace)).toBe(300 + (400 + 30 - 390));
   });
 
   it('should ignore input missing duration', () => {
@@ -351,7 +369,11 @@ describe('detailedTraceSummary', () => {
 
   it('should derive summary info', () => {
     const {
-      traceId, durationStr, depth, serviceNameAndSpanCounts, rootSpan,
+      traceId,
+      durationStr,
+      depth,
+      serviceNameAndSpanCounts,
+      rootSpan,
     } = detailedTraceSummary(cleanedHttpTrace);
 
     expect(traceId).toBe('bb1f0e21882325b8');
@@ -371,19 +393,28 @@ describe('detailedTraceSummary', () => {
     const { spans } = detailedTraceSummary(cleanedNetflixTrace);
 
     // the absolute values are not important, just checks that only the root span is at offset 0
-    expect(spans.map((s) => s.left)).toEqual(
-      [0, 8.108108108108109, 16.216216216216218, 64.86486486486487],
-    );
+    expect(spans.map((s) => s.left)).toEqual([
+      0,
+      8.108108108108109,
+      16.216216216216218,
+      64.86486486486487,
+    ]);
   });
 
   it('should derive summary info even when headless', () => {
     const headless = new SpanNode(); // headless as there's no root span
 
     // make a copy of the cleaned http trace as adding a child is a mutation
-    treeCorrectedForClockSkew(httpTrace).children.forEach((child) => headless.addChild(child));
+    treeCorrectedForClockSkew(httpTrace).children.forEach((child) =>
+      headless.addChild(child),
+    );
 
     const {
-      traceId, durationStr, depth, serviceNameAndSpanCounts, rootSpan,
+      traceId,
+      durationStr,
+      depth,
+      serviceNameAndSpanCounts,
+      rootSpan,
     } = detailedTraceSummary(headless);
 
     expect(traceId).toBe('bb1f0e21882325b8');
@@ -400,73 +431,105 @@ describe('detailedTraceSummary', () => {
   });
 
   it('should show human-readable annotation name', () => {
-    const { spans: [testSpan] } = detailedTraceSummary(cleanedHttpTrace);
+    const {
+      spans: [testSpan],
+    } = detailedTraceSummary(cleanedHttpTrace);
     expect(testSpan.annotations[0].value).toBe('Server Start');
     expect(testSpan.annotations[1].value).toBe('Server Finish');
     expect(testSpan.tags[4].key).toBe('Client Address');
   });
 
   it('should tolerate spans without annotations', () => {
-    const testTrace = new SpanNode(clean({
-      traceId: '2480ccca8df0fca5',
-      name: 'get',
-      id: '2480ccca8df0fca5',
-      timestamp: 1457186385375000,
-      duration: 333000,
-      localEndpoint: { serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411 },
-      tags: { lc: 'component' },
-    }));
-    const { spans: [testSpan] } = detailedTraceSummary(testTrace);
+    const testTrace = new SpanNode(
+      clean({
+        traceId: '2480ccca8df0fca5',
+        name: 'get',
+        id: '2480ccca8df0fca5',
+        timestamp: 1457186385375000,
+        duration: 333000,
+        localEndpoint: {
+          serviceName: 'zipkin-query',
+          ipv4: '127.0.0.1',
+          port: 9411,
+        },
+        tags: { lc: 'component' },
+      }),
+    );
+    const {
+      spans: [testSpan],
+    } = detailedTraceSummary(testTrace);
     expect(testSpan.tags[0].key).toBe('Local Component');
   });
 
   it('should not include empty Local Component annotations', () => {
-    const testTrace = new SpanNode(clean({
-      traceId: '2480ccca8df0fca5',
-      name: 'get',
-      id: '2480ccca8df0fca5',
-      timestamp: 1457186385375000,
-      duration: 333000,
-      localEndpoint: { serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411 },
-    }));
-    const { spans: [testSpan] } = detailedTraceSummary(testTrace);
+    const testTrace = new SpanNode(
+      clean({
+        traceId: '2480ccca8df0fca5',
+        name: 'get',
+        id: '2480ccca8df0fca5',
+        timestamp: 1457186385375000,
+        duration: 333000,
+        localEndpoint: {
+          serviceName: 'zipkin-query',
+          ipv4: '127.0.0.1',
+          port: 9411,
+        },
+      }),
+    );
+    const {
+      spans: [testSpan],
+    } = detailedTraceSummary(testTrace);
     // skips empty Local Component, but still shows it as an address
     expect(testSpan.tags[0].key).toBe('Local Address');
   });
 
   it('should tolerate spans without tags', () => {
-    const testTrace = new SpanNode(clean({
-      traceId: '2480ccca8df0fca5',
-      name: 'get',
-      id: '2480ccca8df0fca5',
-      kind: 'SERVER',
-      timestamp: 1457186385375000,
-      duration: 333000,
-      localEndpoint: { serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411 },
-    }));
-    const { spans: [testSpan] } = detailedTraceSummary(testTrace);
+    const testTrace = new SpanNode(
+      clean({
+        traceId: '2480ccca8df0fca5',
+        name: 'get',
+        id: '2480ccca8df0fca5',
+        kind: 'SERVER',
+        timestamp: 1457186385375000,
+        duration: 333000,
+        localEndpoint: {
+          serviceName: 'zipkin-query',
+          ipv4: '127.0.0.1',
+          port: 9411,
+        },
+      }),
+    );
+    const {
+      spans: [testSpan],
+    } = detailedTraceSummary(testTrace);
     expect(testSpan.annotations[0].value).toBe('Server Start');
     expect(testSpan.annotations[1].value).toBe('Server Finish');
   });
 
   // TODO: we should really only allocate remote endpoints when on an uninstrumented link
   it('should count spans for any endpoint', () => {
-    const testTrace = new SpanNode(clean({
-      traceId: '2480ccca8df0fca5',
-      id: '2480ccca8df0fca5',
-      kind: 'CLIENT',
-      timestamp: 1,
-      localEndpoint: frontend,
-      remoteEndpoint: frontend,
-    }));
-    testTrace.addChild(new SpanNode(clean({
-      traceId: '2480ccca8df0fca5',
-      parentId: '2480ccca8df0fca5',
-      id: 'bf396325699c84bf',
-      name: 'foo',
-      timestamp: 2,
-      localEndpoint: backend,
-    })));
+    const testTrace = new SpanNode(
+      clean({
+        traceId: '2480ccca8df0fca5',
+        id: '2480ccca8df0fca5',
+        kind: 'CLIENT',
+        timestamp: 1,
+        localEndpoint: frontend,
+        remoteEndpoint: frontend,
+      }),
+    );
+    testTrace.addChild(
+      new SpanNode(
+        clean({
+          traceId: '2480ccca8df0fca5',
+          parentId: '2480ccca8df0fca5',
+          id: 'bf396325699c84bf',
+          name: 'foo',
+          timestamp: 2,
+          localEndpoint: backend,
+        }),
+      ),
+    );
 
     const { serviceNameAndSpanCounts } = detailedTraceSummary(testTrace);
     expect(serviceNameAndSpanCounts).toEqual([
@@ -476,21 +539,27 @@ describe('detailedTraceSummary', () => {
   });
 
   it('should count spans with no timestamp or duration', () => {
-    const testTrace = new SpanNode(clean({
-      traceId: '2480ccca8df0fca5',
-      id: '2480ccca8df0fca5',
-      kind: 'CLIENT',
-      timestamp: 1, // root always needs a timestamp
-      localEndpoint: frontend,
-      remoteEndpoint: frontend,
-    }));
-    testTrace.addChild(new SpanNode(clean({
-      traceId: '2480ccca8df0fca5',
-      parentId: '2480ccca8df0fca5',
-      id: 'bf396325699c84bf',
-      name: 'foo',
-      localEndpoint: backend,
-    })));
+    const testTrace = new SpanNode(
+      clean({
+        traceId: '2480ccca8df0fca5',
+        id: '2480ccca8df0fca5',
+        kind: 'CLIENT',
+        timestamp: 1, // root always needs a timestamp
+        localEndpoint: frontend,
+        remoteEndpoint: frontend,
+      }),
+    );
+    testTrace.addChild(
+      new SpanNode(
+        clean({
+          traceId: '2480ccca8df0fca5',
+          parentId: '2480ccca8df0fca5',
+          id: 'bf396325699c84bf',
+          name: 'foo',
+          localEndpoint: backend,
+        }),
+      ),
+    );
 
     const { serviceNameAndSpanCounts } = detailedTraceSummary(testTrace);
     expect(serviceNameAndSpanCounts).toEqual([
@@ -646,9 +715,15 @@ describe('detailedTraceSummary', () => {
       },
     ];
 
-    const { spans } = detailedTraceSummary(treeCorrectedForClockSkew(traceWithEndpointProblems));
+    const { spans } = detailedTraceSummary(
+      treeCorrectedForClockSkew(traceWithEndpointProblems),
+    );
     expect(spans.map((s) => s.timestamp)).toEqual([
-      1, 11000, 30000, 341172, 359175, // increasing order
+      1,
+      11000,
+      30000,
+      341172,
+      359175, // increasing order
     ]);
   });
 });

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -35,13 +35,24 @@ describe('remote services reducer', () => {
 
   it('should handle FETCH_REMOTE_SERVICES_SUCCESS', () => {
     expect(
-      reducer({
-        isLoading: true,
-        remoteServices: ['remoteService1', 'remoteService2', 'remoteService3'],
-      }, {
-        type: types.FETCH_REMOTE_SERVICES_SUCCESS,
-        remoteServices: ['remoteServiceA', 'remoteServiceB', 'remoteServiceC'],
-      }),
+      reducer(
+        {
+          isLoading: true,
+          remoteServices: [
+            'remoteService1',
+            'remoteService2',
+            'remoteService3',
+          ],
+        },
+        {
+          type: types.FETCH_REMOTE_SERVICES_SUCCESS,
+          remoteServices: [
+            'remoteServiceA',
+            'remoteServiceB',
+            'remoteServiceC',
+          ],
+        },
+      ),
     ).toEqual({
       isLoading: false,
       remoteServices: ['remoteServiceA', 'remoteServiceB', 'remoteServiceC'],
@@ -50,12 +61,19 @@ describe('remote services reducer', () => {
 
   it('should handle FETCH_REMOTE_SERVICES_FAILURE', () => {
     expect(
-      reducer({
-        isLoading: true,
-        remoteServices: ['remoteService1', 'remoteService2', 'remoteService3'],
-      }, {
-        type: types.FETCH_REMOTE_SERVICES_FAILURE,
-      }),
+      reducer(
+        {
+          isLoading: true,
+          remoteServices: [
+            'remoteService1',
+            'remoteService2',
+            'remoteService3',
+          ],
+        },
+        {
+          type: types.FETCH_REMOTE_SERVICES_FAILURE,
+        },
+      ),
     ).toEqual({
       isLoading: false,
       remoteServices: [],
@@ -64,12 +82,19 @@ describe('remote services reducer', () => {
 
   it('should handle CLEAR_REMOTE_SERVICES', () => {
     expect(
-      reducer({
-        isLoading: false,
-        remoteServices: ['remoteService1', 'remoteService2', 'remoteService3'],
-      }, {
-        type: types.CLEAR_REMOTE_SERVICES,
-      }),
+      reducer(
+        {
+          isLoading: false,
+          remoteServices: [
+            'remoteService1',
+            'remoteService2',
+            'remoteService3',
+          ],
+        },
+        {
+          type: types.CLEAR_REMOTE_SERVICES,
+        },
+      ),
     ).toEqual({
       isLoading: false,
       remoteServices: [],

@@ -17,28 +17,38 @@ import { cleanup, fireEvent } from '@testing-library/react';
 import { DependenciesPageImpl } from './DependenciesPage';
 import render from '../../test/util/render-with-default-settings';
 
-jest.mock('./VizceralExt', () => jest.fn(({ objectHighlighted }) => (
-  <div>
-    <button
-      aria-label="button"
-      type="button"
-      data-testid="graph-background"
-      onClick={() => objectHighlighted(undefined)}
-    />
-    {
-      ['serviceA', 'serviceB', 'serviceC', 'serviceD', 'serviceE', 'serviceF', 'serviceG'].map((nodeName) => (
+jest.mock('./VizceralExt', () =>
+  jest.fn(({ objectHighlighted }) => (
+    <div>
+      <button
+        aria-label="button"
+        type="button"
+        data-testid="graph-background"
+        onClick={() => objectHighlighted(undefined)}
+      />
+      {[
+        'serviceA',
+        'serviceB',
+        'serviceC',
+        'serviceD',
+        'serviceE',
+        'serviceF',
+        'serviceG',
+      ].map((nodeName) => (
         <button
           key={nodeName}
           type="button"
           data-testid={`${nodeName}-button`}
-          onClick={() => objectHighlighted({ type: 'node', getName: () => nodeName })}
+          onClick={() =>
+            objectHighlighted({ type: 'node', getName: () => nodeName })
+          }
         >
           {nodeName}
         </button>
-      ))
-    }
-  </div>
-)));
+      ))}
+    </div>
+  )),
+);
 
 describe('<DependenciesPage />', () => {
   const exampleDependencies = [
@@ -67,7 +77,9 @@ describe('<DependenciesPage />', () => {
   });
 
   it('should render a loading indicator when isLoading is true', () => {
-    const { queryAllByTestId } = render(<DependenciesPageImpl {...commonProps} isLoading />);
+    const { queryAllByTestId } = render(
+      <DependenciesPageImpl {...commonProps} isLoading />,
+    );
     const loadingIndicators = queryAllByTestId('loading-indicator');
     expect(loadingIndicators.length).toBe(1);
   });

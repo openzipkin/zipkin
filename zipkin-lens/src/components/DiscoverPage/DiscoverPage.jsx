@@ -44,7 +44,10 @@ import * as remoteServicesActionCreators from '../../actions/remote-services-act
 import * as spansActionCreators from '../../actions/spans-action';
 import * as autocompleteKeysActionCreators from '../../actions/autocomplete-keys-action';
 import * as globalSearchActionCreators from '../../actions/global-search-action';
-import { globalSearchLookbackConditionPropTypes, globalSearchConditionsPropTypes } from '../../prop-types';
+import {
+  globalSearchLookbackConditionPropTypes,
+  globalSearchConditionsPropTypes,
+} from '../../prop-types';
 
 import ExplainBox from './ExplainBox';
 
@@ -143,26 +146,33 @@ const DiscoverPageContent = ({
 
   const findTraces = useCallback(() => {
     const currentTs = moment().valueOf();
-    const queryParameters = buildQueryParameters(buildCommonQueryParameters(
-      conditions,
-      lookbackCondition,
-      limitCondition,
-      currentTs,
-    ));
+    const queryParameters = buildQueryParameters(
+      buildCommonQueryParameters(
+        conditions,
+        lookbackCondition,
+        limitCondition,
+        currentTs,
+      ),
+    );
     history.push({ search: queryParameters });
-    loadTraces(buildTracesApiQueryParameters(
-      conditions,
-      lookbackCondition,
-      limitCondition,
-      currentTs,
-    ));
+    loadTraces(
+      buildTracesApiQueryParameters(
+        conditions,
+        lookbackCondition,
+        limitCondition,
+        currentTs,
+      ),
+    );
   }, [loadTraces, conditions, lookbackCondition, limitCondition, history]);
 
-  const handleKeyDown = useCallback((event) => {
-    if (document.activeElement.tagName === 'BODY' && event.key === 'Enter') {
-      findTraces();
-    }
-  }, [findTraces]);
+  const handleKeyDown = useCallback(
+    (event) => {
+      if (document.activeElement.tagName === 'BODY' && event.key === 'Enter') {
+        findTraces();
+      }
+    },
+    [findTraces],
+  );
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -186,7 +196,11 @@ const DiscoverPageContent = ({
       setLookbackCondition({
         value: lookbackConditionFromUrl.value,
         endTs: lookbackConditionFromUrl.endTs || moment().valueOf(),
-        startTs: lookbackConditionFromUrl.startTs || moment().subtract(15, 'minutes').valueOf(),
+        startTs:
+          lookbackConditionFromUrl.startTs ||
+          moment()
+            .subtract(15, 'minutes')
+            .valueOf(),
       });
     }
     setLimitCondition(limitConditionFromUrl || 10);
@@ -205,9 +219,10 @@ const DiscoverPageContent = ({
     const currentTs = lookbackConditionFromUrl.endTs || moment().valueOf();
 
     // Fetch traces only if one or more conditions are set.
-    if (!isEmpty(conditionsFromUrl)
-      || !isEmpty(lookbackConditionFromUrl)
-      || !!limitConditionFromUrl
+    if (
+      !isEmpty(conditionsFromUrl) ||
+      !isEmpty(lookbackConditionFromUrl) ||
+      !!limitConditionFromUrl
     ) {
       const apiQueryParams = buildTracesApiQueryParameters(
         conditionsFromUrl,
@@ -229,7 +244,10 @@ const DiscoverPageContent = ({
   let content;
   if (isLoading) {
     content = (
-      <Box className={classes.loadingIndicatorWrapper} data-testid="loading-indicator">
+      <Box
+        className={classes.loadingIndicatorWrapper}
+        data-testid="loading-indicator"
+      >
         <CircularProgress />
       </Box>
     );
@@ -294,9 +312,9 @@ const DiscoverPageImpl = (props) => {
         <Box className={classes.explainBoxWrapper}>
           <Typography variant="body1">
             <Trans>
-              Searching has been disabled via the searchEnabled property.
-              You can still view specific traces of which you know the trace id
-              by entering it in the "trace id..." textbox on the top-right.
+              Searching has been disabled via the searchEnabled property. You
+              can still view specific traces of which you know the trace id by
+              entering it in the "trace id..." textbox on the top-right.
             </Trans>
           </Typography>
         </Box>
@@ -317,33 +335,23 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-  loadTraces: (params) => dispatch(
-    tracesActionCreators.loadTraces(params),
-  ),
-  clearTraces: () => dispatch(
-    tracesActionCreators.clearTraces(),
-  ),
-  fetchServices: () => dispatch(
-    servicesActionCreators.fetchServices(),
-  ),
-  fetchRemoteServices: (serviceName) => dispatch(
-    remoteServicesActionCreators.fetchRemoteServices(serviceName),
-  ),
-  fetchSpans: (serviceName) => dispatch(
-    spansActionCreators.fetchSpans(serviceName),
-  ),
-  fetchAutocompleteKeys: () => dispatch(
-    autocompleteKeysActionCreators.fetchAutocompleteKeys(),
-  ),
-  setConditions: (conditions) => dispatch(
-    globalSearchActionCreators.setConditions(conditions),
-  ),
-  setLookbackCondition: (lookbackCondition) => dispatch(
-    globalSearchActionCreators.setLookbackCondition(lookbackCondition),
-  ),
-  setLimitCondition: (limitCondition) => dispatch(
-    globalSearchActionCreators.setLimitCondition(limitCondition),
-  ),
+  loadTraces: (params) => dispatch(tracesActionCreators.loadTraces(params)),
+  clearTraces: () => dispatch(tracesActionCreators.clearTraces()),
+  fetchServices: () => dispatch(servicesActionCreators.fetchServices()),
+  fetchRemoteServices: (serviceName) =>
+    dispatch(remoteServicesActionCreators.fetchRemoteServices(serviceName)),
+  fetchSpans: (serviceName) =>
+    dispatch(spansActionCreators.fetchSpans(serviceName)),
+  fetchAutocompleteKeys: () =>
+    dispatch(autocompleteKeysActionCreators.fetchAutocompleteKeys()),
+  setConditions: (conditions) =>
+    dispatch(globalSearchActionCreators.setConditions(conditions)),
+  setLookbackCondition: (lookbackCondition) =>
+    dispatch(
+      globalSearchActionCreators.setLookbackCondition(lookbackCondition),
+    ),
+  setLimitCondition: (limitCondition) =>
+    dispatch(globalSearchActionCreators.setLimitCondition(limitCondition)),
 });
 
 export default connect(

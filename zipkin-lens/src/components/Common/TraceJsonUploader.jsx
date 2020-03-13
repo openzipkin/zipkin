@@ -23,7 +23,6 @@ import { makeStyles } from '@material-ui/styles';
 import Button from '@material-ui/core/Button';
 import Tooltip from '@material-ui/core/Tooltip';
 
-
 import { ensureV2TraceData } from '../../util/trace';
 import { loadTrace, loadTraceFailure } from '../../actions/trace-viewer-action';
 
@@ -53,44 +52,49 @@ const TraceJsonUploader = ({ history }) => {
     }
   }, []);
 
-  const handleFileChange = useCallback((event) => {
-    const fileReader = new FileReader();
+  const handleFileChange = useCallback(
+    (event) => {
+      const fileReader = new FileReader();
 
-    const goToTraceViewerPage = () => {
-      history.push({ pathname: '/traceViewer' });
-    };
+      const goToTraceViewerPage = () => {
+        history.push({ pathname: '/traceViewer' });
+      };
 
-    fileReader.onload = () => {
-      const { result } = fileReader;
+      fileReader.onload = () => {
+        const { result } = fileReader;
 
-      let rawTraceData;
-      try {
-        rawTraceData = JSON.parse(result);
-      } catch (error) {
-        dispatch(loadTraceFailure(i18n._(t`This file does not contain JSON`)));
+        let rawTraceData;
+        try {
+          rawTraceData = JSON.parse(result);
+        } catch (error) {
+          dispatch(
+            loadTraceFailure(i18n._(t`This file does not contain JSON`)),
+          );
+          goToTraceViewerPage();
+          return;
+        }
+
+        try {
+          ensureV2TraceData(rawTraceData);
+          dispatch(loadTrace(rawTraceData));
+        } catch (error) {
+          dispatch(loadTraceFailure(i18n._(t`Only V2 format is supported`)));
+        }
         goToTraceViewerPage();
-        return;
-      }
+      };
 
-      try {
-        ensureV2TraceData(rawTraceData);
-        dispatch(loadTrace(rawTraceData));
-      } catch (error) {
-        dispatch(loadTraceFailure(i18n._(t`Only V2 format is supported`)));
-      }
-      goToTraceViewerPage();
-    };
+      fileReader.onabort = () => {
+        dispatch(loadTraceFailure(i18n._(t`Failed to load this file`)));
+        goToTraceViewerPage();
+      };
 
-    fileReader.onabort = () => {
-      dispatch(loadTraceFailure(i18n._(t`Failed to load this file`)));
-      goToTraceViewerPage();
-    };
+      fileReader.onerror = fileReader.onabort;
 
-    fileReader.onerror = fileReader.onabort;
-
-    const [file] = event.target.files;
-    fileReader.readAsText(file);
-  }, [dispatch, history, i18n]);
+      const [file] = event.target.files;
+      fileReader.readAsText(file);
+    },
+    [dispatch, history, i18n],
+  );
 
   return (
     <>
@@ -101,7 +105,11 @@ const TraceJsonUploader = ({ history }) => {
         onChange={handleFileChange}
       />
       <Tooltip title={i18n._(t`Upload JSON`)}>
-        <Button variant="outlined" className={classes.button} onClick={handleClick}>
+        <Button
+          variant="outlined"
+          className={classes.button}
+          onClick={handleClick}
+        >
           <FontAwesomeIcon icon={faUpload} />
         </Button>
       </Tooltip>

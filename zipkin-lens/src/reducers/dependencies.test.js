@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -69,32 +69,35 @@ describe('dependencies reducer', () => {
     });
 
     expect(
-      reducer({
-        isLoading: true,
-        dependencies: [
-          {
-            parent: 'serviceA',
-            child: 'serviceB',
-            callCount: 4,
-            errorCount: 1,
-          },
-        ],
-      }, {
-        type: types.FETCH_DEPENDENCIES_SUCCESS,
-        dependencies: [
-          {
-            parent: 'service1',
-            child: 'service2',
-            callCount: 100,
-            errorCount: 5,
-          },
-          {
-            parent: 'service3',
-            child: 'service2',
-            callCount: 4,
-          },
-        ],
-      }),
+      reducer(
+        {
+          isLoading: true,
+          dependencies: [
+            {
+              parent: 'serviceA',
+              child: 'serviceB',
+              callCount: 4,
+              errorCount: 1,
+            },
+          ],
+        },
+        {
+          type: types.FETCH_DEPENDENCIES_SUCCESS,
+          dependencies: [
+            {
+              parent: 'service1',
+              child: 'service2',
+              callCount: 100,
+              errorCount: 5,
+            },
+            {
+              parent: 'service3',
+              child: 'service2',
+              callCount: 4,
+            },
+          ],
+        },
+      ),
     ).toEqual({
       isLoading: false,
       dependencies: [
@@ -115,24 +118,27 @@ describe('dependencies reducer', () => {
 
   it('should handle FETCH_DEPENDENCIES_FAILURE', () => {
     expect(
-      reducer({
-        isLoading: true,
-        dependencies: [
-          {
-            parent: 'service1',
-            child: 'service2',
-            callCount: 100,
-            errorCount: 5,
-          },
-          {
-            parent: 'service3',
-            child: 'service2',
-            callCount: 4,
-          },
-        ],
-      }, {
-        type: types.FETCH_DEPENDENCIES_FAILURE,
-      }),
+      reducer(
+        {
+          isLoading: true,
+          dependencies: [
+            {
+              parent: 'service1',
+              child: 'service2',
+              callCount: 100,
+              errorCount: 5,
+            },
+            {
+              parent: 'service3',
+              child: 'service2',
+              callCount: 4,
+            },
+          ],
+        },
+        {
+          type: types.FETCH_DEPENDENCIES_FAILURE,
+        },
+      ),
     ).toEqual({
       isLoading: false,
       dependencies: [],
@@ -141,24 +147,27 @@ describe('dependencies reducer', () => {
 
   it('should handle CLEAN_DEPENDENCIES', () => {
     expect(
-      reducer({
-        isLoading: true,
-        dependencies: [
-          {
-            parent: 'service1',
-            child: 'service2',
-            callCount: 100,
-            errorCount: 5,
-          },
-          {
-            parent: 'service3',
-            child: 'service2',
-            callCount: 4,
-          },
-        ],
-      }, {
-        type: types.CLEAR_DEPENDENCIES,
-      }),
+      reducer(
+        {
+          isLoading: true,
+          dependencies: [
+            {
+              parent: 'service1',
+              child: 'service2',
+              callCount: 100,
+              errorCount: 5,
+            },
+            {
+              parent: 'service3',
+              child: 'service2',
+              callCount: 4,
+            },
+          ],
+        },
+        {
+          type: types.CLEAR_DEPENDENCIES,
+        },
+      ),
     ).toEqual({
       isLoading: true,
       dependencies: [],

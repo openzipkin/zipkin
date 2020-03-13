@@ -49,15 +49,16 @@ export const extractAllServiceNames = (traceSummaries) => {
   return Array.from(new Set(result)); // For uniqueness
 };
 
-export const filterTraceSummaries = (traceSummaries, filters) => traceSummaries.filter(
-  (traceSummary) => {
+export const filterTraceSummaries = (traceSummaries, filters) =>
+  traceSummaries.filter((traceSummary) => {
     for (let i = 0; i < filters.length; i += 1) {
-      if (!traceSummary.serviceSummaries.find(
-        (serviceSummary) => serviceSummary.serviceName === filters[i],
-      )) {
+      if (
+        !traceSummary.serviceSummaries.find(
+          (serviceSummary) => serviceSummary.serviceName === filters[i],
+        )
+      ) {
         return false;
       }
     }
     return true;
-  },
-);
+  });

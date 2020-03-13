@@ -63,40 +63,35 @@ const defaultProps = {
   onDelete: null,
 };
 
-const ServiceBadgeImpl = ({
-  serviceName,
-  count,
-  onClick,
-  onDelete,
-}) => {
+const ServiceBadgeImpl = ({ serviceName, count, onClick, onDelete }) => {
   const classes = useStyles();
 
-  const label = useMemo(
-    () => `${serviceName}${count ? ` (${count})` : ''}`,
-    [count, serviceName],
-  );
+  const label = useMemo(() => `${serviceName}${count ? ` (${count})` : ''}`, [
+    count,
+    serviceName,
+  ]);
 
   return (
     <Box className={classes.root}>
       <Paper className={classes.paper}>
         <Box
-          className={`${classes.buttonBase} ${onClick ? classes.clickableButton : ''}`}
+          className={`${classes.buttonBase} ${
+            onClick ? classes.clickableButton : ''
+          }`}
           onClick={onClick}
           data-test="badge"
         >
           {label}
         </Box>
-        {
-          onDelete ? (
-            <Box
-              className={`${classes.buttonBase} ${classes.clickableButton}`}
-              onClick={onDelete}
-              data-test="delete-button"
-            >
-              <FontAwesomeIcon icon={faTimes} />
-            </Box>
-          ) : null
-        }
+        {onDelete ? (
+          <Box
+            className={`${classes.buttonBase} ${classes.clickableButton}`}
+            onClick={onDelete}
+            data-test="delete-button"
+          >
+            <FontAwesomeIcon icon={faTimes} />
+          </Box>
+        ) : null}
       </Paper>
     </Box>
   );

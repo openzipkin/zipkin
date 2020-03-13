@@ -76,57 +76,59 @@ const propTypes = {
   onFindButtonClick: PropTypes.func.isRequired,
 };
 
-const DependenciesPageHeader = React.memo(({
-  startTime,
-  endTime,
-  onStartTimeChange,
-  onEndTimeChange,
-  onFindButtonClick,
-}) => {
-  const classes = useStyles();
-  const { i18n } = useLingui();
+const DependenciesPageHeader = React.memo(
+  ({
+    startTime,
+    endTime,
+    onStartTimeChange,
+    onEndTimeChange,
+    onFindButtonClick,
+  }) => {
+    const classes = useStyles();
+    const { i18n } = useLingui();
 
-  return (
-    <Box className={classes.root}>
-      <Box className={classes.upperBox}>
-        <Typography variant="h5" className={classes.pageTitle}>
-          <Trans>Dependencies</Trans>
-        </Typography>
-        <Box className={classes.upperRightBox}>
-          <TraceJsonUploader />
-          <TraceIdSearchInput />
+    return (
+      <Box className={classes.root}>
+        <Box className={classes.upperBox}>
+          <Typography variant="h5" className={classes.pageTitle}>
+            <Trans>Dependencies</Trans>
+          </Typography>
+          <Box className={classes.upperRightBox}>
+            <TraceJsonUploader />
+            <TraceIdSearchInput />
+          </Box>
+        </Box>
+        <Box className={classes.searchBox}>
+          <KeyboardDateTimePicker
+            label={i18n._(t`Start Time`)}
+            inputVariant="outlined"
+            value={startTime}
+            onChange={onStartTimeChange}
+            className={classes.dateTimePicker}
+            InputProps={{ classes: { input: classes.dateTimePickerInput } }}
+          />
+          -
+          <KeyboardDateTimePicker
+            label={i18n._(t`End Time`)}
+            inputVariant="outlined"
+            value={endTime}
+            onChange={onEndTimeChange}
+            className={classes.dateTimePicker}
+            InputProps={{ classes: { input: classes.dateTimePickerInput } }}
+          />
+          <Button
+            color="primary"
+            variant="contained"
+            onClick={onFindButtonClick}
+            className={classes.findButton}
+          >
+            <FontAwesomeIcon icon={faSearch} />
+          </Button>
         </Box>
       </Box>
-      <Box className={classes.searchBox}>
-        <KeyboardDateTimePicker
-          label={i18n._(t`Start Time`)}
-          inputVariant="outlined"
-          value={startTime}
-          onChange={onStartTimeChange}
-          className={classes.dateTimePicker}
-          InputProps={{ classes: { input: classes.dateTimePickerInput } }}
-        />
-        -
-        <KeyboardDateTimePicker
-          label={i18n._(t`End Time`)}
-          inputVariant="outlined"
-          value={endTime}
-          onChange={onEndTimeChange}
-          className={classes.dateTimePicker}
-          InputProps={{ classes: { input: classes.dateTimePickerInput } }}
-        />
-        <Button
-          color="primary"
-          variant="contained"
-          onClick={onFindButtonClick}
-          className={classes.findButton}
-        >
-          <FontAwesomeIcon icon={faSearch} />
-        </Button>
-      </Box>
-    </Box>
-  );
-});
+    );
+  },
+);
 
 DependenciesPageHeader.propTypes = propTypes;
 

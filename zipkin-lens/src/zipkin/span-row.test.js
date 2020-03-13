@@ -195,12 +195,17 @@ describe('SPAN v2 -> spanRow Conversion', () => {
   });
 
   it('should not duplicate service names', () => {
-    const converted = newSpanRow([clean({
-      traceId: '1',
-      id: '3',
-      localEndpoint: frontend,
-      remoteEndpoint: frontend,
-    })], false);
+    const converted = newSpanRow(
+      [
+        clean({
+          traceId: '1',
+          id: '3',
+          localEndpoint: frontend,
+          remoteEndpoint: frontend,
+        }),
+      ],
+      false,
+    );
 
     expect(converted.serviceNames).toEqual(['frontend']);
   });
@@ -334,8 +339,9 @@ describe('SPAN v2 -> spanRow Conversion', () => {
     });
 
     const converted = newSpanRow([v2], false);
-    expect(converted.tags)
-      .toEqual([{ key: 'Server Address', value: '192.168.99.101:9000 (backend)' }]);
+    expect(converted.tags).toEqual([
+      { key: 'Server Address', value: '192.168.99.101:9000 (backend)' },
+    ]);
     expect(converted.serviceName).toEqual('unknown');
     expect(converted.serviceNames).toEqual(['backend']);
   });
@@ -410,8 +416,16 @@ describe('SPAN v2 -> spanRow Conversion', () => {
         },
       ],
       tags: [
-        { key: 'http.path', value: '/api', endpoints: ['192.168.99.101:9000 (backend)'] },
-        { key: 'finagle.version', value: '6.45.0', endpoints: ['192.168.99.101:9000 (backend)'] },
+        {
+          key: 'http.path',
+          value: '/api',
+          endpoints: ['192.168.99.101:9000 (backend)'],
+        },
+        {
+          key: 'finagle.version',
+          value: '6.45.0',
+          endpoints: ['192.168.99.101:9000 (backend)'],
+        },
         { key: 'Client Address', value: '127.0.0.1:8080 (frontend)' },
       ],
       serviceName: 'backend',
@@ -609,8 +623,9 @@ describe('SPAN v2 -> spanRow Conversion', () => {
     });
 
     const converted = newSpanRow([v2], false);
-    expect(converted.tags)
-      .toEqual([{ key: 'Client Address', value: '127.0.0.1:8080 (frontend)' }]);
+    expect(converted.tags).toEqual([
+      { key: 'Client Address', value: '127.0.0.1:8080 (frontend)' },
+    ]);
     expect(converted.serviceName).toEqual('unknown');
     expect(converted.serviceNames).toEqual(['frontend']);
   });
@@ -846,7 +861,9 @@ describe('SPAN v2 -> spanRow Conversion', () => {
     });
 
     const spanRow = newSpanRow([v2], false);
-    expect(spanRow.tags.map((s) => s.value)).toEqual(['[2001:db8::c001]:80 (there)']);
+    expect(spanRow.tags.map((s) => s.value)).toEqual([
+      '[2001:db8::c001]:80 (there)',
+    ]);
   });
 
   it('should not require endpoint serviceName', () => {
@@ -861,7 +878,9 @@ describe('SPAN v2 -> spanRow Conversion', () => {
     });
 
     const spanRow = newSpanRow([v2], false);
-    expect(spanRow.annotations.map((s) => s.endpoint)).toEqual(['[2001:db8::c001]']);
+    expect(spanRow.annotations.map((s) => s.endpoint)).toEqual([
+      '[2001:db8::c001]',
+    ]);
   });
 
   it('converts client leaf spans using its remote service name', () => {
@@ -1016,28 +1035,40 @@ describe('newSpanRow', () => {
 
   // originally zipkin2.v1.SpanConverterTest.mergeWhenTagsSentSeparately
   it('should add late server addr', () => {
-    const spanRow = newSpanRow([clientSpan, clean({
-      traceId: '1',
-      id: '3',
-      remoteEndpoint: backend,
-    })], false);
-
-    expect(spanRow.tags).toEqual(
-      [{ key: 'Server Address', value: '192.168.99.101:9000 (backend)' }],
+    const spanRow = newSpanRow(
+      [
+        clientSpan,
+        clean({
+          traceId: '1',
+          id: '3',
+          remoteEndpoint: backend,
+        }),
+      ],
+      false,
     );
+
+    expect(spanRow.tags).toEqual([
+      { key: 'Server Address', value: '192.168.99.101:9000 (backend)' },
+    ]);
   });
 
   // originally zipkin2.v1.SpanConverterTest.mergePrefersServerSpanName
   it('should overwrite client name with server name', () => {
-    const spanRow = newSpanRow([clientSpan, clean({
-      traceId: '1',
-      id: '3',
-      name: 'get /users/:userId',
-      timestamp: 1472470996238000,
-      kind: 'SERVER',
-      localEndpoint: backend,
-      shared: true,
-    })], false);
+    const spanRow = newSpanRow(
+      [
+        clientSpan,
+        clean({
+          traceId: '1',
+          id: '3',
+          name: 'get /users/:userId',
+          timestamp: 1472470996238000,
+          kind: 'SERVER',
+          localEndpoint: backend,
+          shared: true,
+        }),
+      ],
+      false,
+    );
 
     expect(spanRow.spanName).toBe('get /users/:userId');
   });
@@ -1085,99 +1116,128 @@ describe('newSpanRow', () => {
   });
 
   it('should not overwrite client name with empty', () => {
-    const spanRow = newSpanRow([clientSpan, clean({
-      traceId: '1',
-      id: '3',
-      timestamp: 1472470996238000,
-      kind: 'SERVER',
-      localEndpoint: backend,
-      shared: true,
-    })], false);
+    const spanRow = newSpanRow(
+      [
+        clientSpan,
+        clean({
+          traceId: '1',
+          id: '3',
+          timestamp: 1472470996238000,
+          kind: 'SERVER',
+          localEndpoint: backend,
+          shared: true,
+        }),
+      ],
+      false,
+    );
 
     expect(spanRow.spanName).toBe(clientSpan.name);
   });
 
   it('should dedupe annotations with same timestamp and value', () => {
-    const spanRow = newSpanRow([
-      clean({
-        traceId: '1',
-        parentId: '2',
-        id: '3',
-        kind: 'CLIENT',
-        localEndpoint: frontend,
-        annotations: [{ timestamp: 1, value: 'hit' }],
-      }),
-      clean({
-        traceId: '1',
-        parentId: '2',
-        id: '3',
-        kind: 'CLIENT',
-        localEndpoint: frontend,
-        annotations: [{ timestamp: 1, value: 'hit' }],
-      }),
-    ], false);
+    const spanRow = newSpanRow(
+      [
+        clean({
+          traceId: '1',
+          parentId: '2',
+          id: '3',
+          kind: 'CLIENT',
+          localEndpoint: frontend,
+          annotations: [{ timestamp: 1, value: 'hit' }],
+        }),
+        clean({
+          traceId: '1',
+          parentId: '2',
+          id: '3',
+          kind: 'CLIENT',
+          localEndpoint: frontend,
+          annotations: [{ timestamp: 1, value: 'hit' }],
+        }),
+      ],
+      false,
+    );
 
     expect(spanRow.annotations).toEqual([
       {
-        timestamp: 1, value: 'hit', endpoint: '127.0.0.1:8080 (frontend)', isDerived: false,
+        timestamp: 1,
+        value: 'hit',
+        endpoint: '127.0.0.1:8080 (frontend)',
+        isDerived: false,
       },
     ]);
   });
 
   it('should merge endpoints on shared tag', () => {
-    const spanRow = newSpanRow([
-      clean({
-        traceId: '1',
-        parentId: '2',
-        id: '3',
-        kind: 'CLIENT',
-        localEndpoint: frontend,
-        tags: { 'http.path': '/foo' },
-      }),
-      clean({
-        traceId: '1',
-        parentId: '2',
-        id: '3',
-        shared: true,
-        kind: 'SERVER',
-        localEndpoint: backend,
-        tags: { 'http.path': '/foo' },
-      }),
-    ], false);
+    const spanRow = newSpanRow(
+      [
+        clean({
+          traceId: '1',
+          parentId: '2',
+          id: '3',
+          kind: 'CLIENT',
+          localEndpoint: frontend,
+          tags: { 'http.path': '/foo' },
+        }),
+        clean({
+          traceId: '1',
+          parentId: '2',
+          id: '3',
+          shared: true,
+          kind: 'SERVER',
+          localEndpoint: backend,
+          tags: { 'http.path': '/foo' },
+        }),
+      ],
+      false,
+    );
 
     expect(spanRow.tags).toEqual([
       {
         key: 'http.path',
         value: '/foo',
-        endpoints: ['127.0.0.1:8080 (frontend)', '192.168.99.101:9000 (backend)'],
+        endpoints: [
+          '127.0.0.1:8080 (frontend)',
+          '192.168.99.101:9000 (backend)',
+        ],
       },
     ]);
   });
 
   it('should show difference in tag values per endpoint', () => {
-    const spanRow = newSpanRow([
-      clean({
-        traceId: '1',
-        parentId: '2',
-        id: '3',
-        kind: 'CLIENT',
-        localEndpoint: frontend,
-        tags: { 'http.path': '/foo' },
-      }),
-      clean({
-        traceId: '1',
-        parentId: '2',
-        id: '3',
-        shared: true,
-        kind: 'SERVER',
-        localEndpoint: backend,
-        tags: { 'http.path': '/foo/redirected' },
-      }),
-    ], false);
+    const spanRow = newSpanRow(
+      [
+        clean({
+          traceId: '1',
+          parentId: '2',
+          id: '3',
+          kind: 'CLIENT',
+          localEndpoint: frontend,
+          tags: { 'http.path': '/foo' },
+        }),
+        clean({
+          traceId: '1',
+          parentId: '2',
+          id: '3',
+          shared: true,
+          kind: 'SERVER',
+          localEndpoint: backend,
+          tags: { 'http.path': '/foo/redirected' },
+        }),
+      ],
+      false,
+    );
 
     expect(spanRow.tags).toEqual([
-      { key: 'http.path', value: '/foo', endpoints: ['127.0.0.1:8080 (frontend)'] },
-      { key: 'http.path', value: '/foo/redirected', endpoints: ['192.168.99.101:9000 (backend)'] },
+      {
+        key: 'http.path',
+        value: '/foo',
+        endpoints: ['127.0.0.1:8080 (frontend)'],
+      },
+      {
+        key: 'http.path',
+        value: '/foo/redirected',
+        endpoints: ['192.168.99.101:9000 (backend)'],
+      },
     ]);
   });
 
@@ -1197,36 +1257,56 @@ describe('newSpanRow', () => {
 
 describe('formatEndpoint', () => {
   it('should format ip and port', () => {
-    expect(formatEndpoint({ ipv4: '150.151.152.153', port: 5000 })).toBe('150.151.152.153:5000');
+    expect(formatEndpoint({ ipv4: '150.151.152.153', port: 5000 })).toBe(
+      '150.151.152.153:5000',
+    );
   });
 
   it('should not use port when missing or zero', () => {
     expect(formatEndpoint({ ipv4: '150.151.152.153' })).toBe('150.151.152.153');
-    expect(formatEndpoint({ ipv4: '150.151.152.153', port: 0 })).toBe('150.151.152.153');
+    expect(formatEndpoint({ ipv4: '150.151.152.153', port: 0 })).toBe(
+      '150.151.152.153',
+    );
   });
 
   it('should put service name in parenthesis', () => {
-    expect(formatEndpoint({
-      ipv4: '150.151.152.153', port: 9042, serviceName: 'cassandra',
-    })).toBe('150.151.152.153:9042 (cassandra)');
-    expect(formatEndpoint({
-      ipv4: '150.151.152.153', serviceName: 'cassandra',
-    })).toBe('150.151.152.153 (cassandra)');
+    expect(
+      formatEndpoint({
+        ipv4: '150.151.152.153',
+        port: 9042,
+        serviceName: 'cassandra',
+      }),
+    ).toBe('150.151.152.153:9042 (cassandra)');
+    expect(
+      formatEndpoint({
+        ipv4: '150.151.152.153',
+        serviceName: 'cassandra',
+      }),
+    ).toBe('150.151.152.153 (cassandra)');
   });
 
   it('should not show empty service name', () => {
-    expect(formatEndpoint({
-      ipv4: '150.151.152.153', port: 9042, serviceName: '',
-    })).toBe('150.151.152.153:9042');
-    expect(formatEndpoint({
-      ipv4: '150.151.152.153', serviceName: '',
-    })).toBe('150.151.152.153');
+    expect(
+      formatEndpoint({
+        ipv4: '150.151.152.153',
+        port: 9042,
+        serviceName: '',
+      }),
+    ).toBe('150.151.152.153:9042');
+    expect(
+      formatEndpoint({
+        ipv4: '150.151.152.153',
+        serviceName: '',
+      }),
+    ).toBe('150.151.152.153');
   });
 
   it('should show service name missing IP', () => {
-    expect(formatEndpoint({
-      serviceName: 'rabbit',
-    })).toBe('rabbit');
+    expect(
+      formatEndpoint({
+        serviceName: 'rabbit',
+      }),
+    ).toBe('rabbit');
   });
 
   it('should not crash on no data', () => {
@@ -1234,16 +1314,25 @@ describe('formatEndpoint', () => {
   });
 
   it('should put ipv6 in brackets', () => {
-    expect(formatEndpoint({
-      ipv6: '2001:db8::c001', port: 9042, serviceName: 'cassandra',
-    })).toBe('[2001:db8::c001]:9042 (cassandra)');
+    expect(
+      formatEndpoint({
+        ipv6: '2001:db8::c001',
+        port: 9042,
+        serviceName: 'cassandra',
+      }),
+    ).toBe('[2001:db8::c001]:9042 (cassandra)');
 
-    expect(formatEndpoint({
-      ipv6: '2001:db8::c001', port: 9042,
-    })).toBe('[2001:db8::c001]:9042');
+    expect(
+      formatEndpoint({
+        ipv6: '2001:db8::c001',
+        port: 9042,
+      }),
+    ).toBe('[2001:db8::c001]:9042');
 
-    expect(formatEndpoint({
-      ipv6: '2001:db8::c001',
-    })).toBe('[2001:db8::c001]');
+    expect(
+      formatEndpoint({
+        ipv6: '2001:db8::c001',
+      }),
+    ).toBe('[2001:db8::c001]');
   });
 });

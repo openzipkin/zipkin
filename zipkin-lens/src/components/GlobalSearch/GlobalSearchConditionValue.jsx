@@ -40,33 +40,35 @@ const GlobalSearchConditionValue = ({
   onBlur,
 }) => {
   const dispatch = useDispatch();
-  const {
-    services,
-    isLoading: isLoadingServices,
-  } = useSelector((state) => state.services);
-  const {
-    remoteServices,
-    isLoading: isLoadingRemoteServices,
-  } = useSelector((state) => state.remoteServices);
-  const {
-    spans,
-    isLoading: isLoadingSpans,
-  } = useSelector((state) => state.spans);
+  const { services, isLoading: isLoadingServices } = useSelector(
+    (state) => state.services,
+  );
+  const { remoteServices, isLoading: isLoadingRemoteServices } = useSelector(
+    (state) => state.remoteServices,
+  );
+  const { spans, isLoading: isLoadingSpans } = useSelector(
+    (state) => state.spans,
+  );
   const {
     autocompleteValues,
     isLoading: isLoadingAutocompleteValues,
   } = useSelector((state) => state.autocompleteValues);
   const conditions = useSelector((state) => state.globalSearch.conditions);
 
-  const { key: conditionKey, value: conditionValue } = conditions[conditionIndex];
+  const { key: conditionKey, value: conditionValue } = conditions[
+    conditionIndex
+  ];
 
-  const handleValueChange = useCallback((value) => {
-    dispatch(changeConditionValue(conditionIndex, value));
-    if (conditionKey === 'serviceName') {
-      dispatch(fetchRemoteServices(value));
-      dispatch(fetchSpans(value));
-    }
-  }, [conditionIndex, conditionKey, dispatch]);
+  const handleValueChange = useCallback(
+    (value) => {
+      dispatch(changeConditionValue(conditionIndex, value));
+      if (conditionKey === 'serviceName') {
+        dispatch(fetchRemoteServices(value));
+        dispatch(fetchSpans(value));
+      }
+    },
+    [conditionIndex, conditionKey, dispatch],
+  );
 
   const commonProps = {
     value: conditionValue,
@@ -97,16 +99,20 @@ const GlobalSearchConditionValue = ({
           opts = spans;
           isLoading = isLoadingSpans;
           break;
-        default: break;
+        default:
+          break;
       }
-      return (<NameCondition {...commonProps} options={opts} isLoading={isLoading} />);
+      return (
+        <NameCondition {...commonProps} options={opts} isLoading={isLoading} />
+      );
     }
     case 'minDuration':
     case 'maxDuration':
-      return (<DurationCondition {...commonProps} />);
+      return <DurationCondition {...commonProps} />;
     case 'tags':
-      return (<TagCondition {...commonProps} />);
-    default: // autocompleteTags
+      return <TagCondition {...commonProps} />;
+    default:
+      // autocompleteTags
       return (
         <NameCondition
           {...commonProps}

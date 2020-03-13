@@ -53,7 +53,7 @@ const initialUnit = (value) => {
   if (value % (1000 * 1000) === 0) {
     return 's';
   }
-  if (value % (1000) === 0) {
+  if (value % 1000 === 0) {
     return 'ms';
   }
   return 'μs';
@@ -72,93 +72,134 @@ const DurationCondition = ({
 
   const [unit, setUnit] = useState(initialUnit(value));
 
-  const handleValueChange = useCallback((event) => {
-    let newValue = parseInt(event.target.value, 10);
-    if (Number.isNaN(newValue)) {
-      newValue = 0;
-    }
-    switch (unit) {
-      case 'μs': onChange(newValue); break;
-      case 'ms': onChange(newValue * 1000); break;
-      case 's': onChange(newValue * 1000 * 1000); break;
-      default: break;
-    }
-  }, [onChange, unit]);
+  const handleValueChange = useCallback(
+    (event) => {
+      let newValue = parseInt(event.target.value, 10);
+      if (Number.isNaN(newValue)) {
+        newValue = 0;
+      }
+      switch (unit) {
+        case 'μs':
+          onChange(newValue);
+          break;
+        case 'ms':
+          onChange(newValue * 1000);
+          break;
+        case 's':
+          onChange(newValue * 1000 * 1000);
+          break;
+        default:
+          break;
+      }
+    },
+    [onChange, unit],
+  );
 
-  const handleUnitChange = useCallback((selected) => {
-    const prevUnit = unit;
-    const newUnit = selected.value;
-    setUnit(newUnit);
-    switch (prevUnit) {
-      case 'μs':
-        switch (newUnit) {
-          case 'ms': onChange(value * 1000); break;
-          case 's': onChange(value * 1000 * 1000); break;
-          default: break; // Do nothing
-        }
-        break;
-      case 'ms':
-        switch (newUnit) {
-          case 'μs': onChange(value / 1000); break;
-          case 's': onChange(value * 1000); break;
-          default: break; // Do nothing
-        }
-        break;
-      case 's':
-        switch (newUnit) {
-          case 'μs': onChange(value / (1000 * 1000)); break;
-          case 'ms': onChange(value / 1000); break;
-          default: break; // Do nothing
-        }
-        break;
-      default: break; // Do nothing
-    }
-  }, [onChange, unit, value]);
+  const handleUnitChange = useCallback(
+    (selected) => {
+      const prevUnit = unit;
+      const newUnit = selected.value;
+      setUnit(newUnit);
+      switch (prevUnit) {
+        case 'μs':
+          switch (newUnit) {
+            case 'ms':
+              onChange(value * 1000);
+              break;
+            case 's':
+              onChange(value * 1000 * 1000);
+              break;
+            default:
+              break; // Do nothing
+          }
+          break;
+        case 'ms':
+          switch (newUnit) {
+            case 'μs':
+              onChange(value / 1000);
+              break;
+            case 's':
+              onChange(value * 1000);
+              break;
+            default:
+              break; // Do nothing
+          }
+          break;
+        case 's':
+          switch (newUnit) {
+            case 'μs':
+              onChange(value / (1000 * 1000));
+              break;
+            case 'ms':
+              onChange(value / 1000);
+              break;
+            default:
+              break; // Do nothing
+          }
+          break;
+        default:
+          break; // Do nothing
+      }
+    },
+    [onChange, unit, value],
+  );
 
-  const handleKeyDown = useCallback((event) => {
-    if (event.key === 'Enter') {
-      valueRef.current.blur();
-      addCondition();
-    }
-  }, [addCondition, valueRef]);
+  const handleKeyDown = useCallback(
+    (event) => {
+      if (event.key === 'Enter') {
+        valueRef.current.blur();
+        addCondition();
+      }
+    },
+    [addCondition, valueRef],
+  );
 
   const displayedValue = useMemo(() => {
     switch (unit) {
-      case 'μs': return value;
-      case 'ms': return value / 1000;
-      case 's': return value / (1000 * 1000);
-      default: return null;
+      case 'μs':
+        return value;
+      case 'ms':
+        return value / 1000;
+      case 's':
+        return value / (1000 * 1000);
+      default:
+        return null;
     }
   }, [unit, value]);
 
-  const styles = useMemo(() => ({
-    control: (base) => ({
-      ...base,
-      width: '3rem',
-      height: '2.4rem',
-      minHeight: '2.4rem',
-      border: 0,
-      borderRadius: 0,
-      backgroundColor: isFocused ? theme.palette.primary.main : theme.palette.primary.light,
-      '&:hover': {
-        backgroundColor: theme.palette.primary.main,
-      },
-      cursor: 'pointer',
+  const styles = useMemo(
+    () => ({
+      control: (base) => ({
+        ...base,
+        width: '3rem',
+        height: '2.4rem',
+        minHeight: '2.4rem',
+        border: 0,
+        borderRadius: 0,
+        backgroundColor: isFocused
+          ? theme.palette.primary.main
+          : theme.palette.primary.light,
+        '&:hover': {
+          backgroundColor: theme.palette.primary.main,
+        },
+        cursor: 'pointer',
+      }),
+      menu: (base) => ({
+        ...base,
+        zIndex: 10000,
+        width: '3rem',
+      }),
+      singleValue: (base) => ({
+        ...base,
+        color: theme.palette.primary.contrastText,
+      }),
+      indicatorsContainer: (base) => ({
+        ...base,
+        display: 'none',
+      }),
     }),
-    menu: (base) => ({
-      ...base,
-      zIndex: 10000,
-      width: '3rem',
-    }),
-    singleValue: (base) => ({
-      ...base,
-      color: theme.palette.primary.contrastText,
-    }),
-    indicatorsContainer: (base) => ({
-      ...base,
-      display: 'none',
-    }),
-  }), [isFocused]);
+    [isFocused],
+  );
 
   return (
     <Box display="flex" alignItems="center">
@@ -171,7 +212,9 @@ const DurationCondition = ({
         onChange={handleValueChange}
         onKeyDown={handleKeyDown}
         style={{
-          backgroundColor: isFocused ? theme.palette.primary.main : theme.palette.primary.light,
+          backgroundColor: isFocused
+            ? theme.palette.primary.main
+            : theme.palette.primary.light,
         }}
       />
       <ReactSelect

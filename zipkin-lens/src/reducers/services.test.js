@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -35,13 +35,16 @@ describe('services reducer', () => {
 
   it('should handle FETCH_SERVICES_SUCCESS', () => {
     expect(
-      reducer({
-        isLoading: true,
-        services: ['service1', 'service2', 'service3'],
-      }, {
-        type: types.FETCH_SERVICES_SUCCESS,
-        services: ['serviceA', 'serviceB', 'serviceC'],
-      }),
+      reducer(
+        {
+          isLoading: true,
+          services: ['service1', 'service2', 'service3'],
+        },
+        {
+          type: types.FETCH_SERVICES_SUCCESS,
+          services: ['serviceA', 'serviceB', 'serviceC'],
+        },
+      ),
     ).toEqual({
       isLoading: false,
       services: ['serviceA', 'serviceB', 'serviceC'],
@@ -50,12 +53,15 @@ describe('services reducer', () => {
 
   it('should handle FETCH_SERVICES_FAILURE', () => {
     expect(
-      reducer({
-        isLoading: true,
-        services: ['service1', 'service2', 'service3'],
-      }, {
-        type: types.FETCH_SERVICES_FAILURE,
-      }),
+      reducer(
+        {
+          isLoading: true,
+          services: ['service1', 'service2', 'service3'],
+        },
+        {
+          type: types.FETCH_SERVICES_FAILURE,
+        },
+      ),
     ).toEqual({
       isLoading: false,
       services: [],

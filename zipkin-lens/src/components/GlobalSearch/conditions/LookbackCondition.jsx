@@ -55,10 +55,12 @@ const lookbackOptions = [
 
 const lookbackMenuOptions = nonCustomLookbackOptions
   .filter((option) => option.quick)
-  .concat([{
-    value: 'more',
-    label: 'More...',
-  }]);
+  .concat([
+    {
+      value: 'more',
+      label: 'More...',
+    },
+  ]);
 
 const useStyles = makeStyles((theme) => ({
   lookbackButton: {
@@ -88,7 +90,9 @@ const LookbackCondition = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
 
-  const lookbackCondition = useSelector((state) => state.globalSearch.lookbackCondition);
+  const lookbackCondition = useSelector(
+    (state) => state.globalSearch.lookbackCondition,
+  );
 
   const isCustom = lookbackCondition.value === 'custom';
 
@@ -127,17 +131,23 @@ const LookbackCondition = () => {
 
   const handleApplyButtonClick = () => {
     setIsModalOpen(false);
-    dispatch(setLookbackCondition({
-      value: 'custom',
-      startTs: customRange.startTime.valueOf(),
-      endTs: customRange.endTime.valueOf(),
-    }));
+    dispatch(
+      setLookbackCondition({
+        value: 'custom',
+        startTs: customRange.startTime.valueOf(),
+        endTs: customRange.endTime.valueOf(),
+      }),
+    );
   };
 
   let lookbackButtonText = '';
   if (isCustom) {
-    const startTimeStr = moment(lookbackCondition.startTs).format('MMM Do YY, hh:mm');
-    const endTimeStr = moment(lookbackCondition.endTs).format('MMM Do YY, hh:mm');
+    const startTimeStr = moment(lookbackCondition.startTs).format(
+      'MMM Do YY, hh:mm',
+    );
+    const endTimeStr = moment(lookbackCondition.endTs).format(
+      'MMM Do YY, hh:mm',
+    );
     lookbackButtonText = `${startTimeStr} - ${endTimeStr}`;
   } else {
     lookbackButtonText = moment.duration(lookbackCondition.value).humanize();
@@ -157,10 +167,12 @@ const LookbackCondition = () => {
         key={lookbackOption.value}
         onClick={() => {
           setMenuAnchor(null);
-          dispatch(setLookbackCondition({
-            ...lookbackCondition,
-            value: lookbackOption.value,
-          }));
+          dispatch(
+            setLookbackCondition({
+              ...lookbackCondition,
+              value: lookbackOption.value,
+            }),
+          );
         }}
       >
         {lookbackOption.label}
@@ -179,10 +191,12 @@ const LookbackCondition = () => {
         className={classes.fixedLookbackItem}
         onClick={() => {
           setIsModalOpen(false);
-          dispatch(setLookbackCondition({
-            ...lookbackCondition,
-            value: lookbackOption.value,
-          }));
+          dispatch(
+            setLookbackCondition({
+              ...lookbackCondition,
+              value: lookbackOption.value,
+            }),
+          );
         }}
       >
         <ListItemText primary={lookbackOption.label} />
@@ -210,9 +224,7 @@ const LookbackCondition = () => {
         {lookbackMenuOptions.map(renderMenuItems)}
       </Menu>
       <Dialog open={isModalOpen} onClose={handleModalClose}>
-        <DialogTitle>
-          Lookback
-        </DialogTitle>
+        <DialogTitle>Lookback</DialogTitle>
         <DialogContent className={classes.content}>
           <Box className={classes.custom}>
             <Box mb={3}>
@@ -241,14 +253,14 @@ const LookbackCondition = () => {
           </Box>
           <Box pl={2} display="flex">
             <List>
-              {
-                lookbackOptions.slice(0, Math.ceil(lookbackOptions.length / 2)).map(renderListItems)
-              }
+              {lookbackOptions
+                .slice(0, Math.ceil(lookbackOptions.length / 2))
+                .map(renderListItems)}
             </List>
             <List>
-              {
-                lookbackOptions.slice(Math.ceil(lookbackOptions.length / 2)).map(renderListItems)
-              }
+              {lookbackOptions
+                .slice(Math.ceil(lookbackOptions.length / 2))
+                .map(renderListItems)}
             </List>
           </Box>
         </DialogContent>

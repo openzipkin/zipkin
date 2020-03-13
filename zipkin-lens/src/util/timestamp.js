@@ -26,11 +26,13 @@ export const formatDuration = (duration) => {
   return `${(duration / 1000000).toFixed(3)}s`;
 };
 
-export const formatTimestamp = (timestamp) => moment(timestamp / 1000).format('MM/DD HH:mm:ss.SSS');
+export const formatTimestamp = (timestamp) =>
+  moment(timestamp / 1000).format('MM/DD HH:mm:ss.SSS');
 
 // moment.js only supports millisecond precision, however our timestamps have
 // microsecond precision. So we use moment.js to generate the human readable time
 // with just milliseconds and then append the last 3 digits of the timestamp
 // which are the microseconds.
 // NOTE: a.timestamp % 1000 would save a string conversion but drops leading zeros.
-export const formatTimestampMicros = (timestamp) => `${formatTimestamp(timestamp)}_${timestamp.toString().slice(-3)}`;
+export const formatTimestampMicros = (timestamp) =>
+  `${formatTimestamp(timestamp)}_${timestamp.toString().slice(-3)}`;

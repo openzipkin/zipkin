@@ -32,11 +32,14 @@ const i18n = setupI18n();
 i18n.load('en', enMessages);
 i18n.activate('en');
 
-export default (ui, {
-  route = '/',
-  history = createMemoryHistory({ initialEntries: [route] }),
-  uiConfig = {},
-} = {}) => {
+export default (
+  ui,
+  {
+    route = '/',
+    history = createMemoryHistory({ initialEntries: [route] }),
+    uiConfig = {},
+  } = {},
+) => {
   const store = configureStore({});
 
   const filledConfig = {
@@ -52,7 +55,9 @@ export default (ui, {
     ...uiConfig,
   };
 
-  const wrapper = ({ children }) => ( // eslint-disable-line react/prop-types
+  const wrapper = (
+    { children }, // eslint-disable-line react/prop-types
+  ) => (
     <Provider store={store}>
       <I18nProvider i18n={i18n}>
         <Router history={history}>

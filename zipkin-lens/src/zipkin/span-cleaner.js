@@ -43,18 +43,24 @@ export function clean(span) {
   }
   res.id = id;
 
-  if (span.name && span.name !== '' && span.name !== 'unknown') res.name = span.name;
+  if (span.name && span.name !== '' && span.name !== 'unknown')
+    res.name = span.name;
   if (span.kind) res.kind = span.kind;
 
   if (span.timestamp) res.timestamp = span.timestamp;
   if (span.duration) res.duration = span.duration;
 
-  if (isEndpoint(span.localEndpoint)) res.localEndpoint = { ...span.localEndpoint };
-  if (isEndpoint(span.remoteEndpoint)) res.remoteEndpoint = { ...span.remoteEndpoint };
+  if (isEndpoint(span.localEndpoint))
+    res.localEndpoint = { ...span.localEndpoint };
+  if (isEndpoint(span.remoteEndpoint))
+    res.remoteEndpoint = { ...span.remoteEndpoint };
 
   res.annotations = span.annotations ? span.annotations.slice(0) : [];
   if (res.annotations.length > 1) {
-    res.annotations = sortBy(unionWith(res.annotations, isEqual), ['timestamp', 'value']);
+    res.annotations = sortBy(unionWith(res.annotations, isEqual), [
+      'timestamp',
+      'value',
+    ]);
   }
 
   res.tags = span.tags || {};
@@ -97,8 +103,10 @@ export function merge(left, right) {
   } else if (right.annotations.length === 0) {
     res.annotations = left.annotations;
   } else {
-    res.annotations = sortBy(unionWith(left.annotations, right.annotations, isEqual),
-      ['timestamp', 'value']);
+    res.annotations = sortBy(
+      unionWith(left.annotations, right.annotations, isEqual),
+      ['timestamp', 'value'],
+    );
   }
 
   res.tags = { ...left.tags, ...right.tags };
@@ -150,7 +158,8 @@ function compareShared(left, right) {
   return 0;
 }
 
-export function cleanupComparator(left, right) { // exported for testing
+export function cleanupComparator(left, right) {
+  // exported for testing
   const bySpanId = compare(left.id, right.id);
   if (bySpanId !== 0) return bySpanId;
   const byShared = compareShared(left, right);
@@ -160,7 +169,11 @@ export function cleanupComparator(left, right) { // exported for testing
 
 function tryMerge(current, endpoint) {
   if (!endpoint) return true;
-  if (current.serviceName && endpoint.serviceName && current.serviceName !== endpoint.serviceName) {
+  if (
+    current.serviceName &&
+    endpoint.serviceName &&
+    current.serviceName !== endpoint.serviceName
+  ) {
     return false;
   }
   if (current.ipv4 && endpoint.ipv4 && current.ipv4 !== endpoint.ipv4) {
@@ -182,11 +195,14 @@ function tryMerge(current, endpoint) {
 }
 
 // sort by timestamp, then name, root/shared first in case of skew
-export function spanComparator(a, b) { // exported for testing
-  if (!a.parentId && b.parentId) { // a is root
+export function spanComparator(a, b) {
+  // exported for testing
+  if (!a.parentId && b.parentId) {
+    // a is root
     return -1;
   }
-  if (a.parentId && !b.parentId) { // b is root
+  if (a.parentId && !b.parentId) {
+    // b is root
     return 1;
   }
 
@@ -228,13 +244,16 @@ export function mergeV2ById(spans) {
       span.traceId = traceId;
     }
 
-    const localEndpoint = span.localEndpoint ? ({ ...span.localEndpoint }) : {};
+    const localEndpoint = span.localEndpoint ? { ...span.localEndpoint } : {};
     while (i + 1 < length) {
       const next = result[i + 1];
       if (next.id !== span.id) break;
 
       // This cautiously merges with the next span, if we think it was sent in multiple pieces.
-      if (span.shared === next.shared && tryMerge(localEndpoint, next.localEndpoint)) {
+      if (
+        span.shared === next.shared &&
+        tryMerge(localEndpoint, next.localEndpoint)
+      ) {
         span = merge(span, next);
 
         // remove the merged element

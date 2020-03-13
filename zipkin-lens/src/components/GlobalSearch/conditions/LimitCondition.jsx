@@ -43,7 +43,9 @@ const LimitCondition = () => {
 
   const dispatch = useDispatch();
 
-  const limitCondition = useSelector((state) => state.globalSearch.limitCondition);
+  const limitCondition = useSelector(
+    (state) => state.globalSearch.limitCondition,
+  );
   const limitConditionRef = useRef();
   limitConditionRef.current = limitCondition;
 
@@ -55,14 +57,17 @@ const LimitCondition = () => {
     setTimeout(() => setValue(limitConditionRef.current), 0);
   });
 
-  const handleValueChange = useCallback((event) => {
-    if (event.target.value === '') {
-      dispatch(setLimitCondition(0));
-    } else {
-      dispatch(setLimitCondition(parseInt(event.target.value, 10)));
-    }
-    setValue(event.target.value);
-  }, [dispatch]);
+  const handleValueChange = useCallback(
+    (event) => {
+      if (event.target.value === '') {
+        dispatch(setLimitCondition(0));
+      } else {
+        dispatch(setLimitCondition(parseInt(event.target.value, 10)));
+      }
+      setValue(event.target.value);
+    },
+    [dispatch],
+  );
 
   const handleKeyDown = useCallback((event) => {
     if (event.key === 'Enter') {

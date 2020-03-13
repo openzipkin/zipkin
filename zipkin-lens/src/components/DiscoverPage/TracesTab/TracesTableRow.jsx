@@ -28,7 +28,8 @@ import { selectColorByInfoClass } from '../../../colors';
 export function rootServiceAndSpanName(root) {
   const { span } = root;
   if (span) {
-    const serviceName = getServiceName(span.localEndpoint) || getServiceName(span.remoteEndpoint);
+    const serviceName =
+      getServiceName(span.localEndpoint) || getServiceName(span.remoteEndpoint);
     return {
       serviceName: serviceName || 'unknown',
       spanName: span.name || 'unknown',
@@ -109,7 +110,9 @@ export const TracesTableRowImpl = ({
             width={`${traceSummary.width}%`}
             height="100%"
             className={classes.durationBar}
-            style={{ backgroundColor: selectColorByInfoClass(traceSummary.infoClass) }}
+            style={{
+              backgroundColor: selectColorByInfoClass(traceSummary.infoClass),
+            }}
             data-testid="duration-bar"
           />
           <Grid item xs={3} className={classes.dataCell}>
@@ -124,12 +127,8 @@ export const TracesTableRowImpl = ({
             {traceSummary.traceId}
           </Grid>
           <Grid item xs={3} className={classes.dataCell}>
-            <Box>
-              {startTime.format('MM/DD HH:mm:ss:SSS')}
-            </Box>
-            <Box className={classes.subInfo}>
-              {`(${startTime.fromNow()})`}
-            </Box>
+            <Box>{startTime.format('MM/DD HH:mm:ss:SSS')}</Box>
+            <Box className={classes.subInfo}>{`(${startTime.fromNow()})`}</Box>
           </Grid>
           <Grid item xs={3} className={classes.dataCell}>
             {traceSummary.durationStr}
@@ -139,20 +138,18 @@ export const TracesTableRowImpl = ({
       {/* In HTML5, anchor tag including interactive content is invalid.
           So ServiceBadge which has onClick callback cannot be surrounded by Link. */}
       <Box display="flex" flexWrap="wrap" className={classes.badgeRow}>
-        {
-          traceSummary.serviceSummaries.map((serviceSummary) => (
-            <Box key={serviceSummary.serviceName} mr={0.2} ml={0.2}>
-              <ServiceBadge
-                serviceName={serviceSummary.serviceName}
-                count={serviceSummary.spanCount}
-                onClick={(event) => {
-                  onAddFilter(serviceSummary.serviceName);
-                  event.stopPropagation();
-                }}
-              />
-            </Box>
-          ))
-        }
+        {traceSummary.serviceSummaries.map((serviceSummary) => (
+          <Box key={serviceSummary.serviceName} mr={0.2} ml={0.2}>
+            <ServiceBadge
+              serviceName={serviceSummary.serviceName}
+              count={serviceSummary.spanCount}
+              onClick={(event) => {
+                onAddFilter(serviceSummary.serviceName);
+                event.stopPropagation();
+              }}
+            />
+          </Box>
+        ))}
       </Box>
     </Box>
   );
@@ -164,7 +161,4 @@ const mapStateToProps = (state) => ({
   correctedTraceMap: state.traces.correctedTraceMap,
 });
 
-export default connect(
-  mapStateToProps,
-  null,
-)(withRouter(TracesTableRowImpl));
+export default connect(mapStateToProps, null)(withRouter(TracesTableRowImpl));

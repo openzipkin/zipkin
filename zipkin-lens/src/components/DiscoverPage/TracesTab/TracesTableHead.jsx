@@ -93,8 +93,12 @@ const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
       >
         <Trans>Start Time</Trans>
         &nbsp;
-        {sortingMethod === sortingMethods.OLDEST_FIRST && <FontAwesomeIcon icon={faArrowUp} />}
-        {sortingMethod === sortingMethods.NEWEST_FIRST && <FontAwesomeIcon icon={faArrowDown} />}
+        {sortingMethod === sortingMethods.OLDEST_FIRST && (
+          <FontAwesomeIcon icon={faArrowUp} />
+        )}
+        {sortingMethod === sortingMethods.NEWEST_FIRST && (
+          <FontAwesomeIcon icon={faArrowDown} />
+        )}
       </Grid>
       <Grid
         item
@@ -105,8 +109,12 @@ const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
       >
         <Trans>Duration</Trans>
         &nbsp;
-        {sortingMethod === sortingMethods.LONGEST_FIRST && <FontAwesomeIcon icon={faArrowUp} />}
-        {sortingMethod === sortingMethods.SHORTEST_FIRST && <FontAwesomeIcon icon={faArrowDown} />}
+        {sortingMethod === sortingMethods.LONGEST_FIRST && (
+          <FontAwesomeIcon icon={faArrowUp} />
+        )}
+        {sortingMethod === sortingMethods.SHORTEST_FIRST && (
+          <FontAwesomeIcon icon={faArrowDown} />
+        )}
       </Grid>
     </Grid>
   );

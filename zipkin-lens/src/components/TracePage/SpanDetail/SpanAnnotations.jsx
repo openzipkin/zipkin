@@ -12,12 +12,7 @@
  * the License.
  */
 import { Trans } from '@lingui/macro';
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-} from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 
@@ -34,15 +29,18 @@ const SpanAnnotations = React.memo(({ span }) => {
   const [currentAnnotationKey, setCurrentAnnotationKey] = useState();
   const [areAllAnnotationsOpened, setAreAllAnnotationsOpened] = useState(false);
 
-  const handleAnnotationCircleClick = useCallback((annotation) => {
-    // If all annotations have already been expanded, close all of them.
-    if (areAllAnnotationsOpened) {
-      setAreAllAnnotationsOpened(false);
-    }
-    // If an annotation that has already been focused is selected, unfocus it.
-    const key = generateAnnotationKey(annotation);
-    setCurrentAnnotationKey((prev) => (prev === key ? null : key));
-  }, [areAllAnnotationsOpened]);
+  const handleAnnotationCircleClick = useCallback(
+    (annotation) => {
+      // If all annotations have already been expanded, close all of them.
+      if (areAllAnnotationsOpened) {
+        setAreAllAnnotationsOpened(false);
+      }
+      // If an annotation that has already been focused is selected, unfocus it.
+      const key = generateAnnotationKey(annotation);
+      setCurrentAnnotationKey((prev) => (prev === key ? null : key));
+    },
+    [areAllAnnotationsOpened],
+  );
 
   // Initialize states when a different span is selected.
   useEffect(() => {
@@ -50,10 +48,14 @@ const SpanAnnotations = React.memo(({ span }) => {
     setAreAllAnnotationsOpened(false);
   }, [span.spanId]);
 
-  const currentAnnotation = useMemo(() => span.annotations.find((annotation) => {
-    const key = generateAnnotationKey(annotation);
-    return key === currentAnnotationKey;
-  }), [currentAnnotationKey, span.annotations]);
+  const currentAnnotation = useMemo(
+    () =>
+      span.annotations.find((annotation) => {
+        const key = generateAnnotationKey(annotation);
+        return key === currentAnnotationKey;
+      }),
+    [currentAnnotationKey, span.annotations],
+  );
 
   const handleExpandToggle = useCallback(() => {
     // When expanding all annotations, if any annotation is already selected, clear it.
@@ -71,29 +73,33 @@ const SpanAnnotations = React.memo(({ span }) => {
         onAnnotationCircleClick={handleAnnotationCircleClick}
         currentAnnotaionKey={currentAnnotationKey}
       />
-      {
-        /* eslint no-nested-ternary: 0 */
-        areAllAnnotationsOpened ? (
-          span.annotations.map((annotation) => (
-            <Box mt={1} key={generateAnnotationKey(annotation)} data-testid="span-annotations--annotation">
-              <SpanAnnotation annotation={annotation} />
-            </Box>
-          ))
-        ) : (
-          currentAnnotation ? (
-            <Box mt={1} data-testid="span-annotations--annotation">
-              <SpanAnnotation annotation={currentAnnotation} />
-            </Box>
-          ) : null
-        )
-      }
+      {/* eslint no-nested-ternary: 0 */
+      areAllAnnotationsOpened ? (
+        span.annotations.map((annotation) => (
+          <Box
+            mt={1}
+            key={generateAnnotationKey(annotation)}
+            data-testid="span-annotations--annotation"
+          >
+            <SpanAnnotation annotation={annotation} />
+          </Box>
+        ))
+      ) : currentAnnotation ? (
+        <Box mt={1} data-testid="span-annotations--annotation">
+          <SpanAnnotation annotation={currentAnnotation} />
+        </Box>
+      ) : null}
       <Box width="100%" display="flex" justifyContent="flex-end" mt={2}>
-        <Button variant="contained" onClick={handleExpandToggle} data-testid="span-annotations--toggle-button">
-          {
-            areAllAnnotationsOpened
-              ? <Trans>hide annotations</Trans>
-              : <Trans>show all annotations</Trans>
-          }
+        <Button
+          variant="contained"
+          onClick={handleExpandToggle}
+          data-testid="span-annotations--toggle-button"
+        >
+          {areAllAnnotationsOpened ? (
+            <Trans>hide annotations</Trans>
+          ) : (
+            <Trans>show all annotations</Trans>
+          )}
         </Button>
       </Box>
     </>

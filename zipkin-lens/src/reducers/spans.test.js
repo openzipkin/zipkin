@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -35,13 +35,16 @@ describe('spans reducer', () => {
 
   it('should handle FETCH_SPANS_SUCCESS', () => {
     expect(
-      reducer({
-        isLoading: true,
-        spans: ['span1', 'span2', 'span3'],
-      }, {
-        type: types.FETCH_SPANS_SUCCESS,
-        spans: ['spanA', 'spanB', 'spanC'],
-      }),
+      reducer(
+        {
+          isLoading: true,
+          spans: ['span1', 'span2', 'span3'],
+        },
+        {
+          type: types.FETCH_SPANS_SUCCESS,
+          spans: ['spanA', 'spanB', 'spanC'],
+        },
+      ),
     ).toEqual({
       isLoading: false,
       spans: ['spanA', 'spanB', 'spanC'],
@@ -50,12 +53,15 @@ describe('spans reducer', () => {
 
   it('should handle FETCH_SPANS_FAILURE', () => {
     expect(
-      reducer({
-        isLoading: true,
-        spans: ['span1', 'span2', 'span3'],
-      }, {
-        type: types.FETCH_SPANS_FAILURE,
-      }),
+      reducer(
+        {
+          isLoading: true,
+          spans: ['span1', 'span2', 'span3'],
+        },
+        {
+          type: types.FETCH_SPANS_FAILURE,
+        },
+      ),
     ).toEqual({
       isLoading: false,
       spans: [],
@@ -64,12 +70,15 @@ describe('spans reducer', () => {
 
   it('should handle CLEAR_SPANS', () => {
     expect(
-      reducer({
-        isLoading: false,
-        spans: ['span1', 'span2', 'span3'],
-      }, {
-        type: types.CLEAR_SPANS,
-      }),
+      reducer(
+        {
+          isLoading: false,
+          spans: ['span1', 'span2', 'span3'],
+        },
+        {
+          type: types.CLEAR_SPANS,
+        },
+      ),
     ).toEqual({
       isLoading: false,
       spans: [],

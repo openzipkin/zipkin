@@ -45,20 +45,18 @@ const SpanTags = React.memo(({ tags }) => {
     <Paper>
       <Table>
         <TableBody>
-          {
-            tags.map((tag) => (
-              <TableRow key={generateTagKey(tag)}>
-                <TableCell className={classes.cell}>
-                  <Box className={classes.key} data-testid="SpanTags-key">
-                    {tag.key}
-                  </Box>
-                  <Box fontSize="1.05rem" data-testid="SpanTags-value">
-                    {tag.value}
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))
-          }
+          {tags.map((tag) => (
+            <TableRow key={generateTagKey(tag)}>
+              <TableCell className={classes.cell}>
+                <Box className={classes.key} data-testid="SpanTags-key">
+                  {tag.key}
+                </Box>
+                <Box fontSize="1.05rem" data-testid="SpanTags-value">
+                  {tag.value}
+                </Box>
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </Paper>

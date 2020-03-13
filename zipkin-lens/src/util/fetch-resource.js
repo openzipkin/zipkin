@@ -25,11 +25,14 @@ export default (promise) => {
   // In Javascript, there is no way to synchronously know whether a promise is resolved. Even if
   // it's already resolved, we are guaranteed to suspend once. Since it's unlikely the promise has
   // resolved at this point anyways, it's not a huge deal though.
-  promise.then((resp) => {
-    response = resp;
-  }, (err) => {
-    error = err;
-  });
+  promise.then(
+    (resp) => {
+      response = resp;
+    },
+    (err) => {
+      error = err;
+    },
+  );
 
   return {
     read() {

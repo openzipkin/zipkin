@@ -38,11 +38,7 @@ const propTypes = {
   errorCount: PropTypes.number.isRequired,
 };
 
-const EdgeData = React.memo(({
-  nodeName,
-  normalCount,
-  errorCount,
-}) => {
+const EdgeData = React.memo(({ nodeName, normalCount, errorCount }) => {
   const classes = useStyles();
 
   return (
@@ -52,20 +48,12 @@ const EdgeData = React.memo(({
         <Table>
           <TableBody>
             <TableRow>
-              <TableCell className={classes.cell}>
-                NORMAL
-              </TableCell>
-              <TableCell className={classes.cell}>
-                {normalCount}
-              </TableCell>
+              <TableCell className={classes.cell}>NORMAL</TableCell>
+              <TableCell className={classes.cell}>{normalCount}</TableCell>
             </TableRow>
             <TableRow>
-              <TableCell className={classes.cell}>
-                ERROR
-              </TableCell>
-              <TableCell className={classes.cell}>
-                {errorCount}
-              </TableCell>
+              <TableCell className={classes.cell}>ERROR</TableCell>
+              <TableCell className={classes.cell}>{errorCount}</TableCell>
             </TableRow>
           </TableBody>
         </Table>

@@ -31,17 +31,19 @@ export const loadTraceFailure = () => ({
   type: types.TRACE_LOAD_FAILURE,
 });
 
-const calculateCorrectedTrace = async (trace) => treeCorrectedForClockSkew(trace);
+const calculateCorrectedTrace = async (trace) =>
+  treeCorrectedForClockSkew(trace);
 
-const calculateDetailedTraceSummary = async (correctedTrace) => buildDetailedTraceSummary(
-  correctedTrace,
-);
+const calculateDetailedTraceSummary = async (correctedTrace) =>
+  buildDetailedTraceSummary(correctedTrace);
 
 export const loadTrace = (traceId, correctedTraceMap) => async (dispatch) => {
   dispatch(loadTraceRequest());
 
   if (correctedTraceMap[traceId]) {
-    const detailedTraceSummary = await calculateDetailedTraceSummary(correctedTraceMap[traceId]);
+    const detailedTraceSummary = await calculateDetailedTraceSummary(
+      correctedTraceMap[traceId],
+    );
     dispatch(loadTraceSuccess(detailedTraceSummary));
   } else {
     try {
@@ -52,7 +54,9 @@ export const loadTrace = (traceId, correctedTraceMap) => async (dispatch) => {
       }
       const trace = await res.json();
       const correctedTrace = await calculateCorrectedTrace(trace);
-      const detailedTraceSummary = await calculateDetailedTraceSummary(correctedTrace);
+      const detailedTraceSummary = await calculateDetailedTraceSummary(
+        correctedTrace,
+      );
 
       dispatch(loadTraceSuccess(detailedTraceSummary));
     } catch (err) {

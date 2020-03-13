@@ -17,7 +17,11 @@ import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import classNames from 'classnames';
 
-import { spanTreeWidthPercent, timelineWidthPercent, serviceNameWidthPercent } from '../sizing';
+import {
+  spanTreeWidthPercent,
+  timelineWidthPercent,
+  serviceNameWidthPercent,
+} from '../sizing';
 import { formatDuration } from '../../../util/timestamp';
 
 const propTypes = {
@@ -50,7 +54,7 @@ const TimeMarker = React.memo(({ startTs, endTs }) => {
   const timeMarkers = [];
 
   for (let i = 0; i < numTimeMarkers; i += 1) {
-    const label = startTs + ((i / (numTimeMarkers - 1)) * (endTs - startTs));
+    const label = startTs + (i / (numTimeMarkers - 1)) * (endTs - startTs);
     const portion = i / (numTimeMarkers - 1);
 
     timeMarkers.push(
@@ -64,12 +68,9 @@ const TimeMarker = React.memo(({ startTs, endTs }) => {
         <Box
           component="span"
           position="absolute"
-          className={
-            classNames(
-              classes.label,
-              { [classes['label--last']]: portion >= 1 },
-            )
-          }
+          className={classNames(classes.label, {
+            [classes['label--last']]: portion >= 1,
+          })}
           data-testid="TimeMarker-label"
         >
           {formatDuration(label)}

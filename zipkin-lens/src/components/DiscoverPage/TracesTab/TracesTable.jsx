@@ -40,21 +40,17 @@ const TracesTable = ({
     />
     <Box height="100%">
       <AutoSizer>
-        {
-          ({ height, width }) => (
-            <Box width={width} height={height} overflow="auto">
-              {
-                traceSummaries.map((traceSummary) => (
-                  <TracesTableRow
-                    key={traceSummary.traceId}
-                    traceSummary={traceSummary}
-                    onAddFilter={onAddFilter}
-                  />
-                ))
-              }
-            </Box>
-          )
-        }
+        {({ height, width }) => (
+          <Box width={width} height={height} overflow="auto">
+            {traceSummaries.map((traceSummary) => (
+              <TracesTableRow
+                key={traceSummary.traceId}
+                traceSummary={traceSummary}
+                onAddFilter={onAddFilter}
+              />
+            ))}
+          </Box>
+        )}
       </AutoSizer>
     </Box>
   </>

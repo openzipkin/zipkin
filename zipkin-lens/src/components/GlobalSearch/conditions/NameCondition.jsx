@@ -44,45 +44,51 @@ const NameCondition = ({
   addCondition,
   isLoading,
 }) => {
-  const styles = useMemo(() => ({
-    control: (base) => ({
-      ...base,
-      width: isFocused
-        ? '18rem'
-        : '15rem',
-      height: '2.4rem',
-      minHeight: '2.4rem',
-      border: 0,
-      borderRadius: 0,
-      backgroundColor: isFocused ? theme.palette.primary.main : theme.palette.primary.light,
-      '&:hover': {
-        backgroundColor: theme.palette.primary.main,
-      },
-      cursor: 'pointer',
+  const styles = useMemo(
+    () => ({
+      control: (base) => ({
+        ...base,
+        width: isFocused ? '18rem' : '15rem',
+        height: '2.4rem',
+        minHeight: '2.4rem',
+        border: 0,
+        borderRadius: 0,
+        backgroundColor: isFocused
+          ? theme.palette.primary.main
+          : theme.palette.primary.light,
+        '&:hover': {
+          backgroundColor: theme.palette.primary.main,
+        },
+        cursor: 'pointer',
+      }),
+      menu: (base) => ({
+        ...base,
+        zIndex: 10000,
+        width: '18rem',
+      }),
+      singleValue: (base) => ({
+        ...base,
+        color: theme.palette.primary.contrastText,
+      }),
+      indicatorsContainer: (base) => ({
+        ...base,
+        display: 'none',
+      }),
+      input: (base) => ({
+        ...base,
+        color: theme.palette.primary.contrastText,
+      }),
     }),
-    menu: (base) => ({
-      ...base,
-      zIndex: 10000,
-      width: '18rem',
-    }),
-    singleValue: (base) => ({
-      ...base,
-      color: theme.palette.primary.contrastText,
-    }),
-    indicatorsContainer: (base) => ({
-      ...base,
-      display: 'none',
-    }),
-    input: (base) => ({
-      ...base,
-      color: theme.palette.primary.contrastText,
-    }),
-  }), [isFocused]);
+    [isFocused],
+  );
 
-  const handleChange = useCallback((selected) => {
-    onChange(selected.value);
-    addCondition();
-  }, [addCondition, onChange]);
+  const handleChange = useCallback(
+    (selected) => {
+      onChange(selected.value);
+      addCondition();
+    },
+    [addCondition, onChange],
+  );
 
   return (
     <ReactSelect

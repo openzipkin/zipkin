@@ -23,7 +23,8 @@ import SpanDetail from './SpanDetail';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
 import { hasRootSpan } from '../../util/trace';
 
-const findSpanIndex = (spans, spanId) => spans.findIndex((span) => span.spanId === spanId);
+const findSpanIndex = (spans, spanId) =>
+  spans.findIndex((span) => span.spanId === spanId);
 
 const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes.isRequired,
@@ -34,34 +35,44 @@ const TraceSummary = React.memo(({ traceSummary }) => {
   const [rootSpanIndex, setRootSpanIndex] = useState(0);
   const isRerooted = rootSpanIndex !== 0;
   const [currentSpanIndex, setCurrentSpanIndex] = useState(0);
-  const [childrenHiddenSpanIndices, setChildrenHiddenSpanIndices] = useState({});
+  const [childrenHiddenSpanIndices, setChildrenHiddenSpanIndices] = useState(
+    {},
+  );
   const [isSpanDetailOpened, setIsSpanDetailOpened] = useState(true);
   const traceTimelineWidthPercent = isSpanDetailOpened ? 60 : 100;
 
-  const handleChildrenToggle = useCallback((spanId) => {
-    const spanIndex = findSpanIndex(traceSummary.spans, spanId);
-    setChildrenHiddenSpanIndices((prev) => ({
-      ...prev,
-      [spanIndex]: !prev[spanIndex],
-    }));
-  }, [traceSummary.spans]);
+  const handleChildrenToggle = useCallback(
+    (spanId) => {
+      const spanIndex = findSpanIndex(traceSummary.spans, spanId);
+      setChildrenHiddenSpanIndices((prev) => ({
+        ...prev,
+        [spanIndex]: !prev[spanIndex],
+      }));
+    },
+    [traceSummary.spans],
+  );
 
   const handleResetRerootButtonClick = useCallback(() => {
     setRootSpanIndex(0);
   }, []);
 
-  const handleTimelineRowClick = useCallback((spanId) => {
-    const idx = traceSummary.spans.findIndex((span) => span.spanId === spanId);
-    if (isRootedTrace && currentSpanIndex === idx) {
-      if (rootSpanIndex === idx) {
-        setRootSpanIndex(0);
-      } else {
-        setRootSpanIndex(idx);
+  const handleTimelineRowClick = useCallback(
+    (spanId) => {
+      const idx = traceSummary.spans.findIndex(
+        (span) => span.spanId === spanId,
+      );
+      if (isRootedTrace && currentSpanIndex === idx) {
+        if (rootSpanIndex === idx) {
+          setRootSpanIndex(0);
+        } else {
+          setRootSpanIndex(idx);
+        }
       }
-    }
-    setCurrentSpanIndex(idx);
-    setIsSpanDetailOpened(true);
-  }, [currentSpanIndex, isRootedTrace, traceSummary.spans, rootSpanIndex]);
+      setCurrentSpanIndex(idx);
+      setIsSpanDetailOpened(true);
+    },
+    [currentSpanIndex, isRootedTrace, traceSummary.spans, rootSpanIndex],
+  );
 
   const rerootedTree = useMemo(() => {
     // If the trace does not have a root span, the trace is not filtered anymore
@@ -100,24 +111,33 @@ const TraceSummary = React.memo(({ traceSummary }) => {
   }, [rerootedTree, childrenHiddenSpanIndices, traceSummary.spans]);
 
   const childrenHiddenSpanIds = React.useMemo(
-    () => Object.keys(childrenHiddenSpanIndices)
-      .filter((spanIndex) => !!childrenHiddenSpanIndices[spanIndex])
-      .reduce((acc, spanIndex) => {
-        acc[traceSummary.spans[spanIndex].spanId] = true;
-        return acc;
-      }, {}),
+    () =>
+      Object.keys(childrenHiddenSpanIndices)
+        .filter((spanIndex) => !!childrenHiddenSpanIndices[spanIndex])
+        .reduce((acc, spanIndex) => {
+          acc[traceSummary.spans[spanIndex].spanId] = true;
+          return acc;
+        }, {}),
     [traceSummary.spans, childrenHiddenSpanIndices],
   );
 
   // Find the minumum and maximum timestamps in the shown spans.
-  const startTs = useMemo(() => minBy(rerootedTree, 'timestamp').timestamp, [rerootedTree]);
-  const endTs = useMemo(() => rerootedTree.map((span) => {
-    let ts = span.timestamp;
-    if (span.duration) {
-      ts += span.duration;
-    }
-    return ts;
-  }).reduce((a, b) => Math.max(a, b)), [rerootedTree]);
+  const startTs = useMemo(() => minBy(rerootedTree, 'timestamp').timestamp, [
+    rerootedTree,
+  ]);
+  const endTs = useMemo(
+    () =>
+      rerootedTree
+        .map((span) => {
+          let ts = span.timestamp;
+          if (span.duration) {
+            ts += span.duration;
+          }
+          return ts;
+        })
+        .reduce((a, b) => Math.max(a, b)),
+    [rerootedTree],
+  );
 
   const handleSpanDetailToggle = useCallback(() => {
     setIsSpanDetailOpened((prev) => !prev);
@@ -148,10 +168,17 @@ const TraceSummary = React.memo(({ traceSummary }) => {
   return (
     <>
       <Box boxShadow={3} zIndex={1}>
-        <TraceSummaryHeader traceSummary={traceSummary} rootSpanIndex={rootSpanIndex} />
+        <TraceSummaryHeader
+          traceSummary={traceSummary}
+          rootSpanIndex={rootSpanIndex}
+        />
       </Box>
       <Box height="100%" display="flex">
-        <Box width={`${traceTimelineWidthPercent}%`} display="flex" flexDirection="column">
+        <Box
+          width={`${traceTimelineWidthPercent}%`}
+          display="flex"
+          flexDirection="column"
+        >
           <TraceTimelineHeader
             startTs={startTs - traceSummary.spans[0].timestamp}
             endTs={endTs - traceSummary.spans[0].timestamp}
@@ -165,35 +192,34 @@ const TraceSummary = React.memo(({ traceSummary }) => {
           />
           <Box height="100%" width="100%">
             <AutoSizer>
-              {
-                ({ height, width }) => (
-                  <Box height={height} width={width} overflow="auto">
-                    <TraceTimeline
-                      currentSpanId={traceSummary.spans[currentSpanIndex].spanId}
-                      spans={shownTree}
-                      depth={traceSummary.depth}
-                      childrenHiddenSpanIds={childrenHiddenSpanIds}
-                      isRootedTrace={isRootedTrace}
-                      onRowClick={handleTimelineRowClick}
-                      onChildrenToggle={handleChildrenToggle}
-                      startTs={startTs}
-                      endTs={endTs}
-                    />
-                  </Box>
-                )
-              }
+              {({ height, width }) => (
+                <Box height={height} width={width} overflow="auto">
+                  <TraceTimeline
+                    currentSpanId={traceSummary.spans[currentSpanIndex].spanId}
+                    spans={shownTree}
+                    depth={traceSummary.depth}
+                    childrenHiddenSpanIds={childrenHiddenSpanIds}
+                    isRootedTrace={isRootedTrace}
+                    onRowClick={handleTimelineRowClick}
+                    onChildrenToggle={handleChildrenToggle}
+                    startTs={startTs}
+                    endTs={endTs}
+                  />
+                </Box>
+              )}
             </AutoSizer>
           </Box>
         </Box>
         <Box height="100%" width={`${100 - traceTimelineWidthPercent}%`}>
           <AutoSizer>
-            {
-              ({ height, width }) => (
-                <Box height={height} width={width} overflow="auto">
-                  <SpanDetail span={traceSummary.spans[currentSpanIndex]} minHeight={height} />
-                </Box>
-              )
-            }
+            {({ height, width }) => (
+              <Box height={height} width={width} overflow="auto">
+                <SpanDetail
+                  span={traceSummary.spans[currentSpanIndex]}
+                  minHeight={height}
+                />
+              </Box>
+            )}
           </AutoSizer>
         </Box>
       </Box>

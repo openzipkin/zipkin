@@ -16,7 +16,10 @@ import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {
-  faQuestionCircle, faSearch, faProjectDiagram, faHome,
+  faQuestionCircle,
+  faSearch,
+  faProjectDiagram,
+  faHome,
 } from '@fortawesome/free-solid-svg-icons';
 import Box from '@material-ui/core/Box';
 import Drawer from '@material-ui/core/Drawer';
@@ -81,21 +84,46 @@ const Layout = ({ children }) => {
   return (
     <Box className={classes.root}>
       <CssBaseline />
-      <Drawer open variant="permanent" className={classes.drawer} classes={{ paper: classes.drawerPaper }}>
+      <Drawer
+        open
+        variant="permanent"
+        className={classes.drawer}
+        classes={{ paper: classes.drawerPaper }}
+      >
         <Box>
           <Box className={classes.zipkinLogoWrapper}>
-            <img src={logoSrc} alt={i18n._(t`Zipkin`)} className={classes.zipkinLogo} />
+            <img
+              src={logoSrc}
+              alt={i18n._(t`Zipkin`)}
+              className={classes.zipkinLogo}
+            />
           </Box>
           <List>
-            <SidebarMenu title={i18n._(t`Discover Page`)} path="/" icon={faSearch} />
-            <SidebarMenu title={i18n._(t`Dependencies Page`)} path="/dependency" icon={faProjectDiagram} />
+            <SidebarMenu
+              title={i18n._(t`Discover Page`)}
+              path="/"
+              icon={faSearch}
+            />
+            <SidebarMenu
+              title={i18n._(t`Dependencies Page`)}
+              path="/dependency"
+              icon={faProjectDiagram}
+            />
           </List>
         </Box>
         <List>
           {config.supportUrl && (
-            <SidebarMenu title={i18n._(t`Support`)} path={config.supportUrl} icon={faQuestionCircle} />
+            <SidebarMenu
+              title={i18n._(t`Support`)}
+              path={config.supportUrl}
+              icon={faQuestionCircle}
+            />
           )}
-          <SidebarMenu title={i18n._(t`Zipkin Home`)} path="https://zipkin.io/" icon={faHome} />
+          <SidebarMenu
+            title={i18n._(t`Zipkin Home`)}
+            path="https://zipkin.io/"
+            icon={faHome}
+          />
           <LanguageSelector />
         </List>
       </Drawer>
@@ -105,7 +133,6 @@ const Layout = ({ children }) => {
     </Box>
   );
 };
-
 
 Layout.propTypes = propTypes;
 

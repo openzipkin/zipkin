@@ -65,132 +65,132 @@ const useStyles = makeStyles((theme) => ({
 
 const propTypes = {
   serviceName: PropTypes.string.isRequired,
-  targetEdges: PropTypes.arrayOf(PropTypes.shape({
-    target: PropTypes.string.isRequired,
-  })).isRequired,
-  sourceEdges: PropTypes.arrayOf(PropTypes.shape({
-    source: PropTypes.string.isRequired,
-  })).isRequired,
+  targetEdges: PropTypes.arrayOf(
+    PropTypes.shape({
+      target: PropTypes.string.isRequired,
+    }),
+  ).isRequired,
+  sourceEdges: PropTypes.arrayOf(
+    PropTypes.shape({
+      source: PropTypes.string.isRequired,
+    }),
+  ).isRequired,
   minHeight: PropTypes.number.isRequired,
   startTime: PropTypes.shape({}).isRequired,
   endTime: PropTypes.shape({}).isRequired,
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
 };
 
-const NodeDetail = React.memo(({
-  serviceName,
-  targetEdges,
-  sourceEdges,
-  minHeight,
-  startTime,
-  endTime,
-  history,
-}) => {
-  const classes = useStyles();
-  const outputEdgeNames = useMemo(
-    () => targetEdges.map((edge) => edge.target),
-    [targetEdges],
-  );
-  const outputEdgeData = useMemo(
-    () => targetEdges.map((edge) => edge.metrics.normal + edge.metrics.danger),
-    [targetEdges],
-  );
-  const inputEdgeNames = useMemo(
-    () => sourceEdges.map((edge) => edge.source),
-    [sourceEdges],
-  );
-  const inputEdgeData = useMemo(
-    () => sourceEdges.map((edge) => edge.metrics.normal + edge.metrics.danger),
-    [sourceEdges],
-  );
+const NodeDetail = React.memo(
+  ({
+    serviceName,
+    targetEdges,
+    sourceEdges,
+    minHeight,
+    startTime,
+    endTime,
+    history,
+  }) => {
+    const classes = useStyles();
+    const outputEdgeNames = useMemo(
+      () => targetEdges.map((edge) => edge.target),
+      [targetEdges],
+    );
+    const outputEdgeData = useMemo(
+      () =>
+        targetEdges.map((edge) => edge.metrics.normal + edge.metrics.danger),
+      [targetEdges],
+    );
+    const inputEdgeNames = useMemo(
+      () => sourceEdges.map((edge) => edge.source),
+      [sourceEdges],
+    );
+    const inputEdgeData = useMemo(
+      () =>
+        sourceEdges.map((edge) => edge.metrics.normal + edge.metrics.danger),
+      [sourceEdges],
+    );
 
-  const handleSearchTracesButtonClick = useCallback(() => {
-    history.push({
-      pathname: '/',
-      search: buildQueryParameters({
-        serviceName,
-        startTs: startTime.valueOf(),
-        endTs: endTime.valueOf(),
-        lookback: 'custom',
-      }),
-    });
-  }, [serviceName, startTime, endTime, history]);
+    const handleSearchTracesButtonClick = useCallback(() => {
+      history.push({
+        pathname: '/',
+        search: buildQueryParameters({
+          serviceName,
+          startTs: startTime.valueOf(),
+          endTs: endTime.valueOf(),
+          lookback: 'custom',
+        }),
+      });
+    }, [serviceName, startTime, endTime, history]);
 
-  return (
-    <Box minHeight={minHeight} className={classes.root}>
-      <Box className={classes.serviceName}>
-        <Typography variant="h5">
-          {serviceName}
-        </Typography>
-        <Button color="primary" variant="contained" onClick={handleSearchTracesButtonClick}>
-          Search Traces
-        </Button>
-      </Box>
-      <Box className={classes.relatedServicesBox}>
-        <Box className={classes.subtitle}>
-          <Typography variant="h6">
-            USES
-          </Typography>
-          <Box className={classes.tracedRequests}>
-            (traced requests)
-          </Box>
+    return (
+      <Box minHeight={minHeight} className={classes.root}>
+        <Box className={classes.serviceName}>
+          <Typography variant="h5">{serviceName}</Typography>
+          <Button
+            color="primary"
+            variant="contained"
+            onClick={handleSearchTracesButtonClick}
+          >
+            Search Traces
+          </Button>
         </Box>
-        <Paper className={classes.paper}>
-          {
-            targetEdges.length === 0 ? (
+        <Box className={classes.relatedServicesBox}>
+          <Box className={classes.subtitle}>
+            <Typography variant="h6">USES</Typography>
+            <Box className={classes.tracedRequests}>(traced requests)</Box>
+          </Box>
+          <Paper className={classes.paper}>
+            {targetEdges.length === 0 ? (
               <Box>Not found...</Box>
             ) : (
               <>
-                {
-                  targetEdges.map((edge) => (
-                    <EdgeData
-                      key={edge.target}
-                      nodeName={edge.target}
-                      normalCount={edge.metrics.normal}
-                      errorCount={edge.metrics.danger}
-                    />
-                  ))
-                }
-                <DoughnutGraph edgeNames={outputEdgeNames} edgeData={outputEdgeData} />
+                {targetEdges.map((edge) => (
+                  <EdgeData
+                    key={edge.target}
+                    nodeName={edge.target}
+                    normalCount={edge.metrics.normal}
+                    errorCount={edge.metrics.danger}
+                  />
+                ))}
+                <DoughnutGraph
+                  edgeNames={outputEdgeNames}
+                  edgeData={outputEdgeData}
+                />
               </>
-            )
-          }
-        </Paper>
-      </Box>
-      <Box className={classes.relatedServicesBox}>
-        <Box className={classes.subtitle}>
-          <Typography variant="h6">
-            USED
-          </Typography>
-          <Box className={classes.tracedRequests}>
-            (traced requests)
-          </Box>
+            )}
+          </Paper>
         </Box>
-        <Paper className={classes.paper}>
-          {
-            sourceEdges.length === 0 ? (
+        <Box className={classes.relatedServicesBox}>
+          <Box className={classes.subtitle}>
+            <Typography variant="h6">USED</Typography>
+            <Box className={classes.tracedRequests}>(traced requests)</Box>
+          </Box>
+          <Paper className={classes.paper}>
+            {sourceEdges.length === 0 ? (
               <Box>Not found...</Box>
             ) : (
               <>
-                {
-                  sourceEdges.map((edge) => (
-                    <EdgeData
-                      key={edge.source}
-                      nodeName={edge.source}
-                      normalCount={edge.metrics.normal}
-                      errorCount={edge.metrics.danger}
-                    />
-                  ))
-                }
-                <DoughnutGraph edgeNames={inputEdgeNames} edgeData={inputEdgeData} />
+                {sourceEdges.map((edge) => (
+                  <EdgeData
+                    key={edge.source}
+                    nodeName={edge.source}
+                    normalCount={edge.metrics.normal}
+                    errorCount={edge.metrics.danger}
+                  />
+                ))}
+                <DoughnutGraph
+                  edgeNames={inputEdgeNames}
+                  edgeData={inputEdgeData}
+                />
               </>
-            )
-          }
-        </Paper>
+            )}
+          </Paper>
+        </Box>
       </Box>
-    </Box>
-  );
-});
+    );
+  },
+);
 
 NodeDetail.propTypes = propTypes;
 

@@ -14,7 +14,11 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/styles';
 
-import { spanTreeWidthPercent, serviceNameWidthPercent, timelineWidthPercent } from '../sizing';
+import {
+  spanTreeWidthPercent,
+  serviceNameWidthPercent,
+  timelineWidthPercent,
+} from '../sizing';
 
 const numTimeMarkers = 4;
 
@@ -31,8 +35,10 @@ const TimeMarker = React.memo(() => {
 
   for (let i = 0; i < numTimeMarkers; i += 1) {
     const portion = i / (numTimeMarkers - 1);
-    const xPercent = spanTreeWidthPercent
-      + serviceNameWidthPercent + (timelineWidthPercent * portion);
+    const xPercent =
+      spanTreeWidthPercent +
+      serviceNameWidthPercent +
+      timelineWidthPercent * portion;
 
     timeMarkers.push(
       <line
@@ -45,7 +51,7 @@ const TimeMarker = React.memo(() => {
       />,
     );
   }
-  return (<g>{timeMarkers}</g>);
+  return <g>{timeMarkers}</g>;
 });
 
 export default TimeMarker;

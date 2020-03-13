@@ -18,7 +18,10 @@ import { getLocale, setLocale } from './locale';
 // measure.
 
 const setLanguageForTest = (language) => {
-  Object.defineProperty(window.navigator, 'language', { value: language, configurable: true });
+  Object.defineProperty(window.navigator, 'language', {
+    value: language,
+    configurable: true,
+  });
 };
 
 test('browser language en-US sets locale en', () => {

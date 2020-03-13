@@ -41,43 +41,50 @@ describe('traces reducer', () => {
 
   it('should handle TRACES_LOAD_SUCCESS', () => {
     expect(
-      reducer({
-        isLoading: true,
-        traces: [
-          [
+      reducer(
+        {
+          isLoading: true,
+          traces: [
+            [
+              {
+                traceId: 'd050e0d52326cf81', // Omit details
+              },
+            ],
+          ],
+          traceSummaries: [
             {
               traceId: 'd050e0d52326cf81', // Omit details
             },
           ],
-        ],
-        traceSummaries: [{
-          traceId: 'd050e0d52326cf81', // Omit details
-        }],
-        correctedTraceMap: {
-          d050e0d52326cf81: {}, // Omit details
+          correctedTraceMap: {
+            d050e0d52326cf81: {}, // Omit details
+          },
+          lastQueryParams: {
+            serviceName: 'serviceA',
+          },
         },
-        lastQueryParams: {
-          serviceName: 'serviceA',
-        },
-      }, {
-        type: types.TRACES_LOAD_SUCCESS,
-        traces: [
-          [
+        {
+          type: types.TRACES_LOAD_SUCCESS,
+          traces: [
+            [
+              {
+                traceId: 'c020e0d52326cf84', // Omit details
+              },
+            ],
+          ],
+          traceSummaries: [
             {
               traceId: 'c020e0d52326cf84', // Omit details
             },
           ],
-        ],
-        traceSummaries: [{
-          traceId: 'c020e0d52326cf84', // Omit details
-        }],
-        correctedTraceMap: {
-          c020e0d52326cf84: {}, // Omit details
+          correctedTraceMap: {
+            c020e0d52326cf84: {}, // Omit details
+          },
+          lastQueryParams: {
+            serviceName: 'serviceB',
+          },
         },
-        lastQueryParams: {
-          serviceName: 'serviceB',
-        },
-      }),
+      ),
     ).toEqual({
       isLoading: false,
       traces: [
@@ -87,9 +94,11 @@ describe('traces reducer', () => {
           },
         ],
       ],
-      traceSummaries: [{
-        traceId: 'c020e0d52326cf84',
-      }],
+      traceSummaries: [
+        {
+          traceId: 'c020e0d52326cf84',
+        },
+      ],
       correctedTraceMap: {
         c020e0d52326cf84: {},
       },
@@ -101,18 +110,21 @@ describe('traces reducer', () => {
 
   it('should handle TRACES_LOAD_FAILURE', () => {
     expect(
-      reducer({
-        isLoading: true,
-        traces: [
-          [
-            {
-              traceId: 'c020e0d52326cf84',
-            },
+      reducer(
+        {
+          isLoading: true,
+          traces: [
+            [
+              {
+                traceId: 'c020e0d52326cf84',
+              },
+            ],
           ],
-        ],
-      }, {
-        type: types.TRACES_LOAD_FAILURE,
-      }),
+        },
+        {
+          type: types.TRACES_LOAD_FAILURE,
+        },
+      ),
     ).toEqual({
       isLoading: false,
       traces: [],
@@ -123,17 +135,22 @@ describe('traces reducer', () => {
   });
 
   it('should handle CLEAR_TRACES', () => {
-    expect(reducer({
-      isLoading: true,
-      traces: [
-        [
-          {
-            traceId: 'c020e0d52326cf84',
-          },
-        ],
-      ],
-    }, {
-      type: types.CLEAR_TRACES,
-    })).toEqual(initialState);
+    expect(
+      reducer(
+        {
+          isLoading: true,
+          traces: [
+            [
+              {
+                traceId: 'c020e0d52326cf84',
+              },
+            ],
+          ],
+        },
+        {
+          type: types.CLEAR_TRACES,
+        },
+      ),
+    ).toEqual(initialState);
   });
 });

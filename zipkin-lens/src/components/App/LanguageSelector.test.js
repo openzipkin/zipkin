@@ -43,7 +43,9 @@ describe('<LanguageSelector />', () => {
 
     fireEvent.click(changeLanguageButton);
 
-    const languageList = await waitForElement(() => queryByTestId('language-list'));
+    const languageList = await waitForElement(() =>
+      queryByTestId('language-list'),
+    );
 
     expect(changeLanguageButton).toBeInTheDocument();
     expect(languageList).toBeInTheDocument();

@@ -42,13 +42,16 @@ export const TraceIdSearchInputImpl = ({ history }) => {
     setTraceId(event.target.value);
   }, []);
 
-  const handleKeyDown = useCallback((event) => {
-    if (event.key === 'Enter') {
-      history.push({
-        pathname: `/traces/${traceId}`,
-      });
-    }
-  }, [history, traceId]);
+  const handleKeyDown = useCallback(
+    (event) => {
+      if (event.key === 'Enter') {
+        history.push({
+          pathname: `/traces/${traceId}`,
+        });
+      }
+    },
+    [history, traceId],
+  );
 
   return (
     <Tooltip title="Search by Trace ID">

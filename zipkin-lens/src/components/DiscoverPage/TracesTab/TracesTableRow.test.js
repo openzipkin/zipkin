@@ -45,7 +45,10 @@ describe('rootServiceAndSpanName', () => {
 
   it('should return unknown serviceName when missing localEndpoint.serviceName', () => {
     const root = new SpanNode({
-      traceId: '1', id: '1', name: 'get', localEndpoint: { },
+      traceId: '1',
+      id: '1',
+      name: 'get',
+      localEndpoint: {},
     });
 
     expect(rootServiceAndSpanName(root)).toEqual({
@@ -55,7 +58,11 @@ describe('rootServiceAndSpanName', () => {
   });
 
   it('should return unknown spanName when missing span.name', () => {
-    const root = new SpanNode({ traceId: '1', id: '1', localEndpoint: { serviceName: 'frontend' } });
+    const root = new SpanNode({
+      traceId: '1',
+      id: '1',
+      localEndpoint: { serviceName: 'frontend' },
+    });
 
     expect(rootServiceAndSpanName(root)).toEqual({
       serviceName: 'frontend',
@@ -117,7 +124,9 @@ describe('<TracesTableRow />', () => {
     // width and background-color are changed by their props.
     expect(durationBar).toHaveStyle('width: 80%');
     expect(durationBar).toHaveStyle(
-      `background-color: ${selectColorByInfoClass(commonProps.traceSummary.infoClass)}`,
+      `background-color: ${selectColorByInfoClass(
+        commonProps.traceSummary.infoClass,
+      )}`,
     );
   });
 

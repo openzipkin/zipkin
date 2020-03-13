@@ -44,7 +44,9 @@ describe('ensureV2', () => {
       error = err;
     }
 
-    expect(error.message).toEqual('List<Span> implies at least traceId and id fields');
+    expect(error.message).toEqual(
+      'List<Span> implies at least traceId and id fields',
+    );
 
     try {
       ensureV2TraceData([{ id: 'b' }]);

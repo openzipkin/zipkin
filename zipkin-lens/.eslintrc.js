@@ -12,7 +12,12 @@
  * the License.
  */
 module.exports = {
-  extends: 'airbnb-typescript',
+  extends: [
+    'airbnb-typescript',
+    'plugin:prettier/recommended',
+    'prettier/@typescript-eslint',
+    'prettier/react',
+  ],
   rules: {
     'import/prefer-default-export': 'off',
     'react/jsx-filename-extension': [1, { extensions: ['.js', '.jsx', '.tsx'] }],
@@ -23,7 +28,6 @@ module.exports = {
     'react/no-unescaped-entities': 'off',
     'max-classes-per-file': 'off',
     'no-console': 0,
-    'no-mixed-operators': ['error', { allowSamePrecedence: true }],
     'no-underscore-dangle': ['off'],
     'no-continue': ['off'],
     'prefer-destructuring': ['error', {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,7 +19,10 @@ export const ensureV2TraceData = (trace) => {
   if (!first.traceId || !first.id) {
     throw new Error('List<Span> implies at least traceId and id fields');
   }
-  if (first.binaryAnnotations || (!first.localEndpoint && !first.remoteEndpoint && !first.tags)) {
+  if (
+    first.binaryAnnotations ||
+    (!first.localEndpoint && !first.remoteEndpoint && !first.tags)
+  ) {
     throw new Error(
       'v1 format is not supported. For help, contact https://gitter.im/openzipkin/zipkin',
     );
@@ -28,8 +31,10 @@ export const ensureV2TraceData = (trace) => {
 
 export const hasRootSpan = (trace) => {
   switch (trace.length) {
-    case 0: return false;
-    case 1: return true;
+    case 0:
+      return false;
+    case 1:
+      return true;
     default:
       if (trace[0].depth < trace[1].depth) {
         return true;

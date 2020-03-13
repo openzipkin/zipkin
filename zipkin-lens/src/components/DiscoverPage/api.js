@@ -34,7 +34,8 @@ export const buildCommonQueryParameters = (
       case 'tags':
         tagConditions.push(condition.value);
         break;
-      default: // autocompleteTags
+      default:
+        // autocompleteTags
         autocompleteTagConditions.push(`${condition.key}=${condition.value}`);
         break;
     }
@@ -81,7 +82,8 @@ export const buildTracesApiQueryParameters = (
       case 'tags':
         annotationQueryConditions.push(condition.value);
         break;
-      default: // autocompleteTags
+      default:
+        // autocompleteTags
         annotationQueryConditions.push(`${condition.key}=${condition.value}`);
         break;
     }

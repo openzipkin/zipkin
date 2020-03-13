@@ -98,9 +98,7 @@ describe('SpanNode', () => {
     const ids = [];
     a.traverse((s) => ids.push(s.id));
 
-    expect(ids).toEqual([
-      'a', 'b', 'c', 'd', 'e', 'f', '1', '2',
-    ]);
+    expect(ids).toEqual(['a', 'b', 'c', 'd', 'e', 'f', '1', '2']);
   });
 });
 
@@ -155,10 +153,16 @@ describe('SpanNodeBuilder', () => {
     const trace = [
       { traceId: 'a', id: 'b', timestamp: 1 },
       {
-        traceId: 'a', parentId: 'b', id: 'c', timestamp: 2,
+        traceId: 'a',
+        parentId: 'b',
+        id: 'c',
+        timestamp: 2,
       },
       {
-        traceId: 'a', parentId: 'b', id: 'd', timestamp: 3,
+        traceId: 'a',
+        parentId: 'b',
+        id: 'd',
+        timestamp: 3,
       },
       { traceId: 'a', id: 'e', timestamp: 4 },
       { traceId: 'a', id: 'f', timestamp: 5 },
@@ -192,20 +196,16 @@ describe('SpanNodeBuilder', () => {
 
   // input should be well formed, but this ensures we are fine anyway
   it('should skip on cycle', () => {
-    const trace = [
-      { traceId: 'a', parentId: 'b', id: 'b' },
-    ];
+    const trace = [{ traceId: 'a', parentId: 'b', id: 'b' }];
 
     const root = new SpanNodeBuilder({}).build(trace);
 
-    expect(root.span).toEqual(
-      {
-        traceId: '000000000000000a',
-        id: '000000000000000b',
-        annotations: [],
-        tags: {},
-      },
-    );
+    expect(root.span).toEqual({
+      traceId: '000000000000000a',
+      id: '000000000000000b',
+      annotations: [],
+      tags: {},
+    });
     expect(root.children.length).toBe(0);
   });
 
@@ -213,18 +213,27 @@ describe('SpanNodeBuilder', () => {
     const trace = [
       { traceId: 'a', id: '1' },
       {
-        traceId: 'a', parentId: '1', id: 'a', timestamp: 2,
+        traceId: 'a',
+        parentId: '1',
+        id: 'a',
+        timestamp: 2,
       },
       {
-        traceId: 'a', parentId: '1', id: 'b', timestamp: 1,
+        traceId: 'a',
+        parentId: '1',
+        id: 'b',
+        timestamp: 1,
       },
       { traceId: 'a', parentId: '1', id: 'c' },
     ].map(clean);
 
     const root = new SpanNodeBuilder({}).build(trace);
 
-    expect(root.children.map((n) => n.span))
-      .toEqual([trace[3], trace[2], trace[1]]); // null first
+    expect(root.children.map((n) => n.span)).toEqual([
+      trace[3],
+      trace[2],
+      trace[1],
+    ]); // null first
   });
 
   it('should order children by timestamp when IPs change ', () => {
