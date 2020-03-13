@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,10 +24,8 @@ import com.linecorp.armeria.common.util.SafeCloseable;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.ServiceRequestContextBuilder;
 import com.linecorp.armeria.server.thrift.THttpService;
-import com.linecorp.armeria.unsafe.ByteBufHttpData;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -62,71 +60,14 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
     scribeService = THttpService.of(scribe);
   }
 
-  enum ReadState {
-    HEADER,
-    PAYLOAD
-  }
-
-  CompositeByteBuf pending;
-  ReadState state;
-  int nextFrameSize;
-
   Map<Integer, ByteBuf> pendingResponses = new HashMap<>();
   int nextResponseIndex = 0;
   int previouslySentResponseIndex = -1;
 
-  @Override public void channelActive(ChannelHandlerContext ctx) {
-    pending = ctx.alloc().compositeBuffer();
-    state = ReadState.HEADER;
-  }
-
-  @Override public void channelRead(final ChannelHandlerContext ctx, Object msg) {
-    if (pending == null) return; // Already closed (probably due to an exception).
-
-    assert msg instanceof ByteBuf;
-    ByteBuf buf = (ByteBuf) msg;
-    pending.addComponent(true, buf);
-
-    switch (state) {
-      case HEADER:
-        maybeReadHeader(ctx);
-        break;
-      case PAYLOAD:
-        maybeReadPayload(ctx);
-        break;
-    }
-  }
-
-  @Override public void channelInactive(ChannelHandlerContext ctx) {
-    release();
-  }
-
-  @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    Exceptions.logIfUnexpected(logger, ctx.channel(), cause);
-
-    release();
-    closeOnFlush(ctx.channel());
-  }
-
-  void maybeReadHeader(ChannelHandlerContext ctx) {
-    if (pending.readableBytes() < 4) return;
-
-    nextFrameSize = pending.readInt();
-    state = ReadState.PAYLOAD;
-    maybeReadPayload(ctx);
-  }
-
-  void maybeReadPayload(ChannelHandlerContext ctx) {
-    if (pending.readableBytes() < nextFrameSize) return;
-
-    ByteBuf payload = ctx.alloc().buffer(nextFrameSize);
-    pending.readBytes(payload, nextFrameSize);
-    pending.discardSomeReadBytes();
-
-    state = ReadState.HEADER;
-
-    HttpRequest request = HttpRequest.of(THRIFT_HEADERS, new ByteBufHttpData(payload, true));
-    ServiceRequestContextBuilder requestContextBuilder = ServiceRequestContextBuilder.of(request)
+  @Override public void channelRead(ChannelHandlerContext ctx, Object payload) {
+    assert payload instanceof ByteBuf;
+    HttpRequest request = HttpRequest.of(THRIFT_HEADERS, HttpData.wrap((ByteBuf) payload));
+    ServiceRequestContextBuilder requestContextBuilder = ServiceRequestContext.builder(request)
       .service(scribeService)
       .alloc(ctx.alloc());
 
@@ -181,6 +122,17 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
     });
   }
 
+  @Override public void channelInactive(ChannelHandlerContext ctx) {
+    release();
+  }
+
+  @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    Exceptions.logIfUnexpected(logger, ctx.channel(), cause);
+
+    release();
+    closeOnFlush(ctx.channel());
+  }
+
   void flushResponses(ChannelHandlerContext ctx) {
     while (!pendingResponses.isEmpty()) {
       ByteBuf response = pendingResponses.remove(previouslySentResponseIndex + 1);
@@ -194,11 +146,6 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
   }
 
   void release() {
-    if (pending != null) {
-      pending.release();
-      pending = null;
-    }
-
     pendingResponses.values().forEach(ByteBuf::release);
     pendingResponses.clear();
   }

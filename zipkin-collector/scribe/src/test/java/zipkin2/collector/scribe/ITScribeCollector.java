@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 package zipkin2.collector.scribe;
 
+import com.linecorp.armeria.common.CommonPools;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,7 +56,7 @@ public class ITScribeCollector {
       Callback<Void> callback = invocation.getArgument(1);
       callback.onSuccess(null);
       return null;
-    }).when(collector).accept(any(), any());
+    }).when(collector).accept(any(), any(), any());
 
     metrics = mock(CollectorMetrics.class);
 
@@ -89,7 +90,8 @@ public class ITScribeCollector {
       transport.close();
     }
 
-    verify(collector, times(2)).accept(eq(TestObjects.TRACE), any());
+    verify(collector, times(2)).accept(eq(TestObjects.TRACE), any(),
+      eq(CommonPools.blockingTaskExecutor()));
     verify(metrics, times(2)).incrementMessages();
   }
 

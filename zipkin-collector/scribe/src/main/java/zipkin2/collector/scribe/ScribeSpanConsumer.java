@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 package zipkin2.collector.scribe;
 
+import com.linecorp.armeria.common.CommonPools;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -68,6 +69,7 @@ final class ScribeSpanConsumer implements Scribe.AsyncIface {
         Exception error = t instanceof Exception ? (Exception) t : new RuntimeException(t);
         resultHandler.onError(error);
       }
-    });
+    // Collectors may not be asynchronous so switch to blocking executor here.
+    }, CommonPools.blockingTaskExecutor());
   }
 }
