@@ -378,7 +378,7 @@ describe('mergeV2ById', () => {
     const rightFirst = mergeV2ById([right, left]);
 
     [leftFirst, rightFirst].forEach((spans) => {
-      spans.forEach(span => expect(span.traceId).toEqual(left.traceId));
+      spans.forEach((span) => expect(span.traceId).toEqual(left.traceId));
     });
   });
 
@@ -932,7 +932,7 @@ describe('mergeV2ById', () => {
       },
     ]);
 
-    expect(spans.map(s => `${s.id}-${!!s.shared}-${s.timestamp}`)).toEqual([
+    expect(spans.map((s) => `${s.id}-${!!s.shared}-${s.timestamp}`)).toEqual([
       '0000000000000004-false-2', // unshared is first even if later!
       '0000000000000004-true-1',
       '0000000000000003-false-2',
@@ -964,7 +964,7 @@ describe('mergeV2ById', () => {
       },
     ]);
 
-    expect(spans.map(s => s.id)).toEqual([
+    expect(spans.map((s) => s.id)).toEqual([
       '0000000000000001',
       '0000000000000002',
       '0000000000000003',
@@ -989,7 +989,7 @@ describe('mergeV2ById', () => {
       },
     ]);
 
-    expect(spans.map(s => s.name)).toEqual([
+    expect(spans.map((s) => s.name)).toEqual([
       'client',
       'server',
     ]);
@@ -1047,7 +1047,7 @@ describe('cleanupComparator', () => {
       },
     ];
 
-    expect(spans.sort(cleanupComparator).map(s => `${s.id}-${s.kind}`)).toEqual([
+    expect(spans.sort(cleanupComparator).map((s) => `${s.id}-${s.kind}`)).toEqual([
       '0000000000000004-CLIENT', '0000000000000004-SERVER',
     ]);
   });

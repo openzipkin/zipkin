@@ -24,7 +24,7 @@ import DoughnutGraph from './DoughnutGraph';
 import EdgeData from './EdgeData';
 import { buildQueryParameters } from '../../util/api';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     width: '100%',
     borderLeft: `1px solid ${theme.palette.grey[300]}`,
@@ -88,19 +88,19 @@ const NodeDetail = React.memo(({
 }) => {
   const classes = useStyles();
   const outputEdgeNames = useMemo(
-    () => targetEdges.map(edge => edge.target),
+    () => targetEdges.map((edge) => edge.target),
     [targetEdges],
   );
   const outputEdgeData = useMemo(
-    () => targetEdges.map(edge => edge.metrics.normal + edge.metrics.danger),
+    () => targetEdges.map((edge) => edge.metrics.normal + edge.metrics.danger),
     [targetEdges],
   );
   const inputEdgeNames = useMemo(
-    () => sourceEdges.map(edge => edge.source),
+    () => sourceEdges.map((edge) => edge.source),
     [sourceEdges],
   );
   const inputEdgeData = useMemo(
-    () => sourceEdges.map(edge => edge.metrics.normal + edge.metrics.danger),
+    () => sourceEdges.map((edge) => edge.metrics.normal + edge.metrics.danger),
     [sourceEdges],
   );
 
@@ -142,7 +142,7 @@ const NodeDetail = React.memo(({
             ) : (
               <>
                 {
-                  targetEdges.map(edge => (
+                  targetEdges.map((edge) => (
                     <EdgeData
                       key={edge.target}
                       nodeName={edge.target}
@@ -173,7 +173,7 @@ const NodeDetail = React.memo(({
             ) : (
               <>
                 {
-                  sourceEdges.map(edge => (
+                  sourceEdges.map((edge) => (
                     <EdgeData
                       key={edge.source}
                       nodeName={edge.source}

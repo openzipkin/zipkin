@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -41,8 +41,8 @@ const filterNodes = (object, value) => {
   if (object.name === value) {
     return true;
   }
-  return object.incomingConnections.find(conn => conn.source.name === value)
-    || object.outgoingConnections.find(conn => conn.target.name === value);
+  return object.incomingConnections.find((conn) => conn.source.name === value)
+    || object.outgoingConnections.find((conn) => conn.target.name === value);
 };
 
 const useStyles = makeStyles({
@@ -61,7 +61,7 @@ const useStyles = makeStyles({
 });
 
 const reactSelectStyles = {
-  control: base => ({
+  control: (base) => ({
     ...base,
     width: '15rem',
   }),
@@ -119,13 +119,13 @@ const DependenciesGraph = React.memo(({
 
   const maxVolume = useMemo(() => {
     if (edges.length > 0) {
-      return edges.map(edge => edge.metrics.normal + edge.metrics.danger)
+      return edges.map((edge) => edge.metrics.normal + edge.metrics.danger)
         .reduce((a, b) => Math.max(a, b));
     }
     return 0;
   }, [edges]);
 
-  const filterOptions = useMemo(() => nodes.map(node => ({
+  const filterOptions = useMemo(() => nodes.map((node) => ({
     value: node.name,
     label: node.name,
   })), [nodes]);

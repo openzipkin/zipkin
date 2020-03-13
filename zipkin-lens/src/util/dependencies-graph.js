@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@ class Graph {
     this._createdTs = moment().valueOf();
 
     rawDependencies.forEach(
-      edge => this.addEdge(edge),
+      (edge) => this.addEdge(edge),
     );
   }
 
@@ -46,7 +46,7 @@ class Graph {
   }
 
   allNodeNames() {
-    return this.nodes.map(node => node.name);
+    return this.nodes.map((node) => node.name);
   }
 
   allNodes() {
@@ -62,11 +62,11 @@ class Graph {
   }
 
   getTargetEdges(serviceName) {
-    return this.allEdges().filter(edge => edge.source === serviceName);
+    return this.allEdges().filter((edge) => edge.source === serviceName);
   }
 
   getSourceEdges(serviceName) {
-    return this.allEdges().filter(edge => edge.target === serviceName);
+    return this.allEdges().filter((edge) => edge.target === serviceName);
   }
 }
 

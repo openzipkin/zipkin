@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -72,7 +72,7 @@ describe('DependencyLinker', () => {
 
   function withLateParent() {
     const result = trace.slice(0);
-    const missingParent = Object.assign({}, trace[2]);
+    const missingParent = { ...trace[2] };
     delete missingParent.parentId;
     result[2] = missingParent;
     return result;
@@ -98,7 +98,7 @@ describe('DependencyLinker', () => {
    * can resolve even if the client side is never sent.
    */
   it('should link spans when client it never sent', () => {
-    putTrace(withLateParent().filter(s => s !== trace[1])); // client span never sent
+    putTrace(withLateParent().filter((s) => s !== trace[1])); // client span never sent
 
     expect(dependencyLinker.link()).toEqual([
       { parent: 'web', child: 'app', callCount: 1 },

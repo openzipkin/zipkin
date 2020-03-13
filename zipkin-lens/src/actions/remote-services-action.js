@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@ export const fetchRemoteServicesRequest = () => ({
   type: types.FETCH_REMOTE_SERVICES_REQUEST,
 });
 
-export const fetchRemoteServicesSuccess = remoteServices => ({
+export const fetchRemoteServicesSuccess = (remoteServices) => ({
   type: types.FETCH_REMOTE_SERVICES_SUCCESS,
   remoteServices,
 });
@@ -29,7 +29,7 @@ export const fetchRemoteServicesFailure = () => ({
   type: types.FETCH_REMOTE_SERVICES_FAILURE,
 });
 
-export const fetchRemoteServices = serviceName => async (dispatch) => {
+export const fetchRemoteServices = (serviceName) => async (dispatch) => {
   dispatch(fetchRemoteServicesRequest());
   try {
     const query = queryString.stringify({ serviceName });

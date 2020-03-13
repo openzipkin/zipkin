@@ -41,7 +41,7 @@ const SpanAnnotations = React.memo(({ span }) => {
     }
     // If an annotation that has already been focused is selected, unfocus it.
     const key = generateAnnotationKey(annotation);
-    setCurrentAnnotationKey(prev => (prev === key ? null : key));
+    setCurrentAnnotationKey((prev) => (prev === key ? null : key));
   }, [areAllAnnotationsOpened]);
 
   // Initialize states when a different span is selected.
@@ -60,7 +60,7 @@ const SpanAnnotations = React.memo(({ span }) => {
     if (!areAllAnnotationsOpened) {
       setCurrentAnnotationKey(null);
     }
-    setAreAllAnnotationsOpened(prev => !prev);
+    setAreAllAnnotationsOpened((prev) => !prev);
   }, [areAllAnnotationsOpened]);
 
   return (
@@ -74,7 +74,7 @@ const SpanAnnotations = React.memo(({ span }) => {
       {
         /* eslint no-nested-ternary: 0 */
         areAllAnnotationsOpened ? (
-          span.annotations.map(annotation => (
+          span.annotations.map((annotation) => (
             <Box mt={1} key={generateAnnotationKey(annotation)} data-testid="span-annotations--annotation">
               <SpanAnnotation annotation={annotation} />
             </Box>

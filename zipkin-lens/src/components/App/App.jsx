@@ -55,7 +55,7 @@ const App = () => {
           <ThemeProvider theme={theme}>
             <UiConfigConsumer>
               {
-                config => (
+                (config) => (
                   <Provider store={configureStore(config)}>
                     <I18nProvider i18n={i18n}>
                       <BrowserRouter basename={BASE_PATH}>

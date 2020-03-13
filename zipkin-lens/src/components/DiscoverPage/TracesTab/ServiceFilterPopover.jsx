@@ -87,12 +87,12 @@ const ServiceFilterPopover = ({
 
   const [filterText, setFilterText] = useState('');
 
-  const handleTextChange = e => setFilterText(e.target.value);
+  const handleTextChange = (e) => setFilterText(e.target.value);
 
   const filteredServiceNames = useMemo(
     () => allServiceNames
-      .filter(serviceName => !filters.includes(serviceName))
-      .filter(serviceName => serviceName.includes(filterText)),
+      .filter((serviceName) => !filters.includes(serviceName))
+      .filter((serviceName) => serviceName.includes(filterText)),
     [allServiceNames, filters, filterText],
   );
 
@@ -124,7 +124,7 @@ const ServiceFilterPopover = ({
           ? (
             <Box className={classes.filters} data-testid="filters">
               {
-                filters.map(filter => (
+                filters.map((filter) => (
                   <Box className={classes.badgeWrapper} key={filter}>
                     <ServiceBadge serviceName={filter} onDelete={() => onDeleteFilter(filter)} />
                   </Box>
@@ -136,7 +136,7 @@ const ServiceFilterPopover = ({
       }
       <List className={classes.serviceList}>
         {
-          filteredServiceNames.map(serviceName => (
+          filteredServiceNames.map((serviceName) => (
             <ListItem button onClick={() => onAddFilter(serviceName)} key={serviceName}>
               <ListItemText primary={serviceName} />
             </ListItem>

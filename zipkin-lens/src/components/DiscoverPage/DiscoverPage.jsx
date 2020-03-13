@@ -48,7 +48,7 @@ import { globalSearchLookbackConditionPropTypes, globalSearchConditionsPropTypes
 
 import ExplainBox from './ExplainBox';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   header: {
     paddingRight: theme.spacing(3),
     paddingLeft: theme.spacing(3),
@@ -194,7 +194,7 @@ const DiscoverPageContent = ({
     // Next, fetch data which will be shown as conditions in GlobalSearch.
     fetchServices();
     const serviceNameCondition = conditionsFromUrl.find(
-      condition => condition.key === 'serviceName',
+      (condition) => condition.key === 'serviceName',
     );
     if (serviceNameCondition) {
       fetchRemoteServices(serviceNameCondition.value);
@@ -307,7 +307,7 @@ const DiscoverPageImpl = (props) => {
   return <DiscoverPageContent {...props} />;
 };
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   traces: state.traces.traces,
   isLoading: state.traces.isLoading,
   lastQueryParams: state.traces.lastQueryParams,
@@ -316,8 +316,8 @@ const mapStateToProps = state => ({
   limitCondition: state.globalSearch.limitCondition,
 });
 
-const mapDispatchToProps = dispatch => ({
-  loadTraces: params => dispatch(
+const mapDispatchToProps = (dispatch) => ({
+  loadTraces: (params) => dispatch(
     tracesActionCreators.loadTraces(params),
   ),
   clearTraces: () => dispatch(
@@ -326,22 +326,22 @@ const mapDispatchToProps = dispatch => ({
   fetchServices: () => dispatch(
     servicesActionCreators.fetchServices(),
   ),
-  fetchRemoteServices: serviceName => dispatch(
+  fetchRemoteServices: (serviceName) => dispatch(
     remoteServicesActionCreators.fetchRemoteServices(serviceName),
   ),
-  fetchSpans: serviceName => dispatch(
+  fetchSpans: (serviceName) => dispatch(
     spansActionCreators.fetchSpans(serviceName),
   ),
   fetchAutocompleteKeys: () => dispatch(
     autocompleteKeysActionCreators.fetchAutocompleteKeys(),
   ),
-  setConditions: conditions => dispatch(
+  setConditions: (conditions) => dispatch(
     globalSearchActionCreators.setConditions(conditions),
   ),
-  setLookbackCondition: lookbackCondition => dispatch(
+  setLookbackCondition: (lookbackCondition) => dispatch(
     globalSearchActionCreators.setLookbackCondition(lookbackCondition),
   ),
-  setLimitCondition: limitCondition => dispatch(
+  setLimitCondition: (limitCondition) => dispatch(
     globalSearchActionCreators.setLimitCondition(limitCondition),
   ),
 });

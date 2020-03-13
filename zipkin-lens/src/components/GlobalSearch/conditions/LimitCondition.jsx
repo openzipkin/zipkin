@@ -22,7 +22,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import { setLimitCondition } from '../../../actions/global-search-action';
 import { useMount } from '../../../hooks';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   input: {
     width: '6rem',
     padding: '0 0.5rem',
@@ -43,7 +43,7 @@ const LimitCondition = () => {
 
   const dispatch = useDispatch();
 
-  const limitCondition = useSelector(state => state.globalSearch.limitCondition);
+  const limitCondition = useSelector((state) => state.globalSearch.limitCondition);
   const limitConditionRef = useRef();
   limitConditionRef.current = limitCondition;
 

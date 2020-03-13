@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -49,8 +49,8 @@ export function clean(span) {
   if (span.timestamp) res.timestamp = span.timestamp;
   if (span.duration) res.duration = span.duration;
 
-  if (isEndpoint(span.localEndpoint)) res.localEndpoint = Object.assign({}, span.localEndpoint);
-  if (isEndpoint(span.remoteEndpoint)) res.remoteEndpoint = Object.assign({}, span.remoteEndpoint);
+  if (isEndpoint(span.localEndpoint)) res.localEndpoint = { ...span.localEndpoint };
+  if (isEndpoint(span.remoteEndpoint)) res.remoteEndpoint = { ...span.remoteEndpoint };
 
   res.annotations = span.annotations ? span.annotations.slice(0) : [];
   if (res.annotations.length > 1) {
@@ -87,9 +87,9 @@ export function merge(left, right) {
   const duration = left.duration || right.duration;
   if (duration) res.duration = duration;
 
-  const localEndpoint = Object.assign({}, left.localEndpoint, right.localEndpoint);
+  const localEndpoint = { ...left.localEndpoint, ...right.localEndpoint };
   if (isEndpoint(localEndpoint)) res.localEndpoint = localEndpoint;
-  const remoteEndpoint = Object.assign({}, left.remoteEndpoint, right.remoteEndpoint);
+  const remoteEndpoint = { ...left.remoteEndpoint, ...right.remoteEndpoint };
   if (isEndpoint(remoteEndpoint)) res.remoteEndpoint = remoteEndpoint;
 
   if (left.annotations.length === 0) {
@@ -101,7 +101,7 @@ export function merge(left, right) {
       ['timestamp', 'value']);
   }
 
-  res.tags = Object.assign({}, left.tags, right.tags);
+  res.tags = { ...left.tags, ...right.tags };
 
   if (left.debug || right.debug) res.debug = true;
   if (left.shared || right.shared) res.shared = true;
@@ -228,7 +228,7 @@ export function mergeV2ById(spans) {
       span.traceId = traceId;
     }
 
-    const localEndpoint = span.localEndpoint ? Object.assign({}, span.localEndpoint) : {};
+    const localEndpoint = span.localEndpoint ? ({ ...span.localEndpoint }) : {};
     while (i + 1 < length) {
       const next = result[i + 1];
       if (next.id !== span.id) break;

@@ -212,7 +212,7 @@ const propTypes = {
   onChildrenToggle: PropTypes.func.isRequired,
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   line: {
     stroke: theme.palette.grey[400],
     strokeWidth: '1px',

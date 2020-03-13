@@ -39,7 +39,7 @@ const propTypes = {
   onExpandButtonClick: PropTypes.func.isRequired,
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     borderBottom: `1px solid ${theme.palette.grey[300]}`,
     backgroundColor: theme.palette.grey[100],

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@ export const fetchDependenciesRequest = () => ({
   type: types.FETCH_DEPENDENCIES_REQUEST,
 });
 
-export const fetchDependenciesSuccess = dependencies => ({
+export const fetchDependenciesSuccess = (dependencies) => ({
   type: types.FETCH_DEPENDENCIES_SUCCESS,
   dependencies,
 });
@@ -31,14 +31,14 @@ export const fetchDependenciesFailure = () => ({
 
 const fetchDependenciesTimeout = 500;
 
-export const fetchDependencies = params => async (dispatch) => {
+export const fetchDependencies = (params) => async (dispatch) => {
   dispatch(fetchDependenciesRequest());
   try {
     const query = queryString.stringify(params);
 
     const res = await Promise.all([
       fetch(`${api.DEPENDENCIES}?${query}`),
-      new Promise(resolve => setTimeout(resolve, fetchDependenciesTimeout)),
+      new Promise((resolve) => setTimeout(resolve, fetchDependenciesTimeout)),
     ]);
     if (!res[0].ok) {
       throw Error(res[0].statusText);

@@ -28,7 +28,7 @@ const propTypes = {
   minHeight: PropTypes.number.isRequired,
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     width: '100%',
     borderLeft: `1px solid ${theme.palette.grey[300]}`,
@@ -89,7 +89,7 @@ const SpanDetail = React.memo(({ span, minHeight }) => {
         [
           { label: i18n._(t`Span ID`), value: span.spanId },
           { label: i18n._(t`Parent ID`), value: span.parentId },
-        ].map(entry => (
+        ].map((entry) => (
           <Box className={classes.spanIdEntry}>
             <Box className={classes.spanIdLabel}>
               {`${entry.label}:`}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@ export const fetchAutocompleteValuesRequest = () => ({
   type: types.FETCH_AUTOCOMPLETE_VALUES_REQUEST,
 });
 
-export const fetchAutocompleteValuesSuccess = autocompleteValues => ({
+export const fetchAutocompleteValuesSuccess = (autocompleteValues) => ({
   type: types.FETCH_AUTOCOMPLETE_VALUES_SUCCESS,
   autocompleteValues,
 });
@@ -29,7 +29,7 @@ export const fetchAutocompleteValuesFailure = () => ({
   type: types.FETCH_AUTOCOMPLETE_VALUES_FAILURE,
 });
 
-export const fetchAutocompleteValues = autocompleteKey => async (dispatch) => {
+export const fetchAutocompleteValues = (autocompleteKey) => async (dispatch) => {
   dispatch(fetchAutocompleteValuesRequest());
   try {
     const query = queryString.stringify({ key: autocompleteKey });

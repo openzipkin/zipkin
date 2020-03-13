@@ -46,7 +46,7 @@ const propTypes = {
   correctedTraceMap: PropTypes.shape({}).isRequired,
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     cursor: 'pointer',
     '&:hover': {
@@ -140,7 +140,7 @@ export const TracesTableRowImpl = ({
           So ServiceBadge which has onClick callback cannot be surrounded by Link. */}
       <Box display="flex" flexWrap="wrap" className={classes.badgeRow}>
         {
-          traceSummary.serviceSummaries.map(serviceSummary => (
+          traceSummary.serviceSummaries.map((serviceSummary) => (
             <Box key={serviceSummary.serviceName} mr={0.2} ml={0.2}>
               <ServiceBadge
                 serviceName={serviceSummary.serviceName}
@@ -160,7 +160,7 @@ export const TracesTableRowImpl = ({
 
 TracesTableRowImpl.propTypes = propTypes;
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   correctedTraceMap: state.traces.correctedTraceMap,
 });
 

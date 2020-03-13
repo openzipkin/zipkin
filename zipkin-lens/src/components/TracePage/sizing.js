@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 /* eslint-disable max-len */
 
 //
@@ -36,7 +35,7 @@ export const timelineWidthPercent = 100 - (spanTreeWidthPercent + serviceNameWid
 export const spanBarRowHeight = 40; // px
 export const spanBarHeight = spanBarRowHeight - 4; // px;
 
-export const spanTreeLineWidthPercentPerDepth = depth => spanTreeWidthPercent / (depth + 1); // %
+export const spanTreeLineWidthPercentPerDepth = (depth) => spanTreeWidthPercent / (depth + 1); // %
 export const serviceNameBadgeWidth = serviceNameWidthPercent - 2;
 export const serviceNameBadgeHeight = 24;
 export const serviceNameBadgeTranslate = `translate(16,${-serviceNameBadgeHeight / 2})`; // px
@@ -61,10 +60,10 @@ export const spanToggleButtonTranslate = `translate(${-spanToggleButtonLengthOfS
 // |--------------------|
 //   spanBarOffsetXPercent
 //
-export const spanBarRowOffsetY = index => index * spanBarRowHeight; // px
-export const spanBarOffsetY = index => spanBarRowOffsetY(index) + 2; // px
-export const spanBarLinePosY = index => spanBarRowOffsetY(index) + (spanBarRowHeight / 2); // px
-export const spanBarWidthPercent = width => timelineWidthPercent * (width / 100); // %
-export const spanBarOffsetXPercent = left => spanTreeWidthPercent + serviceNameWidthPercent + timelineWidthPercent * (left / 100); // %
+export const spanBarRowOffsetY = (index) => index * spanBarRowHeight; // px
+export const spanBarOffsetY = (index) => spanBarRowOffsetY(index) + 2; // px
+export const spanBarLinePosY = (index) => spanBarRowOffsetY(index) + (spanBarRowHeight / 2); // px
+export const spanBarWidthPercent = (width) => timelineWidthPercent * (width / 100); // %
+export const spanBarOffsetXPercent = (left) => spanTreeWidthPercent + serviceNameWidthPercent + (timelineWidthPercent * (left / 100)); // %
 
-export const timelineHeight = spanCounts => spanBarRowHeight * spanCounts; // px
+export const timelineHeight = (spanCounts) => spanBarRowHeight * spanCounts; // px

@@ -134,7 +134,7 @@ const mapStateToProps = (state, ownProps) => {
   return props;
 };
 
-const mapDispatchToProps = dispatch => ({
+const mapDispatchToProps = (dispatch) => ({
   loadTrace: (traceId, correctedTraceMap) => dispatch(
     traceActionCreators.loadTrace(traceId, correctedTraceMap),
   ),

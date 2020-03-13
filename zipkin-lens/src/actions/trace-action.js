@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,7 +22,7 @@ export const loadTraceRequest = () => ({
   type: types.TRACE_LOAD_REQUEST,
 });
 
-export const loadTraceSuccess = traceSummary => ({
+export const loadTraceSuccess = (traceSummary) => ({
   type: types.TRACE_LOAD_SUCCESS,
   traceSummary,
 });
@@ -31,9 +31,9 @@ export const loadTraceFailure = () => ({
   type: types.TRACE_LOAD_FAILURE,
 });
 
-const calculateCorrectedTrace = async trace => treeCorrectedForClockSkew(trace);
+const calculateCorrectedTrace = async (trace) => treeCorrectedForClockSkew(trace);
 
-const calculateDetailedTraceSummary = async correctedTrace => buildDetailedTraceSummary(
+const calculateDetailedTraceSummary = async (correctedTrace) => buildDetailedTraceSummary(
   correctedTrace,
 );
 

@@ -23,7 +23,7 @@ import SpanDetail from './SpanDetail';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
 import { hasRootSpan } from '../../util/trace';
 
-const findSpanIndex = (spans, spanId) => spans.findIndex(span => span.spanId === spanId);
+const findSpanIndex = (spans, spanId) => spans.findIndex((span) => span.spanId === spanId);
 
 const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes.isRequired,
@@ -40,7 +40,7 @@ const TraceSummary = React.memo(({ traceSummary }) => {
 
   const handleChildrenToggle = useCallback((spanId) => {
     const spanIndex = findSpanIndex(traceSummary.spans, spanId);
-    setChildrenHiddenSpanIndices(prev => ({
+    setChildrenHiddenSpanIndices((prev) => ({
       ...prev,
       [spanIndex]: !prev[spanIndex],
     }));
@@ -51,7 +51,7 @@ const TraceSummary = React.memo(({ traceSummary }) => {
   }, []);
 
   const handleTimelineRowClick = useCallback((spanId) => {
-    const idx = traceSummary.spans.findIndex(span => span.spanId === spanId);
+    const idx = traceSummary.spans.findIndex((span) => span.spanId === spanId);
     if (isRootedTrace && currentSpanIndex === idx) {
       if (rootSpanIndex === idx) {
         setRootSpanIndex(0);
@@ -101,7 +101,7 @@ const TraceSummary = React.memo(({ traceSummary }) => {
 
   const childrenHiddenSpanIds = React.useMemo(
     () => Object.keys(childrenHiddenSpanIndices)
-      .filter(spanIndex => !!childrenHiddenSpanIndices[spanIndex])
+      .filter((spanIndex) => !!childrenHiddenSpanIndices[spanIndex])
       .reduce((acc, spanIndex) => {
         acc[traceSummary.spans[spanIndex].spanId] = true;
         return acc;
@@ -120,18 +120,18 @@ const TraceSummary = React.memo(({ traceSummary }) => {
   }).reduce((a, b) => Math.max(a, b)), [rerootedTree]);
 
   const handleSpanDetailToggle = useCallback(() => {
-    setIsSpanDetailOpened(prev => !prev);
+    setIsSpanDetailOpened((prev) => !prev);
   }, []);
 
   const handleExpandButtonClick = useCallback(() => {
     const expandedSpanIndices = shownTree
-      .filter(span => !!childrenHiddenSpanIds[span.spanId])
+      .filter((span) => !!childrenHiddenSpanIds[span.spanId])
       .reduce((acc, span) => {
         const spanIndex = findSpanIndex(traceSummary.spans, span.spanId);
         acc[spanIndex] = false;
         return acc;
       }, {});
-    setChildrenHiddenSpanIndices(prev => ({
+    setChildrenHiddenSpanIndices((prev) => ({
       ...prev,
       ...expandedSpanIndices,
     }));
@@ -139,7 +139,7 @@ const TraceSummary = React.memo(({ traceSummary }) => {
 
   const handleCollapseButtonClick = useCallback(() => {
     const spanIndex = findSpanIndex(traceSummary.spans, shownTree[0].spanId);
-    setChildrenHiddenSpanIndices(prev => ({
+    setChildrenHiddenSpanIndices((prev) => ({
       ...prev,
       [spanIndex]: true,
     }));

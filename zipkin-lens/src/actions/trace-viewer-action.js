@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,12 +13,12 @@
  */
 import * as types from '../constants/action-types';
 
-export const loadTrace = trace => ({
+export const loadTrace = (trace) => ({
   type: types.TRACE_VIEWER__LOAD_TRACE,
   trace,
 });
 
-export const loadTraceFailure = message => ({
+export const loadTraceFailure = (message) => ({
   type: types.TRACE_VIEWER__LOAD_TRACE_FAILURE,
   message,
 });

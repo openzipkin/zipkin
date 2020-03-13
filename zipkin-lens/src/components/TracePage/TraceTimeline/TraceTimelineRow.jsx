@@ -41,7 +41,7 @@ const propTypes = {
   endTs: PropTypes.number.isRequired,
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   line: {
     stroke: theme.palette.grey[400],
     strokeWidth: '1px',
@@ -132,7 +132,7 @@ const TraceTimelineRow = React.memo(({
         isTextLeft ? (
           <text
             x={`${spanBarOffsetXPercent(left) + 1}%`}
-            y={spanBarOffsetY(index) + spanBarRowHeight / 2}
+            y={spanBarOffsetY(index) + (spanBarRowHeight / 2)}
             className={classes.text}
           >
             {`${span.spanName} ${durationStr}`}
@@ -140,7 +140,7 @@ const TraceTimelineRow = React.memo(({
         ) : (
           <text
             x={`${spanBarOffsetXPercent(left) + spanBarWidthPercent(width) - 1}%`}
-            y={spanBarOffsetY(index) + spanBarRowHeight / 2}
+            y={spanBarOffsetY(index) + (spanBarRowHeight / 2)}
             textAnchor="end"
             className={classes.text}
           >

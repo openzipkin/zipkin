@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,7 +18,7 @@ export const fetchServicesRequest = () => ({
   type: types.FETCH_SERVICES_REQUEST,
 });
 
-export const fetchServicesSuccess = services => ({
+export const fetchServicesSuccess = (services) => ({
   type: types.FETCH_SERVICES_SUCCESS,
   services,
 });

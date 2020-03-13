@@ -25,7 +25,7 @@ const propTypes = {
   endTs: PropTypes.number.isRequired,
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   marker: {
     height: '100%',
     width: '1px',
@@ -50,7 +50,7 @@ const TimeMarker = React.memo(({ startTs, endTs }) => {
   const timeMarkers = [];
 
   for (let i = 0; i < numTimeMarkers; i += 1) {
-    const label = startTs + (i / (numTimeMarkers - 1)) * (endTs - startTs);
+    const label = startTs + ((i / (numTimeMarkers - 1)) * (endTs - startTs));
     const portion = i / (numTimeMarkers - 1);
 
     timeMarkers.push(

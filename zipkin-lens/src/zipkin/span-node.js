@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -64,7 +64,7 @@ export class SpanNode {
     const queue = [];
     // since the input data could be headless, we first push onto the queue the root-most spans
     if (typeof this.span === 'undefined') { // synthetic root
-      this.children.forEach(child => queue.push(child));
+      this.children.forEach((child) => queue.push(child));
     } else {
       queue.push(this);
     }

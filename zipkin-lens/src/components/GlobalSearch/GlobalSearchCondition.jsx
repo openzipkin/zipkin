@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,7 +24,7 @@ import GlobalSearchConditionKey from './GlobalSearchConditionKey';
 import GlobalSearchConditionValue from './GlobalSearchConditionValue';
 import { deleteCondition } from '../../actions/global-search-action';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     display: 'flex',
     alignItems: 'center',
@@ -62,7 +62,7 @@ const GlobalSearchCondition = ({ conditionIndex, addCondition }) => {
 
   const dispatch = useDispatch();
 
-  const conditions = useSelector(state => state.globalSearch.conditions);
+  const conditions = useSelector((state) => state.globalSearch.conditions);
 
   const [isKeyFocused, setIsKeyFocused] = useState(false);
   const [isValueFocused, setIsValueFocused] = useState(false);

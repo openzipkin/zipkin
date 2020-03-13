@@ -26,7 +26,7 @@ const propTypes = {
   icon: PropTypes.shape({}).isRequired,
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   item: {
     height: '3.2rem',
     cursor: 'pointer',

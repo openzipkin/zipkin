@@ -18,7 +18,7 @@ import { spanTreeWidthPercent, serviceNameWidthPercent, timelineWidthPercent } f
 
 const numTimeMarkers = 4;
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   line: {
     stroke: theme.palette.grey[300],
     strokeWidth: '1px',

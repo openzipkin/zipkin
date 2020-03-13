@@ -19,7 +19,7 @@ import fetchResource from '../../util/fetch-resource';
 
 const ConfigContext = React.createContext();
 
-const configResource = fetchResource(fetch(UI_CONFIG).then(response => response.json()));
+const configResource = fetchResource(fetch(UI_CONFIG).then((response) => response.json()));
 
 const propTypes = {
   children: PropTypes.element.isRequired,

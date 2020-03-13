@@ -371,7 +371,7 @@ describe('detailedTraceSummary', () => {
     const { spans } = detailedTraceSummary(cleanedNetflixTrace);
 
     // the absolute values are not important, just checks that only the root span is at offset 0
-    expect(spans.map(s => s.left)).toEqual(
+    expect(spans.map((s) => s.left)).toEqual(
       [0, 8.108108108108109, 16.216216216216218, 64.86486486486487],
     );
   });
@@ -380,7 +380,7 @@ describe('detailedTraceSummary', () => {
     const headless = new SpanNode(); // headless as there's no root span
 
     // make a copy of the cleaned http trace as adding a child is a mutation
-    treeCorrectedForClockSkew(httpTrace).children.forEach(child => headless.addChild(child));
+    treeCorrectedForClockSkew(httpTrace).children.forEach((child) => headless.addChild(child));
 
     const {
       traceId, durationStr, depth, serviceNameAndSpanCounts, rootSpan,
@@ -534,7 +534,7 @@ describe('detailedTraceSummary', () => {
     g.addChild(h);
 
     const { spans } = detailedTraceSummary(a);
-    expect(spans.map(s => s.spanId)).toEqual([
+    expect(spans.map((s) => s.spanId)).toEqual([
       '000000000000000a',
       '000000000000000b',
       '000000000000000e',
@@ -647,7 +647,7 @@ describe('detailedTraceSummary', () => {
     ];
 
     const { spans } = detailedTraceSummary(treeCorrectedForClockSkew(traceWithEndpointProblems));
-    expect(spans.map(s => s.timestamp)).toEqual([
+    expect(spans.map((s) => s.timestamp)).toEqual([
       1, 11000, 30000, 341172, 359175, // increasing order
     ]);
   });

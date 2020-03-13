@@ -33,7 +33,7 @@ import logoSrc from '../../img/zipkin-logo.png';
 
 const drawerWidth = '3.2rem';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     display: 'flex',
   },
