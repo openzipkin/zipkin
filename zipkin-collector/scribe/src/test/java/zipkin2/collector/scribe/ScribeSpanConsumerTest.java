@@ -18,7 +18,8 @@ import java.util.Base64;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.thrift.async.AsyncMethodCallback;
-import org.junit.Test;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.Endpoint;
@@ -37,8 +38,9 @@ import zipkin2.v1.V1SpanConverter;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
-public class ScribeSpanConsumerTest {
+class ScribeSpanConsumerTest {
   // scope to scribe as we aren't creating the consumer with the builder.
   InMemoryCollectorMetrics scribeMetrics = new InMemoryCollectorMetrics().forTransport("scribe");
 
@@ -97,7 +99,7 @@ public class ScribeSpanConsumerTest {
   byte[] bytes = SpanBytesEncoder.THRIFT.encode(v2);
   String encodedSpan = new String(Base64.getEncoder().encode(bytes), UTF_8);
 
-  @Test public void entriesWithSpansAreConsumed() throws Exception {
+  @Test void entriesWithSpansAreConsumed() throws Exception {
     ScribeSpanConsumer scribe = newScribeSpanConsumer("zipkin", consumer);
 
     LogEntry entry = new LogEntry();
@@ -106,7 +108,8 @@ public class ScribeSpanConsumerTest {
 
     expectSuccess(scribe, entry);
 
-    assertThat(storage.getTraces()).containsExactly(asList(v2));
+    // Storage finishes after callback so wait for it.
+    await().untilAsserted(() -> assertThat(storage.getTraces()).containsExactly(asList(v2)));
 
     assertThat(scribeMetrics.messages()).isEqualTo(1);
     assertThat(scribeMetrics.messagesDropped()).isZero();
@@ -115,7 +118,7 @@ public class ScribeSpanConsumerTest {
     assertThat(scribeMetrics.spansDropped()).isZero();
   }
 
-  @Test public void entriesWithoutSpansAreSkipped() throws Exception {
+  @Test void entriesWithoutSpansAreSkipped() throws Exception {
     SpanConsumer consumer = (callback) -> {
       throw new AssertionError(); // as we shouldn't get here.
     };
@@ -142,7 +145,7 @@ public class ScribeSpanConsumerTest {
     assertThat(callback.resultCode).isEqualTo(ResultCode.OK);
   }
 
-  @Test public void malformedDataIsDropped() {
+  @Test void malformedDataIsDropped() {
     ScribeSpanConsumer scribe = newScribeSpanConsumer("zipkin", consumer);
 
     LogEntry entry = new LogEntry();
@@ -160,7 +163,7 @@ public class ScribeSpanConsumerTest {
     assertThat(scribeMetrics.spansDropped()).isZero();
   }
 
-  @Test public void consumerExceptionBeforeCallbackDoesntSetFutureException() {
+  @Test void consumerExceptionBeforeCallbackDoesntSetFutureException() {
     consumer = (input) -> {
       throw new NullPointerException("endpoint was null");
     };
@@ -188,7 +191,7 @@ public class ScribeSpanConsumerTest {
    * Callbacks are performed asynchronously. If they throw, it hints that we are chaining futures
    * when we shouldn't
    */
-  @Test public void callbackExceptionDoesntThrow() throws Exception {
+  @Test void callbackExceptionDoesntThrow() throws Exception {
     consumer = (input) -> new Call.Base<Void>() {
       @Override protected Void doExecute() {
         throw new AssertionError();
@@ -219,7 +222,7 @@ public class ScribeSpanConsumerTest {
   }
 
   /** Finagle's zipkin tracer breaks on a column width with a trailing newline */
-  @Test public void decodesSpanGeneratedByFinagle() throws Exception {
+  @Test void decodesSpanGeneratedByFinagle() throws Exception {
     LogEntry entry = new LogEntry();
     entry.category = "zipkin";
     entry.message = ""
@@ -230,7 +233,8 @@ public class ScribeSpanConsumerTest {
 
     expectSuccess(scribe, entry);
 
-    assertThat(storage.getTraces()).containsExactly(asList(v2));
+    // Storage finishes after callback so wait for it.
+    await().untilAsserted(() -> assertThat(storage.getTraces()).containsExactly(asList(v2)));
 
     assertThat(scribeMetrics.messages()).isEqualTo(1);
     assertThat(scribeMetrics.messagesDropped()).isZero();
