@@ -12,12 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, {
-  useMemo,
-  useCallback,
-  useState,
-  useEffect,
-} from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { AutoSizer } from 'react-virtualized';
@@ -90,91 +85,104 @@ const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
 };
 
-export const DependenciesPageImpl = React.memo(({
-  isLoading,
-  dependencies,
-  fetchDependencies,
-  clearDependencies,
-  location,
-  history,
-}) => {
-  const classes = useStyles();
-  const graph = useMemo(() => new Graph(dependencies), [dependencies]);
-  const isGraphExists = graph.allNodes().length !== 0;
-  const [nodeName, setNodeName] = useState(null);
-  const [timeRange, setTimeRange] = useState({
-    startTime: moment().subtract(1, 'days'),
-    endTime: moment(),
-  });
-  const targetEdges = useMemo(
-    () => (nodeName ? graph.getTargetEdges(nodeName) : []),
-    [nodeName, graph],
-  );
-  const sourceEdges = useMemo(
-    () => (nodeName ? graph.getSourceEdges(nodeName) : []),
-    [nodeName, graph],
-  );
-
-  const handleStartTimeChange = useCallback((startTime) => {
-    setTimeRange({ ...timeRange, startTime });
-  }, [timeRange]);
-
-  const handleEndTimeChange = useCallback((endTime) => {
-    setTimeRange({ ...timeRange, endTime });
-  }, [timeRange]);
-
-  const handleFindButtonClick = useCallback(() => {
-    const startTs = timeRange.startTime.valueOf();
-    const endTs = timeRange.endTime.valueOf();
-    const lookback = endTs - startTs;
-    fetchDependencies({ lookback, endTs });
-    history.push({
-      pathname: '/dependency',
-      search: buildQueryParameters({ startTs, endTs }),
+export const DependenciesPageImpl = React.memo(
+  ({
+    isLoading,
+    dependencies,
+    fetchDependencies,
+    clearDependencies,
+    location,
+    history,
+  }) => {
+    const classes = useStyles();
+    const graph = useMemo(() => new Graph(dependencies), [dependencies]);
+    const isGraphExists = graph.allNodes().length !== 0;
+    const [nodeName, setNodeName] = useState(null);
+    const [timeRange, setTimeRange] = useState({
+      startTime: moment().subtract(1, 'days'),
+      endTime: moment(),
     });
-  }, [fetchDependencies, timeRange, history]);
+    const targetEdges = useMemo(
+      () => (nodeName ? graph.getTargetEdges(nodeName) : []),
+      [nodeName, graph],
+    );
+    const sourceEdges = useMemo(
+      () => (nodeName ? graph.getSourceEdges(nodeName) : []),
+      [nodeName, graph],
+    );
 
-  const handleNodeClick = useCallback((newNodeName) => {
-    setNodeName(newNodeName);
-  }, []);
+    const handleStartTimeChange = useCallback(
+      (startTime) => {
+        setTimeRange({ ...timeRange, startTime });
+      },
+      [timeRange],
+    );
 
-  useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
+    const handleEndTimeChange = useCallback(
+      (endTime) => {
+        setTimeRange({ ...timeRange, endTime });
+      },
+      [timeRange],
+    );
 
-    const startTs = queryParams.get('startTs');
-    const endTs = queryParams.get('endTs');
-    if (startTs && endTs) {
-      setTimeRange({
-        startTime: moment(parseInt(startTs, 10)),
-        endTime: moment(parseInt(endTs, 10)),
-      });
+    const handleFindButtonClick = useCallback(() => {
+      const startTs = timeRange.startTime.valueOf();
+      const endTs = timeRange.endTime.valueOf();
       const lookback = endTs - startTs;
       fetchDependencies({ lookback, endTs });
-    }
-    return clearDependencies;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      history.push({
+        pathname: '/dependency',
+        search: buildQueryParameters({ startTs, endTs }),
+      });
+    }, [fetchDependencies, timeRange, history]);
 
-  let content;
-  if (isLoading) {
-    content = (
-      <Box className={classes.loadingIndicatorWrapper} data-testid="loading-indicator">
-        <CircularProgress />
-      </Box>
-    );
-  } else if (!isGraphExists) {
-    content = (
-      <Box className={classes.explainBoxWrapper} data-testid="explain-box">
-        <ExplainBox />
-      </Box>
-    );
-  } else {
-    content = (
-      <Box className={classes.content}>
-        <Box width={nodeName ? '70%' : '100%'} className={classes.graphWrapper} data-testid="dependencies-graph">
-          <AutoSizer>
-            {
-              ({ width, height }) => (
+    const handleNodeClick = useCallback((newNodeName) => {
+      setNodeName(newNodeName);
+    }, []);
+
+    useEffect(() => {
+      const queryParams = new URLSearchParams(location.search);
+
+      const startTs = queryParams.get('startTs');
+      const endTs = queryParams.get('endTs');
+      if (startTs && endTs) {
+        setTimeRange({
+          startTime: moment(parseInt(startTs, 10)),
+          endTime: moment(parseInt(endTs, 10)),
+        });
+        const lookback = endTs - startTs;
+        fetchDependencies({ lookback, endTs });
+      }
+      return clearDependencies;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    let content;
+    if (isLoading) {
+      content = (
+        <Box
+          className={classes.loadingIndicatorWrapper}
+          data-testid="loading-indicator"
+        >
+          <CircularProgress />
+        </Box>
+      );
+    } else if (!isGraphExists) {
+      content = (
+        <Box className={classes.explainBoxWrapper} data-testid="explain-box">
+          <ExplainBox />
+        </Box>
+      );
+    } else {
+      content = (
+        <Box className={classes.content}>
+          <Box
+            width={nodeName ? '70%' : '100%'}
+            className={classes.graphWrapper}
+            data-testid="dependencies-graph"
+          >
+            <AutoSizer>
+              {({ width, height }) => (
                 <Box width={width} height={height}>
                   <DependenciesGraph
                     selectedNodeName={nodeName}
@@ -184,49 +192,48 @@ export const DependenciesPageImpl = React.memo(({
                     updated={graph.createdTs()}
                   />
                 </Box>
-              )
-            }
-          </AutoSizer>
-        </Box>
-        {
-          nodeName ? (
-            <Box className={classes.nodeDetailWrapper} data-testid="node-detail">
+              )}
+            </AutoSizer>
+          </Box>
+          {nodeName ? (
+            <Box
+              className={classes.nodeDetailWrapper}
+              data-testid="node-detail"
+            >
               <AutoSizer>
-                {
-                  ({ width, height }) => (
-                    <Box width={width} height={height} overflow="auto">
-                      <NodeDetail
-                        serviceName={nodeName}
-                        minHeight={height}
-                        targetEdges={targetEdges}
-                        sourceEdges={sourceEdges}
-                        startTime={timeRange.startTime}
-                        endTime={timeRange.endTime}
-                      />
-                    </Box>
-                  )
-                }
+                {({ width, height }) => (
+                  <Box width={width} height={height} overflow="auto">
+                    <NodeDetail
+                      serviceName={nodeName}
+                      minHeight={height}
+                      targetEdges={targetEdges}
+                      sourceEdges={sourceEdges}
+                      startTime={timeRange.startTime}
+                      endTime={timeRange.endTime}
+                    />
+                  </Box>
+                )}
               </AutoSizer>
             </Box>
-          ) : null
-        }
-      </Box>
-    );
-  }
+          ) : null}
+        </Box>
+      );
+    }
 
-  return (
-    <>
-      <DependenciesPageHeader
-        startTime={timeRange.startTime}
-        endTime={timeRange.endTime}
-        onStartTimeChange={handleStartTimeChange}
-        onEndTimeChange={handleEndTimeChange}
-        onFindButtonClick={handleFindButtonClick}
-      />
-      {content}
-    </>
-  );
-});
+    return (
+      <>
+        <DependenciesPageHeader
+          startTime={timeRange.startTime}
+          endTime={timeRange.endTime}
+          onStartTimeChange={handleStartTimeChange}
+          onEndTimeChange={handleEndTimeChange}
+          onFindButtonClick={handleFindButtonClick}
+        />
+        {content}
+      </>
+    );
+  },
+);
 
 DependenciesPageImpl.propTypes = propTypes;
 
@@ -236,10 +243,10 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-  fetchDependencies: (params) => dispatch(
-    dependenciesActionCreators.fetchDependencies(params),
-  ),
-  clearDependencies: () => dispatch(dependenciesActionCreators.clearDependencies()),
+  fetchDependencies: (params) =>
+    dispatch(dependenciesActionCreators.fetchDependencies(params)),
+  clearDependencies: () =>
+    dispatch(dependenciesActionCreators.clearDependencies()),
 });
 
 export default connect(

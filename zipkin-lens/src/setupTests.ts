@@ -33,14 +33,15 @@ const { language } = window.navigator;
 
 // Mock out createRange until jest-environment-jsdom is updated to latest jsdom
 // https://github.com/mui-org/material-ui/issues/15726
-document.createRange = () => ({
-  setStart: () => {},
-  setEnd: () => {},
-  commonAncestorContainer: {
-    nodeName: 'BODY',
-    ownerDocument: document,
-  },
-}) as any; // Only partial mock so don't enforce full type.
+document.createRange = () =>
+  ({
+    setStart: () => {},
+    setEnd: () => {},
+    commonAncestorContainer: {
+      nodeName: 'BODY',
+      ownerDocument: document,
+    },
+  } as any); // Only partial mock so don't enforce full type.
 
 beforeAll(() => {
   delete window.location;
@@ -52,11 +53,17 @@ beforeAll(() => {
 
 beforeEach(() => {
   // Set english as browser locale by default.
-  Object.defineProperty(window.navigator, 'language', { value: 'en-US', configurable: true });
+  Object.defineProperty(window.navigator, 'language', {
+    value: 'en-US',
+    configurable: true,
+  });
 });
 
 afterAll(() => {
   // Restore overrides for good measure.
-  Object.defineProperty(window.navigator, 'language', { value: language, configurable: true });
+  Object.defineProperty(window.navigator, 'language', {
+    value: language,
+    configurable: true,
+  });
   window.location = location;
 });

@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-const buildOrderedConditionKeyOptions = (autocompleteKeys) => ([
+const buildOrderedConditionKeyOptions = (autocompleteKeys) => [
   'serviceName',
   'spanName',
   'minDuration',
@@ -19,9 +19,13 @@ const buildOrderedConditionKeyOptions = (autocompleteKeys) => ([
   ...autocompleteKeys,
   'tags',
   'remoteServiceName',
-]);
+];
 
-export const buildConditionKeyOptions = (currentConditionKey, conditions, autocompleteKeys) => {
+export const buildConditionKeyOptions = (
+  currentConditionKey,
+  conditions,
+  autocompleteKeys,
+) => {
   const existingConditions = {};
 
   conditions.forEach((condition) => {
@@ -31,15 +35,17 @@ export const buildConditionKeyOptions = (currentConditionKey, conditions, autoco
     existingConditions[condition.key] = true;
   });
 
-  return buildOrderedConditionKeyOptions(autocompleteKeys).map((conditionKeyOption) => {
-    if (conditionKeyOption === currentConditionKey) {
+  return buildOrderedConditionKeyOptions(autocompleteKeys).map(
+    (conditionKeyOption) => {
+      if (conditionKeyOption === currentConditionKey) {
+        return { conditionKey: conditionKeyOption, isDisabled: false };
+      }
+      if (existingConditions[conditionKeyOption]) {
+        return { conditionKey: conditionKeyOption, isDisabled: true };
+      }
       return { conditionKey: conditionKeyOption, isDisabled: false };
-    }
-    if (existingConditions[conditionKeyOption]) {
-      return { conditionKey: conditionKeyOption, isDisabled: true };
-    }
-    return { conditionKey: conditionKeyOption, isDisabled: false };
-  });
+    },
+  );
 };
 
 export const retrieveNextConditionKey = (conditions, autocompleteKeys) => {
@@ -73,7 +79,8 @@ export const retrieveDefaultConditionValue = (conditionKey) => {
       return 0;
     case 'tags':
       return '';
-    default: // autocompleteKeys
+    default:
+      // autocompleteKeys
       return undefined;
   }
 };

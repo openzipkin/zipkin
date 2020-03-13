@@ -19,9 +19,7 @@ class Graph {
     this.edges = [];
     this._createdTs = moment().valueOf();
 
-    rawDependencies.forEach(
-      (edge) => this.addEdge(edge),
-    );
+    rawDependencies.forEach((edge) => this.addEdge(edge));
   }
 
   addEdge(edge) {

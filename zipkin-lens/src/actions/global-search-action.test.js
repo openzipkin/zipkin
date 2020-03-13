@@ -26,7 +26,9 @@ describe('global search actions', () => {
       type: types.GLOBAL_SEARCH_SET_LOOKBACK_CONDITION,
       lookbackCondition,
     };
-    expect(actions.setLookbackCondition(lookbackCondition)).toEqual(expectedAction);
+    expect(actions.setLookbackCondition(lookbackCondition)).toEqual(
+      expectedAction,
+    );
   });
 
   it('should create an action to set the limit condition', () => {
@@ -67,7 +69,9 @@ describe('global search actions', () => {
       index,
       conditionKey,
     };
-    expect(actions.changeConditionKey(index, conditionKey)).toEqual(expectedAction);
+    expect(actions.changeConditionKey(index, conditionKey)).toEqual(
+      expectedAction,
+    );
   });
 
   it('should create an action to change the value of conditions', () => {
@@ -78,6 +82,8 @@ describe('global search actions', () => {
       index,
       conditionValue,
     };
-    expect(actions.changeConditionValue(index, conditionValue)).toEqual(expectedAction);
+    expect(actions.changeConditionValue(index, conditionValue)).toEqual(
+      expectedAction,
+    );
   });
 });

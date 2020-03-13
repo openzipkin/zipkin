@@ -54,33 +54,27 @@ const App = () => {
         <MuiPickersUtilsProvider utils={MomentUtils}>
           <ThemeProvider theme={theme}>
             <UiConfigConsumer>
-              {
-                (config) => (
-                  <Provider store={configureStore(config)}>
-                    <I18nProvider i18n={i18n}>
-                      <BrowserRouter basename={BASE_PATH}>
-                        <Layout>
-                          <Route
-                            exact
-                            path="/"
-                            component={DiscoverPage}
-                          />
-                          <Route
-                            exact
-                            path="/dependency"
-                            component={DependenciesPage}
-                          />
-                          <Route
-                            exact
-                            path={['/traces/:traceId', '/traceViewer']}
-                            component={TracePage}
-                          />
-                        </Layout>
-                      </BrowserRouter>
-                    </I18nProvider>
-                  </Provider>
-                )
-              }
+              {(config) => (
+                <Provider store={configureStore(config)}>
+                  <I18nProvider i18n={i18n}>
+                    <BrowserRouter basename={BASE_PATH}>
+                      <Layout>
+                        <Route exact path="/" component={DiscoverPage} />
+                        <Route
+                          exact
+                          path="/dependency"
+                          component={DependenciesPage}
+                        />
+                        <Route
+                          exact
+                          path={['/traces/:traceId', '/traceViewer']}
+                          component={TracePage}
+                        />
+                      </Layout>
+                    </BrowserRouter>
+                  </I18nProvider>
+                </Provider>
+              )}
             </UiConfigConsumer>
           </ThemeProvider>
         </MuiPickersUtilsProvider>

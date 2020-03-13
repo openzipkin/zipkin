@@ -16,8 +16,14 @@ import React, { useMemo, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import ReactSelect from 'react-select';
 
-import { buildConditionKeyOptions, retrieveDefaultConditionValue } from './util';
-import { changeConditionKey, changeConditionValue } from '../../actions/global-search-action';
+import {
+  buildConditionKeyOptions,
+  retrieveDefaultConditionValue,
+} from './util';
+import {
+  changeConditionKey,
+  changeConditionValue,
+} from '../../actions/global-search-action';
 import { fetchAutocompleteValues } from '../../actions/autocomplete-values-action';
 import { theme } from '../../colors';
 
@@ -38,16 +44,16 @@ const GlobalSearchConditionKey = ({
 }) => {
   const dispatch = useDispatch();
 
-  const autocompleteKeys = useSelector((state) => state.autocompleteKeys.autocompleteKeys);
+  const autocompleteKeys = useSelector(
+    (state) => state.autocompleteKeys.autocompleteKeys,
+  );
   const conditions = useSelector((state) => state.globalSearch.conditions);
 
   const { key: conditionKey } = conditions[conditionIndex];
 
   const clearConditionValue = useCallback(
-    (idx, key) => dispatch(changeConditionValue(
-      idx,
-      retrieveDefaultConditionValue(key),
-    )),
+    (idx, key) =>
+      dispatch(changeConditionValue(idx, retrieveDefaultConditionValue(key))),
     [dispatch],
   );
 
@@ -61,28 +67,31 @@ const GlobalSearchConditionKey = ({
       }
       focusValue();
     },
-    [autocompleteKeys, clearConditionValue, conditionIndex, dispatch, focusValue],
+    [
+      autocompleteKeys,
+      clearConditionValue,
+      conditionIndex,
+      dispatch,
+      focusValue,
+    ],
   );
 
   const options = useMemo(
-    () => buildConditionKeyOptions(
-      conditionKey,
-      conditions,
-      autocompleteKeys,
-    ).map((opt) => ({
-      value: opt.conditionKey,
-      label: opt.conditionKey,
-      isDisabled: opt.isDisabled,
-    })),
+    () =>
+      buildConditionKeyOptions(conditionKey, conditions, autocompleteKeys).map(
+        (opt) => ({
+          value: opt.conditionKey,
+          label: opt.conditionKey,
+          isDisabled: opt.isDisabled,
+        }),
+      ),
     [conditionKey, conditions, autocompleteKeys],
   );
 
   const styles = {
     control: (base) => ({
       ...base,
-      width: isFocused
-        ? '15rem'
-        : '12rem',
+      width: isFocused ? '15rem' : '12rem',
       height: '2.4rem',
       minHeight: '2.4rem',
       border: 0,
@@ -90,7 +99,9 @@ const GlobalSearchConditionKey = ({
       borderTopRightRadius: 0,
       borderBottomLeftRadius: '0.2rem',
       borderBottomRightRadius: 0,
-      backgroundColor: isFocused ? theme.palette.primary.dark : theme.palette.primary.main,
+      backgroundColor: isFocused
+        ? theme.palette.primary.dark
+        : theme.palette.primary.main,
       '&:hover': {
         backgroundColor: theme.palette.primary.dark,
       },

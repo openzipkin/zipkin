@@ -43,45 +43,39 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export const SidebarMenuImpl = React.forwardRef(({
-  title,
-  path,
-  icon,
-  ...others
-}, ref) => {
-  const classes = useStyles();
-  const location = useLocation();
+export const SidebarMenuImpl = React.forwardRef(
+  ({ title, path, icon, ...others }, ref) => {
+    const classes = useStyles();
+    const location = useLocation();
 
-  const listItemProps = {};
-  if (path.startsWith('https://') || path.startsWith('http://')) {
-    listItemProps.component = 'a';
-    listItemProps.href = path;
-    listItemProps.target = '_blank';
-    listItemProps.rel = 'no-opener';
-  } else {
-    listItemProps.component = Link;
-    listItemProps.to = path;
-  }
+    const listItemProps = {};
+    if (path.startsWith('https://') || path.startsWith('http://')) {
+      listItemProps.component = 'a';
+      listItemProps.href = path;
+      listItemProps.target = '_blank';
+      listItemProps.rel = 'no-opener';
+    } else {
+      listItemProps.component = Link;
+      listItemProps.to = path;
+    }
 
-  return (
-    <Tooltip title={title} placement="right">
-      <ListItem
-        {...listItemProps}
-        button
-        ref={ref}
-        className={
-          classNames(
-            classes.item,
-            { [classes['item--selected']]: path === location.pathname },
-          )
-        }
-        {...others}
-      >
-        <FontAwesomeIcon icon={icon} />
-      </ListItem>
-    </Tooltip>
-  );
-});
+    return (
+      <Tooltip title={title} placement="right">
+        <ListItem
+          {...listItemProps}
+          button
+          ref={ref}
+          className={classNames(classes.item, {
+            [classes['item--selected']]: path === location.pathname,
+          })}
+          {...others}
+        >
+          <FontAwesomeIcon icon={icon} />
+        </ListItem>
+      </Tooltip>
+    );
+  },
+);
 
 SidebarMenuImpl.propTypes = propTypes;
 

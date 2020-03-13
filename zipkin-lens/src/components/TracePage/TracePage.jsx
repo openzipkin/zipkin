@@ -45,64 +45,67 @@ const defaultProps = {
   correctedTraceMap: {},
 };
 
-export const TracePageImpl = React.memo(({
-  traceId,
-  traceSummary,
-  loadTrace,
-  isTraceViewerPage,
-  isLoading,
-  isMalformedFile,
-  errorMessage,
-  correctedTraceMap,
-}) => {
-  useEffect(() => {
-    if (!isTraceViewerPage) {
-      loadTrace(traceId, correctedTraceMap);
+export const TracePageImpl = React.memo(
+  ({
+    traceId,
+    traceSummary,
+    loadTrace,
+    isTraceViewerPage,
+    isLoading,
+    isMalformedFile,
+    errorMessage,
+    correctedTraceMap,
+  }) => {
+    useEffect(() => {
+      if (!isTraceViewerPage) {
+        loadTrace(traceId, correctedTraceMap);
+      }
+    }, [traceId, isTraceViewerPage, loadTrace, correctedTraceMap]);
+
+    if (isTraceViewerPage && isMalformedFile) {
+      return (
+        <>
+          <TraceSummaryHeader />
+          <MessageBar
+            variant="error"
+            message={errorMessage || 'Loading error'}
+          />
+        </>
+      );
     }
-  }, [traceId, isTraceViewerPage, loadTrace, correctedTraceMap]);
 
-  if (isTraceViewerPage && isMalformedFile) {
-    return (
-      <>
-        <TraceSummaryHeader />
-        <MessageBar variant="error" message={errorMessage || 'Loading error'} />
-      </>
-    );
-  }
+    if (!isTraceViewerPage && isLoading) {
+      return (
+        <>
+          <TraceSummaryHeader />
+          <Box width="100%" display="flex" justifyContent="center">
+            <CircularProgress data-testid="progress-indicator" />
+          </Box>
+        </>
+      );
+    }
 
-  if (!isTraceViewerPage && isLoading) {
-    return (
-      <>
-        <TraceSummaryHeader />
-        <Box width="100%" display="flex" justifyContent="center">
-          <CircularProgress data-testid="progress-indicator" />
-        </Box>
-      </>
-    );
-  }
+    if (!traceSummary && isTraceViewerPage) {
+      return (
+        <>
+          <TraceSummaryHeader />
+          <MessageBar variant="info" message="You need to upload JSON..." />
+        </>
+      );
+    }
 
-  if (!traceSummary && isTraceViewerPage) {
-    return (
-      <>
-        <TraceSummaryHeader />
-        <MessageBar variant="info" message="You need to upload JSON..." />
-      </>
-    );
-  }
+    if (!traceSummary && !isTraceViewerPage) {
+      return (
+        <>
+          <TraceSummaryHeader />
+          <MessageBar variant="error" message="Trace not found" />
+        </>
+      );
+    }
 
-  if (!traceSummary && !isTraceViewerPage) {
-    return (
-      <>
-        <TraceSummaryHeader />
-        <MessageBar variant="error" message="Trace not found" />
-      </>
-    );
-  }
-
-  return (
-    <TraceSummary traceSummary={traceSummary} />
-  );
-});
+    return <TraceSummary traceSummary={traceSummary} />;
+  },
+);
 
 TracePageImpl.propTypes = propTypes;
 TracePageImpl.defaultProps = defaultProps;
@@ -135,14 +138,10 @@ const mapStateToProps = (state, ownProps) => {
 };
 
 const mapDispatchToProps = (dispatch) => ({
-  loadTrace: (traceId, correctedTraceMap) => dispatch(
-    traceActionCreators.loadTrace(traceId, correctedTraceMap),
-  ),
+  loadTrace: (traceId, correctedTraceMap) =>
+    dispatch(traceActionCreators.loadTrace(traceId, correctedTraceMap)),
 });
 
 export default withRouter(
-  connect(
-    mapStateToProps,
-    mapDispatchToProps,
-  )(TracePageImpl),
+  connect(mapStateToProps, mapDispatchToProps)(TracePageImpl),
 );

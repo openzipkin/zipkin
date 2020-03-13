@@ -44,12 +44,12 @@ const MessageBar = React.memo(({ variant, message }) => {
     <Zoom in>
       <SnackbarContent
         className={classes[variant]}
-        message={(
+        message={
           <Box component="span">
             <FontAwesomeIcon icon={faExclamation} className={classes.icon} />
             {message}
           </Box>
-        )}
+        }
       />
     </Zoom>
   );

@@ -79,7 +79,8 @@ export function traceSummary(root) {
     addServiceNameTimestampDuration(span, groupedTimestamps);
   });
 
-  if (timestamps.length === 0) throw new Error(`Trace ${traceId} is missing a timestamp`);
+  if (timestamps.length === 0)
+    throw new Error(`Trace ${traceId} is missing a timestamp`);
 
   return {
     traceId,
@@ -113,12 +114,15 @@ export function totalDuration(timestampAndDurations) {
     const next = filtered[i];
     const nextIntervalEnd = next.timestamp + next.duration;
 
-    if (nextIntervalEnd <= currentIntervalEnd) { // we are still in the interval
+    if (nextIntervalEnd <= currentIntervalEnd) {
+      // we are still in the interval
       continue;
-    } else if (next.timestamp <= currentIntervalEnd) { // we extending the interval
+    } else if (next.timestamp <= currentIntervalEnd) {
+      // we extending the interval
       result += nextIntervalEnd - currentIntervalEnd;
       currentIntervalEnd = nextIntervalEnd;
-    } else { // this is a new interval
+    } else {
+      // this is a new interval
       result += next.duration;
       currentIntervalEnd = nextIntervalEnd;
     }
@@ -143,7 +147,8 @@ export function mkDurationStr(duration) {
     return `${duration.toFixed(0)}μs`;
   }
   if (duration < 1000000) {
-    if (duration % 1000 === 0) { // Sometimes spans are in milliseconds resolution
+    if (duration % 1000 === 0) {
+      // Sometimes spans are in milliseconds resolution
       return `${(duration / 1000).toFixed(0)}ms`;
     }
     return `${(duration / 1000).toFixed(3)}ms`;
@@ -153,65 +158,76 @@ export function mkDurationStr(duration) {
 
 // maxSpanDurationStr is only used in index.mustache
 export function getServiceSummaries(groupedTimestamps) {
-  const services = Object.entries(groupedTimestamps)
-    .map(([serviceName, sts]) => ({
+  const services = Object.entries(groupedTimestamps).map(
+    ([serviceName, sts]) => ({
       serviceName,
       spanCount: sts.length,
       maxSpanDuration: Math.max(...sts.map((t) => t.duration)),
-    }));
-  return orderBy(services, ['maxSpanDuration', 'serviceName'], ['desc', 'asc'])
-    .map((summary) => ({
-      serviceName: summary.serviceName,
-      spanCount: summary.spanCount,
-      maxSpanDurationStr: mkDurationStr(summary.maxSpanDuration),
-    }));
+    }),
+  );
+  return orderBy(
+    services,
+    ['maxSpanDuration', 'serviceName'],
+    ['desc', 'asc'],
+  ).map((summary) => ({
+    serviceName: summary.serviceName,
+    spanCount: summary.spanCount,
+    maxSpanDurationStr: mkDurationStr(summary.maxSpanDuration),
+  }));
 }
 
 export function traceSummaries(serviceName, summaries, utc = false) {
   const maxDuration = Math.max(...summaries.map((s) => s.duration));
 
-  return summaries.map((t) => {
-    const { timestamp } = t;
+  return summaries
+    .map((t) => {
+      const { timestamp } = t;
 
-    const res = {
-      traceId: t.traceId, // used to navigate to trace screen
-      timestamp, // used only for client-side sort
-      startTs: formatDate(timestamp, utc),
-      spanCount: t.spanCount,
-    };
+      const res = {
+        traceId: t.traceId, // used to navigate to trace screen
+        timestamp, // used only for client-side sort
+        startTs: formatDate(timestamp, utc),
+        spanCount: t.spanCount,
+      };
 
-    const duration = t.duration || 0;
-    if (duration) {
-      // used to show the relative duration this trace was compared to others
-      res.width = parseInt(parseFloat(duration) / parseFloat(maxDuration) * 100, 10);
-      res.duration = duration / 1000; // used only for client-side sort
-      res.durationStr = mkDurationStr(duration);
-    }
-
-    // groupedTimestamps is keyed by service name, if there are no service names in the trace,
-    // don't try to add data dependent on service names.
-    if (Object.keys(t.groupedTimestamps).length !== 0) {
-      res.serviceSummaries = getServiceSummaries(t.groupedTimestamps);
-
-      // Only add a service percentage when there is a duration for it
-      if (serviceName && duration && t.groupedTimestamps[serviceName]) {
-        const serviceTime = totalDuration(t.groupedTimestamps[serviceName]);
-        // used for display and also client-side sort by service percentage
-        res.servicePercentage = parseInt(parseFloat(serviceTime) / parseFloat(duration) * 100, 10);
+      const duration = t.duration || 0;
+      if (duration) {
+        // used to show the relative duration this trace was compared to others
+        res.width = parseInt(
+          (parseFloat(duration) / parseFloat(maxDuration)) * 100,
+          10,
+        );
+        res.duration = duration / 1000; // used only for client-side sort
+        res.durationStr = mkDurationStr(duration);
       }
-    }
 
-    if (t.errorType !== 'none') res.infoClass = `trace-error-${t.errorType}`;
-    return res;
-  }).sort((t1, t2) => {
-    const durationComparison = t2.duration - t1.duration;
-    if (durationComparison === 0) {
-      return t1.traceId.localeCompare(t2.traceId);
-    }
-    return durationComparison;
-  });
+      // groupedTimestamps is keyed by service name, if there are no service names in the trace,
+      // don't try to add data dependent on service names.
+      if (Object.keys(t.groupedTimestamps).length !== 0) {
+        res.serviceSummaries = getServiceSummaries(t.groupedTimestamps);
+
+        // Only add a service percentage when there is a duration for it
+        if (serviceName && duration && t.groupedTimestamps[serviceName]) {
+          const serviceTime = totalDuration(t.groupedTimestamps[serviceName]);
+          // used for display and also client-side sort by service percentage
+          res.servicePercentage = parseInt(
+            (parseFloat(serviceTime) / parseFloat(duration)) * 100,
+            10,
+          );
+        }
+      }
+
+      if (t.errorType !== 'none') res.infoClass = `trace-error-${t.errorType}`;
+      return res;
+    })
+    .sort((t1, t2) => {
+      const durationComparison = t2.duration - t1.duration;
+      if (durationComparison === 0) {
+        return t1.traceId.localeCompare(t2.traceId);
+      }
+      return durationComparison;
+    });
 }
-
 
 function incrementEntry(dict, key) {
   if (dict[key]) {
@@ -233,15 +249,21 @@ function getTraceTimestampAndDuration(root) {
 }
 
 function addLayoutDetails(
-  spanRow, traceTimestamp, traceDuration, depth, childIds,
-) { /* eslint-disable no-param-reassign */
+  spanRow,
+  traceTimestamp,
+  traceDuration,
+  depth,
+  childIds,
+) {
+  /* eslint-disable no-param-reassign */
   spanRow.childIds = childIds;
   spanRow.depth = depth + 1;
   spanRow.depthClass = (depth - 1) % 6;
 
   // Add the correct width and duration string for the span
-  if (spanRow.duration) { // implies traceDuration, as trace duration is derived from spans
-    const width = traceDuration ? spanRow.duration / traceDuration * 100 : 0;
+  if (spanRow.duration) {
+    // implies traceDuration, as trace duration is derived from spans
+    const width = traceDuration ? (spanRow.duration / traceDuration) * 100 : 0;
     spanRow.width = width < 0.1 ? 0.1 : width;
     spanRow.durationStr = mkDurationStr(spanRow.duration); // bubble over the span in trace view
   } else {
@@ -251,12 +273,15 @@ function addLayoutDetails(
 
   if (traceDuration) {
     // position the span at the correct offset in the trace diagram.
-    spanRow.left = ((spanRow.timestamp - traceTimestamp) / traceDuration * 100);
+    spanRow.left = ((spanRow.timestamp - traceTimestamp) / traceDuration) * 100;
 
     // position each annotation at the offset in the trace diagram.
-    spanRow.annotations.forEach((a) => { /* eslint-disable no-param-reassign */
+    spanRow.annotations.forEach((a) => {
+      /* eslint-disable no-param-reassign */
       // left offset here is from the span
-      a.left = spanRow.duration ? ((a.timestamp - spanRow.timestamp) / spanRow.duration * 100) : 0;
+      a.left = spanRow.duration
+        ? ((a.timestamp - spanRow.timestamp) / spanRow.duration) * 100
+        : 0;
       // relative time is for the trace itself
       a.relativeTime = mkDurationStr(a.timestamp - traceTimestamp);
       a.width = 8; // size of the dot
@@ -276,7 +301,8 @@ export function detailedTraceSummary(root, logsUrl) {
   };
 
   const { timestamp, duration } = getTraceTimestampAndDuration(root);
-  if (!timestamp) throw new Error(`Trace ${modelview.traceId} is missing a timestamp`);
+  if (!timestamp)
+    throw new Error(`Trace ${modelview.traceId} is missing a timestamp`);
 
   while (queue.length > 0) {
     let current = queue.shift();
@@ -318,7 +344,9 @@ export function detailedTraceSummary(root, logsUrl) {
     //
     // TODO: We should only do this if it is a leaf span and a client or producer. If we are at the
     // bottom of the tree, it can be helpful to count also against a remote uninstrumented service.
-    spanRow.serviceNames.forEach((serviceName) => incrementEntry(serviceNameToCount, serviceName));
+    spanRow.serviceNames.forEach((serviceName) =>
+      incrementEntry(serviceNameToCount, serviceName),
+    );
 
     modelview.spans.push(spanRow);
   }
@@ -338,13 +366,16 @@ export function detailedTraceSummary(root, logsUrl) {
   modelview.serviceNameAndSpanCounts = Object.keys(serviceNameToCount)
     .sort()
     .map((serviceName) => ({
-      serviceName, spanCount: serviceNameToCount[serviceName],
+      serviceName,
+      spanCount: serviceNameToCount[serviceName],
     }));
 
   // the zoom feature needs backups and timeMarkers regardless of if there is a trace duration
   modelview.spansBackup = modelview.spans;
-  modelview.timeMarkers = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
-    .map((p, index) => ({ index, time: mkDurationStr(duration * p) }));
+  modelview.timeMarkers = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0].map((p, index) => ({
+    index,
+    time: mkDurationStr(duration * p),
+  }));
   modelview.timeMarkersBackup = modelview.timeMarkers;
 
   modelview.duration = duration;

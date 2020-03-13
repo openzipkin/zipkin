@@ -18,9 +18,7 @@ export const spanTagPropTypes = PropTypes.shape({
   value: PropTypes.string.isRequired,
 });
 
-export const spanTagsPropTypes = PropTypes.arrayOf(
-  spanTagPropTypes,
-);
+export const spanTagsPropTypes = PropTypes.arrayOf(spanTagPropTypes);
 
 export const spanAnnotationPropTypes = PropTypes.shape({
   value: PropTypes.string.isRequired,
@@ -54,9 +52,7 @@ export const detailedSpanPropTypes = PropTypes.shape({
   left: PropTypes.number.isRequired,
 });
 
-export const detailedSpansPropTypes = PropTypes.arrayOf(
-  detailedSpanPropTypes,
-);
+export const detailedSpansPropTypes = PropTypes.arrayOf(detailedSpanPropTypes);
 
 export const spanServiceNameSummary = PropTypes.shape({
   serviceName: PropTypes.string.isRequired,
@@ -79,9 +75,7 @@ export const traceSummaryPropTypes = PropTypes.shape({
   width: PropTypes.number.isRequired,
 });
 
-export const traceSummariesPropTypes = PropTypes.arrayOf(
-  traceSummaryPropTypes,
-);
+export const traceSummariesPropTypes = PropTypes.arrayOf(traceSummaryPropTypes);
 
 export const detailedTraceSummaryPropTypes = PropTypes.shape({
   traceId: PropTypes.string.isRequired,
@@ -95,14 +89,16 @@ export const detailedTraceSummaryPropTypes = PropTypes.shape({
   }).isRequired,
 });
 
-export const globalSearchConditionsPropTypes = PropTypes.arrayOf(PropTypes.shape({
-  key: PropTypes.string,
-  value: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.number,
-    PropTypes.shape({}),
-  ]),
-}));
+export const globalSearchConditionsPropTypes = PropTypes.arrayOf(
+  PropTypes.shape({
+    key: PropTypes.string,
+    value: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.number,
+      PropTypes.shape({}),
+    ]),
+  }),
+);
 
 export const globalSearchLookbackConditionPropTypes = PropTypes.shape({
   value: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),

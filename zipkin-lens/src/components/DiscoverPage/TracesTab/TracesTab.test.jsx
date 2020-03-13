@@ -17,7 +17,7 @@ import render from '../../../test/util/render-with-default-settings';
 
 import { TracesTab } from './TracesTab';
 
-jest.mock('./TracesTable', () => () => (<div>TracesTable</div>));
+jest.mock('./TracesTable', () => () => <div>TracesTable</div>);
 
 afterAll(() => {
   jest.restoreAllMocks();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,26 +32,26 @@ const propTypes = {
   endTs: PropTypes.number.isRequired,
 };
 
-const TraceTimeline = React.memo(({
-  currentSpanId,
-  spans,
-  depth,
-  childrenHiddenSpanIds,
-  isRootedTrace,
-  onRowClick,
-  onChildrenToggle,
-  startTs,
-  endTs,
-}) => (
-  <svg
-    version="1.1"
-    xmlns="http://www.w3.org/2000/svg"
-    width="100%"
-    height={`${timelineHeight(spans.length)}px`}
-  >
-    <TimeMarker />
-    {
-      spans.map((span, idx) => (
+const TraceTimeline = React.memo(
+  ({
+    currentSpanId,
+    spans,
+    depth,
+    childrenHiddenSpanIds,
+    isRootedTrace,
+    onRowClick,
+    onChildrenToggle,
+    startTs,
+    endTs,
+  }) => (
+    <svg
+      version="1.1"
+      xmlns="http://www.w3.org/2000/svg"
+      width="100%"
+      height={`${timelineHeight(spans.length)}px`}
+    >
+      <TimeMarker />
+      {spans.map((span, idx) => (
         <TraceTimelineRow
           key={span.spanId}
           span={span}
@@ -61,20 +61,18 @@ const TraceTimeline = React.memo(({
           startTs={startTs}
           endTs={endTs}
         />
-      ))
-    }
-    {
-      isRootedTrace ? (
+      ))}
+      {isRootedTrace ? (
         <TraceTree
           spans={spans}
           depth={depth}
           childrenHiddenSpanIds={childrenHiddenSpanIds}
           onChildrenToggle={onChildrenToggle}
         />
-      ) : null
-    }
-  </svg>
-));
+      ) : null}
+    </svg>
+  ),
+);
 
 TraceTimeline.propTypes = propTypes;
 

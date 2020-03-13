@@ -24,10 +24,7 @@ describe('<SpanAnnotations />', () => {
 
   const span = {
     spanId: '74280ae0c10d8062',
-    serviceNames: [
-      'servicea',
-      'serviceb',
-    ],
+    serviceNames: ['servicea', 'serviceb'],
     annotations: [
       {
         isDerived: true,
@@ -73,9 +70,7 @@ describe('<SpanAnnotations />', () => {
     timestamp: 1470150004074202,
     duration: 94539,
     serviceName: 'serviceb',
-    childIds: [
-      '43210ae0c10d1234',
-    ],
+    childIds: ['43210ae0c10d1234'],
     depth: 3,
     depthClass: 1,
     width: 58.45916966571439,
@@ -85,18 +80,24 @@ describe('<SpanAnnotations />', () => {
 
   it('should not render annotation data when mounted', () => {
     const { queryByTestId } = render(<SpanAnnotations span={span} />);
-    expect(queryByTestId('span-annotations--annotation')).not.toBeInTheDocument();
+    expect(
+      queryByTestId('span-annotations--annotation'),
+    ).not.toBeInTheDocument();
   });
 
-  it('should change the toggle button\'s text when the toggle button is clicked', () => {
+  it("should change the toggle button's text when the toggle button is clicked", () => {
     const { getByTestId } = render(<SpanAnnotations span={span} />);
-    expect(getByTestId('span-annotations--toggle-button'))
-      .toHaveTextContent('show all annotations');
+    expect(getByTestId('span-annotations--toggle-button')).toHaveTextContent(
+      'show all annotations',
+    );
     fireEvent.click(getByTestId('span-annotations--toggle-button'));
-    expect(getByTestId('span-annotations--toggle-button')).toHaveTextContent('hide annotations');
+    expect(getByTestId('span-annotations--toggle-button')).toHaveTextContent(
+      'hide annotations',
+    );
     fireEvent.click(getByTestId('span-annotations--toggle-button'));
-    expect(getByTestId('span-annotations--toggle-button'))
-      .toHaveTextContent('show all annotations');
+    expect(getByTestId('span-annotations--toggle-button')).toHaveTextContent(
+      'show all annotations',
+    );
   });
 
   it('should show the only one annotation data when an annotation circle is clicked', () => {
@@ -105,17 +106,22 @@ describe('<SpanAnnotations />', () => {
     );
     fireEvent.click(getByTestId('span-annotations--toggle-button'));
     expect(queryAllByTestId('span-annotations--annotation')).toHaveLength(4);
-    expect(getByTestId('span-annotations--toggle-button')).toHaveTextContent('hide annotations');
+    expect(getByTestId('span-annotations--toggle-button')).toHaveTextContent(
+      'hide annotations',
+    );
 
     // Click an annotation circle.
     fireEvent.click(getAllByTestId('span-annotation-graph--circle')[0]);
     expect(queryAllByTestId('span-annotations--annotation')).toHaveLength(1);
-    expect(getByTestId('span-annotations--toggle-button'))
-      .toHaveTextContent('show all annotations');
+    expect(getByTestId('span-annotations--toggle-button')).toHaveTextContent(
+      'show all annotations',
+    );
   });
 
   it('should unselect when the same circle is clicked twice', () => {
-    const { getAllByTestId, queryAllByTestId } = render(<SpanAnnotations span={span} />);
+    const { getAllByTestId, queryAllByTestId } = render(
+      <SpanAnnotations span={span} />,
+    );
     fireEvent.click(getAllByTestId('span-annotation-graph--circle')[0]);
     expect(queryAllByTestId('span-annotations--annotation')).toHaveLength(1);
     fireEvent.click(getAllByTestId('span-annotation-graph--circle')[0]);

@@ -11,11 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import useEffectOnce from './useEffectOnce';
-
-const useMount = (f) =>
-  useEffectOnce(() => {
-    f();
-  });
-
-export default useMount;
+module.exports = {
+  arrowParens: 'always',
+  singleQuote: true,
+  trailingComma: 'all',
+};

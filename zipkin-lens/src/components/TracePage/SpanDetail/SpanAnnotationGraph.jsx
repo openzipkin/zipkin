@@ -113,74 +113,69 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const SpanAnnotationGraph = React.memo(({
-  serviceName,
-  annotations,
-  onAnnotationCircleClick,
-  currentAnnotationKey,
-}) => {
-  const classes = useStyles();
+const SpanAnnotationGraph = React.memo(
+  ({
+    serviceName,
+    annotations,
+    onAnnotationCircleClick,
+    currentAnnotationKey,
+  }) => {
+    const classes = useStyles();
 
-  let minTs;
-  let maxTs;
-  if (annotations.length === 0) {
-    minTs = 0;
-    maxTs = 0;
-  } else if (annotations.length === 1) {
-    minTs = annotations[0].timestamp;
-    maxTs = minTs + 1;
-  } else {
-    minTs = minBy(annotations, 'timestamp').timestamp;
-    maxTs = maxBy(annotations, 'timestamp').timestamp;
-  }
+    let minTs;
+    let maxTs;
+    if (annotations.length === 0) {
+      minTs = 0;
+      maxTs = 0;
+    } else if (annotations.length === 1) {
+      minTs = annotations[0].timestamp;
+      maxTs = minTs + 1;
+    } else {
+      minTs = minBy(annotations, 'timestamp').timestamp;
+      maxTs = maxBy(annotations, 'timestamp').timestamp;
+    }
 
-  const duration = maxTs - minTs;
+    const duration = maxTs - minTs;
 
-  return (
-    <Box height="50px" width="100%" display="flex" alignItems="center">
-      <svg width="100%" height={spanBarHeight} className={classes.svg}>
-        <line
-          x1="0%"
-          x2="100%"
-          y1="8px"
-          y2="8px"
-        />
-        <rect
-          x={`${leftOffsetPercent}%`}
-          y="0"
-          width={`${100 - (leftOffsetPercent + rightOffsetPercent)}%`}
-          height={spanBarHeight}
-          rx={2}
-          ry={2}
-          fill={selectServiceColor(serviceName)}
-        />
-        {
-          annotations.map((annotation) => {
+    return (
+      <Box height="50px" width="100%" display="flex" alignItems="center">
+        <svg width="100%" height={spanBarHeight} className={classes.svg}>
+          <line x1="0%" x2="100%" y1="8px" y2="8px" />
+          <rect
+            x={`${leftOffsetPercent}%`}
+            y="0"
+            width={`${100 - (leftOffsetPercent + rightOffsetPercent)}%`}
+            height={spanBarHeight}
+            rx={2}
+            ry={2}
+            fill={selectServiceColor(serviceName)}
+          />
+          {annotations.map((annotation) => {
             const annotationKey = generateAnnotationKey(annotation);
-            const cx = ((100 - (leftOffsetPercent + rightOffsetPercent))
-              * ((annotation.timestamp - minTs) / duration)) + leftOffsetPercent;
+            const cx =
+              (100 - (leftOffsetPercent + rightOffsetPercent)) *
+                ((annotation.timestamp - minTs) / duration) +
+              leftOffsetPercent;
             return (
               <circle
                 key={annotationKey}
                 cx={`${cx}%`}
                 cy="8px"
                 r="6px"
-                className={
-                  classnames(
-                    classes.circle,
-                    { [classes['circle--selected']]: annotationKey === currentAnnotationKey },
-                  )
-                }
+                className={classnames(classes.circle, {
+                  [classes['circle--selected']]:
+                    annotationKey === currentAnnotationKey,
+                })}
                 onClick={() => onAnnotationCircleClick(annotation)}
                 data-testid="span-annotation-graph--circle"
               />
             );
-          })
-        }
-      </svg>
-    </Box>
-  );
-});
+          })}
+        </svg>
+      </Box>
+    );
+  },
+);
 
 SpanAnnotationGraph.propTypes = propTypes;
 SpanAnnotationGraph.defaultProps = defaultProps;

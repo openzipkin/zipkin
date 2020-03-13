@@ -52,16 +52,22 @@ const TagCondition = ({
 }) => {
   const classes = useStyles();
 
-  const handleValueChange = useCallback((event) => {
-    onChange(event.target.value);
-  }, [onChange]);
+  const handleValueChange = useCallback(
+    (event) => {
+      onChange(event.target.value);
+    },
+    [onChange],
+  );
 
-  const handleKeyDown = useCallback((event) => {
-    if (event.key === 'Enter') {
-      valueRef.current.blur();
-      addCondition();
-    }
-  }, [addCondition, valueRef]);
+  const handleKeyDown = useCallback(
+    (event) => {
+      if (event.key === 'Enter') {
+        valueRef.current.blur();
+        addCondition();
+      }
+    },
+    [addCondition, valueRef],
+  );
 
   return (
     <InputBase
@@ -73,7 +79,9 @@ const TagCondition = ({
       onBlur={onBlur}
       onKeyDown={handleKeyDown}
       style={{
-        backgroundColor: isFocused ? theme.palette.primary.main : theme.palette.primary.light,
+        backgroundColor: isFocused
+          ? theme.palette.primary.main
+          : theme.palette.primary.light,
       }}
     />
   );

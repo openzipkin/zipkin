@@ -48,22 +48,32 @@ const SpanAnnotation = React.memo(({ annotation }) => {
       <Paper>
         <Table>
           <TableBody data-testid="span-annotation--table-body">
-            {
-              [
-                { label: i18n._(t`Start Time`), value: formatTimestampMicros(annotation.timestamp) },
-                { label: i18n._(t`Relative Time`), value: annotation.relativeTime },
-                { label: i18n._(t`Address`), value: annotation.endpoint },
-              ].map((e) => (
-                <TableRow key={e.label}>
-                  <TableCell className={classes.cell} data-testid="span-annotation--label">
-                    {e.label}
-                  </TableCell>
-                  <TableCell className={classes.cell} data-testid="span-annotation--value">
-                    {e.value}
-                  </TableCell>
-                </TableRow>
-              ))
-            }
+            {[
+              {
+                label: i18n._(t`Start Time`),
+                value: formatTimestampMicros(annotation.timestamp),
+              },
+              {
+                label: i18n._(t`Relative Time`),
+                value: annotation.relativeTime,
+              },
+              { label: i18n._(t`Address`), value: annotation.endpoint },
+            ].map((e) => (
+              <TableRow key={e.label}>
+                <TableCell
+                  className={classes.cell}
+                  data-testid="span-annotation--label"
+                >
+                  {e.label}
+                </TableCell>
+                <TableCell
+                  className={classes.cell}
+                  data-testid="span-annotation--value"
+                >
+                  {e.value}
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </Paper>

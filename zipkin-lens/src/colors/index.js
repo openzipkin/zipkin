@@ -47,13 +47,15 @@ export const allColors = [
   colors.blueGrey,
 ];
 
-export const allColorThemes = allColors.map((color) => createMuiTheme({
-  palette: {
-    primary: {
-      main: color[500],
+export const allColorThemes = allColors.map((color) =>
+  createMuiTheme({
+    palette: {
+      primary: {
+        main: color[500],
+      },
     },
-  },
-}));
+  }),
+);
 
 /* eslint no-bitwise: ["error", { "allow": ["<<", "|="] }] */
 const generateHash = (str) => {
@@ -61,7 +63,7 @@ const generateHash = (str) => {
   if (str.length === 0) return hash;
   for (let i = 0; i < str.length; i += 1) {
     const c = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + c;
+    hash = (hash << 5) - hash + c;
     hash |= 0; // Convert to 32bit integer
   }
   return Math.abs(hash); // Only positive number.
@@ -72,9 +74,8 @@ export const selectServiceTheme = (serviceName) => {
   return allColorThemes[hash % allColors.length];
 };
 
-export const selectServiceColor = (serviceName) => selectServiceTheme(
-  serviceName,
-).palette.primary.dark;
+export const selectServiceColor = (serviceName) =>
+  selectServiceTheme(serviceName).palette.primary.dark;
 
 export const selectColorByErrorType = (errorType) => {
   switch (errorType) {

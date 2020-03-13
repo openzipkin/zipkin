@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -74,9 +74,11 @@ describe('trace async actions', () => {
     ];
     const store = mockStore({});
 
-    return store.dispatch(actions.loadTrace('d050e0d52326cf81', {})).then(() => {
-      expect(store.getActions()).toEqual(expectedActions);
-    });
+    return store
+      .dispatch(actions.loadTrace('d050e0d52326cf81', {}))
+      .then(() => {
+        expect(store.getActions()).toEqual(expectedActions);
+      });
   });
 
   it('create TRACE_LOAD_SUCCESS when calculating summary has been done', () => {
@@ -91,13 +93,17 @@ describe('trace async actions', () => {
       },
       {
         type: types.TRACE_LOAD_SUCCESS,
-        traceSummary: buildDetailedTraceSummary(correctedTraceMap.d050e0d52326cf81),
+        traceSummary: buildDetailedTraceSummary(
+          correctedTraceMap.d050e0d52326cf81,
+        ),
       },
     ];
     const store = mockStore({});
 
-    return store.dispatch(actions.loadTrace('d050e0d52326cf81', correctedTraceMap)).then(() => {
-      expect(store.getActions()).toEqual(expectedActions);
-    });
+    return store
+      .dispatch(actions.loadTrace('d050e0d52326cf81', correctedTraceMap))
+      .then(() => {
+        expect(store.getActions()).toEqual(expectedActions);
+      });
   });
 });

@@ -41,15 +41,17 @@ describe('<ServiceFilterPopover />', () => {
     const input = within(getByTestId('text-field')).getByRole('textbox');
 
     fireEvent.change(input, { target: { value: 'service-A' } });
-    const updatedInput = await waitForElement(
-      () => within(getByTestId('text-field')).getByRole('textbox'),
+    const updatedInput = await waitForElement(() =>
+      within(getByTestId('text-field')).getByRole('textbox'),
     );
 
     expect(updatedInput.value).toEqual('service-A');
   });
 
   it('should not show filter list when there are not any filters', () => {
-    const { queryByTestId } = render(<ServiceFilterPopover {...props} filters={[]} />);
+    const { queryByTestId } = render(
+      <ServiceFilterPopover {...props} filters={[]} />,
+    );
     expect(queryByTestId('filters')).not.toBeInTheDocument();
   });
 });

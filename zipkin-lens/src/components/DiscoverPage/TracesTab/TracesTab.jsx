@@ -37,10 +37,16 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export const TracesTab = ({ traceSummaries }) => { // Export for testing.
+export const TracesTab = ({ traceSummaries }) => {
+  // Export for testing.
   const classes = useStyles();
-  const allServiceNames = useMemo(() => extractAllServiceNames(traceSummaries), [traceSummaries]);
-  const [sortingMethod, setSortingMethod] = useState(sortingMethods.LONGEST_FIRST);
+  const allServiceNames = useMemo(
+    () => extractAllServiceNames(traceSummaries),
+    [traceSummaries],
+  );
+  const [sortingMethod, setSortingMethod] = useState(
+    sortingMethods.LONGEST_FIRST,
+  );
 
   const handleSortingMethodChange = useCallback((newSortingMethod) => {
     setSortingMethod(newSortingMethod);
@@ -48,28 +54,46 @@ export const TracesTab = ({ traceSummaries }) => { // Export for testing.
 
   const [filters, setFilters] = useState([]);
 
-  const handleAddFilter = useCallback((filter) => {
-    if (!filters.includes(filter)) {
-      setFilters([
-        ...filters,
-        filter,
-      ]);
-    }
-  }, [filters]);
+  const handleAddFilter = useCallback(
+    (filter) => {
+      if (!filters.includes(filter)) {
+        setFilters([...filters, filter]);
+      }
+    },
+    [filters],
+  );
 
-  const handleDeleteFilter = useCallback((filter) => {
-    setFilters(filters.filter((f) => f !== filter));
-  }, [filters]);
+  const handleDeleteFilter = useCallback(
+    (filter) => {
+      setFilters(filters.filter((f) => f !== filter));
+    },
+    [filters],
+  );
 
-  const filteredTraceSummaries = useMemo(() => sortTraceSummaries(
-    filterTraceSummaries(traceSummaries, filters),
-    sortingMethod,
-  ), [filters, traceSummaries, sortingMethod]);
+  const filteredTraceSummaries = useMemo(
+    () =>
+      sortTraceSummaries(
+        filterTraceSummaries(traceSummaries, filters),
+        sortingMethod,
+      ),
+    [filters, traceSummaries, sortingMethod],
+  );
 
   return (
     <Box height="100%" display="flex" flexDirection="column">
-      <Box borderBottom={1} display="flex" justifyContent="space-between" p={1} className={classes.header}>
-        <Box display="flex" alignItems="center" fontSize="1.05rem" data-test="count-results">
+      <Box
+        borderBottom={1}
+        display="flex"
+        justifyContent="space-between"
+        p={1}
+        className={classes.header}
+      >
+        <Box
+          display="flex"
+          alignItems="center"
+          fontSize="1.05rem"
+          data-test="count-results"
+        >
           <Plural
             value={traceSummaries.length}
             one="# Result"
@@ -104,7 +128,4 @@ const mapStateToProps = (state) => ({
 // React-Redux already provides two hooks API, useSelector and useDispatch.
 // However, I think that using them would make tests more complex, so for now
 // I decided to keep using connect API.
-export default connect(
-  mapStateToProps,
-  null,
-)(TracesTab);
+export default connect(mapStateToProps, null)(TracesTab);

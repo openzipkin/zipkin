@@ -38,9 +38,7 @@ const UiConfig = () => {
     <Suspense fallback="Suspended">
       <RawUiConfig>
         <UiConfigConsumer>
-          {(value) => (
-            <div>{JSON.stringify(value)}</div>
-          )}
+          {(value) => <div>{JSON.stringify(value)}</div>}
         </UiConfigConsumer>
       </RawUiConfig>
     </Suspense>

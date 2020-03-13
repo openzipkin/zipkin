@@ -49,7 +49,10 @@ const ExplainBox = React.memo(() => {
         <Trans>Search Traces</Trans>
       </Typography>
       <Typography variant="body1" className={classes.description}>
-        <Trans>Please select criteria in the search bar. Then, click the search button.</Trans>
+        <Trans>
+          Please select criteria in the search bar. Then, click the search
+          button.
+        </Trans>
       </Typography>
     </Box>
   );

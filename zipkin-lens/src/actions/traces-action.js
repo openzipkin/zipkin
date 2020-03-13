@@ -55,7 +55,10 @@ const calculateTraceSummaries = async (traces, serviceName) => {
     correctedTraceMap[traceId] = trace;
   });
 
-  const traceSummaries = buildTraceSummaries(serviceName, correctedTraces.map(buildTraceSummary));
+  const traceSummaries = buildTraceSummaries(
+    serviceName,
+    correctedTraces.map(buildTraceSummary),
+  );
 
   return {
     traceSummaries,
@@ -75,12 +78,14 @@ export const loadTraces = (params) => async (dispatch) => {
     }
     const traces = await res.json();
 
-    const {
-      traceSummaries,
-      correctedTraceMap,
-    } = await calculateTraceSummaries(traces, query.serviceName);
+    const { traceSummaries, correctedTraceMap } = await calculateTraceSummaries(
+      traces,
+      query.serviceName,
+    );
 
-    dispatch(loadTracesSuccess(traces, traceSummaries, correctedTraceMap, params));
+    dispatch(
+      loadTracesSuccess(traces, traceSummaries, correctedTraceMap, params),
+    );
   } catch (err) {
     dispatch(loadTracesFailure());
   }

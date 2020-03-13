@@ -59,14 +59,17 @@ const LanguageSelector = () => {
 
   const currentLocale = i18n.locale;
 
-  const onLanguageClick = useCallback((e) => {
-    const { locale } = e.currentTarget.dataset;
-    if (locale === currentLocale) {
-      return;
-    }
-    setLocale(locale);
-    window.location.reload();
-  }, [currentLocale]);
+  const onLanguageClick = useCallback(
+    (e) => {
+      const { locale } = e.currentTarget.dataset;
+      if (locale === currentLocale) {
+        return;
+      }
+      setLocale(locale);
+      window.location.reload();
+    },
+    [currentLocale],
+  );
 
   return (
     <>

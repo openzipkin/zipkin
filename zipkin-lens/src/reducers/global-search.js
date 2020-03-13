@@ -55,10 +55,7 @@ const createGlobalSearch = (config) => {
         };
         return {
           ...state,
-          conditions: [
-            ...state.conditions,
-            newCondition,
-          ],
+          conditions: [...state.conditions, newCondition],
         };
       }
       case types.GLOBAL_SEARCH_DELETE_CONDITION: {

@@ -19,9 +19,8 @@ import {
 } from './util';
 
 describe('sortTraceSummaries', () => {
-  const pairsToTraceSummaries = (pairs) => pairs.map(
-    (pair) => ({ duration: pair[0], timestamp: pair[1] }),
-  );
+  const pairsToTraceSummaries = (pairs) =>
+    pairs.map((pair) => ({ duration: pair[0], timestamp: pair[1] }));
 
   const input = pairsToTraceSummaries([
     [1, 3], // [duration, timestamp]
@@ -30,75 +29,89 @@ describe('sortTraceSummaries', () => {
   ]);
 
   it('LONGEST_FIRST', () => {
-    expect(sortTraceSummaries(input, sortingMethods.LONGEST_FIRST)).toEqual(pairsToTraceSummaries([
-      [3, 2],
-      [2, 1],
-      [1, 3],
-    ]));
+    expect(sortTraceSummaries(input, sortingMethods.LONGEST_FIRST)).toEqual(
+      pairsToTraceSummaries([
+        [3, 2],
+        [2, 1],
+        [1, 3],
+      ]),
+    );
     // original traceSummaries should not be changed.
-    expect(input).toEqual(pairsToTraceSummaries([
-      [1, 3],
-      [3, 2],
-      [2, 1],
-    ]));
+    expect(input).toEqual(
+      pairsToTraceSummaries([
+        [1, 3],
+        [3, 2],
+        [2, 1],
+      ]),
+    );
   });
 
   it('SHORTEST', () => {
-    expect(sortTraceSummaries(input, sortingMethods.SHORTEST_FIRST)).toEqual(pairsToTraceSummaries([
-      [1, 3],
-      [2, 1],
-      [3, 2],
-    ]));
+    expect(sortTraceSummaries(input, sortingMethods.SHORTEST_FIRST)).toEqual(
+      pairsToTraceSummaries([
+        [1, 3],
+        [2, 1],
+        [3, 2],
+      ]),
+    );
   });
 
   it('NEWEST', () => {
-    expect(sortTraceSummaries(input, sortingMethods.NEWEST_FIRST)).toEqual(pairsToTraceSummaries([
-      [1, 3],
-      [3, 2],
-      [2, 1],
-    ]));
+    expect(sortTraceSummaries(input, sortingMethods.NEWEST_FIRST)).toEqual(
+      pairsToTraceSummaries([
+        [1, 3],
+        [3, 2],
+        [2, 1],
+      ]),
+    );
   });
 
   it('OLDEST', () => {
-    expect(sortTraceSummaries(input, sortingMethods.OLDEST_FIRST)).toEqual(pairsToTraceSummaries([
-      [2, 1],
-      [3, 2],
-      [1, 3],
-    ]));
+    expect(sortTraceSummaries(input, sortingMethods.OLDEST_FIRST)).toEqual(
+      pairsToTraceSummaries([
+        [2, 1],
+        [3, 2],
+        [1, 3],
+      ]),
+    );
   });
 
   it('otherwise', () => {
-    expect(sortTraceSummaries(input, 'OTHERWISE')).toEqual(pairsToTraceSummaries([
-      [1, 3],
-      [3, 2],
-      [2, 1],
-    ]));
+    expect(sortTraceSummaries(input, 'OTHERWISE')).toEqual(
+      pairsToTraceSummaries([
+        [1, 3],
+        [3, 2],
+        [2, 1],
+      ]),
+    );
   });
 });
 
 describe('extractAllServiceNames', () => {
   it('should return all service names', () => {
-    expect(extractAllServiceNames([
-      {
-        serviceSummaries: [
-          { serviceName: 'service-A' },
-          { serviceName: 'service-B' },
-        ],
-      },
-      {
-        serviceSummaries: [
-          { serviceName: 'service-C' },
-          { serviceName: 'service-D' },
-        ],
-      },
-      {
-        serviceSummaries: [
-          { serviceName: 'service-B' },
-          { serviceName: 'service-E' },
-          { serviceName: 'service-A' },
-        ],
-      },
-    ])).toEqual([
+    expect(
+      extractAllServiceNames([
+        {
+          serviceSummaries: [
+            { serviceName: 'service-A' },
+            { serviceName: 'service-B' },
+          ],
+        },
+        {
+          serviceSummaries: [
+            { serviceName: 'service-C' },
+            { serviceName: 'service-D' },
+          ],
+        },
+        {
+          serviceSummaries: [
+            { serviceName: 'service-B' },
+            { serviceName: 'service-E' },
+            { serviceName: 'service-A' },
+          ],
+        },
+      ]),
+    ).toEqual([
       'service-A',
       'service-B',
       'service-C',
@@ -137,9 +150,7 @@ describe('filterTraceSummaries', () => {
         ],
       },
       {
-        serviceSummaries: [
-          { serviceName: 'service-G' },
-        ],
+        serviceSummaries: [{ serviceName: 'service-G' }],
       },
       {
         serviceSummaries: [
@@ -149,7 +160,9 @@ describe('filterTraceSummaries', () => {
         ],
       },
     ];
-    expect(filterTraceSummaries(traceSummaries, ['service-A', 'service-B'])).toEqual([
+    expect(
+      filterTraceSummaries(traceSummaries, ['service-A', 'service-B']),
+    ).toEqual([
       {
         serviceSummaries: [
           { serviceName: 'service-A' },

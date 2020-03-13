@@ -38,7 +38,9 @@ describe('<TracesTableHead />', () => {
       const startTimeCell = getByTestId('start-time');
       fireEvent.click(startTimeCell);
       expect(onSortingMethodChange).toHaveBeenCalledTimes(1);
-      expect(onSortingMethodChange).toHaveBeenCalledWith(sortingMethods.NEWEST_FIRST);
+      expect(onSortingMethodChange).toHaveBeenCalledWith(
+        sortingMethods.NEWEST_FIRST,
+      );
     });
 
     it('StartTime cell Newest -> StartTime cell Oldest', () => {
@@ -52,7 +54,9 @@ describe('<TracesTableHead />', () => {
       const startTimeCell = getByTestId('start-time');
       fireEvent.click(startTimeCell);
       expect(onSortingMethodChange).toHaveBeenCalledTimes(1);
-      expect(onSortingMethodChange).toHaveBeenCalledWith(sortingMethods.OLDEST_FIRST);
+      expect(onSortingMethodChange).toHaveBeenCalledWith(
+        sortingMethods.OLDEST_FIRST,
+      );
     });
 
     it('Duration cell Longest -> Duration cell Shortest', () => {
@@ -66,7 +70,9 @@ describe('<TracesTableHead />', () => {
       const durationCell = getByTestId('duration');
       fireEvent.click(durationCell);
       expect(onSortingMethodChange).toHaveBeenCalledTimes(1);
-      expect(onSortingMethodChange).toHaveBeenCalledWith(sortingMethods.SHORTEST_FIRST);
+      expect(onSortingMethodChange).toHaveBeenCalledWith(
+        sortingMethods.SHORTEST_FIRST,
+      );
     });
 
     it('StartTime cell -> Duration cell', () => {
@@ -80,7 +86,9 @@ describe('<TracesTableHead />', () => {
       const durationCell = getByTestId('duration');
       fireEvent.click(durationCell);
       expect(onSortingMethodChange).toHaveBeenCalledTimes(1);
-      expect(onSortingMethodChange).toHaveBeenCalledWith(sortingMethods.LONGEST_FIRST);
+      expect(onSortingMethodChange).toHaveBeenCalledWith(
+        sortingMethods.LONGEST_FIRST,
+      );
     });
   });
 });

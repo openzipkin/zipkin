@@ -29,7 +29,8 @@ class ClockSkew {
   }
 }
 
-export function ipsMatch(a, b) { // export for testing
+export function ipsMatch(a, b) {
+  // export for testing
   if (!a || !b) return false;
   if (a.ipv6 && b.ipv6 && a.ipv6 === b.ipv6) {
     return true;
@@ -57,7 +58,8 @@ function adjustTimestamps(span, skew) {
 }
 
 /* Uses span kind to determine if there's clock skew. */
-export function getClockSkew(node) { // export for testing
+export function getClockSkew(node) {
+  // export for testing
   const parent = node.parent ? node.parent.span : undefined;
   const child = node.span;
   if (!parent) return undefined;
@@ -161,7 +163,9 @@ export function treeCorrectedForClockSkew(spans, debug = false) {
     if (debug) {
       /* eslint-disable no-console */
       const prefix = 'skipping redundant root span';
-      console.log(`${prefix}: traceId=${traceId}, rootSpanId=${rootSpanId}, spanId=${spanId}`);
+      console.log(
+        `${prefix}: traceId=${traceId}, rootSpanId=${rootSpanId}, spanId=${spanId}`,
+      );
     }
     return trace;
   }

@@ -29,7 +29,8 @@ describe('buildCommonQueryParameters', () => {
         { key: 'spanName', value: 'spanA' },
         { key: 'minDuration', value: 10 },
         { key: 'maxDuration', value: 100 },
-      ], {
+      ],
+      {
         value: '1h',
       },
       15,
@@ -55,7 +56,8 @@ describe('buildCommonQueryParameters', () => {
         { key: 'spanName', value: 'spanA' },
         { key: 'minDuration', value: 10 },
         { key: 'maxDuration', value: 100 },
-      ], {
+      ],
+      {
         value: 'custom',
         endTs: 1547098357716,
         startTs: 1547098357701,
@@ -84,7 +86,8 @@ describe('buildCommonQueryParameters', () => {
         { key: 'spanName', value: 'spanA' },
         { key: 'minDuration', value: 10 },
         { key: 'maxDuration', value: 100 },
-      ], {
+      ],
+      {
         value: '1h',
         endTs: 1547098357716,
       },
@@ -104,9 +107,8 @@ describe('buildCommonQueryParameters', () => {
 
   it('should return right query parameters with a tags', () => {
     const queryParameters = buildCommonQueryParameters(
-      [
-        { key: 'tags', value: 'key=value' },
-      ], {
+      [{ key: 'tags', value: 'key=value' }],
+      {
         value: '1h',
       },
       15,
@@ -126,7 +128,8 @@ describe('buildCommonQueryParameters', () => {
         { key: 'tags', value: 'key1=value1' },
         { key: 'tags', value: 'key2' }, // no value
         { key: 'tags', value: 'key3=value3' },
-      ], {
+      ],
+      {
         value: '1h',
       },
       15,
@@ -150,7 +153,8 @@ describe('buildTracesApiQueryParameters', () => {
         { key: 'spanName', value: 'spanA' },
         { key: 'minDuration', value: 10 },
         { key: 'maxDuration', value: 100 },
-      ], {
+      ],
+      {
         value: 3600000,
       },
       15,
@@ -176,7 +180,8 @@ describe('buildTracesApiQueryParameters', () => {
         { key: 'spanName', value: 'spanA' },
         { key: 'minDuration', value: 10 },
         { key: 'maxDuration', value: 100 },
-      ], {
+      ],
+      {
         value: 'custom',
         endTs: 1547098357716,
         startTs: 1547098357710, // lookback == 6
@@ -204,7 +209,8 @@ describe('buildTracesApiQueryParameters', () => {
         { key: 'spanName', value: 'spanA' },
         { key: 'minDuration', value: 10 },
         { key: 'maxDuration', value: 100 },
-      ], {
+      ],
+      {
         value: 3600000,
         endTs: 1547098357716,
       },
@@ -226,9 +232,11 @@ describe('buildTracesApiQueryParameters', () => {
     const apiQueryParameters = buildTracesApiQueryParameters(
       [
         {
-          key: 'tags', value: 'key1=value1 and key2 and key3=value3',
+          key: 'tags',
+          value: 'key1=value1 and key2 and key3=value3',
         },
-      ], {
+      ],
+      {
         value: 3600000,
       },
       15,
@@ -273,12 +281,10 @@ describe('buildDependenciesApiQueryParameters', () => {
   });
 
   it('should return right query parameters when the currentTs is not specified', () => {
-    const apiQueryParameters = buildDependenciesApiQueryParameters(
-      {
-        value: 3600000,
-        endTs: 1547098357716,
-      },
-    );
+    const apiQueryParameters = buildDependenciesApiQueryParameters({
+      value: 3600000,
+      endTs: 1547098357716,
+    });
     expect(apiQueryParameters).toEqual({
       endTs: 1547098357716,
       lookback: 3600000,
@@ -288,52 +294,64 @@ describe('buildDependenciesApiQueryParameters', () => {
 
 describe('extractConditionsFromQueryParameters', () => {
   it('should return right conditions', () => {
-    const { conditions } = extractConditionsFromQueryParameters({
-      serviceName: 'serviceA',
-      remoteServiceName: 'serviceB',
-      spanName: 'spanA',
-      minDuration: '10',
-      maxDuration: '100',
-      tags: 'key1=value1 and key2 and key3=value3',
-    }, []);
-    expect(conditions.sort()).toEqual([
-      { key: 'serviceName', value: 'serviceA' },
-      { key: 'remoteServiceName', value: 'serviceB' },
-      { key: 'spanName', value: 'spanA' },
-      { key: 'minDuration', value: 10 },
-      { key: 'maxDuration', value: 100 },
-      { key: 'tags', value: 'key1=value1' },
-      { key: 'tags', value: 'key2' },
-      { key: 'tags', value: 'key3=value3' },
-    ].sort());
+    const { conditions } = extractConditionsFromQueryParameters(
+      {
+        serviceName: 'serviceA',
+        remoteServiceName: 'serviceB',
+        spanName: 'spanA',
+        minDuration: '10',
+        maxDuration: '100',
+        tags: 'key1=value1 and key2 and key3=value3',
+      },
+      [],
+    );
+    expect(conditions.sort()).toEqual(
+      [
+        { key: 'serviceName', value: 'serviceA' },
+        { key: 'remoteServiceName', value: 'serviceB' },
+        { key: 'spanName', value: 'spanA' },
+        { key: 'minDuration', value: 10 },
+        { key: 'maxDuration', value: 100 },
+        { key: 'tags', value: 'key1=value1' },
+        { key: 'tags', value: 'key2' },
+        { key: 'tags', value: 'key3=value3' },
+      ].sort(),
+    );
   });
 
   it('should return right conditions with autocompleteTags', () => {
-    const { conditions } = extractConditionsFromQueryParameters({
-      serviceName: 'serviceA',
-      remoteServiceName: 'serviceB',
-      spanName: 'spanA',
-      minDuration: '10',
-      maxDuration: '100',
-      tags: 'key1=value1 and key2 and key3=value3',
-      autocompleteTags: 'key4=value4 and key5=value5',
-    }, []);
-    expect(conditions.sort()).toEqual([
-      { key: 'serviceName', value: 'serviceA' },
-      { key: 'remoteServiceName', value: 'serviceB' },
-      { key: 'spanName', value: 'spanA' },
-      { key: 'minDuration', value: 10 },
-      { key: 'maxDuration', value: 100 },
-      { key: 'tags', value: 'key1=value1' },
-      { key: 'tags', value: 'key2' },
-      { key: 'tags', value: 'key3=value3' },
-      { key: 'key4', value: 'value4' },
-      { key: 'key5', value: 'value5' },
-    ].sort());
+    const { conditions } = extractConditionsFromQueryParameters(
+      {
+        serviceName: 'serviceA',
+        remoteServiceName: 'serviceB',
+        spanName: 'spanA',
+        minDuration: '10',
+        maxDuration: '100',
+        tags: 'key1=value1 and key2 and key3=value3',
+        autocompleteTags: 'key4=value4 and key5=value5',
+      },
+      [],
+    );
+    expect(conditions.sort()).toEqual(
+      [
+        { key: 'serviceName', value: 'serviceA' },
+        { key: 'remoteServiceName', value: 'serviceB' },
+        { key: 'spanName', value: 'spanA' },
+        { key: 'minDuration', value: 10 },
+        { key: 'maxDuration', value: 100 },
+        { key: 'tags', value: 'key1=value1' },
+        { key: 'tags', value: 'key2' },
+        { key: 'tags', value: 'key3=value3' },
+        { key: 'key4', value: 'value4' },
+        { key: 'key5', value: 'value5' },
+      ].sort(),
+    );
   });
 
   it('should return the right limit condition', () => {
-    const { limitCondition } = extractConditionsFromQueryParameters({ limit: '15' });
+    const { limitCondition } = extractConditionsFromQueryParameters({
+      limit: '15',
+    });
     expect(limitCondition).toEqual(15);
   });
 

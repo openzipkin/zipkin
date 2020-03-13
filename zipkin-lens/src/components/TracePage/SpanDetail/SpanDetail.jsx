@@ -85,21 +85,17 @@ const SpanDetail = React.memo(({ span, minHeight }) => {
 
   const spanIds = (
     <Box className={classes.spanIds}>
-      {
-        [
-          { label: i18n._(t`Span ID`), value: span.spanId },
-          { label: i18n._(t`Parent ID`), value: span.parentId },
-        ].map((entry) => (
-          <Box className={classes.spanIdEntry}>
-            <Box className={classes.spanIdLabel}>
-              {`${entry.label}:`}
-            </Box>
-            <Box className={classes.spanIdValue}>
-              {entry.value || <Trans>None</Trans>}
-            </Box>
+      {[
+        { label: i18n._(t`Span ID`), value: span.spanId },
+        { label: i18n._(t`Parent ID`), value: span.parentId },
+      ].map((entry) => (
+        <Box className={classes.spanIdEntry}>
+          <Box className={classes.spanIdLabel}>{`${entry.label}:`}</Box>
+          <Box className={classes.spanIdValue}>
+            {entry.value || <Trans>None</Trans>}
           </Box>
-        ))
-      }
+        </Box>
+      ))}
     </Box>
   );
 

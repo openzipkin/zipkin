@@ -90,9 +90,10 @@ const ServiceFilterPopover = ({
   const handleTextChange = (e) => setFilterText(e.target.value);
 
   const filteredServiceNames = useMemo(
-    () => allServiceNames
-      .filter((serviceName) => !filters.includes(serviceName))
-      .filter((serviceName) => serviceName.includes(filterText)),
+    () =>
+      allServiceNames
+        .filter((serviceName) => !filters.includes(serviceName))
+        .filter((serviceName) => serviceName.includes(filterText)),
     [allServiceNames, filters, filterText],
   );
 
@@ -119,29 +120,28 @@ const ServiceFilterPopover = ({
           data-testid="text-field"
         />
       </Box>
-      {
-        filters.length > 0
-          ? (
-            <Box className={classes.filters} data-testid="filters">
-              {
-                filters.map((filter) => (
-                  <Box className={classes.badgeWrapper} key={filter}>
-                    <ServiceBadge serviceName={filter} onDelete={() => onDeleteFilter(filter)} />
-                  </Box>
-                ))
-              }
+      {filters.length > 0 ? (
+        <Box className={classes.filters} data-testid="filters">
+          {filters.map((filter) => (
+            <Box className={classes.badgeWrapper} key={filter}>
+              <ServiceBadge
+                serviceName={filter}
+                onDelete={() => onDeleteFilter(filter)}
+              />
             </Box>
-          )
-          : null
-      }
+          ))}
+        </Box>
+      ) : null}
       <List className={classes.serviceList}>
-        {
-          filteredServiceNames.map((serviceName) => (
-            <ListItem button onClick={() => onAddFilter(serviceName)} key={serviceName}>
-              <ListItemText primary={serviceName} />
-            </ListItem>
-          ))
-        }
+        {filteredServiceNames.map((serviceName) => (
+          <ListItem
+            button
+            onClick={() => onAddFilter(serviceName)}
+            key={serviceName}
+          >
+            <ListItemText primary={serviceName} />
+          </ListItem>
+        ))}
       </List>
     </Popover>
   );

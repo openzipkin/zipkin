@@ -25,7 +25,9 @@ describe('<TraceIdSearchInput />', () => {
   });
 
   it('should render Tooltip when hovered', async () => {
-    const { findByText, getByTestId } = render(<TraceIdSearchInputImpl history={history} />);
+    const { findByText, getByTestId } = render(
+      <TraceIdSearchInputImpl history={history} />,
+    );
     fireEvent.mouseEnter(getByTestId('search-input-text'));
 
     const tooltipText = await findByText('Search by Trace ID');
@@ -33,12 +35,16 @@ describe('<TraceIdSearchInput />', () => {
   });
 
   it('should render TextField', () => {
-    const { getByTestId } = render(<TraceIdSearchInputImpl history={history} />);
+    const { getByTestId } = render(
+      <TraceIdSearchInputImpl history={history} />,
+    );
     expect(getByTestId('search-input-text')).toBeInTheDocument();
   });
 
   it('should call push when Enter is pushed', () => {
-    const { getByTestId } = render(<TraceIdSearchInputImpl history={history} />);
+    const { getByTestId } = render(
+      <TraceIdSearchInputImpl history={history} />,
+    );
 
     const input = getByTestId('search-input-text');
     fireEvent.keyDown(input, { key: 'Enter' });

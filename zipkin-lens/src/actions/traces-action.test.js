@@ -18,7 +18,11 @@ import fetchMock from 'fetch-mock';
 import * as actions from './traces-action';
 import * as types from '../constants/action-types';
 import * as api from '../constants/api';
-import { traceSummary as buildTraceSummary, traceSummaries as buildTraceSummaries, treeCorrectedForClockSkew } from '../zipkin';
+import {
+  traceSummary as buildTraceSummary,
+  traceSummaries as buildTraceSummaries,
+  treeCorrectedForClockSkew,
+} from '../zipkin';
 
 const middlewares = [thunk];
 const mockStore = configureMockStore(middlewares);
@@ -65,7 +69,10 @@ describe('traces async actions', () => {
       const [{ traceId }] = rawTraces[index];
       correctedTraceMap[traceId] = trace;
     });
-    const traceSummaries = buildTraceSummaries(null, correctedTraces.map(buildTraceSummary));
+    const traceSummaries = buildTraceSummaries(
+      null,
+      correctedTraces.map(buildTraceSummary),
+    );
 
     const expectedActions = [
       {
@@ -84,12 +91,16 @@ describe('traces async actions', () => {
     ];
     const store = mockStore({});
 
-    return store.dispatch(actions.loadTraces({
-      serviceName: 'serviceA',
-      spanName: 'span1',
-    })).then(() => {
-      expect(store.getActions()).toEqual(expectedActions);
-    });
+    return store
+      .dispatch(
+        actions.loadTraces({
+          serviceName: 'serviceA',
+          spanName: 'span1',
+        }),
+      )
+      .then(() => {
+        expect(store.getActions()).toEqual(expectedActions);
+      });
   });
 
   it('clearTraces dispatches action', () => {

@@ -17,8 +17,5 @@ import thunk from 'redux-thunk';
 import createReducer from '../reducers';
 
 export default function configureStore(config) {
-  return createStore(
-    createReducer(config),
-    applyMiddleware(thunk),
-  );
+  return createStore(createReducer(config), applyMiddleware(thunk));
 }

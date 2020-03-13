@@ -19,7 +19,9 @@ import fetchResource from '../../util/fetch-resource';
 
 const ConfigContext = React.createContext();
 
-const configResource = fetchResource(fetch(UI_CONFIG).then((response) => response.json()));
+const configResource = fetchResource(
+  fetch(UI_CONFIG).then((response) => response.json()),
+);
 
 const propTypes = {
   children: PropTypes.element.isRequired,
@@ -43,9 +45,7 @@ export const UiConfig = ({ children }) => {
   });
 
   return (
-    <ConfigContext.Provider value={response}>
-      {children}
-    </ConfigContext.Provider>
+    <ConfigContext.Provider value={response}>{children}</ConfigContext.Provider>
   );
 };
 

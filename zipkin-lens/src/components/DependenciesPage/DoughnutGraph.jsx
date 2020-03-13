@@ -42,10 +42,14 @@ const propTypes = {
 
 const DoughnutGraph = React.memo(({ edgeNames, edgeData }) => {
   const classes = useStyles();
-  const data = useMemo(() => edgeNames.map((name, index) => ({
-    name,
-    value: edgeData[index],
-  })), [edgeNames, edgeData]);
+  const data = useMemo(
+    () =>
+      edgeNames.map((name, index) => ({
+        name,
+        value: edgeData[index],
+      })),
+    [edgeNames, edgeData],
+  );
 
   const renderLabel = useCallback(({ index }) => data[index].name, [data]);
 
@@ -53,27 +57,26 @@ const DoughnutGraph = React.memo(({ edgeNames, edgeData }) => {
     <Box className={classes.root}>
       <Box className={classes.content}>
         <AutoSizer>
-          {
-            ({ width }) => (
-              <PieChart width={width} height={width}>
-                <Pie
-                  data={data}
-                  nameKey="name"
-                  dataKey="value"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={60}
-                  label={renderLabel}
-                >
-                  {
-                    data.map((entry) => (
-                      <Cell key={entry.name} fill={selectServiceColor(entry.name)} />
-                    ))
-                  }
-                </Pie>
-              </PieChart>
-            )
-          }
+          {({ width }) => (
+            <PieChart width={width} height={width}>
+              <Pie
+                data={data}
+                nameKey="name"
+                dataKey="value"
+                cx="50%"
+                cy="50%"
+                outerRadius={60}
+                label={renderLabel}
+              >
+                {data.map((entry) => (
+                  <Cell
+                    key={entry.name}
+                    fill={selectServiceColor(entry.name)}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+          )}
         </AutoSizer>
       </Box>
     </Box>

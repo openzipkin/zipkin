@@ -169,7 +169,11 @@ export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
   // |
   // |---B
   horizontalLineDataList.push({ x: spans[0].depth, y: 0 });
-  serviceNameDataList.push({ x: spans[0].depth, y: 0, serviceName: spans[0].serviceName });
+  serviceNameDataList.push({
+    x: spans[0].depth,
+    y: 0,
+    serviceName: spans[0].serviceName,
+  });
   if (childrenHiddenSpanIds[spans[0].spanId]) {
     buttonDataList.push({
       x: spans[0].depth,
@@ -239,24 +243,22 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const TraceTree = React.memo(({
-  spans,
-  depth,
-  childrenHiddenSpanIds,
-  onChildrenToggle,
-}) => {
-  const classes = useStyles();
-  const {
-    horizontalLineDataList,
-    verticalLineDataList,
-    buttonDataList,
-    serviceNameDataList,
-  } = useMemo(() => buildTraceTree(spans, childrenHiddenSpanIds), [spans, childrenHiddenSpanIds]);
+const TraceTree = React.memo(
+  ({ spans, depth, childrenHiddenSpanIds, onChildrenToggle }) => {
+    const classes = useStyles();
+    const {
+      horizontalLineDataList,
+      verticalLineDataList,
+      buttonDataList,
+      serviceNameDataList,
+    } = useMemo(() => buildTraceTree(spans, childrenHiddenSpanIds), [
+      spans,
+      childrenHiddenSpanIds,
+    ]);
 
-  return (
-    <g>
-      {
-        horizontalLineDataList.map(({ x, y }) => (
+    return (
+      <g>
+        {horizontalLineDataList.map(({ x, y }) => (
           <line
             key={`${x}-${y}`}
             x1={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
@@ -265,10 +267,8 @@ const TraceTree = React.memo(({
             y2={spanBarLinePosY(y)}
             className={classes.line}
           />
-        ))
-      }
-      {
-        serviceNameDataList.map(({ x, y, serviceName }) => (
+        ))}
+        {serviceNameDataList.map(({ x, y, serviceName }) => (
           <g transform={serviceNameBadgeTranslate} key={`${x}-${y}`}>
             <svg
               x={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
@@ -297,10 +297,8 @@ const TraceTree = React.memo(({
               </text>
             </svg>
           </g>
-        ))
-      }
-      {
-        verticalLineDataList.map(({ x, y1, y2 }) => (
+        ))}
+        {verticalLineDataList.map(({ x, y1, y2 }) => (
           <line
             key={`${x}-${y1}-${y2}`}
             x1={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
@@ -309,15 +307,8 @@ const TraceTree = React.memo(({
             y2={spanBarLinePosY(y2)}
             className={classes.line}
           />
-        ))
-      }
-      {
-        buttonDataList.map(({
-          x,
-          y,
-          spanId,
-          isClosed,
-        }) => (
+        ))}
+        {buttonDataList.map(({ x, y, spanId, isClosed }) => (
           <g key={spanId} transform={spanToggleButtonTranslate}>
             <rect
               rx={2}
@@ -339,16 +330,14 @@ const TraceTree = React.memo(({
                 y1={spanToggleButtonLengthOfSide / 2}
                 y2={spanToggleButtonLengthOfSide / 2}
               />
-              {
-                isClosed ? (
-                  <line
-                    x1={spanToggleButtonLengthOfSide / 2}
-                    x2={spanToggleButtonLengthOfSide / 2}
-                    y1={0}
-                    y2={spanToggleButtonLengthOfSide}
-                  />
-                ) : null
-              }
+              {isClosed ? (
+                <line
+                  x1={spanToggleButtonLengthOfSide / 2}
+                  x2={spanToggleButtonLengthOfSide / 2}
+                  y1={0}
+                  y2={spanToggleButtonLengthOfSide}
+                />
+              ) : null}
             </svg>
             <rect
               rx={2}
@@ -361,11 +350,11 @@ const TraceTree = React.memo(({
               className={classes.spanToggleButton}
             />
           </g>
-        ))
-      }
-    </g>
-  );
-});
+        ))}
+      </g>
+    );
+  },
+);
 
 TraceTree.propTypes = propTypes;
 

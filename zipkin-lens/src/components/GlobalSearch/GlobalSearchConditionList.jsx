@@ -20,7 +20,10 @@ import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 
-import { retrieveNextConditionKey, retrieveDefaultConditionValue } from './util';
+import {
+  retrieveNextConditionKey,
+  retrieveDefaultConditionValue,
+} from './util';
 import GlobalSearchCondition from './GlobalSearchCondition';
 import { addCondition } from '../../actions/global-search-action';
 
@@ -44,20 +47,26 @@ const GlobalSearchConditionList = () => {
   const dispatch = useDispatch();
 
   const conditions = useSelector((state) => state.globalSearch.conditions);
-  const autocompleteKeys = useSelector((state) => state.autocompleteKeys.autocompleteKeys);
-
-  const addNewCondition = useCallback(
-    () => {
-      const nextConditionKey = retrieveNextConditionKey(conditions, autocompleteKeys);
-      dispatch(addCondition({
-        key: nextConditionKey,
-        value: retrieveDefaultConditionValue(nextConditionKey),
-      }));
-    },
-    [autocompleteKeys, conditions, dispatch],
+  const autocompleteKeys = useSelector(
+    (state) => state.autocompleteKeys.autocompleteKeys,
   );
 
-  const handleAddButtonClick = useMemo(() => addNewCondition, [addNewCondition]);
+  const addNewCondition = useCallback(() => {
+    const nextConditionKey = retrieveNextConditionKey(
+      conditions,
+      autocompleteKeys,
+    );
+    dispatch(
+      addCondition({
+        key: nextConditionKey,
+        value: retrieveDefaultConditionValue(nextConditionKey),
+      }),
+    );
+  }, [autocompleteKeys, conditions, dispatch]);
+
+  const handleAddButtonClick = useMemo(() => addNewCondition, [
+    addNewCondition,
+  ]);
 
   return (
     <Box
@@ -75,23 +84,21 @@ const GlobalSearchConditionList = () => {
         px={0.75}
         py={0.5}
       >
-        {
-          conditions.length === 0
-            ? (
-              <Box>
-                <Trans>Please select the criteria for your trace lookup</Trans>
-              </Box>
-            )
-            : conditions.map((condition, conditionIndex) => (
-              <Box m={0.25}>
-                <GlobalSearchCondition
-                  conditionIndex={conditionIndex}
-                  key={condition._id}
-                  addCondition={addNewCondition}
-                />
-              </Box>
-            ))
-        }
+        {conditions.length === 0 ? (
+          <Box>
+            <Trans>Please select the criteria for your trace lookup</Trans>
+          </Box>
+        ) : (
+          conditions.map((condition, conditionIndex) => (
+            <Box m={0.25}>
+              <GlobalSearchCondition
+                conditionIndex={conditionIndex}
+                key={condition._id}
+                addCondition={addNewCondition}
+              />
+            </Box>
+          ))
+        )}
         <Box m={0.25}>
           <Button
             color="primary"

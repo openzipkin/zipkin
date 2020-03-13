@@ -100,9 +100,10 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
   const { i18n } = useLingui();
   const config = useUiConfig();
 
-  const logsUrl = (config.logsUrl && traceSummary)
-    ? config.logsUrl.replace('{traceId}', traceSummary.traceId)
-    : undefined;
+  const logsUrl =
+    config.logsUrl && traceSummary
+      ? config.logsUrl.replace('{traceId}', traceSummary.traceId)
+      : undefined;
 
   const handleSaveButtonClick = useCallback(() => {
     if (!traceSummary || !traceSummary.traceId) {
@@ -124,48 +125,46 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
 
   const traceInfo = traceSummary ? (
     <Box className={classes.traceInfo}>
-      {
-        [
-          { label: i18n._(t`Duration`), value: traceSummary.durationStr },
-          { label: i18n._(t`Services`), value: traceSummary.serviceNameAndSpanCounts.length },
-          { label: i18n._(t`Depth`), value: traceSummary.depth },
-          { label: i18n._(t`Total Spans`), value: traceSummary.spans.length },
-          {
-            label: i18n._(t`Trace ID`),
-            value: rootSpanIndex === 0
+      {[
+        { label: i18n._(t`Duration`), value: traceSummary.durationStr },
+        {
+          label: i18n._(t`Services`),
+          value: traceSummary.serviceNameAndSpanCounts.length,
+        },
+        { label: i18n._(t`Depth`), value: traceSummary.depth },
+        { label: i18n._(t`Total Spans`), value: traceSummary.spans.length },
+        {
+          label: i18n._(t`Trace ID`),
+          value:
+            rootSpanIndex === 0
               ? traceSummary.traceId
               : `${traceSummary.traceId} - ${traceSummary.spans[rootSpanIndex].spanId}`,
-          },
-        ].map((entry) => (
-          <Box key={entry.label} className={classes.traceInfoEntry}>
-            <Box className={classes.traceInfoLabel}>
-              {`${entry.label}:`}
-            </Box>
-            <Box className={classes.traceInfoValue}>
-              {entry.value}
-            </Box>
-          </Box>
-        ))
-      }
+        },
+      ].map((entry) => (
+        <Box key={entry.label} className={classes.traceInfoEntry}>
+          <Box className={classes.traceInfoLabel}>{`${entry.label}:`}</Box>
+          <Box className={classes.traceInfoValue}>{entry.value}</Box>
+        </Box>
+      ))}
     </Box>
-  ) : <div />;
+  ) : (
+    <div />
+  );
 
   return (
     <Box className={classes.root}>
       <Box className={classes.upperBox}>
         <Box className={classes.serviceNameAndSpanName}>
-          {
-            traceSummary ? (
-              <>
-                <Typography variant="h5" className={classes.serviceName}>
-                  {traceSummary.rootSpan.serviceName}
-                </Typography>
-                <Typography variant="h5" className={classes.spanName}>
-                  {` : ${traceSummary.rootSpan.spanName}`}
-                </Typography>
-              </>
-            ) : null
-          }
+          {traceSummary ? (
+            <>
+              <Typography variant="h5" className={classes.serviceName}>
+                {traceSummary.rootSpan.serviceName}
+              </Typography>
+              <Typography variant="h5" className={classes.spanName}>
+                {` : ${traceSummary.rootSpan.spanName}`}
+              </Typography>
+            </>
+          ) : null}
         </Box>
         <Box className={classes.jsonUploaderAndSearchInput}>
           <TraceJsonUploader />
@@ -178,15 +177,32 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
         </Grid>
         <Grid container item xs={4} justify="flex-end" spacing={1}>
           <Grid item>
-            <Button variant="outlined" className={classes.actionButton} onClick={handleSaveButtonClick}>
-              <FontAwesomeIcon icon={faDownload} className={classes.actionButtonIcon} />
+            <Button
+              variant="outlined"
+              className={classes.actionButton}
+              onClick={handleSaveButtonClick}
+            >
+              <FontAwesomeIcon
+                icon={faDownload}
+                className={classes.actionButtonIcon}
+              />
               <Trans>Download JSON</Trans>
             </Button>
           </Grid>
           {logsUrl && (
             <Grid item>
-              <Button variant="outlined" className={classes.actionButton} href={logsUrl} target="_blank" rel="noopener" data-testid="view-logs-link">
-                <FontAwesomeIcon icon={faFileAlt} className={classes.actionButtonIcon} />
+              <Button
+                variant="outlined"
+                className={classes.actionButton}
+                href={logsUrl}
+                target="_blank"
+                rel="noopener"
+                data-testid="view-logs-link"
+              >
+                <FontAwesomeIcon
+                  icon={faFileAlt}
+                  className={classes.actionButtonIcon}
+                />
                 <Trans>View Logs</Trans>
               </Button>
             </Grid>
