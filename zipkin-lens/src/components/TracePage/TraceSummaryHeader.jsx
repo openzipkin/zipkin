@@ -87,8 +87,8 @@ const useStyles = makeStyles((theme) => ({
     marginLeft: theme.spacing(0.8),
   },
   actionButton: {
-    fontSize: '0.5rem',
-    lineHeight: 0.8,
+    fontSize: '0.7rem',
+    lineHeight: 1.0,
   },
   actionButtonIcon: {
     marginRight: theme.spacing(1),

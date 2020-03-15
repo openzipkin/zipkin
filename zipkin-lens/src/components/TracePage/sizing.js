@@ -34,13 +34,13 @@ export const timelineRightMarginPercent = 2; // %
 export const timelineWidthPercent =
   100 -
   (spanTreeWidthPercent + serviceNameWidthPercent + timelineRightMarginPercent);
-export const spanBarRowHeight = 40; // px
+export const spanBarRowHeight = 30; // px
 export const spanBarHeight = spanBarRowHeight - 4; // px;
 
 export const spanTreeLineWidthPercentPerDepth = (depth) =>
   spanTreeWidthPercent / (depth + 1); // %
 export const serviceNameBadgeWidth = serviceNameWidthPercent - 2;
-export const serviceNameBadgeHeight = 24;
+export const serviceNameBadgeHeight = 20;
 export const serviceNameBadgeTranslate = `translate(16,${-serviceNameBadgeHeight /
   2})`; // px
 export const spanToggleButtonLengthOfSide = 16; // px

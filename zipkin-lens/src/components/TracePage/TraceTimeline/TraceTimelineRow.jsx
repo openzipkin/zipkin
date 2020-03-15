@@ -43,7 +43,7 @@ const propTypes = {
 
 const useStyles = makeStyles((theme) => ({
   line: {
-    stroke: theme.palette.grey[400],
+    stroke: theme.palette.grey[300],
     strokeWidth: '1px',
   },
   bar: {
