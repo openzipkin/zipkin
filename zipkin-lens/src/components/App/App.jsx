@@ -19,6 +19,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { ThemeProvider } from '@material-ui/styles';
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
+import { SnackbarProvider } from 'notistack';
 
 import Layout from './Layout';
 import DiscoverPage from '../DiscoverPage';
@@ -39,29 +40,32 @@ const App = () => {
       <UiConfig>
         <MuiPickersUtilsProvider utils={MomentUtils}>
           <ThemeProvider theme={theme}>
-            <UiConfigConsumer>
-              {(config) => (
-                <Provider store={configureStore(config)}>
-                  <I18nProvider i18n={i18n}>
-                    <BrowserRouter basename={BASE_PATH}>
-                      <Layout>
-                        <Route exact path="/" component={DiscoverPage} />
-                        <Route
-                          exact
-                          path="/dependency"
-                          component={DependenciesPage}
-                        />
-                        <Route
-                          exact
-                          path={['/traces/:traceId', '/traceViewer']}
-                          component={TracePage}
-                        />
-                      </Layout>
-                    </BrowserRouter>
-                  </I18nProvider>
-                </Provider>
-              )}
-            </UiConfigConsumer>
+            {/* Snackbar is used to provide popup alerts to the user */}
+            <SnackbarProvider>
+              <UiConfigConsumer>
+                {(config) => (
+                  <Provider store={configureStore(config)}>
+                    <I18nProvider i18n={i18n}>
+                      <BrowserRouter basename={BASE_PATH}>
+                        <Layout>
+                          <Route exact path="/" component={DiscoverPage} />
+                          <Route
+                            exact
+                            path="/dependency"
+                            component={DependenciesPage}
+                          />
+                          <Route
+                            exact
+                            path={['/traces/:traceId', '/traceViewer']}
+                            component={TracePage}
+                          />
+                        </Layout>
+                      </BrowserRouter>
+                    </I18nProvider>
+                  </Provider>
+                )}
+              </UiConfigConsumer>
+            </SnackbarProvider>
           </ThemeProvider>
         </MuiPickersUtilsProvider>
       </UiConfig>

@@ -291,12 +291,7 @@ function addLayoutDetails(
   }
 }
 
-export function detailedTraceSummary(
-  root,
-  logsUrl,
-  archivePostUrl,
-  archiveUrl,
-) {
+export function detailedTraceSummary(root) {
   const serviceNameToCount = {};
   let queue = root.queueRootMostSpans();
   const modelview = {
@@ -385,9 +380,6 @@ export function detailedTraceSummary(
 
   modelview.duration = duration;
   modelview.durationStr = mkDurationStr(duration);
-  if (logsUrl) modelview.logsUrl = logsUrl;
-  if (archivePostUrl) modelview.archivePostUrl = archivePostUrl;
-  if (archiveUrl) modelview.archiveUrl = archiveUrl;
 
   return modelview;
 }

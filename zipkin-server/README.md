@@ -186,6 +186,14 @@ basePath | zipkin.ui.basepath | path prefix placed into the <base> tag in the UI
 To map properties to environment variables, change them to upper-underscore case format. For
 example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 
+### Trace archival
+Most production Zipkin clusters store traces with a limited TTL. This makes it a bit inconvenient to
+share a trace, as the link to it will expire after a few days.
+
+The "archive a trace" feature helps with this. Launch a second zipkin server pointing to a storage with a longer
+TTL than the regular one and set the archivePostUrl and archiveUrl UI configs pointing to this second server.
+Once archivePostUrl is set, a new "Archive Trace" button will appear on the trace view page.
+
 ## Storage
 
 ### In-Memory Storage
