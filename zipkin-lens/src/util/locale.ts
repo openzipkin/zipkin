@@ -12,7 +12,7 @@
  * the License.
  */
 
-import { Catalogs, setupI18n } from '@lingui/core';
+import { setupI18n } from '@lingui/core';
 
 import enMessages from '../translations/en/messages';
 import esMessages from '../translations/es/messages';
@@ -34,14 +34,14 @@ export function getLocale(): string {
 
   const browserLanguage = navigator.language.toLowerCase();
 
-  if (catalogs.hasOwnProperty(browserLanguage)) {
+  if (Object.prototype.hasOwnProperty.call(catalogs, browserLanguage)) {
     return browserLanguage;
   }
 
   const hyphenIndex = browserLanguage.indexOf('-');
   if (hyphenIndex >= 0) {
     const stripped = browserLanguage.substring(0, hyphenIndex);
-    if (catalogs.hasOwnProperty(stripped)) {
+    if (Object.prototype.hasOwnProperty.call(catalogs, stripped)) {
       return stripped;
     }
   }
@@ -55,6 +55,6 @@ export function setLocale(locale: string) {
 }
 
 export const i18n = setupI18n({
-  catalogs: (catalogs as any),
+  catalogs: catalogs as any,
   locale: getLocale(),
 });

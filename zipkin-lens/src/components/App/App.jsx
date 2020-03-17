@@ -11,7 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { setupI18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import React, { Suspense } from 'react';
 import { Provider } from 'react-redux';
