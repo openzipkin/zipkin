@@ -11,8 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-const { REACT_APP_API_BASE } = process.env;
-
 const extractBasePath = () => {
   const base = document.getElementsByTagName('base');
   if (base.length === 0) {
@@ -22,10 +20,9 @@ const extractBasePath = () => {
 };
 
 export const BASE_PATH = extractBasePath();
-export const ZIPKIN_BASE = `${REACT_APP_API_BASE || ''}${BASE_PATH}`;
 
-export const ZIPKIN_API = `${ZIPKIN_BASE}/api/v2`;
-export const UI_CONFIG = `${ZIPKIN_BASE}/config.json`;
+export const ZIPKIN_API = `${BASE_PATH}/api/v2`;
+export const UI_CONFIG = `${BASE_PATH}/config.json`;
 export const SERVICES = `${ZIPKIN_API}/services`;
 export const REMOTE_SERVICES = `${ZIPKIN_API}/remoteServices`;
 export const SPANS = `${ZIPKIN_API}/spans`;
