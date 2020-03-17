@@ -58,7 +58,7 @@ export const allColorThemes = allColors.map((color) =>
 );
 
 /* eslint no-bitwise: ["error", { "allow": ["<<", "|="] }] */
-const generateHash = (str) => {
+const generateHash = (str: string) => {
   let hash = 0;
   if (str.length === 0) return hash;
   for (let i = 0; i < str.length; i += 1) {
@@ -69,15 +69,15 @@ const generateHash = (str) => {
   return Math.abs(hash); // Only positive number.
 };
 
-export const selectServiceTheme = (serviceName) => {
+export const selectServiceTheme = (serviceName: string) => {
   const hash = generateHash(serviceName);
   return allColorThemes[hash % allColors.length];
 };
 
-export const selectServiceColor = (serviceName) =>
+export const selectServiceColor = (serviceName: string) =>
   selectServiceTheme(serviceName).palette.primary.dark;
 
-export const selectColorByErrorType = (errorType) => {
+export const selectColorByErrorType = (errorType: string) => {
   switch (errorType) {
     case 'transient':
       return colors.red[500];
@@ -88,7 +88,7 @@ export const selectColorByErrorType = (errorType) => {
   }
 };
 
-export const selectColorByInfoClass = (infoClass) => {
+export const selectColorByInfoClass = (infoClass: string) => {
   switch (infoClass) {
     case 'trace-error-transient':
       return selectColorByErrorType('transient');
