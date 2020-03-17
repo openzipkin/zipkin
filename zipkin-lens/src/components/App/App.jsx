@@ -29,22 +29,9 @@ import { UiConfig, UiConfigConsumer } from '../UiConfig';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../colors';
 import { useDocumentTitle } from '../../hooks';
-import { getLocale } from '../../util/locale';
+import { i18n } from '../../util/locale';
 
 import { BASE_PATH } from '../../constants/api';
-
-import enMessages from '../../translations/en/messages';
-import esMessages from '../../translations/es/messages';
-import zhCnMessages from '../../translations/zh-cn/messages';
-
-export const i18n = setupI18n({
-  catalogs: {
-    en: enMessages,
-    es: esMessages,
-    'zh-cn': zhCnMessages,
-  },
-  locale: getLocale(),
-});
 
 const App = () => {
   useDocumentTitle('Zipkin');
