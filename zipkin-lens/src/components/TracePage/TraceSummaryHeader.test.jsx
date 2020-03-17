@@ -57,9 +57,38 @@ describe('<TraceSummaryHeader />', () => {
     );
     const logsLink = queryByTestId('view-logs-link');
     expect(logsLink).toBeInTheDocument();
-    expect(logsLink.href).toEqual('http://zipkin.io/logs=1');
+    expect(logsLink).toHaveAttribute('href', 'http://zipkin.io/logs=1');
     // Make sure the link opens in a new tab
-    expect(logsLink.target).toEqual('_blank');
-    expect(logsLink.rel).toEqual('noopener');
+    expect(logsLink).toHaveAttribute('target', '_blank');
+    expect(logsLink).toHaveAttribute('rel', 'noopener');
+  });
+
+  it('does replace multiple instances of {traceId} in logsUrl', () => {
+    const { queryByTestId } = render(
+      <TraceSummaryHeader
+        traceSummary={{
+          traceId: '1',
+          spans: [],
+          serviceNameAndSpanCounts: [],
+          duration: 1,
+          durationStr: '1μs',
+          rootSpan: {
+            serviceName: 'service-A',
+            spanName: 'span-A',
+          },
+        }}
+      />,
+      {
+        uiConfig: {
+          logsUrl: 'http://zipkin.io/logs={traceId}&moreLogs={traceId}',
+        },
+      },
+    );
+    const logsLink = queryByTestId('view-logs-link');
+    expect(logsLink).toBeInTheDocument();
+    expect(logsLink).toHaveAttribute(
+      'href',
+      'http://zipkin.io/logs=1&moreLogs=1',
+    );
   });
 });
