@@ -49,7 +49,7 @@ the locale. Translate as many strings in the JSON file as you can. Then run `yar
 compile the strings.
 
 Finally, edit [App.jsx](./src/components/App/App.jsx) and
-[LanguageSelector.jsx](./src/components/App/LanguageSelector.jsx) to import the new translation and
+[LanguageSelector.tsx](./src/components/App/LanguageSelector.tsx) to import the new translation and
 add an entry to the language selector respectively.
 
 

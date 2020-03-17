@@ -12,25 +12,11 @@
  * the License.
  */
 
-const localeStorageKey = 'localeOverride';
+declare module '@lingui/macro' {
+  // Copied from @lingui/macro/index.d.ts, not clear why this doesn't work by default.
 
-export function getLocale() {
-  const override = localStorage.getItem(localeStorageKey);
-  if (override) {
-    return override;
-  }
-  const browserLanguage = navigator.language.toLowerCase();
-  // Strip browser language to what we support.
-  if (browserLanguage === 'en' || browserLanguage.startsWith('en-')) {
-    return 'en';
-  }
-  if (browserLanguage === 'zh-cn') {
-    return 'zh-cn';
-  }
-
-  return browserLanguage;
-}
-
-export function setLocale(locale) {
-  localStorage.setItem(localeStorageKey, locale);
+  export function t(
+    literals: TemplateStringsArray,
+    ...placeholders: any[]
+  ): string;
 }

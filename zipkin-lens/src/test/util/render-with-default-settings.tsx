@@ -11,16 +11,16 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import MomentUtils from '@date-io/moment';
 import { setupI18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
+import { ThemeProvider } from '@material-ui/styles';
+import { MuiPickersUtilsProvider } from '@material-ui/pickers';
+import { render } from '@testing-library/react';
+import { createMemoryHistory, History } from 'history';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { Router } from 'react-router-dom';
-import { createMemoryHistory } from 'history';
-import { ThemeProvider } from '@material-ui/styles';
-import { MuiPickersUtilsProvider } from '@material-ui/pickers';
-import MomentUtils from '@date-io/moment';
-import { render } from '@testing-library/react';
 
 import { UiConfigContext } from '../../components/UiConfig';
 
@@ -29,16 +29,22 @@ import { theme } from '../../colors';
 import configureStore from '../../store/configure-store';
 
 const i18n = setupI18n();
-i18n.load('en', enMessages);
+i18n.load('en', enMessages as any);
 i18n.activate('en');
 
+interface RenderProps {
+  route?: string;
+  history?: History;
+  uiConfig?: object;
+}
+
 export default (
-  ui,
+  ui: React.ReactElement,
   {
     route = '/',
     history = createMemoryHistory({ initialEntries: [route] }),
     uiConfig = {},
-  } = {},
+  }: RenderProps = {},
 ) => {
   const store = configureStore({});
 
@@ -55,9 +61,7 @@ export default (
     ...uiConfig,
   };
 
-  const wrapper = (
-    { children }, // eslint-disable-line react/prop-types
-  ) => (
+  const wrapper: React.FunctionComponent = ({ children }) => (
     <Provider store={store}>
       <I18nProvider i18n={i18n}>
         <Router history={history}>

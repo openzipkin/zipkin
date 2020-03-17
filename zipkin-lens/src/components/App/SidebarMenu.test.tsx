@@ -29,8 +29,8 @@ describe('<SidebarMenu />', () => {
       />,
     );
     const link = getByTestId('sidebar-menu-link');
-    expect(link.href).toEqual('http://localhost/traces');
-    expect(link.target).toBeFalsy();
+    expect(link).toHaveAttribute('href', '/traces');
+    expect(link).not.toHaveAttribute('target');
   });
 
   it('renders absolute link to be external', () => {
@@ -43,8 +43,8 @@ describe('<SidebarMenu />', () => {
       />,
     );
     const link = getByTestId('sidebar-menu-link');
-    expect(link.href).toEqual('https://github.com/openzipkin');
-    expect(link.target).toEqual('_blank');
-    expect(link.rel).toEqual('no-opener');
+    expect(link).toHaveAttribute('href', 'https://github.com/openzipkin');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'no-opener');
   });
 });

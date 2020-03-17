@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { fireEvent, waitForElement } from '@testing-library/react';
+import { fireEvent } from '@testing-library/react';
 import React from 'react';
 
 import render from '../../test/util/render-with-default-settings';
@@ -21,9 +21,9 @@ import LanguageSelector, { LANGUAGES } from './LanguageSelector';
 
 describe('<LanguageSelector />', () => {
   it('loads and displays button and no popover', async () => {
-    const { queryByTestId } = render(<LanguageSelector />);
+    const { getByTestId, queryByTestId } = render(<LanguageSelector />);
 
-    const changeLanguageButton = queryByTestId('change-language-button');
+    const changeLanguageButton = getByTestId('change-language-button');
     const languageList = queryByTestId('language-list');
 
     expect(changeLanguageButton).toBeInTheDocument();
@@ -35,17 +35,15 @@ describe('<LanguageSelector />', () => {
   });
 
   it('click displays popover', async () => {
-    const { queryByTestId } = render(<LanguageSelector />);
+    const { findByTestId, getByTestId } = render(<LanguageSelector />);
 
-    const changeLanguageButton = queryByTestId('change-language-button');
+    const changeLanguageButton = getByTestId('change-language-button');
 
     expect(changeLanguageButton).toBeInTheDocument();
 
     fireEvent.click(changeLanguageButton);
 
-    const languageList = await waitForElement(() =>
-      queryByTestId('language-list'),
-    );
+    const languageList = await findByTestId('language-list');
 
     expect(changeLanguageButton).toBeInTheDocument();
     expect(languageList).toBeInTheDocument();
@@ -55,17 +53,17 @@ describe('<LanguageSelector />', () => {
   });
 
   it('language select changes locale and refreshes', async () => {
-    const { queryByTestId } = render(<LanguageSelector />);
+    const { findByTestId, getByTestId } = render(<LanguageSelector />);
 
-    const changeLanguageButton = queryByTestId('change-language-button');
+    const changeLanguageButton = getByTestId('change-language-button');
 
     expect(changeLanguageButton).toBeInTheDocument();
 
     fireEvent.click(changeLanguageButton);
 
-    await waitForElement(() => queryByTestId('language-list'));
+    await findByTestId('language-list');
 
-    fireEvent.click(queryByTestId('language-list-item-zh-cn'));
+    fireEvent.click(getByTestId('language-list-item-zh-cn'));
 
     await expect(window.location.reload).toHaveBeenCalled();
 

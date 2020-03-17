@@ -54,4 +54,12 @@ module.exports = {
     jquery: true,
     'jest/globals': true
   },
+  overrides: [
+    {
+      files: ['**/*.tsx'],
+      rules: {
+        'react/prop-types': 'off'
+      }
+    }
+  ]
 };
