@@ -102,7 +102,7 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
 
   const logsUrl =
     config.logsUrl && traceSummary
-      ? config.logsUrl.replace('{traceId}', traceSummary.traceId)
+      ? config.logsUrl.replace(/{traceId}/g, traceSummary.traceId)
       : undefined;
 
   const handleSaveButtonClick = useCallback(() => {
