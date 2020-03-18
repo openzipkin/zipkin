@@ -3,6 +3,7 @@
 !.git
 !docker/zipkin/**
 !**/.eslintrc*
+!**/.prettierrc*
 
 **/*.test.yml
 
