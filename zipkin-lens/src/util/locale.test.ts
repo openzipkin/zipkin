@@ -25,19 +25,19 @@ const setLanguageForTest = (language: string) => {
 };
 
 describe('getting locale', () => {
-  it('browser language en-US sets locale en', () => {
-    setLanguageForTest('en-US');
-    expect(getLocale()).toEqual('en');
+  it('browser language es-AR sets locale es', () => {
+    setLanguageForTest('es-AR');
+    expect(getLocale()).toEqual('es');
   });
 
   it('browser language lower case works the same as mixed case', () => {
-    setLanguageForTest('en-us');
-    expect(getLocale()).toEqual('en');
+    setLanguageForTest('es-ar');
+    expect(getLocale()).toEqual('es');
   });
 
-  it('browser language en sets locale en', () => {
-    setLanguageForTest('en');
-    expect(getLocale()).toEqual('en');
+  it('browser language es sets locale es', () => {
+    setLanguageForTest('es');
+    expect(getLocale()).toEqual('es');
   });
 
   it('browser language zh-CN sets locale zh-cn', () => {
@@ -45,9 +45,14 @@ describe('getting locale', () => {
     expect(getLocale()).toEqual('zh-cn');
   });
 
-  it('unknown locale returned as is', () => {
+  it('unsupported variant defaults to en', () => {
+    setLanguageForTest('zh-hk');
+    expect(getLocale()).toEqual('en');
+  });
+
+  it('unknown locale defaults to en', () => {
     setLanguageForTest('ja-jp');
-    expect(getLocale()).toEqual('ja-jp');
+    expect(getLocale()).toEqual('en');
   });
 
   it('setLocale overrides browser language', () => {

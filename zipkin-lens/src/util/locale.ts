@@ -12,25 +12,49 @@
  * the License.
  */
 
+import { setupI18n } from '@lingui/core';
+
+import enMessages from '../translations/en/messages';
+import esMessages from '../translations/es/messages';
+import zhCnMessages from '../translations/zh-cn/messages';
+
 const localeStorageKey = 'localeOverride';
+
+const catalogs = {
+  en: enMessages,
+  es: esMessages,
+  'zh-cn': zhCnMessages,
+};
 
 export function getLocale(): string {
   const override = localStorage.getItem(localeStorageKey);
   if (override) {
     return override;
   }
+
   const browserLanguage = navigator.language.toLowerCase();
-  // Strip browser language to what we support.
-  if (browserLanguage === 'en' || browserLanguage.startsWith('en-')) {
-    return 'en';
-  }
-  if (browserLanguage === 'zh-cn') {
-    return 'zh-cn';
+
+  if (Object.prototype.hasOwnProperty.call(catalogs, browserLanguage)) {
+    return browserLanguage;
   }
 
-  return browserLanguage;
+  const hyphenIndex = browserLanguage.indexOf('-');
+  if (hyphenIndex >= 0) {
+    const stripped = browserLanguage.substring(0, hyphenIndex);
+    if (Object.prototype.hasOwnProperty.call(catalogs, stripped)) {
+      return stripped;
+    }
+  }
+
+  // Default to English if we don't support the current browser language.
+  return 'en';
 }
 
 export function setLocale(locale: string) {
   localStorage.setItem(localeStorageKey, locale);
 }
+
+export const i18n = setupI18n({
+  catalogs: catalogs as any,
+  locale: getLocale(),
+});

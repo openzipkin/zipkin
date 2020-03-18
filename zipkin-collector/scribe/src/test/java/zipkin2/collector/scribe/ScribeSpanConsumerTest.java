@@ -18,7 +18,6 @@ import java.util.Base64;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.thrift.async.AsyncMethodCallback;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
@@ -131,7 +130,8 @@ class ScribeSpanConsumerTest {
 
     expectSuccess(scribe, entry);
 
-    assertThat(scribeMetrics.messages()).isEqualTo(1);
+    // Storage finishes after callback so wait for it.
+    await().untilAsserted(() -> assertThat(scribeMetrics.messages()).isEqualTo(1));
     assertThat(scribeMetrics.messagesDropped()).isZero();
     assertThat(scribeMetrics.bytes()).isZero();
     assertThat(scribeMetrics.spans()).isZero();
@@ -156,7 +156,8 @@ class ScribeSpanConsumerTest {
     scribe.Log(asList(entry), callback);
     assertThat(callback.error).isInstanceOf(IllegalArgumentException.class);
 
-    assertThat(scribeMetrics.messages()).isEqualTo(1);
+    // Storage finishes after callback so wait for it.
+    await().untilAsserted(() -> assertThat(scribeMetrics.messages()).isEqualTo(1));
     assertThat(scribeMetrics.messagesDropped()).isEqualTo(1);
     assertThat(scribeMetrics.bytes()).isZero();
     assertThat(scribeMetrics.spans()).isZero();
@@ -180,7 +181,8 @@ class ScribeSpanConsumerTest {
     // Storage related exceptions are not propagated to the caller. Only marshalling ones are.
     assertThat(callback.error).isNull();
 
-    assertThat(scribeMetrics.messages()).isEqualTo(1);
+    // Storage finishes after callback so wait for it.
+    await().untilAsserted(() -> assertThat(scribeMetrics.messages()).isEqualTo(1));
     assertThat(scribeMetrics.messagesDropped()).isZero();
     assertThat(scribeMetrics.bytes()).isEqualTo(bytes.length);
     assertThat(scribeMetrics.spans()).isEqualTo(1);
@@ -214,7 +216,8 @@ class ScribeSpanConsumerTest {
 
     expectSuccess(scribe, entry);
 
-    assertThat(scribeMetrics.messages()).isEqualTo(1);
+    // Storage finishes after callback so wait for it.
+    await().untilAsserted(() -> assertThat(scribeMetrics.messages()).isEqualTo(1));
     assertThat(scribeMetrics.messagesDropped()).isZero();
     assertThat(scribeMetrics.bytes()).isEqualTo(bytes.length);
     assertThat(scribeMetrics.spans()).isEqualTo(1);
