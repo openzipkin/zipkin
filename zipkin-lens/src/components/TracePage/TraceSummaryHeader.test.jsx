@@ -91,4 +91,44 @@ describe('<TraceSummaryHeader />', () => {
       'http://zipkin.io/logs=1&moreLogs=1',
     );
   });
+
+  it('does not render Archive Trace link with default config', () => {
+    const { queryByTestId } = render(
+      <TraceSummaryHeader
+        traceSummary={{
+          traceId: '1',
+          spans: [],
+          serviceNameAndSpanCounts: [],
+          duration: 1,
+          durationStr: '1μs',
+          rootSpan: {
+            serviceName: 'service-A',
+            spanName: 'span-A',
+          },
+        }}
+      />,
+    );
+    expect(queryByTestId('archive-trace-link')).not.toBeInTheDocument();
+  });
+
+  it('does render Archive Trace link when logs URL in config', () => {
+    const { queryByTestId } = render(
+      <TraceSummaryHeader
+        traceSummary={{
+          traceId: '1',
+          spans: [],
+          serviceNameAndSpanCounts: [],
+          duration: 1,
+          durationStr: '1μs',
+          rootSpan: {
+            serviceName: 'service-A',
+            spanName: 'span-A',
+          },
+        }}
+      />,
+      { uiConfig: { archivePostUrl: 'http://localhost:9411/api/v2/spans' } },
+    );
+    const logsLink = queryByTestId('archive-trace-link');
+    expect(logsLink).toBeInTheDocument();
+  });
 });

@@ -22,6 +22,7 @@ import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
+import { useSnackbar } from 'notistack';
 
 import { useUiConfig } from '../UiConfig';
 
@@ -104,6 +105,80 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
     config.logsUrl && traceSummary
       ? config.logsUrl.replace(/{traceId}/g, traceSummary.traceId)
       : undefined;
+
+  const archivePostUrl =
+    config.archivePostUrl && traceSummary ? config.archivePostUrl : undefined;
+
+  const archiveUrl =
+    config.archiveUrl && traceSummary
+      ? config.archiveUrl.replace('{traceId}', traceSummary.traceId)
+      : undefined;
+
+  const { enqueueSnackbar } = useSnackbar();
+
+  const archiveClick = useCallback(() => {
+    const notify = (message, variant) => {
+      enqueueSnackbar(message, {
+        variant,
+        anchorOrigin: {
+          vertical: 'top',
+          horizontal: 'center',
+        },
+        autoHideDuration: 10000, // 10 seconds
+      });
+    };
+
+    // We don't store the raw json in the browser yet, so we need to make an
+    // HTTP call to retrieve it again.
+    fetch(`${api.TRACE}/${traceSummary.traceId}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch trace from backend');
+        }
+        return response.json();
+      })
+      .then((json) => {
+        // Add zipkin.archived tag to root span
+        /* eslint-disable-next-line no-restricted-syntax */
+        for (const span of json) {
+          if ('parentId' in span === false) {
+            const tags = span.tags || {};
+            tags['zipkin.archived'] = 'true';
+            span.tags = tags;
+            break;
+          }
+        }
+        return json;
+      })
+      .then((json) => {
+        return fetch(archivePostUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(json),
+        });
+      })
+      .then((response) => {
+        if (
+          !response.ok ||
+          (response.status !== 202 && response.status === 200)
+        ) {
+          throw new Error('Failed to archive the trace');
+        }
+        if (archiveUrl) {
+          notify(
+            `Archive successful! This trace is now accessible at ${archiveUrl}`,
+            'success',
+          );
+        } else {
+          notify(`Archive successful!`, 'success');
+        }
+      })
+      .catch(() => {
+        notify('Failed to archive the trace', 'error');
+      });
+  }, [archivePostUrl, archiveUrl, traceSummary, enqueueSnackbar]);
 
   const handleSaveButtonClick = useCallback(() => {
     if (!traceSummary || !traceSummary.traceId) {
@@ -204,6 +279,24 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
                   className={classes.actionButtonIcon}
                 />
                 <Trans>View Logs</Trans>
+              </Button>
+            </Grid>
+          )}
+          {archivePostUrl && (
+            <Grid item>
+              <Button
+                variant="outlined"
+                className={classes.actionButton}
+                target="_blank"
+                rel="noopener"
+                data-testid="archive-trace-link"
+                onClick={archiveClick}
+              >
+                <FontAwesomeIcon
+                  icon={faFileAlt}
+                  className={classes.actionButtonIcon}
+                />
+                <Trans>Archive Trace</Trans>
               </Button>
             </Grid>
           )}

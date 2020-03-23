@@ -83,6 +83,22 @@ public class ZipkinUiConfigurationTest {
   }
 
   @Test
+  public void canOverrideProperty_archivePostUrl() {
+    final String url = "http://zipkin.archive.com/api/v2/spans";
+    context = createContextWithOverridenProperty("zipkin.ui.archive-post-url:" + url);
+
+    assertThat(context.getBean(ZipkinUiProperties.class).getArchivePostUrl()).isEqualTo(url);
+  }
+
+  @Test
+  public void canOverrideProperty_archiveUrl() {
+    final String url = "http://zipkin.archive.com/zipkin/traces/{traceId}";
+    context = createContextWithOverridenProperty("zipkin.ui.archive-url:" + url);
+
+    assertThat(context.getBean(ZipkinUiProperties.class).getArchiveUrl()).isEqualTo(url);
+  }
+
+  @Test
   public void canOverrideProperty_supportUrl() {
     final String url = "http://mycompany.com/file-a-bug";
     context = createContextWithOverridenProperty("zipkin.ui.support-url:" + url);

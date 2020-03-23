@@ -177,12 +177,22 @@ queryLimit | zipkin.ui.query-limit | Default limit for Find Traces. Defaults to 
 instrumented | zipkin.ui.instrumented | Which sites this Zipkin UI covers. Regex syntax. e.g. `http:\/\/example.com\/.*` Defaults to match all websites (`.*`).
 logsUrl | zipkin.ui.logs-url | Logs query service url pattern. If specified, a button will appear on the trace page and will replace {traceId} in the url by the traceId. Not required.
 supportUrl / zipkin.ui.support-url / A URL where a user can ask for support. If specified, a link will be placed in the side menu to this URL, for example a page to file support tickets. Not required.
+archivePostUrl | zipkin.ui.archive-post-url | Url to POST the current trace in Zipkin v2 json format. e.g. 'https://longterm/api/v2/spans'. If specified, a button will appear on the trace page accordingly. Not required.
+archiveUrl | zipkin.ui.archive-url | Url to a web application serving an archived trace, templated by '{traceId}'. e.g. https://longterm/zipkin/trace/{traceId}'. This is shown in a confirmation message after a trace is successfully POSTed to the `archivePostUrl`. Not required.
 dependency.lowErrorRate | zipkin.ui.dependency.low-error-rate | The rate of error calls on a dependency link that turns it yellow. Defaults to 0.5 (50%) set to >1 to disable.
 dependency.highErrorRate | zipkin.ui.dependency.high-error-rate | The rate of error calls on a dependency link that turns it red. Defaults to 0.75 (75%) set to >1 to disable.
 basePath | zipkin.ui.basepath | path prefix placed into the <base> tag in the UI HTML; useful when running behind a reverse proxy. Default "/zipkin"
 
 To map properties to environment variables, change them to upper-underscore case format. For
 example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
+
+### Trace archival
+Most production Zipkin clusters store traces with a limited TTL. This makes it a bit inconvenient to
+share a trace, as the link to it will expire after a few days.
+
+The "archive a trace" feature helps with this. Launch a second zipkin server pointing to a storage with a longer
+TTL than the regular one and set the archivePostUrl and archiveUrl UI configs pointing to this second server.
+Once archivePostUrl is set, a new "Archive Trace" button will appear on the trace view page.
 
 ## Storage
 

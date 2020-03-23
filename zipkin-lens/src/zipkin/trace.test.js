@@ -362,11 +362,6 @@ describe('totalDuration', () => {
 const cleanedNetflixTrace = treeCorrectedForClockSkew(netflixTrace);
 
 describe('detailedTraceSummary', () => {
-  it('should show logsUrl', () => {
-    const { logsUrl } = detailedTraceSummary(cleanedHttpTrace, 'http/url.com');
-    expect(logsUrl).toBe('http/url.com');
-  });
-
   it('should derive summary info', () => {
     const {
       traceId,
