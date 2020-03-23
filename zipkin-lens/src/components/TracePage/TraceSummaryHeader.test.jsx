@@ -19,6 +19,28 @@ import render from '../../test/util/render-with-default-settings';
 import TraceSummaryHeader from './TraceSummaryHeader';
 
 describe('<TraceSummaryHeader />', () => {
+  it('renders download JSON button', () => {
+    const { getByTestId } = render(
+      <TraceSummaryHeader
+        traceSummary={{
+          traceId: '1',
+          spans: [],
+          serviceNameAndSpanCounts: [],
+          duration: 1,
+          durationStr: '1μs',
+          rootSpan: {
+            serviceName: 'service-A',
+            spanName: 'span-A',
+          },
+        }}
+      />,
+    );
+    const downloadJson = getByTestId('download-json-link');
+    expect(downloadJson).toBeInTheDocument();
+    expect(downloadJson).toHaveAttribute('href', '/zipkin/api/v2/trace/1');
+    expect(downloadJson).toHaveAttribute('download', '1.json');
+  });
+
   it('does not render View Logs link with default config', () => {
     const { queryByTestId } = render(
       <TraceSummaryHeader
