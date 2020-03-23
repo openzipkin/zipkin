@@ -60,6 +60,8 @@ public class ITZipkinUiConfiguration {
       + "  \"searchEnabled\" : true,\n"
       + "  \"logsUrl\" : null,\n"
       + "  \"supportUrl\" : null,\n"
+      + "  \"archivePostUrl\" : null,\n"
+      + "  \"archiveUrl\" : null,\n"
       + "  \"dependency\" : {\n"
       + "    \"lowErrorRate\" : 0.5,\n"
       + "    \"highErrorRate\" : 0.75\n"

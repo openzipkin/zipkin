@@ -21,6 +21,7 @@ import { createMemoryHistory, History } from 'history';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { Router } from 'react-router-dom';
+import { SnackbarProvider } from 'notistack';
 
 import { UiConfigContext } from '../../components/UiConfig';
 
@@ -67,9 +68,11 @@ export default (
         <Router history={history}>
           <MuiPickersUtilsProvider utils={MomentUtils}>
             <ThemeProvider theme={theme}>
-              <UiConfigContext.Provider value={filledConfig}>
-                {children}
-              </UiConfigContext.Provider>
+              <SnackbarProvider>
+                <UiConfigContext.Provider value={filledConfig}>
+                  {children}
+                </UiConfigContext.Provider>
+              </SnackbarProvider>
             </ThemeProvider>
           </MuiPickersUtilsProvider>
         </Router>

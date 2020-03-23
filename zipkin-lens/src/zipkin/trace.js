@@ -291,7 +291,7 @@ function addLayoutDetails(
   }
 }
 
-export function detailedTraceSummary(root, logsUrl) {
+export function detailedTraceSummary(root) {
   const serviceNameToCount = {};
   let queue = root.queueRootMostSpans();
   const modelview = {
@@ -380,7 +380,6 @@ export function detailedTraceSummary(root, logsUrl) {
 
   modelview.duration = duration;
   modelview.durationStr = mkDurationStr(duration);
-  if (logsUrl) modelview.logsUrl = logsUrl;
 
   return modelview;
 }
