@@ -51,6 +51,7 @@
     "eslint-plugin-react-hooks": "^1.6.1",
     "fetch-mock": "^7.3.0",
     "history": "^4.10.1",
+    "http-proxy-middleware": "^1.0.3",
     "lodash": "^4.17.14",
     "moment": "^2.24.0",
     "mvy": "0.2.1",
@@ -99,6 +100,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "proxy": "http://localhost:9411"
+  }
 }
