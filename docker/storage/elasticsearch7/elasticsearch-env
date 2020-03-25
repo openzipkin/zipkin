@@ -1,9 +1,12 @@
 ES_HOME=/elasticsearch
-ES_CLASSPATH='/elasticsearch/lib/*'
+ES_CLASSPATH="$ES_HOME/lib/*"
+ES_PATH_CONF=$ES_HOME/config
+
+# we can't use our JAVA_HOME as it lacks thai support
 JAVA_HOME=$ES_HOME/jdk
 JAVA=$JAVA_HOME/bin/java
 JAVA_TYPE=JAVA_HOME
-ES_PATH_CONF=/elasticsearch/config
+
 ES_DISTRIBUTION_FLAVOR=default
 ES_DISTRIBUTION_TYPE=tar
 ES_BUNDLED_JDK=true
