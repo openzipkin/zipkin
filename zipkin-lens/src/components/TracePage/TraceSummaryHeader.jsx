@@ -106,6 +106,10 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
       ? config.logsUrl.replace(/{traceId}/g, traceSummary.traceId)
       : undefined;
 
+  const traceJsonUrl = traceSummary
+    ? `${api.TRACE}/${traceSummary.traceId}`
+    : undefined;
+
   const archivePostUrl =
     config.archivePostUrl && traceSummary ? config.archivePostUrl : undefined;
 
@@ -180,24 +184,6 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
       });
   }, [archivePostUrl, archiveUrl, traceSummary, enqueueSnackbar]);
 
-  const handleSaveButtonClick = useCallback(() => {
-    if (!traceSummary || !traceSummary.traceId) {
-      return;
-    }
-    fetch(`${api.TRACE}/${traceSummary.traceId}`)
-      .then((resp) => resp.blob())
-      .then((blob) => {
-        const a = document.createElement('a');
-        a.href = window.URL.createObjectURL(blob);
-        a.download = `${traceSummary.traceId}.json`;
-        a.click();
-        // See: https://stackoverflow.com/questions/30694453/blob-createobjecturl-download-not-working-in-firefox-but-works-when-debugging
-        setTimeout(() => {
-          window.URL.revokeObjectURL(a.href);
-        }, 100);
-      });
-  }, [traceSummary]);
-
   const traceInfo = traceSummary ? (
     <Box className={classes.traceInfo}>
       {[
@@ -255,7 +241,9 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
             <Button
               variant="outlined"
               className={classes.actionButton}
-              onClick={handleSaveButtonClick}
+              href={traceJsonUrl}
+              download={traceSummary && `${traceSummary.traceId}.json`}
+              data-testid="download-json-link"
             >
               <FontAwesomeIcon
                 icon={faDownload}
