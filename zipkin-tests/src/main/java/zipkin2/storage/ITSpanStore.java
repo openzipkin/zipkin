@@ -316,6 +316,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .minDuration(CLIENT_SPAN.durationAsLong() + 1)
       .build()).execute()).isEmpty();
 
+    // We merge here because MySQL storage doesn't retain the individual documents
     assertThat(store().getTraces(requestBuilder()
       .minDuration(CLIENT_SPAN.durationAsLong())
       .build()).execute()).flatExtracting(Trace::merge).containsExactly(CLIENT_SPAN);
@@ -398,21 +399,31 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
    * </ul>
    */
   @Test protected void spanWithProblematicData() throws IOException {
-    String json = "{\"foo\":\"bar\"}";
-    Span spanWithProblematicData = CLIENT_SPAN.toBuilder().name(json)
+    // Intentionally store in two fragments to try to trigger storage problems with dots
+    Span part1 = Span.newBuilder().traceId("a").id("b")
+      .timestamp((TODAY + 50L) * 1000L)
+      .localEndpoint(FRONTEND)
       .putTag("http.path", "/api")
+      .build();
+    accept(part1);
+
+    String json = "{\"foo\":\"bar\"}";
+    Span part2 = part1.toBuilder()
+      .name(json)
+      .clearTags()
       .putTag("http.path.morepath", "/api/api")
       .build();
+    accept(part2);
 
-    accept(spanWithProblematicData);
+    // We merge here because MySQL storage doesn't retain the individual documents
+    Span merged = Trace.merge(asList(part1, part2)).get(0);
 
     QueryRequest query = requestBuilder().serviceName("frontend").spanName(json).build();
-    assertThat(store().getTraces(query).execute())
-      .extracting(t -> t.get(0))
-      .containsExactly(spanWithProblematicData);
+    assertThat(store().getTraces(query).execute()).flatExtracting(Trace::merge)
+      .containsExactly(merged);
 
-    assertThat(traces().getTrace(spanWithProblematicData.traceId()).execute())
-      .containsExactly(spanWithProblematicData);
+    assertThat(traces().getTrace(part1.traceId()).map(Trace::merge).execute())
+      .containsExactly(merged);
   }
 
   /**
