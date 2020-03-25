@@ -27,6 +27,9 @@ RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch
 
 COPY docker/storage/elasticsearch7/config /elasticsearch/config
 
+# Overwrite environment script to fix parse failures when run with busybox.
+COPY docker/storage/elasticsearch7/elasticsearch-env /elasticsearch/bin/elasticsearch-env
+
 FROM openzipkin/jre-full:11.0.6-11.37
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
