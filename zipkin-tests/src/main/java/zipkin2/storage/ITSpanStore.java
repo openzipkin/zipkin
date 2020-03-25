@@ -412,11 +412,11 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     accept(part2);
 
     QueryRequest query = requestBuilder().serviceName("frontend").spanName(json).build();
-    assertThat(store().getTraces(query).execute())
-      .containsExactly(asList(part1, part2));
+    assertThat(store().getTraces(query).execute().stream().flatMap(List::stream))
+      .containsExactlyInAnyOrder(part1, part2);
 
     assertThat(traces().getTrace(part1.traceId()).execute())
-      .containsExactly(part1, part2);
+      .containsExactlyInAnyOrder(part1, part2);
   }
 
   /**
