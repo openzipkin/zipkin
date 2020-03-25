@@ -400,14 +400,17 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
    */
   @Test protected void spanWithProblematicData() throws IOException {
     // Intentionally store in two fragments to try to trigger storage problems with dots
-    Span part1 = CLIENT_SPAN.toBuilder()
+    Span part1 = Span.newBuilder().traceId("a").id("b")
+      .timestamp((TODAY + 50L) * 1000L)
+      .localEndpoint(FRONTEND)
       .putTag("http.path", "/api")
       .build();
     accept(part1);
 
     String json = "{\"foo\":\"bar\"}";
-    Span part2 = CLIENT_SPAN.toBuilder()
+    Span part2 = part1.toBuilder()
       .name(json)
+      .clearTags()
       .putTag("http.path.morepath", "/api/api")
       .build();
     accept(part2);
