@@ -398,21 +398,25 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
    * </ul>
    */
   @Test protected void spanWithProblematicData() throws IOException {
-    String json = "{\"foo\":\"bar\"}";
-    Span spanWithProblematicData = CLIENT_SPAN.toBuilder().name(json)
+    // Intentionally store in two fragments to try to trigger storage problems with dots
+    Span part1 = CLIENT_SPAN.toBuilder()
       .putTag("http.path", "/api")
+      .build();
+    accept(part1);
+
+    String json = "{\"foo\":\"bar\"}";
+    Span part2 = CLIENT_SPAN.toBuilder()
+      .name(json)
       .putTag("http.path.morepath", "/api/api")
       .build();
-
-    accept(spanWithProblematicData);
+    accept(part2);
 
     QueryRequest query = requestBuilder().serviceName("frontend").spanName(json).build();
     assertThat(store().getTraces(query).execute())
-      .extracting(t -> t.get(0))
-      .containsExactly(spanWithProblematicData);
+      .containsExactly(asList(part1, part2));
 
-    assertThat(traces().getTrace(spanWithProblematicData.traceId()).execute())
-      .containsExactly(spanWithProblematicData);
+    assertThat(traces().getTrace(part1.traceId()).execute())
+      .containsExactly(part1, part2);
   }
 
   /**
