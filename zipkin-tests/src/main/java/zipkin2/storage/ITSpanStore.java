@@ -316,6 +316,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .minDuration(CLIENT_SPAN.durationAsLong() + 1)
       .build()).execute()).isEmpty();
 
+    // We merge here because MySQL storage doesn't retain the individual documents
     assertThat(store().getTraces(requestBuilder()
       .minDuration(CLIENT_SPAN.durationAsLong())
       .build()).execute()).flatExtracting(Trace::merge).containsExactly(CLIENT_SPAN);
@@ -411,12 +412,15 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .build();
     accept(part2);
 
-    QueryRequest query = requestBuilder().serviceName("frontend").spanName(json).build();
-    assertThat(store().getTraces(query).execute().stream().flatMap(List::stream))
-      .containsExactlyInAnyOrder(part1, part2);
+    // We merge here because MySQL storage doesn't retain the individual documents
+    Span merged = Trace.merge(asList(part1, part2)).get(0);
 
-    assertThat(traces().getTrace(part1.traceId()).execute())
-      .containsExactlyInAnyOrder(part1, part2);
+    QueryRequest query = requestBuilder().serviceName("frontend").spanName(json).build();
+    assertThat(store().getTraces(query).execute()).flatExtracting(Trace::merge)
+      .containsExactly(merged);
+
+    assertThat(traces().getTrace(part1.traceId()).map(Trace::merge).execute())
+      .containsExactly(merged);
   }
 
   /**
