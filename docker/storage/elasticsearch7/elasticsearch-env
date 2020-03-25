@@ -1,8 +1,9 @@
 ES_HOME=/elasticsearch
 ES_CLASSPATH='/elasticsearch/lib/*'
+JAVA_HOME=$ES_HOME/jdk
 JAVA=$JAVA_HOME/bin/java
 JAVA_TYPE=JAVA_HOME
 ES_PATH_CONF=/elasticsearch/config
 ES_DISTRIBUTION_FLAVOR=default
 ES_DISTRIBUTION_TYPE=tar
-ES_BUNDLED_JDK=false
+ES_BUNDLED_JDK=true
