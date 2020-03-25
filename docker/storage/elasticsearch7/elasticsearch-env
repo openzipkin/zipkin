@@ -5,7 +5,6 @@ ES_PATH_CONF=$ES_HOME/config
 # we can't use our JAVA_HOME as it lacks thai support
 JAVA_HOME=$ES_HOME/jdk
 JAVA=$JAVA_HOME/bin/java
-JAVA_TYPE=JAVA_HOME
 
 ES_DISTRIBUTION_FLAVOR=default
 ES_DISTRIBUTION_TYPE=tar
