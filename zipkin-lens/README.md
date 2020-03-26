@@ -1,6 +1,6 @@
 # Zipkin Lens
 
-Zipkin-lens is an alternative UI for [Zipkin](https://github.com/openzipkin/zipkin), which based on React, Netflix/vizceral and chartjs.
+Zipkin-lens is the UI for [Zipkin](https://github.com/openzipkin/zipkin). It is a modern replacement of the [classic](https://github.com/openzipkin-attic/zipkin-classic) UI which has proved its merit since the beginning of the Zipkin project.
 
 Here are a couple example screen shots:
 
