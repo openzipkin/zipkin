@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,7 +19,6 @@ import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
-import java.io.IOException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,12 +39,12 @@ class ElasticsearchAutocompleteTagsTest {
   ElasticsearchAutocompleteTags tagStore;
 
   @BeforeEach void setUp() {
-    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri("/")))
+    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri()))
       .autocompleteKeys(asList("http#host", "http-url", "http.method")).build();
     tagStore = new ElasticsearchAutocompleteTags(storage);
   }
 
-  @AfterEach void tearDown() throws IOException {
+  @AfterEach void tearDown() {
     storage.close();
   }
 

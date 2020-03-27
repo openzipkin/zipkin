@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,8 +17,9 @@ import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.HttpService;
+import com.linecorp.armeria.server.cors.CorsService;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
-import com.linecorp.armeria.server.file.HttpFileBuilder;
+import com.linecorp.armeria.server.file.HttpFile;
 import com.linecorp.armeria.server.metric.PrometheusExpositionService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -33,7 +34,7 @@ import org.springframework.core.annotation.Order;
 import zipkin2.server.internal.health.ZipkinHealthController;
 import zipkin2.server.internal.prometheus.ZipkinMetricsController;
 
-@Configuration(proxyBeanMethods=false)
+@Configuration(proxyBeanMethods = false)
 public class ZipkinHttpConfiguration {
   public static final MediaType MEDIA_TYPE_ACTUATOR =
     MediaType.parse("application/vnd.spring-boot.actuator.v2+json;charset=UTF-8");
@@ -79,7 +80,7 @@ public class ZipkinHttpConfiguration {
   /** Configures the server at the last because of the specified {@link Order} annotation. */
   @Order @Bean ArmeriaServerConfigurator corsConfigurator(
     @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins) {
-    CorsServiceBuilder corsBuilder = CorsServiceBuilder.forOrigins(allowedOrigins.split(","))
+    CorsServiceBuilder corsBuilder = CorsService.builder(allowedOrigins.split(","))
       // NOTE: The property says query, and the UI does not use POST, but we allow POST?
       //
       // The reason is that our former CORS implementation accidentally allowed POST. People doing
@@ -94,7 +95,10 @@ public class ZipkinHttpConfiguration {
     return builder -> builder.decorator(corsBuilder::build);
   }
 
-  static HttpService infoService(MediaType mediaType) {
-    return HttpFileBuilder.ofResource("info.json").contentType(mediaType).build().asService();
+  HttpService infoService(MediaType mediaType) {
+    return HttpFile.builder(getClass().getClassLoader(), "info.json")
+      .contentType(mediaType)
+      .build()
+      .asService();
   }
 }

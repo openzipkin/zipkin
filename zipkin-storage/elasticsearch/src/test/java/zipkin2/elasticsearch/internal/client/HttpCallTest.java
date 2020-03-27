@@ -63,13 +63,12 @@ class HttpCallTest {
 
   @RegisterExtension static MockWebServerExtension server = new MockWebServerExtension();
 
-  private static final AggregatedHttpRequest REQUEST =
-    AggregatedHttpRequest.of(HttpMethod.GET, "/");
+  static final AggregatedHttpRequest REQUEST = AggregatedHttpRequest.of(HttpMethod.GET, "/");
 
   HttpCall.Factory http;
 
   @BeforeEach void setUp() {
-    http = new HttpCall.Factory(WebClient.of(server.httpUri("/")));
+    http = new HttpCall.Factory(WebClient.of(server.httpUri()));
   }
 
   @Test void emptyContent() throws Exception {
@@ -220,7 +219,7 @@ class HttpCallTest {
     server.enqueue(SUCCESS_RESPONSE);
 
     AtomicReference<RequestLog> log = new AtomicReference<>();
-    http = new HttpCall.Factory(WebClient.builder(server.httpUri("/"))
+    http = new HttpCall.Factory(WebClient.builder(server.httpUri())
       .decorator((client, ctx, req) -> {
         ctx.log().whenComplete().thenAccept(log::set);
         return client.execute(ctx, req);
@@ -247,7 +246,7 @@ class HttpCallTest {
   @Test void unprocessedRequest() {
     server.enqueue(SUCCESS_RESPONSE);
 
-    http = new HttpCall.Factory(WebClient.builder(server.httpUri("/"))
+    http = new HttpCall.Factory(WebClient.builder(server.httpUri())
       .decorator((client, ctx, req) -> {
         throw new UnprocessedRequestException("Could not process request.",
           new EndpointGroupException("No endpoints"));

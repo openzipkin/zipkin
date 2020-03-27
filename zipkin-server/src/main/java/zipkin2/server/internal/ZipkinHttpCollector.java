@@ -260,7 +260,7 @@ final class UnzippingBytesRequestConverter {
     if (content.length() == 2 && "[]".equals(content.toStringAscii())) {
       ZipkinHttpCollector.maybeLog("Empty JSON list POST body", ctx, request);
       ReferenceCountUtil.release(content);
-      content = HttpData.EMPTY_DATA;
+      content = HttpData.empty();
     }
 
     ZipkinHttpCollector.metrics.incrementBytes(content.length());

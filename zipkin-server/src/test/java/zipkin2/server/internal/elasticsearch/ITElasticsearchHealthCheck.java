@@ -13,7 +13,6 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.healthcheck.HealthCheckService;
 import com.linecorp.armeria.server.healthcheck.SettableHealthChecker;
@@ -46,7 +45,7 @@ public class ITElasticsearchHealthCheck {
   @ClassRule public static ServerRule server1 = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) {
       sb.service("/_cluster/health", HealthCheckService.of(server1Health));
-      sb.serviceUnder("/_cluster/health/", (ctx, req) -> HttpResponse.of(GREEN_RESPONSE));
+      sb.serviceUnder("/_cluster/health/", (ctx, req) -> GREEN_RESPONSE.toHttpResponse());
     }
   };
 
@@ -55,7 +54,7 @@ public class ITElasticsearchHealthCheck {
   @ClassRule public static ServerRule server2 = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) {
       sb.service("/_cluster/health", HealthCheckService.of(server2Health));
-      sb.serviceUnder("/_cluster/health/", (ctx, req) -> HttpResponse.of(GREEN_RESPONSE));
+      sb.serviceUnder("/_cluster/health/", (ctx, req) -> GREEN_RESPONSE.toHttpResponse());
     }
   };
 
