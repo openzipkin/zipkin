@@ -32,7 +32,7 @@
     <main.signature.artifact>java18</main.signature.artifact>
 
     <!-- Sometimes we need to override Armeria's Brave version -->
-    <brave.version>5.10.1</brave.version>
+    <brave.version>5.10.2</brave.version>
     <maven-invoker-plugin.version>3.2.1</maven-invoker-plugin.version>
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>

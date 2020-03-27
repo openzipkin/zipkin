@@ -18,11 +18,10 @@ import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ServerCacheControl;
-import com.linecorp.armeria.common.ServerCacheControlBuilder;
 import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.RedirectService;
-import com.linecorp.armeria.server.file.HttpFileBuilder;
-import com.linecorp.armeria.server.file.HttpFileServiceBuilder;
+import com.linecorp.armeria.server.file.FileService;
+import com.linecorp.armeria.server.file.HttpFile;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
@@ -84,15 +83,16 @@ public class ZipkinUiConfiguration {
     Optional<MeterRegistry> meterRegistry
   ) throws IOException {
     ServerCacheControl maxAgeYear =
-      new ServerCacheControlBuilder().maxAgeSeconds(TimeUnit.DAYS.toSeconds(365)).build();
+      ServerCacheControl.builder().maxAgeSeconds(TimeUnit.DAYS.toSeconds(365)).build();
 
-    HttpService uiFileService =
-        HttpFileServiceBuilder.forClassPath("zipkin-lens").cacheControl(maxAgeYear).build();
+    HttpService uiFileService = FileService.builder(getClass().getClassLoader(), "zipkin-lens")
+      .cacheControl(maxAgeYear)
+      .build();
 
     String config = writeConfig(ui);
     return sb -> {
-      sb.service("/zipkin/config.json", HttpFileBuilder.of(HttpData.ofUtf8(config))
-        .cacheControl(new ServerCacheControlBuilder().maxAgeSeconds(600).build())
+      sb.service("/zipkin/config.json", HttpFile.builder(HttpData.ofUtf8(config))
+        .cacheControl(ServerCacheControl.builder().maxAgeSeconds(600).build())
         .contentType(MediaType.JSON_UTF_8)
         .build()
         .asService());
@@ -156,9 +156,9 @@ public class ZipkinUiConfiguration {
     String maybeContent = maybeResource(basePath, resource);
     if (maybeContent == null) return null;
 
-    ServerCacheControl maxAgeMinute = new ServerCacheControlBuilder().maxAgeSeconds(60).build();
+    ServerCacheControl maxAgeMinute = ServerCacheControl.builder().maxAgeSeconds(60).build();
 
-    return HttpFileBuilder.of(HttpData.ofUtf8(maybeContent))
+    return HttpFile.builder(HttpData.ofUtf8(maybeContent))
       .contentType(MediaType.HTML_UTF_8).cacheControl(maxAgeMinute)
       .build().asService();
   }

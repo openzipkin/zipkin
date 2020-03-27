@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,6 @@
 package zipkin2.server.internal;
 
 import com.linecorp.armeria.client.ClientFactory;
-import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
@@ -65,7 +64,7 @@ public class ITZipkinServerSsl {
   ClientFactory clientFactory;
 
   @Before public void configureClientFactory() {
-    clientFactory = configureSsl(new ClientFactoryBuilder(), armeriaSettings.getSsl()).build();
+    clientFactory = configureSsl(ClientFactory.builder(), armeriaSettings.getSsl()).build();
   }
 
   @Test public void callHealthEndpoint_HTTP() {
@@ -77,9 +76,10 @@ public class ITZipkinServerSsl {
   }
 
   void callHealthEndpoint(SessionProtocol http) {
-    AggregatedHttpResponse response = WebClient.of(clientFactory, baseUrl(server, http))
-      .get("/health")
-      .aggregate().join();
+    AggregatedHttpResponse response =
+      WebClient.builder(baseUrl(server, http)).factory(clientFactory).build()
+        .get("/health")
+        .aggregate().join();
 
     assertThat(response.status()).isEqualTo(HttpStatus.OK);
   }

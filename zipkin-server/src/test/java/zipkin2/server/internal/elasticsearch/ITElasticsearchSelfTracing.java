@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -41,7 +41,7 @@ class ITElasticsearchSelfTracing {
       "zipkin.self-tracing.message-timeout=1ms",
       "zipkin.self-tracing.traces-per-second=10",
       "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:" + server.httpUri("/")).applyTo(context);
+      "zipkin.storage.elasticsearch.hosts:" + server.httpUri()).applyTo(context);
     Access.registerElasticsearch(context);
     context.register(ZipkinSelfTracingConfiguration.class);
     context.refresh();
@@ -58,7 +58,7 @@ class ITElasticsearchSelfTracing {
    */
   @Test void healthcheck_usesB3Single() {
     pretendIndexTemplatesExist(storage);
-    server.enqueue(YELLOW_RESPONSE);
+    server.enqueue(YELLOW_RESPONSE.toHttpResponse());
 
     assertThat(storage.check().ok()).isTrue();
 

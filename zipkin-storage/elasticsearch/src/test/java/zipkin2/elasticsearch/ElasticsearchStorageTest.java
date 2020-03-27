@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -39,7 +39,7 @@ import static zipkin2.TestObjects.DAY;
 class ElasticsearchStorageTest {
 
   static final AggregatedHttpResponse SUCCESS_RESPONSE =
-    AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.OK), HttpData.EMPTY_DATA);
+    AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.OK), HttpData.empty());
 
   @RegisterExtension static MockWebServerExtension server = new MockWebServerExtension();
 
@@ -48,11 +48,11 @@ class ElasticsearchStorageTest {
   @BeforeEach void setUp() {
     storage = ElasticsearchStorage.newBuilder(new LazyHttpClient() {
       @Override public WebClient get() {
-        return WebClient.of(server.httpUri("/"));
+        return WebClient.of(server.httpUri());
       }
 
       @Override public String toString() {
-        return server.httpUri("/");
+        return server.httpUri().toString();
       }
     }).build();
   }
@@ -192,7 +192,6 @@ class ElasticsearchStorageTest {
    */
   @Test void toStringContainsOnlySummaryInformation() {
     assertThat(storage).hasToString(
-      String.format("ElasticsearchStorage{initialEndpoints=%s, index=zipkin}",
-        server.httpUri("/")));
+      String.format("ElasticsearchStorage{initialEndpoints=%s, index=zipkin}", server.httpUri()));
   }
 }

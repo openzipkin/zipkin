@@ -28,6 +28,7 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.elasticsearch.Access.pretendIndexTemplatesExist;
+import static zipkin2.server.internal.elasticsearch.TestResponses.YELLOW_RESPONSE;
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties.Ssl;
 
 class ITElasticsearchAuth {
@@ -77,7 +78,7 @@ class ITElasticsearchAuth {
 
   @Test void healthcheck_usesAuthAndTls() {
     pretendIndexTemplatesExist(storage);
-    server.enqueue(TestResponses.YELLOW_RESPONSE);
+    server.enqueue(YELLOW_RESPONSE.toHttpResponse());
 
     assertThat(storage.check().ok()).isTrue();
 

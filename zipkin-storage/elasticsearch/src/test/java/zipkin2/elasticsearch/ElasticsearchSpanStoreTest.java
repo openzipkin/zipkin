@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -37,12 +37,12 @@ import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_SPAN;
 
 class ElasticsearchSpanStoreTest {
   static final AggregatedHttpResponse EMPTY_RESPONSE =
-    AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.OK), HttpData.EMPTY_DATA);
+    AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.OK), HttpData.empty());
 
   @RegisterExtension static MockWebServerExtension server = new MockWebServerExtension();
 
   @BeforeEach void setUp() {
-    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri("/"))).build();
+    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri())).build();
     spanStore = new ElasticsearchSpanStore(storage);
   }
 
@@ -91,7 +91,7 @@ class ElasticsearchSpanStoreTest {
 
   @Test void searchDisabled_doesntMakeRemoteQueryRequests() throws Exception {
     storage.close();
-    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri("/")))
+    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri()))
       .searchEnabled(false)
       .build();
 
@@ -106,7 +106,7 @@ class ElasticsearchSpanStoreTest {
     assertThat(server.takeRequest(100, TimeUnit.MILLISECONDS)).isNull();
   }
 
-  void requestLimitedTo2DaysOfIndices_singleTypeIndex() throws Exception {
+  void requestLimitedTo2DaysOfIndices_singleTypeIndex() {
     long today = TestObjects.midnightUTC(System.currentTimeMillis());
     long yesterday = today - TimeUnit.DAYS.toMillis(1);
 

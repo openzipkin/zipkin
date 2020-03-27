@@ -70,8 +70,8 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   /**
-   * A supplier of {@linkplain HttpHeaders headers} and {@linkplain HttpData body} of a request
-   * to Elasticsearch.
+   * A supplier of {@linkplain HttpHeaders headers} and {@linkplain HttpData body} of a request to
+   * Elasticsearch.
    */
   public interface RequestSupplier {
     /**
@@ -80,10 +80,10 @@ public final class HttpCall<V> extends Call.Base<V> {
     RequestHeaders headers();
 
     /**
-     * Writes the body of this request into the {@link RequestStream}.
-     * {@link RequestStream#tryWrite(HttpData)} can be called any number of times to publish any
-     * number of payload objects. It can be useful to split up a large payload into smaller chunks
-     * instead of buffering everything as one payload.
+     * Writes the body of this request into the {@link RequestStream}. {@link
+     * RequestStream#tryWrite(HttpData)} can be called any number of times to publish any number of
+     * payload objects. It can be useful to split up a large payload into smaller chunks instead of
+     * buffering everything as one payload.
      */
     void writeBody(RequestStream requestStream);
   }
@@ -156,7 +156,7 @@ public final class HttpCall<V> extends Call.Base<V> {
 
   @Override protected V doExecute() throws IOException {
     // TODO: testme
-    for (EventExecutor eventLoop : httpClient.factory().eventLoopGroup()) {
+    for (EventExecutor eventLoop : httpClient.options().factory().eventLoopGroup()) {
       if (eventLoop.inEventLoop()) {
         throw new RuntimeException("Attempting to make a blocking request from an event loop. "
           + "Either use doEnqueue() or run this in a separate thread.");
