@@ -155,6 +155,8 @@ zipkin:
       index-replicas: ${ES_INDEX_REPLICAS:1}
       username: ${ES_USERNAME:}
       password: ${ES_PASSWORD:}
+      security-file-path: ${ES_SECURITY_FILE_PATH:}
+      security-file-refresh-interval-in-second: ${ES_SECURITY_FILE_REFRESH_INTERVAL_IN_SECOND:5}
       http-logging: ${ES_HTTP_LOGGING:}
       health-check:
         enabled: ${ES_HEALTH_CHECK_ENABLED:true}

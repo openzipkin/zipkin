@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -35,6 +35,8 @@ import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
  *   index-replicas: 1
  *   username: username
  *   password: password
+ *   security-file-path: securityFilePath
+ *   security-file-refresh-interval-in-second: 5
  *   http-logging: HEADERS
  *   ssl:
  *     key-store: keystore.p12
@@ -166,6 +168,13 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   private String username;
   /** password used for basic auth. Needed when Shield or X-Pack security is enabled */
   private String password;
+  /**
+   * securityFilePath is an absolute path refers to a properties-file used to store username and
+   * password
+   */
+  private String securityFilePath;
+  /** Security file refresh interval(in seconds) for security file */
+  private Integer securityFileRefreshIntervalInSecond = 5;
   /** When set, controls the volume of HTTP logging of the Elasticsearch Api. */
   private HttpLogging httpLogging = HttpLogging.NONE;
   /** Connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api requests. */
@@ -251,6 +260,22 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
 
   public void setPassword(String password) {
     this.password = emptyToNull(password);
+  }
+
+  public String getSecurityFilePath() {
+    return securityFilePath;
+  }
+
+  public void setSecurityFilePath(final String securityFilePath) {
+    this.securityFilePath = securityFilePath;
+  }
+
+  public Integer getSecurityFileRefreshIntervalInSecond() {
+    return securityFileRefreshIntervalInSecond;
+  }
+
+  public void setSecurityFileRefreshIntervalInSecond(Integer securityFileRefreshIntervalInSecond) {
+    this.securityFileRefreshIntervalInSecond = securityFileRefreshIntervalInSecond;
   }
 
   public HttpLogging getHttpLogging() {

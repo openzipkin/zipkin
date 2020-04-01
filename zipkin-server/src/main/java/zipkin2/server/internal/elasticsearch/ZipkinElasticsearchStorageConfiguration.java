@@ -16,6 +16,7 @@ package zipkin2.server.internal.elasticsearch;
 import brave.CurrentSpanCustomizer;
 import brave.SpanCustomizer;
 import brave.http.HttpTracing;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.linecorp.armeria.client.ClientFactory;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
@@ -27,6 +28,9 @@ import com.linecorp.armeria.common.logging.RequestLogProperty;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.net.ssl.KeyManagerFactory;
@@ -48,12 +52,15 @@ import zipkin2.storage.StorageComponent;
 
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties.Ssl;
 
-@Configuration(proxyBeanMethods=false)
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(ZipkinElasticsearchStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
 @ConditionalOnMissingBean(StorageComponent.class)
 public class ZipkinElasticsearchStorageConfiguration {
   static final String QUALIFIER = "zipkinElasticsearch";
+  static final String USERNAME_PROP = "zipkin.storage.elasticsearch.username";
+  static final String PASSWORD_PROP = "zipkin.storage.elasticsearch.password";
+  static final String SECURITY_FILE_PATH_PROP = "zipkin.storage.elasticsearch.security-file-path";
 
   // Exposed as a bean so that zipkin-aws can override this as sourced from the AWS endpoints api
   @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean
@@ -124,15 +131,40 @@ public class ZipkinElasticsearchStorageConfiguration {
   }
 
   @Bean @Qualifier(QUALIFIER) @Conditional(BasicAuthRequired.class)
-  Consumer<ClientOptionsBuilder> esBasicAuth(ZipkinElasticsearchStorageProperties es) {
+  Consumer<ClientOptionsBuilder> esBasicAuth(
+    @Qualifier(QUALIFIER) BasicCredentials basicCredentials) {
     return new Consumer<ClientOptionsBuilder>() {
       @Override public void accept(ClientOptionsBuilder client) {
         client.decorator(
-          delegate -> new BasicAuthInterceptor(delegate, es.getUsername(), es.getPassword()));
+          delegate -> new BasicAuthInterceptor(delegate, basicCredentials));
       }
 
       @Override public String toString() {
         return "BasicAuthCustomizer{basicCredentials=<redacted>}";
+      }
+    };
+  }
+
+  @Bean @Qualifier(QUALIFIER) @Conditional(BasicAuthRequired.class)
+  BasicCredentials dynamicElasticsearchBasicCredentials(ZipkinElasticsearchStorageProperties es) {
+    if (isEmpty(es.getUsername()) || isEmpty(es.getPassword())) {
+      return new BasicCredentials();
+    }
+    return new BasicCredentials(es.getUsername(), es.getPassword());
+  }
+
+  @Bean @Qualifier(QUALIFIER) @Conditional(DynamicRefreshRequired.class)
+  Consumer<ClientOptionsBuilder> dynamicElasticsearchAuth(ZipkinElasticsearchStorageProperties es,
+    @Qualifier(QUALIFIER) BasicCredentials basicCredentials) {
+    return new Consumer<ClientOptionsBuilder>() {
+      @Override
+      public void accept(final ClientOptionsBuilder client) {
+        ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor(
+          new ThreadFactoryBuilder().setDaemon(true)
+            .setNameFormat("RefreshElasticSearchSecurityFile-%d")
+            .build());
+        ses.scheduleAtFixedRate(new DynamicSecurityFileLoader(es.getSecurityFilePath(), basicCredentials),
+          0, es.getSecurityFileRefreshIntervalInSecond(), TimeUnit.SECONDS);
       }
     };
   }
@@ -170,10 +202,18 @@ public class ZipkinElasticsearchStorageConfiguration {
   static final class BasicAuthRequired implements Condition {
     @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
       String userName =
-        condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.username");
+        condition.getEnvironment().getProperty(USERNAME_PROP);
       String password =
-        condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.password");
-      return !isEmpty(userName) && !isEmpty(password);
+        condition.getEnvironment().getProperty(PASSWORD_PROP);
+      String securityFilePath =
+        condition.getEnvironment().getProperty(SECURITY_FILE_PATH_PROP);
+      return !isEmpty(userName) && !isEmpty(password) || !isEmpty(securityFilePath);
+    }
+  }
+
+  static final class DynamicRefreshRequired implements Condition {
+    @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
+      return !isEmpty(condition.getEnvironment().getProperty(SECURITY_FILE_PATH_PROP));
     }
   }
 

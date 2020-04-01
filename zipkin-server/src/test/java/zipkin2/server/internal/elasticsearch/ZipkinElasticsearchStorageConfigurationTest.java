@@ -17,7 +17,12 @@ import com.linecorp.armeria.client.ClientOption;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.common.SessionProtocol;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.Arrays;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.junit.After;
@@ -32,6 +37,8 @@ import org.springframework.context.annotation.Configuration;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.PASSWORD_PROP;
+import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.USERNAME_PROP;
 
 public class ZipkinElasticsearchStorageConfigurationTest {
   final AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
@@ -306,6 +313,40 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .option(ClientOption.DECORATION, factory.options.decoration())
       .build();
     assertThat(client.as(BasicAuthInterceptor.class)).isNotNull();
+  }
+
+  @Test(timeout = 30_1000)
+  public void providesBasicAuthInterceptor_whenDynamicCredentialsConfigured() throws Exception {
+    File securityFile = File.createTempFile("zipkin-server-security", ".properties");
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
+      "zipkin.storage.elasticsearch.security-file-path:" + securityFile.getAbsolutePath(),
+      "zipkin.storage.elasticsearch.security-file-refresh-interval-in-second:2")
+      .applyTo(context);
+    Access.registerElasticsearch(context);
+    context.refresh();
+
+    HttpClientFactory factory = context.getBean(HttpClientFactory.class);
+
+    WebClient client = WebClient.builder("http://127.0.0.1:1234")
+      .option(ClientOption.DECORATION, factory.options.decoration())
+      .build();
+    assertThat(client.as(BasicAuthInterceptor.class)).isNotNull();
+    BasicCredentials basicCredentials =
+      Objects.requireNonNull(client.as(BasicAuthInterceptor.class)).basicCredentials;
+    Optional<String> credentialsOption = basicCredentials.getCredentials();
+    assertThat(credentialsOption.isPresent()).isFalse();
+    Properties props = new Properties();
+    props.put(USERNAME_PROP, "foo");
+    props.put(PASSWORD_PROP, "bar");
+    try (FileOutputStream os = new FileOutputStream(securityFile)) {
+      props.store(os, "");
+      os.flush();
+    }
+    while (!basicCredentials.getCredentials().orElse("").equals("Basic Zm9vOmJhcg==")) {
+      Thread.sleep(500);
+    }
   }
 
   @Test public void searchEnabled_false() {
