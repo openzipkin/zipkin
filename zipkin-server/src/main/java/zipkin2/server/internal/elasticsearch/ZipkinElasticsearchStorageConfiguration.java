@@ -16,7 +16,6 @@ package zipkin2.server.internal.elasticsearch;
 import brave.CurrentSpanCustomizer;
 import brave.SpanCustomizer;
 import brave.http.HttpTracing;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.linecorp.armeria.client.ClientFactory;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
@@ -28,9 +27,6 @@ import com.linecorp.armeria.common.logging.RequestLogProperty;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.net.ssl.KeyManagerFactory;
@@ -46,6 +42,7 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
@@ -53,6 +50,7 @@ import zipkin2.storage.StorageComponent;
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties.Ssl;
 
 @Configuration(proxyBeanMethods = false)
+@EnableScheduling
 @EnableConfigurationProperties(ZipkinElasticsearchStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
 @ConditionalOnMissingBean(StorageComponent.class)
@@ -154,19 +152,10 @@ public class ZipkinElasticsearchStorageConfiguration {
   }
 
   @Bean @Qualifier(QUALIFIER) @Conditional(DynamicRefreshRequired.class)
-  Consumer<ClientOptionsBuilder> dynamicElasticsearchAuth(ZipkinElasticsearchStorageProperties es,
+  DynamicSecurityFileLoader dynamicElasticsearchAuth(
+    @Value("${" + SECURITY_FILE_PATH_PROP + "}") String securityFilePath,
     @Qualifier(QUALIFIER) BasicCredentials basicCredentials) {
-    return new Consumer<ClientOptionsBuilder>() {
-      @Override
-      public void accept(final ClientOptionsBuilder client) {
-        ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor(
-          new ThreadFactoryBuilder().setDaemon(true)
-            .setNameFormat("RefreshElasticSearchSecurityFile-%d")
-            .build());
-        ses.scheduleAtFixedRate(new DynamicSecurityFileLoader(es.getSecurityFilePath(), basicCredentials),
-          0, es.getSecurityFileRefreshIntervalInSecond(), TimeUnit.SECONDS);
-      }
-    };
+    return new DynamicSecurityFileLoader(basicCredentials, securityFilePath);
   }
 
   @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing

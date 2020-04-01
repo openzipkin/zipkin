@@ -19,8 +19,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.PASSWORD_PROP;
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.USERNAME_PROP;
@@ -28,29 +27,21 @@ import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageCo
 /**
  * Load username/password from security file.
  */
-class DynamicSecurityFileLoader implements Runnable {
-  static final Logger log = Logger.getLogger(DynamicSecurityFileLoader.class.getName());
+class DynamicSecurityFileLoader {
+  static final String SECURITY_FILE_REFRESH_INTERVAL_IN_SECOND =
+    "zipkin.storage.elasticsearch.security-file-refresh-interval-in-second";
 
   private final String securityFilePath;
+
   private final BasicCredentials basicCredentials;
 
-  DynamicSecurityFileLoader(String securityFilePath, BasicCredentials basicCredentials) {
-    this.securityFilePath = securityFilePath;
+  public DynamicSecurityFileLoader(BasicCredentials basicCredentials, String securityFilePath) {
     this.basicCredentials = basicCredentials;
+    this.securityFilePath = securityFilePath;
   }
 
-  @Override
-  public void run() {
-    while (true) {
-      try {
-        load();
-      } catch (Exception e) {
-        log.log(Level.WARNING, "To load Elasticsearch security file encounters error", e);
-      }
-    }
-  }
-
-  private void load() throws IOException {
+  @Scheduled(fixedRateString = "${" + SECURITY_FILE_REFRESH_INTERVAL_IN_SECOND +"}000")
+  void load() throws IOException {
     Properties properties = new Properties();
     File file = Paths.get(securityFilePath).toFile();
     if (!file.getName().endsWith(".properties")) {
