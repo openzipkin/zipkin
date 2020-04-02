@@ -276,6 +276,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
 
   public void setCredentialsFileRefreshIntervalInSecond(
     Integer credentialsFileRefreshIntervalInSecond) {
+    // Convert second to millisecond
     this.credentialsFileRefreshIntervalInSecond = credentialsFileRefreshIntervalInSecond * 1000;
   }
 
