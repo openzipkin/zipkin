@@ -25,25 +25,26 @@ import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageCo
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.USERNAME_PROP;
 
 /**
- * Load username/password from security file.
+ * Load username/password from credentials file.
  */
-class DynamicSecurityFileLoader {
-  static final String SECURITY_FILE_REFRESH_INTERVAL_IN_SECOND =
-    "zipkin.storage.elasticsearch.security-file-refresh-interval-in-second";
+class DynamicCredentialsFileLoader {
+  static final String CREDENTIALS_FILE_REFRESH_INTERVAL_IN_SECOND =
+    "zipkin.storage.elasticsearch.credentials-file-refresh-interval-in-second";
 
-  private final String securityFilePath;
+  private final String credentialsFilePath;
 
   private final BasicCredentials basicCredentials;
 
-  public DynamicSecurityFileLoader(BasicCredentials basicCredentials, String securityFilePath) {
+  public DynamicCredentialsFileLoader(BasicCredentials basicCredentials,
+    String credentialsFilePath) {
     this.basicCredentials = basicCredentials;
-    this.securityFilePath = securityFilePath;
+    this.credentialsFilePath = credentialsFilePath;
   }
 
-  @Scheduled(fixedRateString = "${" + SECURITY_FILE_REFRESH_INTERVAL_IN_SECOND +"}000")
+  @Scheduled(fixedRateString = "${" + CREDENTIALS_FILE_REFRESH_INTERVAL_IN_SECOND + "}")
   void load() throws IOException {
     Properties properties = new Properties();
-    File file = Paths.get(securityFilePath).toFile();
+    File file = Paths.get(credentialsFilePath).toFile();
     if (!file.getName().endsWith(".properties")) {
       throw new FileNotFoundException("The file does not exist or not end with '.properties'");
     }

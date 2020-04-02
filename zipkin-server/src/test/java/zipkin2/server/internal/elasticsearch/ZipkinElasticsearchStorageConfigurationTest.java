@@ -317,12 +317,12 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
   @Test(timeout = 30_1000)
   public void providesBasicAuthInterceptor_whenDynamicCredentialsConfigured() throws Exception {
-    File securityFile = File.createTempFile("zipkin-server-security", ".properties");
+    File credentialsFile = File.createTempFile("zipkin-server-credentials", ".properties");
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
-      "zipkin.storage.elasticsearch.security-file-path:" + securityFile.getAbsolutePath(),
-      "zipkin.storage.elasticsearch.security-file-refresh-interval-in-second:2")
+      "zipkin.storage.elasticsearch.credentials-file-path:" + credentialsFile.getAbsolutePath(),
+      "zipkin.storage.elasticsearch.credentials-file-refresh-interval-in-second:2")
       .applyTo(context);
     Access.registerElasticsearch(context);
     context.refresh();
@@ -340,7 +340,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Properties props = new Properties();
     props.put(USERNAME_PROP, "foo");
     props.put(PASSWORD_PROP, "bar");
-    try (FileOutputStream os = new FileOutputStream(securityFile)) {
+    try (FileOutputStream os = new FileOutputStream(credentialsFile)) {
       props.store(os, "");
       os.flush();
     }

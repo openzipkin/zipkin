@@ -62,22 +62,22 @@ class ITElasticsearchDynamicCredentials {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
   ElasticsearchStorage storage;
-  File securityFile;
+  File credentialsFile;
 
   @BeforeEach void init() throws IOException {
-    securityFile = File.createTempFile("zipkin-server-security", ".properties");
+    credentialsFile = File.createTempFile("zipkin-server-security", ".properties");
     Properties props = new Properties();
     props.put(USERNAME_PROP, "foo");
     props.put(PASSWORD_PROP, "bar");
-    try (FileOutputStream os = new FileOutputStream(securityFile)) {
+    try (FileOutputStream os = new FileOutputStream(credentialsFile)) {
       props.store(os, "");
     }
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:https://localhost:" + server.httpsPort(),
-      "zipkin.storage.elasticsearch.security-file-path=" + securityFile.getAbsolutePath(),
-      "zipkin.storage.elasticsearch.security-file-refresh-interval-in-second=3",
+      "zipkin.storage.elasticsearch.credentials-file-path=" + credentialsFile.getAbsolutePath(),
+      "zipkin.storage.elasticsearch.credentials-file-refresh-interval-in-second=3",
       "zipkin.storage.elasticsearch.ssl.key-store=classpath:keystore.jks",
       "zipkin.storage.elasticsearch.ssl.key-store-password=password",
       "zipkin.storage.elasticsearch.ssl.trust-store=classpath:keystore.jks",
@@ -111,7 +111,7 @@ class ITElasticsearchDynamicCredentials {
     Properties props = new Properties();
     props.put(USERNAME_PROP, "foo1");
     props.put(PASSWORD_PROP, "bar1");
-    try (FileOutputStream os = new FileOutputStream(securityFile)) {
+    try (FileOutputStream os = new FileOutputStream(credentialsFile)) {
       props.store(os, "");
     }
     assertTimeout(ofSeconds(30), () -> {

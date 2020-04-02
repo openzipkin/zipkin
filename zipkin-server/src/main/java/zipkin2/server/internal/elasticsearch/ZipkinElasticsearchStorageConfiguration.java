@@ -58,7 +58,8 @@ public class ZipkinElasticsearchStorageConfiguration {
   static final String QUALIFIER = "zipkinElasticsearch";
   static final String USERNAME_PROP = "zipkin.storage.elasticsearch.username";
   static final String PASSWORD_PROP = "zipkin.storage.elasticsearch.password";
-  static final String SECURITY_FILE_PATH_PROP = "zipkin.storage.elasticsearch.security-file-path";
+  static final String CREDENTIALS_FILE_PATH_PROP =
+    "zipkin.storage.elasticsearch.credentials-file-path";
 
   // Exposed as a bean so that zipkin-aws can override this as sourced from the AWS endpoints api
   @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean
@@ -152,10 +153,10 @@ public class ZipkinElasticsearchStorageConfiguration {
   }
 
   @Bean @Qualifier(QUALIFIER) @Conditional(DynamicRefreshRequired.class)
-  DynamicSecurityFileLoader dynamicElasticsearchAuth(
-    @Value("${" + SECURITY_FILE_PATH_PROP + "}") String securityFilePath,
+  DynamicCredentialsFileLoader dynamicElasticsearchAuth(
+    @Value("${" + CREDENTIALS_FILE_PATH_PROP + "}") String credentialsFilePath,
     @Qualifier(QUALIFIER) BasicCredentials basicCredentials) {
-    return new DynamicSecurityFileLoader(basicCredentials, securityFilePath);
+    return new DynamicCredentialsFileLoader(basicCredentials, credentialsFilePath);
   }
 
   @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing
@@ -194,15 +195,15 @@ public class ZipkinElasticsearchStorageConfiguration {
         condition.getEnvironment().getProperty(USERNAME_PROP);
       String password =
         condition.getEnvironment().getProperty(PASSWORD_PROP);
-      String securityFilePath =
-        condition.getEnvironment().getProperty(SECURITY_FILE_PATH_PROP);
-      return !isEmpty(userName) && !isEmpty(password) || !isEmpty(securityFilePath);
+      String credentialsFilePath =
+        condition.getEnvironment().getProperty(CREDENTIALS_FILE_PATH_PROP);
+      return !isEmpty(userName) && !isEmpty(password) || !isEmpty(credentialsFilePath);
     }
   }
 
   static final class DynamicRefreshRequired implements Condition {
     @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
-      return !isEmpty(condition.getEnvironment().getProperty(SECURITY_FILE_PATH_PROP));
+      return !isEmpty(condition.getEnvironment().getProperty(CREDENTIALS_FILE_PATH_PROP));
     }
   }
 

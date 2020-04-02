@@ -22,7 +22,10 @@ import com.linecorp.armeria.common.HttpResponse;
 import java.util.Optional;
 
 /**
- * Adds basic auth username and password to every request per https://www.elastic.co/guide/en/x-pack/current/how-security-works.html
+ * Adds basic auth username and password to every request per.
+ *
+ * <p>Ref: <a href="https://www.elastic.co/guide/en/x-pack/current/how-security-works.html"> How
+ * Elasticsearch security works</a></p>
  */
 final class BasicAuthInterceptor extends SimpleDecoratingHttpClient {
 
@@ -36,7 +39,8 @@ final class BasicAuthInterceptor extends SimpleDecoratingHttpClient {
   @Override
   public HttpResponse execute(ClientRequestContext ctx, HttpRequest req) throws Exception {
     Optional<String> credentialsOption = basicCredentials.getCredentials();
-    credentialsOption.ifPresent(s -> ctx.addAdditionalRequestHeader(HttpHeaderNames.AUTHORIZATION, s));
+    credentialsOption.ifPresent(
+      s -> ctx.addAdditionalRequestHeader(HttpHeaderNames.AUTHORIZATION, s));
     return delegate().execute(ctx, req);
   }
 }

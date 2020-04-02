@@ -19,7 +19,10 @@ import java.util.Optional;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Generate Elasticsearch basic user credentials https://www.elastic.co/guide/en/x-pack/current/how-security-works.html
+ * Generate Elasticsearch basic user credentials.
+ *
+ * <p>Ref: <a href="https://www.elastic.co/guide/en/x-pack/current/how-security-works.html"> How
+ * Elasticsearch security works</a></p>
  */
 final class BasicCredentials {
 
