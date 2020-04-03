@@ -139,6 +139,8 @@ trace IDs. Defaults to true
 * `QUERY_TIMEOUT`: Sets the hard timeout for query requests. Accepts any duration string (e.g., 100ms).
 A value of 0 will disable the timeout completely. Defaults to 11s.
 * `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
+* `QUERY_NAMES_MAX_AGE`: Controls the value of the `max-age` header zipkin-server responds with on
+ http requests for autocompleted values in the UI (service names for example). Defaults to 300 seconds.
 * `QUERY_LOOKBACK`: How many milliseconds queries can look back from endTs; Defaults to 24 hours (two daily buckets: one for today and one for yesterday)
 * `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra`, `elasticsearch`
 * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
