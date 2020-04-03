@@ -321,8 +321,8 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
-      "zipkin.storage.elasticsearch.credentials-file-path:" + credentialsFile.getAbsolutePath(),
-      "zipkin.storage.elasticsearch.credentials-file-refresh-interval-in-second:2")
+      "zipkin.storage.elasticsearch.credentials-file:" + credentialsFile.getAbsolutePath(),
+      "zipkin.storage.elasticsearch.credentials-refresh-interval:2")
       .applyTo(context);
     Access.registerElasticsearch(context);
     context.refresh();

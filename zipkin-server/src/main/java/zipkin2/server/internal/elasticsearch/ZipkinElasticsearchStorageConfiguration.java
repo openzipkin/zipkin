@@ -58,8 +58,8 @@ public class ZipkinElasticsearchStorageConfiguration {
   static final String QUALIFIER = "zipkinElasticsearch";
   static final String USERNAME_PROP = "zipkin.storage.elasticsearch.username";
   static final String PASSWORD_PROP = "zipkin.storage.elasticsearch.password";
-  static final String CREDENTIALS_FILE_PATH_PROP =
-    "zipkin.storage.elasticsearch.credentials-file-path";
+  static final String CREDENTIALS_FILE_PROP =
+    "zipkin.storage.elasticsearch.credentials-file";
 
   // Exposed as a bean so that zipkin-aws can override this as sourced from the AWS endpoints api
   @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean
@@ -145,7 +145,7 @@ public class ZipkinElasticsearchStorageConfiguration {
   }
 
   @Bean @Qualifier(QUALIFIER) @Conditional(BasicAuthRequired.class)
-  BasicCredentials dynamicElasticsearchBasicCredentials(ZipkinElasticsearchStorageProperties es) {
+  BasicCredentials basicCredentials(ZipkinElasticsearchStorageProperties es) {
     if (isEmpty(es.getUsername()) || isEmpty(es.getPassword())) {
       return new BasicCredentials();
     }
@@ -154,9 +154,9 @@ public class ZipkinElasticsearchStorageConfiguration {
 
   @Bean @Qualifier(QUALIFIER) @Conditional(DynamicRefreshRequired.class)
   DynamicCredentialsFileLoader dynamicElasticsearchAuth(
-    @Value("${" + CREDENTIALS_FILE_PATH_PROP + "}") String credentialsFilePath,
+    @Value("${" + CREDENTIALS_FILE_PROP + "}") String credentialsFile,
     @Qualifier(QUALIFIER) BasicCredentials basicCredentials) {
-    return new DynamicCredentialsFileLoader(basicCredentials, credentialsFilePath);
+    return new DynamicCredentialsFileLoader(basicCredentials, credentialsFile);
   }
 
   @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing
@@ -195,15 +195,15 @@ public class ZipkinElasticsearchStorageConfiguration {
         condition.getEnvironment().getProperty(USERNAME_PROP);
       String password =
         condition.getEnvironment().getProperty(PASSWORD_PROP);
-      String credentialsFilePath =
-        condition.getEnvironment().getProperty(CREDENTIALS_FILE_PATH_PROP);
-      return !isEmpty(userName) && !isEmpty(password) || !isEmpty(credentialsFilePath);
+      String credentialsFile =
+        condition.getEnvironment().getProperty(CREDENTIALS_FILE_PROP);
+      return !isEmpty(userName) && !isEmpty(password) || !isEmpty(credentialsFile);
     }
   }
 
   static final class DynamicRefreshRequired implements Condition {
     @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
-      return !isEmpty(condition.getEnvironment().getProperty(CREDENTIALS_FILE_PATH_PROP));
+      return !isEmpty(condition.getEnvironment().getProperty(CREDENTIALS_FILE_PROP));
     }
   }
 

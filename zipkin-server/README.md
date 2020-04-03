@@ -268,16 +268,16 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                            to 0 as it would mean a machine failure results in data loss.
     * `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch basic authentication, which defaults to empty string.
                                        Use when X-Pack security (formerly Shield) is in place.
-    * `ES_CREDENTIALS_FILE_PATH`: Elasticsearch credentails properties file path, which defaults to empty
+    * `ES_CREDENTIALS_FILE`: Elasticsearch credentails properties file path, which defaults to empty
                                string. The suffix of file should be `.properties`. The keys of
                                `username` and `password` are `zipkin.storage.elasticsearch.username`
                                and `zipkin.storage.elasticsearch.password` respectively.
                                Before the credentials are loaded from the file, `ES_USERNAME` and
                                `ES_PASSWORD` is in place. If they are empty, basic authentication
                                is disable temporarily. This file is reloaded periodically, which uses
-                               `ES_CREDENTIALS_FILE_REFRESH_INTERVAL_IN_SECOND` as the interval.
-    * `ES_CREDENTIALS_FILE_REFRESH_INTERVAL_IN_SECOND`: Credentials file refresh interval in seconds
-                               , which defaults to 5 seconds.
+                               `ES_CREDENTIALS_REFRESH_INTERVAL` as the interval.
+    * `ES_CREDENTIALS_REFRESH_INTERVAL`: Credentials refresh interval in seconds, which defaults to
+                                         5 seconds.
     * `ES_HTTP_LOGGING`: When set, controls the volume of HTTP logging of the Elasticsearch API.
                          Options are BASIC, HEADERS, BODY
 Example usage:

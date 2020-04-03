@@ -35,8 +35,8 @@ import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
  *   index-replicas: 1
  *   username: username
  *   password: password
- *   credentials-file-path: credentialsFilePath
- *   credentials-file-refresh-interval-in-second: 5
+ *   credentials-file: credentialsFile
+ *   credentials-refresh-interval: 5000
  *   http-logging: HEADERS
  *   ssl:
  *     key-store: keystore.p12
@@ -169,12 +169,12 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   /** password used for basic auth. Needed when Shield or X-Pack security is enabled */
   private String password;
   /**
-   * credentialsFilePath is an absolute path refers to a properties-file used to store username and
+   * credentialsFile is an absolute path refers to a properties-file used to store username and
    * password
    */
-  private String credentialsFilePath;
-  /** Credentials file refresh interval(in seconds) for credentials file */
-  private Integer credentialsFileRefreshIntervalInSecond = 5;
+  private String credentialsFile;
+  /** Credentials refresh interval(in milliseconds) */
+  private Integer credentialsRefreshInterval = 5_000;
   /** When set, controls the volume of HTTP logging of the Elasticsearch Api. */
   private HttpLogging httpLogging = HttpLogging.NONE;
   /** Connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api requests. */
@@ -262,22 +262,22 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     this.password = emptyToNull(password);
   }
 
-  public String getCredentialsFilePath() {
-    return credentialsFilePath;
+  public String getCredentialsFile() {
+    return credentialsFile;
   }
 
-  public void setCredentialsFilePath(final String credentialsFilePath) {
-    this.credentialsFilePath = credentialsFilePath;
+  public void setCredentialsFile(final String credentialsFile) {
+    this.credentialsFile = credentialsFile;
   }
 
-  public Integer getCredentialsFileRefreshIntervalInSecond() {
-    return credentialsFileRefreshIntervalInSecond;
+  public Integer getCredentialsRefreshInterval() {
+    return credentialsRefreshInterval;
   }
 
-  public void setCredentialsFileRefreshIntervalInSecond(
-    Integer credentialsFileRefreshIntervalInSecond) {
+  public void setCredentialsRefreshInterval(
+    Integer credentialsRefreshInterval) {
     // Convert second to millisecond
-    this.credentialsFileRefreshIntervalInSecond = credentialsFileRefreshIntervalInSecond * 1000;
+    this.credentialsRefreshInterval = credentialsRefreshInterval;
   }
 
   public HttpLogging getHttpLogging() {

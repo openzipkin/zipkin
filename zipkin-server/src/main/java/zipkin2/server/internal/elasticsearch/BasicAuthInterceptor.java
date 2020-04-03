@@ -22,7 +22,7 @@ import com.linecorp.armeria.common.HttpResponse;
 import java.util.Optional;
 
 /**
- * Adds basic auth username and password to every request per.
+ * Adds basic auth username and password to every request.
  *
  * <p>Ref: <a href="https://www.elastic.co/guide/en/x-pack/current/how-security-works.html"> How
  * Elasticsearch security works</a></p>

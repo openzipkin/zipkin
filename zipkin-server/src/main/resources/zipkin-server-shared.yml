@@ -155,8 +155,8 @@ zipkin:
       index-replicas: ${ES_INDEX_REPLICAS:1}
       username: ${ES_USERNAME:}
       password: ${ES_PASSWORD:}
-      credentials-file-path: ${ES_CREDENTIALS_FILE_PATH:}
-      credentials-file-refresh-interval-in-second: ${ES_CREDENTIALS_FILE_REFRESH_INTERVAL_IN_SECOND:5}
+      credentials-file: ${ES_CREDENTIALS_FILE:}
+      credentials-refresh-interval: ${ES_CREDENTIALS_REFRESH_INTERVAL:5000}
       http-logging: ${ES_HTTP_LOGGING:}
       health-check:
         enabled: ${ES_HEALTH_CHECK_ENABLED:true}

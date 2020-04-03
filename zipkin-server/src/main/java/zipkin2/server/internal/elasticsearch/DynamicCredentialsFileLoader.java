@@ -13,12 +13,15 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
+import com.google.common.util.concurrent.RateLimiter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.PASSWORD_PROP;
@@ -28,35 +31,45 @@ import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageCo
  * Load username/password from credentials file.
  */
 class DynamicCredentialsFileLoader {
+  static final Logger LOGGER = LoggerFactory.getLogger(DynamicCredentialsFileLoader.class);
   static final String CREDENTIALS_FILE_REFRESH_INTERVAL_IN_SECOND =
-    "zipkin.storage.elasticsearch.credentials-file-refresh-interval-in-second";
+    "zipkin.storage.elasticsearch.credentials-refresh-interval";
 
-  private final String credentialsFilePath;
+  private final String credentialsFile;
 
   private final BasicCredentials basicCredentials;
 
+  // Log an exception every 10 seconds.
+  private final RateLimiter rateLimiter = RateLimiter.create(0.1);
+
   public DynamicCredentialsFileLoader(BasicCredentials basicCredentials,
-    String credentialsFilePath) {
+    String credentialsFile) {
     this.basicCredentials = basicCredentials;
-    this.credentialsFilePath = credentialsFilePath;
+    this.credentialsFile = credentialsFile;
   }
 
   @Scheduled(fixedRateString = "${" + CREDENTIALS_FILE_REFRESH_INTERVAL_IN_SECOND + "}")
-  void load() throws IOException {
+  void load() {
     Properties properties = new Properties();
-    File file = Paths.get(credentialsFilePath).toFile();
-    if (!file.getName().endsWith(".properties")) {
-      throw new FileNotFoundException("The file does not exist or not end with '.properties'");
-    }
-    try (FileInputStream is = new FileInputStream(file)) {
-      properties.load(is);
-      if (!properties.containsKey(USERNAME_PROP) || !properties.containsKey(PASSWORD_PROP)) {
-        return;
+    try {
+      File file = Paths.get(credentialsFile).toFile();
+      if (!file.getName().endsWith(".properties")) {
+        throw new FileNotFoundException("The file does not exist or not end with '.properties'");
       }
-      basicCredentials.updateCredentials(
-        properties.getProperty(USERNAME_PROP),
-        properties.getProperty(PASSWORD_PROP)
-      );
+      try (FileInputStream is = new FileInputStream(file)) {
+        properties.load(is);
+        if (!properties.containsKey(USERNAME_PROP) || !properties.containsKey(PASSWORD_PROP)) {
+          return;
+        }
+        basicCredentials.updateCredentials(
+          properties.getProperty(USERNAME_PROP),
+          properties.getProperty(PASSWORD_PROP)
+        );
+      }
+    } catch (Exception e) {
+      if (rateLimiter.tryAcquire()) {
+        LOGGER.error("Load credentials file error", e);
+      }
     }
   }
 }
