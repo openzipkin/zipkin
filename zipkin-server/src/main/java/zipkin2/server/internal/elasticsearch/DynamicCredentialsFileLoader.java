@@ -52,7 +52,7 @@ class DynamicCredentialsFileLoader {
     this.credentialsFile = credentialsFile;
   }
 
-  @Scheduled(fixedRateString = "${" + CREDENTIALS_FILE_REFRESH_INTERVAL_IN_SECOND + "}")
+  @Scheduled(fixedRateString = "${" + CREDENTIALS_REFRESH_INTERVAL + "}")
   void load() {
     Properties properties = new Properties();
     try {
