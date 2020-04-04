@@ -156,7 +156,7 @@ zipkin:
       username: ${ES_USERNAME:}
       password: ${ES_PASSWORD:}
       credentials-file: ${ES_CREDENTIALS_FILE:}
-      credentials-refresh-interval: ${ES_CREDENTIALS_REFRESH_INTERVAL:5000}
+      credentials-refresh-interval: ${ES_CREDENTIALS_REFRESH_INTERVAL:5}
       http-logging: ${ES_HTTP_LOGGING:}
       health-check:
         enabled: ${ES_HEALTH_CHECK_ENABLED:true}

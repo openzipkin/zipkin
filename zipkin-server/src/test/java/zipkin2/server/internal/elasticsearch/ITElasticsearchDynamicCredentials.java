@@ -77,7 +77,7 @@ class ITElasticsearchDynamicCredentials {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:https://localhost:" + server.httpsPort(),
       "zipkin.storage.elasticsearch.credentials-file=" + credentialsFile.getAbsolutePath(),
-      "zipkin.storage.elasticsearch.credentials-refresh-interval=3000",
+      "zipkin.storage.elasticsearch.credentials-refresh-interval=3",
       "zipkin.storage.elasticsearch.ssl.key-store=classpath:keystore.jks",
       "zipkin.storage.elasticsearch.ssl.key-store-password=password",
       "zipkin.storage.elasticsearch.ssl.trust-store=classpath:keystore.jks",

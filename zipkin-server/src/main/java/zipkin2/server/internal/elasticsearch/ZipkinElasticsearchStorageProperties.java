@@ -36,7 +36,7 @@ import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
  *   username: username
  *   password: password
  *   credentials-file: credentialsFile
- *   credentials-refresh-interval: 5000
+ *   credentials-refresh-interval: 5
  *   http-logging: HEADERS
  *   ssl:
  *     key-store: keystore.p12
@@ -173,8 +173,8 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
    * password
    */
   private String credentialsFile;
-  /** Credentials refresh interval(in milliseconds) */
-  private Integer credentialsRefreshInterval = 5_000;
+  /** Credentials refresh interval (in seconds) */
+  private Integer credentialsRefreshInterval = 5;
   /** When set, controls the volume of HTTP logging of the Elasticsearch Api. */
   private HttpLogging httpLogging = HttpLogging.NONE;
   /** Connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api requests. */
@@ -276,7 +276,6 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
 
   public void setCredentialsRefreshInterval(
     Integer credentialsRefreshInterval) {
-    // Convert second to millisecond
     this.credentialsRefreshInterval = credentialsRefreshInterval;
   }
 
