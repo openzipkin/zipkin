@@ -36,7 +36,7 @@ import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageCo
  */
 class DynamicCredentialsFileLoader {
   static final Logger LOGGER = LoggerFactory.getLogger(DynamicCredentialsFileLoader.class);
-  static final String CREDENTIALS_FILE_REFRESH_INTERVAL_IN_SECOND =
+  static final String CREDENTIALS_REFRESH_INTERVAL =
     "zipkin.storage.elasticsearch.credentials-refresh-interval";
 
   private final String credentialsFile;
