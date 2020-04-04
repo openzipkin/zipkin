@@ -30,7 +30,7 @@ import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageCo
 /**
  * Loads username/password from credentials file.
  *
- * <p><em>NOTE:</em> This implementation currently uses blocking I/O loop without poll events.
+ * <p><em>NOTE:</em> This implementation loops instead of using {@link java.nio.file.WatchService}.
  * This means that spans will drop and api failures will occur for any time remaining in the refresh
  * interval. A future version can tighten this by also using poll events.
  */
