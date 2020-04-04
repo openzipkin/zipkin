@@ -28,7 +28,11 @@ import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageCo
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.USERNAME_PROP;
 
 /**
- * Load username/password from credentials file.
+ * Loads username/password from credentials file.
+ *
+ * <p><em>NOTE:</em> This implementation currently uses blocking I/O loop without poll events.
+ * This means that spans will drop and api failures will occur for any time remaining in the refresh
+ * interval. A future version can tighten this by also using poll events.
  */
 class DynamicCredentialsFileLoader {
   static final Logger LOGGER = LoggerFactory.getLogger(DynamicCredentialsFileLoader.class);
