@@ -65,7 +65,7 @@ class ITElasticsearchDynamicCredentials {
   File credentialsFile;
 
   @BeforeEach void init() throws IOException {
-    credentialsFile = File.createTempFile("zipkin-server-security", ".properties");
+    credentialsFile = File.createTempFile("zipkin-server", "credentials");
     Properties props = new Properties();
     props.put(USERNAME_PROP, "foo");
     props.put(PASSWORD_PROP, "bar");

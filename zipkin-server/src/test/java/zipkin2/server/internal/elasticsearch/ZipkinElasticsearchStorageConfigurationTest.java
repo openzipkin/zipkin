@@ -317,7 +317,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
   @Test(timeout = 30_1000)
   public void providesBasicAuthInterceptor_whenDynamicCredentialsConfigured() throws Exception {
-    File credentialsFile = File.createTempFile("zipkin-server-credentials", ".properties");
+    File credentialsFile = File.createTempFile("zipkin-server", "credentials");
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",

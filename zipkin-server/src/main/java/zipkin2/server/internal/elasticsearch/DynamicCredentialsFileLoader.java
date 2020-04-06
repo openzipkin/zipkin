@@ -57,8 +57,8 @@ class DynamicCredentialsFileLoader {
     Properties properties = new Properties();
     try {
       File file = Paths.get(credentialsFile).toFile();
-      if (!file.getName().endsWith(".properties")) {
-        throw new FileNotFoundException("The file does not exist or not end with '.properties'");
+      if (!file.exists()) {
+        throw new FileNotFoundException("The file does not exist");
       }
       try (FileInputStream is = new FileInputStream(file)) {
         properties.load(is);
