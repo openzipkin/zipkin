@@ -31,6 +31,10 @@ import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageCo
  * <p><em>NOTE:</em> This implementation loops instead of using {@link java.nio.file.WatchService}.
  * This means that spans will drop and api failures will occur for any time remaining in the refresh
  * interval. A future version can tighten this by also using poll events.
+ *
+ * adriancole implementation note: actually if we use a normal single thread scheduled executor and
+ * make this type closeable, it should be less error prone on things like this. Spring automatically
+ * closes beans on shutdown. Also, this as a bean allows something to synchronously call load auth fail.
  */
 class DynamicCredentialsFileLoader {
   static final Logger LOGGER = LoggerFactory.getLogger(DynamicCredentialsFileLoader.class);
