@@ -19,7 +19,7 @@ import com.linecorp.armeria.client.SimpleDecoratingHttpClient;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
-import java.util.Optional;
+import java.util.Objects;
 
 /**
  * Adds basic auth username and password to every request.
@@ -38,9 +38,10 @@ final class BasicAuthInterceptor extends SimpleDecoratingHttpClient {
 
   @Override
   public HttpResponse execute(ClientRequestContext ctx, HttpRequest req) throws Exception {
-    Optional<String> credentialsOption = basicCredentials.getCredentials();
-    credentialsOption.ifPresent(
-      s -> ctx.addAdditionalRequestHeader(HttpHeaderNames.AUTHORIZATION, s));
+    String credentials = basicCredentials.getCredentials();
+    if (Objects.nonNull(credentials)) {
+      ctx.addAdditionalRequestHeader(HttpHeaderNames.AUTHORIZATION, credentials);
+    }
     return delegate().execute(ctx, req);
   }
 }

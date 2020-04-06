@@ -335,8 +335,8 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     assertThat(client.as(BasicAuthInterceptor.class)).isNotNull();
     BasicCredentials basicCredentials =
       Objects.requireNonNull(client.as(BasicAuthInterceptor.class)).basicCredentials;
-    Optional<String> credentialsOption = basicCredentials.getCredentials();
-    assertThat(credentialsOption.isPresent()).isFalse();
+    String credentials = basicCredentials.getCredentials();
+    assertThat(credentials).isNull();
     Properties props = new Properties();
     props.put(USERNAME_PROP, "foo");
     props.put(PASSWORD_PROP, "bar");
@@ -344,7 +344,8 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       props.store(os, "");
       os.flush();
     }
-    while (!basicCredentials.getCredentials().orElse("").equals("Basic Zm9vOmJhcg==")) {
+    while (!Objects.requireNonNullElse(basicCredentials.getCredentials(), "")
+      .equals("Basic Zm9vOmJhcg==")) {
       Thread.sleep(500);
     }
   }

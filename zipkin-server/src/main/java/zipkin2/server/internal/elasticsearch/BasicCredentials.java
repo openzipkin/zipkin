@@ -15,6 +15,7 @@ package zipkin2.server.internal.elasticsearch;
 
 import java.util.Base64;
 import java.util.Optional;
+import zipkin2.internal.Nullable;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -41,7 +42,8 @@ final class BasicCredentials {
     basicCredentials = "Basic " + Base64.getEncoder().encodeToString(token.getBytes(UTF_8));
   }
 
-  Optional<String> getCredentials() {
-    return Optional.ofNullable(basicCredentials);
+  @Nullable
+  String getCredentials() {
+    return basicCredentials;
   }
 }

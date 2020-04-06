@@ -13,11 +13,9 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import com.google.common.util.concurrent.RateLimiter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Properties;
 import org.slf4j.Logger;
@@ -42,9 +40,6 @@ class DynamicCredentialsFileLoader {
   private final String credentialsFile;
 
   private final BasicCredentials basicCredentials;
-
-  // Log an exception every 10 seconds.
-  private final RateLimiter rateLimiter = RateLimiter.create(0.1);
 
   public DynamicCredentialsFileLoader(BasicCredentials basicCredentials,
     String credentialsFile) {
@@ -71,9 +66,7 @@ class DynamicCredentialsFileLoader {
         );
       }
     } catch (Exception e) {
-      if (rateLimiter.tryAcquire()) {
-        LOGGER.error("Load credentials file error", e);
-      }
+      LOGGER.error("Load credentials file error", e);
     }
   }
 }
