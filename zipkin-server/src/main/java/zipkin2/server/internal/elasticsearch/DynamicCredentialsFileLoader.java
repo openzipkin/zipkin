@@ -31,15 +31,9 @@ import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageCo
  * <p><em>NOTE:</em> This implementation loops instead of using {@link java.nio.file.WatchService}.
  * This means that spans will drop and api failures will occur for any time remaining in the refresh
  * interval. A future version can tighten this by also using poll events.
- *
- * adriancole implementation note: actually if we use a normal single thread scheduled executor and
- * make this type closeable, it should be less error prone on things like this. Spring automatically
- * closes beans on shutdown. Also, this as a bean allows something to synchronously call load auth fail.
  */
-class DynamicCredentialsFileLoader {
+class DynamicCredentialsFileLoader implements Runnable {
   static final Logger LOGGER = LoggerFactory.getLogger(DynamicCredentialsFileLoader.class);
-  static final String CREDENTIALS_REFRESH_INTERVAL =
-    "zipkin.storage.elasticsearch.credentials-refresh-interval";
 
   private final String credentialsFile;
 
@@ -51,8 +45,7 @@ class DynamicCredentialsFileLoader {
     this.credentialsFile = credentialsFile;
   }
 
-  @Scheduled(fixedRateString = "${" + CREDENTIALS_REFRESH_INTERVAL + "}")
-  void load() {
+  public void run() {
     Properties properties = new Properties();
     try {
       File file = Paths.get(credentialsFile).toFile();

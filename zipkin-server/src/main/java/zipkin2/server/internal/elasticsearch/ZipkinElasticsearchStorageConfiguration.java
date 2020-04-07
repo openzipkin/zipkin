@@ -16,6 +16,7 @@ package zipkin2.server.internal.elasticsearch;
 import brave.CurrentSpanCustomizer;
 import brave.SpanCustomizer;
 import brave.http.HttpTracing;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.linecorp.armeria.client.ClientFactory;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
@@ -27,6 +28,9 @@ import com.linecorp.armeria.common.logging.RequestLogProperty;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.net.ssl.KeyManagerFactory;
@@ -42,7 +46,6 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
@@ -50,7 +53,6 @@ import zipkin2.storage.StorageComponent;
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties.Ssl;
 
 @Configuration(proxyBeanMethods = false)
-@EnableScheduling
 @EnableConfigurationProperties(ZipkinElasticsearchStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
 @ConditionalOnMissingBean(StorageComponent.class)
@@ -60,6 +62,8 @@ public class ZipkinElasticsearchStorageConfiguration {
   static final String PASSWORD_PROP = "zipkin.storage.elasticsearch.password";
   static final String CREDENTIALS_FILE_PROP =
     "zipkin.storage.elasticsearch.credentials-file";
+  static final String CREDENTIALS_REFRESH_INTERVAL =
+    "zipkin.storage.elasticsearch.credentials-refresh-interval";
 
   // Exposed as a bean so that zipkin-aws can override this as sourced from the AWS endpoints api
   @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean
@@ -152,11 +156,18 @@ public class ZipkinElasticsearchStorageConfiguration {
     return new BasicCredentials(es.getUsername(), es.getPassword());
   }
 
-  @Bean @Qualifier(QUALIFIER) @Conditional(DynamicRefreshRequired.class)
-  DynamicCredentialsFileLoader dynamicElasticsearchAuth(
+  @Bean(destroyMethod="shutdown") @Qualifier(QUALIFIER) @Conditional(DynamicRefreshRequired.class)
+  ScheduledExecutorService dynamicCredentialsScheduledExecutorService(
     @Value("${" + CREDENTIALS_FILE_PROP + "}") String credentialsFile,
+    @Value("${" + CREDENTIALS_REFRESH_INTERVAL + "}") Integer credentialsRefreshInterval,
     @Qualifier(QUALIFIER) BasicCredentials basicCredentials) {
-    return new DynamicCredentialsFileLoader(basicCredentials, credentialsFile);
+    ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor(
+      new ThreadFactoryBuilder()
+        .setNameFormat("LoadElasticSearchCredentials-%d")
+        .build());
+    ses.scheduleAtFixedRate(new DynamicCredentialsFileLoader(basicCredentials, credentialsFile),
+      0, credentialsRefreshInterval, TimeUnit.SECONDS);
+    return ses;
   }
 
   @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing
@@ -188,6 +199,8 @@ public class ZipkinElasticsearchStorageConfiguration {
       client.decorator(BraveClient.newDecorator(httpTracing));
     };
   }
+
+
 
   static final class BasicAuthRequired implements Condition {
     @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
