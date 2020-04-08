@@ -36,7 +36,7 @@ import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
  *   username: username
  *   password: password
  *   credentials-file: credentialsFile
- *   credentials-refresh-interval: 5
+ *   credentials-refresh-interval: 1
  *   http-logging: HEADERS
  *   ssl:
  *     key-store: keystore.p12
