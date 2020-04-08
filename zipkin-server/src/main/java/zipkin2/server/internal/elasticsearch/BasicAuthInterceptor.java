@@ -39,7 +39,7 @@ final class BasicAuthInterceptor extends SimpleDecoratingHttpClient {
   @Override
   public HttpResponse execute(ClientRequestContext ctx, HttpRequest req) throws Exception {
     String credentials = basicCredentials.getCredentials();
-    if (Objects.nonNull(credentials)) {
+    if (credentials != null) {
       ctx.addAdditionalRequestHeader(HttpHeaderNames.AUTHORIZATION, credentials);
     }
     return delegate().execute(ctx, req);
