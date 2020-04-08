@@ -275,7 +275,8 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                              as the interval. This parameter takes precedence over ES_USERNAME and
                               ES_PASSWORD when specified.
     * `ES_CREDENTIALS_REFRESH_INTERVAL`: Credentials refresh interval in seconds, which defaults to
-                                         5 seconds.
+                                         1 second. This is the maximum amount of time spans will drop due to stale
+                                         credentials. Any errors reading the credentials file occur in logs at this rate.
     * `ES_HTTP_LOGGING`: When set, controls the volume of HTTP logging of the Elasticsearch API.
                          Options are BASIC, HEADERS, BODY
 Example usage:
