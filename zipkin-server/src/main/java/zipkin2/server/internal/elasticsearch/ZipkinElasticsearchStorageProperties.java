@@ -174,7 +174,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
    */
   private String credentialsFile;
   /** Credentials refresh interval (in seconds) */
-  private Integer credentialsRefreshInterval = 5;
+  private Integer credentialsRefreshInterval = 1;
   /** When set, controls the volume of HTTP logging of the Elasticsearch Api. */
   private HttpLogging httpLogging = HttpLogging.NONE;
   /** Connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api requests. */
