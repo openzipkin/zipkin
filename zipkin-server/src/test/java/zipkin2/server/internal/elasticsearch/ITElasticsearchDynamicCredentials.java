@@ -35,8 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static zipkin2.elasticsearch.Access.pretendIndexTemplatesExist;
 import static zipkin2.server.internal.elasticsearch.TestResponses.YELLOW_RESPONSE;
-import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.PASSWORD_PROP;
-import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.USERNAME_PROP;
+import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.PASSWORD;
+import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.USERNAME;
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties.Ssl;
 
 class ITElasticsearchDynamicCredentials {
@@ -62,13 +62,13 @@ class ITElasticsearchDynamicCredentials {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
   ElasticsearchStorage storage;
-  File credentialsFile;
+  String credentialsFile;
 
   @BeforeEach void init() throws IOException {
-    credentialsFile = File.createTempFile("zipkin-server", "credentials");
+    credentialsFile = pathOfResource("es-credentials-it");
     Properties props = new Properties();
-    props.put(USERNAME_PROP, "foo");
-    props.put(PASSWORD_PROP, "bar");
+    props.put(USERNAME, "foo");
+    props.put(PASSWORD, "bar");
     try (FileOutputStream os = new FileOutputStream(credentialsFile)) {
       props.store(os, "");
     }
@@ -76,7 +76,7 @@ class ITElasticsearchDynamicCredentials {
       "spring.config.name=zipkin-server",
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:https://localhost:" + server.httpsPort(),
-      "zipkin.storage.elasticsearch.credentials-file=" + credentialsFile.getAbsolutePath(),
+      "zipkin.storage.elasticsearch.credentials-file=" + credentialsFile,
       "zipkin.storage.elasticsearch.credentials-refresh-interval=3",
       "zipkin.storage.elasticsearch.ssl.key-store=classpath:keystore.jks",
       "zipkin.storage.elasticsearch.ssl.key-store-password=password",
@@ -109,8 +109,8 @@ class ITElasticsearchDynamicCredentials {
 
     // Update security file with new username/password
     Properties props = new Properties();
-    props.put(USERNAME_PROP, "foo1");
-    props.put(PASSWORD_PROP, "bar1");
+    props.put(USERNAME, "foo1");
+    props.put(PASSWORD, "bar1");
     try (FileOutputStream os = new FileOutputStream(credentialsFile)) {
       props.store(os, "");
     }
@@ -125,5 +125,11 @@ class ITElasticsearchDynamicCredentials {
         }
       }
     });
+  }
+
+  static String pathOfResource(String resource) {
+    File file = new File(
+      ITElasticsearchDynamicCredentials.class.getClassLoader().getResource(resource).getFile());
+    return file.getAbsolutePath();
   }
 }

@@ -13,17 +13,15 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.nio.file.Paths;
+import java.io.IOException;
 import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
+import zipkin2.internal.Nullable;
 
-import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.PASSWORD_PROP;
-import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.USERNAME_PROP;
+import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.PASSWORD;
+import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.USERNAME;
 
 /**
  * Loads username/password from credentials file.
@@ -45,25 +43,33 @@ class DynamicCredentialsFileLoader implements Runnable {
     this.credentialsFile = credentialsFile;
   }
 
-  public void run() {
-    Properties properties = new Properties();
+  @Override public void run() {
     try {
-      File file = Paths.get(credentialsFile).toFile();
-      if (!file.exists()) {
-        throw new FileNotFoundException("The file does not exist");
-      }
-      try (FileInputStream is = new FileInputStream(file)) {
-        properties.load(is);
-        if (!properties.containsKey(USERNAME_PROP) || !properties.containsKey(PASSWORD_PROP)) {
-          return;
-        }
-        basicCredentials.updateCredentials(
-          properties.getProperty(USERNAME_PROP),
-          properties.getProperty(PASSWORD_PROP)
-        );
-      }
+      updateCredentialsFromProperties();
     } catch (Exception e) {
-      LOGGER.error("Load credentials file error", e);
+      LOGGER.error("Error loading elasticsearch credentials", e);
     }
+  }
+
+  void updateCredentialsFromProperties() throws IOException {
+    Properties properties = new Properties();
+    try (FileInputStream is = new FileInputStream(credentialsFile)) {
+      properties.load(is);
+    }
+    String username = ensureNotEmptyOrNull(properties, credentialsFile, USERNAME);
+    String password = ensureNotEmptyOrNull(properties, credentialsFile, PASSWORD);
+    basicCredentials.updateCredentials(username, password);
+  }
+
+  @Nullable static String ensureNotEmptyOrNull(Properties properties, String fileName, String name) {
+    String value = properties.getProperty(name);
+    if (value == null) {
+      throw new IllegalStateException("no " + name + " property in " + fileName);
+    }
+    value = value.trim();
+    if ("".equals(value)) {
+      throw new IllegalStateException("empty " + name + " property in " + fileName);
+    }
+    return value;
   }
 }

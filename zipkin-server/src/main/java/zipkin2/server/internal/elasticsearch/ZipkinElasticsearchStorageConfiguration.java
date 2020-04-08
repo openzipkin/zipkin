@@ -26,6 +26,7 @@ import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.logging.RequestLog;
 import com.linecorp.armeria.common.logging.RequestLogProperty;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -58,9 +59,9 @@ import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStoragePr
 @ConditionalOnMissingBean(StorageComponent.class)
 public class ZipkinElasticsearchStorageConfiguration {
   static final String QUALIFIER = "zipkinElasticsearch";
-  static final String USERNAME_PROP = "zipkin.storage.elasticsearch.username";
-  static final String PASSWORD_PROP = "zipkin.storage.elasticsearch.password";
-  static final String CREDENTIALS_FILE_PROP =
+  static final String USERNAME = "zipkin.storage.elasticsearch.username";
+  static final String PASSWORD = "zipkin.storage.elasticsearch.password";
+  static final String CREDENTIALS_FILE =
     "zipkin.storage.elasticsearch.credentials-file";
   static final String CREDENTIALS_REFRESH_INTERVAL =
     "zipkin.storage.elasticsearch.credentials-refresh-interval";
@@ -156,16 +157,19 @@ public class ZipkinElasticsearchStorageConfiguration {
     return new BasicCredentials(es.getUsername(), es.getPassword());
   }
 
-  @Bean(destroyMethod="shutdown") @Qualifier(QUALIFIER) @Conditional(DynamicRefreshRequired.class)
+  @Bean(destroyMethod = "shutdown") @Qualifier(QUALIFIER) @Conditional(DynamicRefreshRequired.class)
   ScheduledExecutorService dynamicCredentialsScheduledExecutorService(
-    @Value("${" + CREDENTIALS_FILE_PROP + "}") String credentialsFile,
+    @Value("${" + CREDENTIALS_FILE + "}") String credentialsFile,
     @Value("${" + CREDENTIALS_REFRESH_INTERVAL + "}") Integer credentialsRefreshInterval,
-    @Qualifier(QUALIFIER) BasicCredentials basicCredentials) {
+    @Qualifier(QUALIFIER) BasicCredentials basicCredentials) throws IOException {
     ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor(
       new ThreadFactoryBuilder()
         .setNameFormat("LoadElasticSearchCredentials-%d")
         .build());
-    ses.scheduleAtFixedRate(new DynamicCredentialsFileLoader(basicCredentials, credentialsFile),
+    DynamicCredentialsFileLoader credentialsFileLoader =
+      new DynamicCredentialsFileLoader(basicCredentials, credentialsFile);
+    credentialsFileLoader.updateCredentialsFromProperties();
+    ses.scheduleAtFixedRate(credentialsFileLoader,
       0, credentialsRefreshInterval, TimeUnit.SECONDS);
     return ses;
   }
@@ -200,23 +204,21 @@ public class ZipkinElasticsearchStorageConfiguration {
     };
   }
 
-
-
   static final class BasicAuthRequired implements Condition {
     @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
       String userName =
-        condition.getEnvironment().getProperty(USERNAME_PROP);
+        condition.getEnvironment().getProperty(USERNAME);
       String password =
-        condition.getEnvironment().getProperty(PASSWORD_PROP);
+        condition.getEnvironment().getProperty(PASSWORD);
       String credentialsFile =
-        condition.getEnvironment().getProperty(CREDENTIALS_FILE_PROP);
+        condition.getEnvironment().getProperty(CREDENTIALS_FILE);
       return !isEmpty(userName) && !isEmpty(password) || !isEmpty(credentialsFile);
     }
   }
 
   static final class DynamicRefreshRequired implements Condition {
     @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
-      return !isEmpty(condition.getEnvironment().getProperty(CREDENTIALS_FILE_PROP));
+      return !isEmpty(condition.getEnvironment().getProperty(CREDENTIALS_FILE));
     }
   }
 
