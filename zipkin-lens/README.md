@@ -55,6 +55,27 @@ Finally, edit [App.jsx](./src/components/App/App.jsx) and
 [LanguageSelector.tsx](./src/components/App/LanguageSelector.tsx) to import the new translation and
 add an entry to the language selector respectively.
 
+## Running behind a reverse proxy
+Since version `2.20`, Zipkin Lens supports running under an arbitrary context root. As a result,
+it can be proxied under a different path than `/zipkin/` such as `/proxy/foo/myzipkin/`.
+
+As an example, here is the configuration for Apache HTTPD acting as a reverse proxy
+for a Zipkin instance running on the same host:
+
+```
+LoadModule proxy_module lib/httpd/modules/mod_proxy.so
+LoadModule proxy_http_module lib/httpd/modules/mod_proxy_http.so
+
+ProxyPass "/proxy/foo/myzipkin"  "http://localhost:9411/zipkin/"
+ProxyPassReverse "/proxy/foo/myzipkin"  "http://localhost:9411/zipkin/"
+```
+
+For the reverse proxy configuration to work, Zipkin needs to be started with the `zipkin.ui.basepath`
+parameter pointing to the proxy path:
+
+```
+java -jar zipkin.jar --zipkin.ui.basepath=/proxy/foo/myzipkin
+```
 
 ## Authentication / Authorization
 
