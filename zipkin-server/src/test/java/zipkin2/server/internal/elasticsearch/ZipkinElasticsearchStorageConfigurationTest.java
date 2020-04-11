@@ -335,6 +335,19 @@ public class ZipkinElasticsearchStorageConfigurationTest {
   }
 
   @Test(expected = BeanCreationException.class)
+  public void providesBasicAuthInterceptor_whenInvalidDynamicCredentialsConfigured() {
+    String credentialsFile = pathOfResource("es-credentials-invalid");
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
+      "zipkin.storage.elasticsearch.credentials-file:" + credentialsFile,
+      "zipkin.storage.elasticsearch.credentials-refresh-interval:2")
+      .applyTo(context);
+    Access.registerElasticsearch(context);
+    context.refresh();
+  }
+
+  @Test(expected = BeanCreationException.class)
   public void providesBasicAuthInterceptor_whenDynamicCredentialsConfiguredButFileAbsent() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",

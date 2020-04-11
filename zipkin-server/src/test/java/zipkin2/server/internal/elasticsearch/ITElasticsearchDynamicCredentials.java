@@ -17,9 +17,7 @@ import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Properties;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -30,13 +28,9 @@ import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
-import static java.time.Duration.ofSeconds;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static zipkin2.elasticsearch.Access.pretendIndexTemplatesExist;
 import static zipkin2.server.internal.elasticsearch.TestResponses.YELLOW_RESPONSE;
-import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.PASSWORD;
-import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.USERNAME;
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties.Ssl;
 
 class ITElasticsearchDynamicCredentials {
@@ -65,13 +59,7 @@ class ITElasticsearchDynamicCredentials {
   String credentialsFile;
 
   @BeforeEach void init() throws IOException {
-    credentialsFile = pathOfResource("es-credentials-it");
-    Properties props = new Properties();
-    props.put(USERNAME, "foo");
-    props.put(PASSWORD, "bar");
-    try (FileOutputStream os = new FileOutputStream(credentialsFile)) {
-      props.store(os, "");
-    }
+    credentialsFile = pathOfResource("es-credentials");
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
       "zipkin.storage.type:elasticsearch",
@@ -95,36 +83,10 @@ class ITElasticsearchDynamicCredentials {
   @Test void healthcheck_usesDynamicCredentialsAndTls() throws IOException {
     pretendIndexTemplatesExist(storage);
 
-    assertTimeout(ofSeconds(30), () -> {
-      while (true) {
-        server.enqueue(YELLOW_RESPONSE.toHttpResponse());
-        assertThat(storage.check().ok()).isTrue();
-        AggregatedHttpRequest next = server.takeRequest().request();
-        // hard coded for sanity taken from https://en.wikipedia.org/wiki/Basic_access_authentication
-        if (next.headers().get("Authorization").equals("Basic Zm9vOmJhcg==")) {
-          break;
-        }
-      }
-    });
-
-    // Update security file with new username/password
-    Properties props = new Properties();
-    props.put(USERNAME, "foo1");
-    props.put(PASSWORD, "bar1");
-    try (FileOutputStream os = new FileOutputStream(credentialsFile)) {
-      props.store(os, "");
-    }
-    assertTimeout(ofSeconds(30), () -> {
-      while (true) {
-        server.enqueue(YELLOW_RESPONSE.toHttpResponse());
-        assertThat(storage.check().ok()).isTrue();
-        AggregatedHttpRequest next = server.takeRequest().request();
-        // hard coded for sanity taken from https://en.wikipedia.org/wiki/Basic_access_authentication
-        if (next.headers().get("Authorization").equals("Basic Zm9vMTpiYXIx")) {
-          break;
-        }
-      }
-    });
+    server.enqueue(YELLOW_RESPONSE.toHttpResponse());
+    assertThat(storage.check().ok()).isTrue();
+    AggregatedHttpRequest next = server.takeRequest().request();
+    assertThat(next.headers().get("Authorization")).isEqualTo("Basic Zm9vOmJhcg==");
   }
 
   static String pathOfResource(String resource) {
