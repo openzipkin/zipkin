@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,16 +11,11 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import Vizceral from 'vizceral-react';
-
-// Vizceral (vizceral-react) does not release some resources when unmounting the component.
-// Therefore, when Vizceral is mounted many times, rendering speed decreases.
-// So this class inherits Vizceral and overrides componentWillUnmount for releasing resources.
-class VizceralExt extends Vizceral {
-  componentWillUnmount() {
-    this.vizceral.animate = () => {};
-    delete this.vizceral;
-  }
+export interface Edge {
+  source: string;
+  target: string;
+  metrics: {
+    normal: number;
+    danger: number;
+  };
 }
-
-export default VizceralExt;
