@@ -34,14 +34,9 @@ const useStyles = makeStyles((theme) => ({
     borderLeft: `1px solid ${theme.palette.grey[300]}`,
     backgroundColor: theme.palette.grey[100],
   },
-  serviceNameAndSpanName: {
-    paddingTop: theme.spacing(2),
-    paddingLeft: theme.spacing(2),
-    paddingBottom: theme.spacing(1.5),
-    paddingRight: theme.spacing(2),
-  },
   serviceName: {
     textTransform: 'uppercase',
+    wordBreak: 'break-all',
   },
   spanName: {
     color: theme.palette.text.secondary,
@@ -101,7 +96,7 @@ const SpanDetail = React.memo(({ span, minHeight }) => {
 
   return (
     <Box minHeight={minHeight} className={classes.root}>
-      <Box className={classes.serviceNameAndSpanName}>
+      <Box pt={2} pl={2} pr={2} pb={1.5}>
         <Typography variant="h5" className={classes.serviceName}>
           {span.serviceName}
         </Typography>
