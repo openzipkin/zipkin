@@ -60,6 +60,9 @@ const useStyles = makeStyles((theme) => ({
     fontSize: '1rem',
     height: '1.6rem',
     padding: '0.4rem 0.6rem',
+    '&:disabled': {
+      color: theme.palette.text.primary,
+    },
   },
   findButton: {
     fontSize: '1.2rem',
@@ -105,7 +108,10 @@ const DependenciesPageHeader = React.memo(
             value={startTime}
             onChange={onStartTimeChange}
             className={classes.dateTimePicker}
-            InputProps={{ classes: { input: classes.dateTimePickerInput } }}
+            InputProps={{
+              disabled: true,
+              classes: { input: classes.dateTimePickerInput },
+            }}
           />
           -
           <KeyboardDateTimePicker
@@ -114,7 +120,10 @@ const DependenciesPageHeader = React.memo(
             value={endTime}
             onChange={onEndTimeChange}
             className={classes.dateTimePicker}
-            InputProps={{ classes: { input: classes.dateTimePickerInput } }}
+            InputProps={{
+              disabled: true,
+              classes: { input: classes.dateTimePickerInput },
+            }}
           />
           <Button
             color="primary"
