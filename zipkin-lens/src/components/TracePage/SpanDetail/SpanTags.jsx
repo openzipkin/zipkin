@@ -27,6 +27,9 @@ const useStyles = makeStyles((theme) => ({
   cell: {
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(1),
+    // overflow-wrap does not work well for elements with "display: table-cell",
+    // so use word-break as a workaround.
+    wordBreak: 'break-all',
   },
   key: {
     color: theme.palette.grey[500],

@@ -36,10 +36,11 @@ const useStyles = makeStyles((theme) => ({
   },
   serviceName: {
     textTransform: 'uppercase',
-    wordBreak: 'break-all',
+    overflowWrap: 'break-word',
   },
   spanName: {
     color: theme.palette.text.secondary,
+    overflowWrap: 'break-word',
   },
   annotationsAndTagsBox: {
     paddingTop: theme.spacing(1),
