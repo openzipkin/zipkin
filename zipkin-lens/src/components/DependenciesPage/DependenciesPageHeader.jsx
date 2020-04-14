@@ -90,20 +90,14 @@ const DependenciesPageHeader = React.memo(
     const classes = useStyles();
     const { i18n } = useLingui();
 
-    const dateTimePickerCommonProps = React.useMemo(
-      () => ({
-        inputVariant: 'outlined',
-        className: classes.dateTimePicker,
-        InputProps: {
-          // See: https://github.com/openzipkin/zipkin/issues/3052
-          // DateTimePicker's input is not very useful, so disable it and
-          // let users use a calendar dialog instead.
-          disabled: true,
-          classes: { input: classes.dateTimePickerInput },
-        },
-      }),
-      [classes.dateTimePicker, classes.dateTimePickerInput],
-    );
+    const dateTimePickerCommonProps = {
+      inputVariant: 'outlined',
+      className: classes.dateTimePicker,
+      InputProps: {
+        classes: { input: classes.dateTimePickerInput },
+      },
+      format: 'MM/DD/YYYY HH:mm:ss',
+    };
 
     return (
       <Box className={classes.root}>
