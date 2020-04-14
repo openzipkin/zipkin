@@ -60,6 +60,9 @@ const useStyles = makeStyles((theme) => ({
     fontSize: '1rem',
     height: '1.6rem',
     padding: '0.4rem 0.6rem',
+    '&:disabled': {
+      color: theme.palette.text.primary,
+    },
   },
   findButton: {
     fontSize: '1.2rem',
@@ -87,6 +90,15 @@ const DependenciesPageHeader = React.memo(
     const classes = useStyles();
     const { i18n } = useLingui();
 
+    const dateTimePickerCommonProps = {
+      inputVariant: 'outlined',
+      className: classes.dateTimePicker,
+      InputProps: {
+        classes: { input: classes.dateTimePickerInput },
+      },
+      format: 'MM/DD/YYYY HH:mm:ss',
+    };
+
     return (
       <Box className={classes.root}>
         <Box className={classes.upperBox}>
@@ -101,20 +113,16 @@ const DependenciesPageHeader = React.memo(
         <Box className={classes.searchBox}>
           <KeyboardDateTimePicker
             label={i18n._(t`Start Time`)}
-            inputVariant="outlined"
             value={startTime}
             onChange={onStartTimeChange}
-            className={classes.dateTimePicker}
-            InputProps={{ classes: { input: classes.dateTimePickerInput } }}
+            {...dateTimePickerCommonProps}
           />
           -
           <KeyboardDateTimePicker
             label={i18n._(t`End Time`)}
-            inputVariant="outlined"
             value={endTime}
             onChange={onEndTimeChange}
-            className={classes.dateTimePicker}
-            InputProps={{ classes: { input: classes.dateTimePickerInput } }}
+            {...dateTimePickerCommonProps}
           />
           <Button
             color="primary"
