@@ -27,7 +27,6 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin2.elasticsearch.Access.pretendIndexTemplatesExist;
 import static zipkin2.server.internal.elasticsearch.TestResponses.YELLOW_RESPONSE;
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties.Ssl;
 
@@ -58,11 +57,12 @@ class ITElasticsearchAuth {
   @BeforeEach void init() {
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.username:Aladdin",
-      "zipkin.storage.elasticsearch.password:OpenSesame",
-      "zipkin.storage.elasticsearch.hosts:https://localhost:" + server.httpsPort(),
-      "zipkin.storage.elasticsearch.ssl.key-store=classpath:keystore.jks",
+      "zipkin.storage.type=elasticsearch",
+      "zipkin.storage.elasticsearch.ensure-templates=false",
+      "zipkin.storage.elasticsearch.username=Aladdin",
+      "zipkin.storage.elasticsearch.password=OpenSesame",
+      "zipkin.storage.elasticsearch.hosts=https://localhost:" + server.httpsPort(),
+      "zipkin.storage.elasticsearch.ssl.key-store=classpath=keystore.jks",
       "zipkin.storage.elasticsearch.ssl.key-store-password=password",
       "zipkin.storage.elasticsearch.ssl.trust-store=classpath:keystore.jks",
       "zipkin.storage.elasticsearch.ssl.trust-store-password=password")
@@ -77,7 +77,6 @@ class ITElasticsearchAuth {
   }
 
   @Test void healthcheck_usesAuthAndTls() {
-    pretendIndexTemplatesExist(storage);
     server.enqueue(YELLOW_RESPONSE.toHttpResponse());
 
     assertThat(storage.check().ok()).isTrue();

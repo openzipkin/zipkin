@@ -24,7 +24,6 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.server.internal.brave.ZipkinSelfTracingConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin2.elasticsearch.Access.pretendIndexTemplatesExist;
 import static zipkin2.server.internal.elasticsearch.TestResponses.YELLOW_RESPONSE;
 
 class ITElasticsearchSelfTracing {
@@ -40,8 +39,9 @@ class ITElasticsearchSelfTracing {
       "zipkin.self-tracing.enabled=true",
       "zipkin.self-tracing.message-timeout=1ms",
       "zipkin.self-tracing.traces-per-second=10",
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:" + server.httpUri()).applyTo(context);
+      "zipkin.storage.type=elasticsearch",
+      "zipkin.storage.elasticsearch.ensure-templates=false",
+      "zipkin.storage.elasticsearch.hosts=" + server.httpUri()).applyTo(context);
     Access.registerElasticsearch(context);
     context.register(ZipkinSelfTracingConfiguration.class);
     context.refresh();
@@ -57,7 +57,6 @@ class ITElasticsearchSelfTracing {
    * we are nicer.
    */
   @Test void healthcheck_usesB3Single() {
-    pretendIndexTemplatesExist(storage);
     server.enqueue(YELLOW_RESPONSE.toHttpResponse());
 
     assertThat(storage.check().ok()).isTrue();

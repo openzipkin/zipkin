@@ -33,7 +33,6 @@ import zipkin2.Component;
 import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static zipkin2.TestObjects.DAY;
 
 class ElasticsearchStorageTest {
@@ -46,19 +45,24 @@ class ElasticsearchStorageTest {
   ElasticsearchStorage storage;
 
   @BeforeEach void setUp() {
-    storage = ElasticsearchStorage.newBuilder(new LazyHttpClient() {
-      @Override public WebClient get() {
-        return WebClient.of(server.httpUri());
-      }
-
-      @Override public String toString() {
-        return server.httpUri().toString();
-      }
-    }).build();
+    storage = newBuilder().build();
   }
 
   @AfterEach void tearDown() {
     storage.close();
+  }
+
+  @Test void ensureIndexTemplates_false() throws Exception {
+    storage.close();
+    storage = newBuilder().ensureTemplates(false).build();
+
+    server.enqueue(SUCCESS_RESPONSE); // dependencies request
+
+    long endTs = storage.indexNameFormatter().parseDate("2016-10-02");
+    storage.spanStore().getDependencies(endTs, DAY).execute();
+
+    assertThat(server.takeRequest().request().path())
+      .startsWith("/zipkin*dependency-2016-10-01,zipkin*dependency-2016-10-02/_search");
   }
 
   @Test void memoizesIndexTemplate() throws Exception {
@@ -142,7 +146,7 @@ class ElasticsearchStorageTest {
 
   // makes sure we don't NPE
   @Test void check_fail_onNoContent() {
-    storage.indexTemplates = mock(IndexTemplates.class); // assume index templates called before
+    storage.ensuredTemplates = true; // assume index templates called before
 
     server.enqueue(SUCCESS_RESPONSE); // empty instead of success response
 
@@ -193,5 +197,17 @@ class ElasticsearchStorageTest {
   @Test void toStringContainsOnlySummaryInformation() {
     assertThat(storage).hasToString(
       String.format("ElasticsearchStorage{initialEndpoints=%s, index=zipkin}", server.httpUri()));
+  }
+
+  ElasticsearchStorage.Builder newBuilder() {
+    return ElasticsearchStorage.newBuilder(new LazyHttpClient() {
+      @Override public WebClient get() {
+        return WebClient.of(server.httpUri());
+      }
+
+      @Override public String toString() {
+        return server.httpUri().toString();
+      }
+    });
   }
 }

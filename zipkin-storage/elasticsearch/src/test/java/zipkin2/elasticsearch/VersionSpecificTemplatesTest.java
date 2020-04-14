@@ -14,130 +14,24 @@
 package zipkin2.elasticsearch;
 
 import com.linecorp.armeria.client.WebClient;
-import com.linecorp.armeria.common.AggregatedHttpResponse;
-import com.linecorp.armeria.common.HttpData;
-import com.linecorp.armeria.common.HttpStatus;
-import com.linecorp.armeria.common.MediaType;
-import com.linecorp.armeria.common.ResponseHeaders;
-import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static zipkin2.elasticsearch.ElasticsearchStorageTest.RESPONSE_UNAUTHORIZED;
+import static org.mockito.Mockito.mock;
 
 class VersionSpecificTemplatesTest {
-  static final AggregatedHttpResponse VERSION_RESPONSE_7 = AggregatedHttpResponse.of(
-    HttpStatus.OK, MediaType.JSON_UTF_8, ""
-      + "{\n"
-      + "  \"name\" : \"zipkin-elasticsearch\",\n"
-      + "  \"cluster_name\" : \"docker-cluster\",\n"
-      + "  \"cluster_uuid\" : \"wByRPgSgTryYl0TZXW4MsA\",\n"
-      + "  \"version\" : {\n"
-      + "    \"number\" : \"7.0.1\",\n"
-      + "    \"build_flavor\" : \"default\",\n"
-      + "    \"build_type\" : \"tar\",\n"
-      + "    \"build_hash\" : \"e4efcb5\",\n"
-      + "    \"build_date\" : \"2019-04-29T12:56:03.145736Z\",\n"
-      + "    \"build_snapshot\" : false,\n"
-      + "    \"lucene_version\" : \"8.0.0\",\n"
-      + "    \"minimum_wire_compatibility_version\" : \"6.7.0\",\n"
-      + "    \"minimum_index_compatibility_version\" : \"6.0.0-beta1\"\n"
-      + "  },\n"
-      + "  \"tagline\" : \"You Know, for Search\"\n"
-      + "}");
-  static final AggregatedHttpResponse VERSION_RESPONSE_6 = AggregatedHttpResponse.of(
-    HttpStatus.OK, MediaType.JSON_UTF_8, ""
-      + "{\n"
-      + "  \"name\" : \"PV-NhJd\",\n"
-      + "  \"cluster_name\" : \"CollectorDBCluster\",\n"
-      + "  \"cluster_uuid\" : \"UjZaM0fQRC6tkHINCg9y8w\",\n"
-      + "  \"version\" : {\n"
-      + "    \"number\" : \"6.7.0\",\n"
-      + "    \"build_flavor\" : \"oss\",\n"
-      + "    \"build_type\" : \"tar\",\n"
-      + "    \"build_hash\" : \"8453f77\",\n"
-      + "    \"build_date\" : \"2019-03-21T15:32:29.844721Z\",\n"
-      + "    \"build_snapshot\" : false,\n"
-      + "    \"lucene_version\" : \"7.7.0\",\n"
-      + "    \"minimum_wire_compatibility_version\" : \"5.6.0\",\n"
-      + "    \"minimum_index_compatibility_version\" : \"5.0.0\"\n"
-      + "  },\n"
-      + "  \"tagline\" : \"You Know, for Search\"\n"
-      + "}");
-  static final AggregatedHttpResponse VERSION_RESPONSE_5 = AggregatedHttpResponse.of(
-    HttpStatus.OK, MediaType.JSON_UTF_8, ""
-      + "{\n"
-      + "  \"name\" : \"vU0g1--\",\n"
-      + "  \"cluster_name\" : \"elasticsearch\",\n"
-      + "  \"cluster_uuid\" : \"Fnm277ITSNyzsy0UCVFN7g\",\n"
-      + "  \"version\" : {\n"
-      + "    \"number\" : \"5.0.0\",\n"
-      + "    \"build_hash\" : \"253032b\",\n"
-      + "    \"build_date\" : \"2016-10-26T04:37:51.531Z\",\n"
-      + "    \"build_snapshot\" : false,\n"
-      + "    \"lucene_version\" : \"6.2.0\"\n"
-      + "  },\n"
-      + "  \"tagline\" : \"You Know, for Search\"\n"
-      + "}");
-  static final AggregatedHttpResponse VERSION_RESPONSE_2 = AggregatedHttpResponse.of(
-    HttpStatus.OK, MediaType.JSON_UTF_8, ""
-      + "{\n"
-      + "  \"name\" : \"Kamal\",\n"
-      + "  \"cluster_name\" : \"elasticsearch\",\n"
-      + "  \"version\" : {\n"
-      + "    \"number\" : \"2.4.0\",\n"
-      + "    \"build_hash\" : \"ce9f0c7394dee074091dd1bc4e9469251181fc55\",\n"
-      + "    \"build_timestamp\" : \"2016-08-29T09:14:17Z\",\n"
-      + "    \"build_snapshot\" : false,\n"
-      + "    \"lucene_version\" : \"5.5.2\"\n"
-      + "  },\n"
-      + "  \"tagline\" : \"You Know, for Search\"\n"
-      + "}");
-
-  @RegisterExtension static MockWebServerExtension server = new MockWebServerExtension();
-
-  @BeforeEach void setUp() {
-    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri())).build();
-  }
-
-  @AfterEach void tearDown() {
-    storage.close();
-  }
-
-  ElasticsearchStorage storage;
-
-  @Test void wrongContent() {
-    server.enqueue(AggregatedHttpResponse.of(
-      ResponseHeaders.of(HttpStatus.OK),
-      HttpData.ofUtf8("you got mail")));
-
-    assertThatThrownBy(() -> storage.versionSpecificTemplates(storage.http()))
-      .hasMessage(".version.number not found in response: you got mail");
-  }
-
-  @Test void unauthorized() {
-    server.enqueue(RESPONSE_UNAUTHORIZED);
-
-    assertThatThrownBy(() -> storage.versionSpecificTemplates(storage.http()))
-      .hasMessage("User: anonymous is not authorized to perform: es:ESHttpGet");
-  }
+  ElasticsearchStorage storage =
+    ElasticsearchStorage.newBuilder(() -> mock(WebClient.class)).build();
 
   /** Unsupported, but we should test that parsing works */
   @Test void version2_unsupported() {
-    server.enqueue(VERSION_RESPONSE_2);
-
-    assertThatThrownBy(() -> storage.versionSpecificTemplates(storage.http()))
+    assertThatThrownBy(() -> storage.versionSpecificTemplates(2.2f))
       .hasMessage("Elasticsearch versions 5-7.x are supported, was: 2.4");
   }
 
-  @Test void version5() throws Exception {
-    server.enqueue(VERSION_RESPONSE_5);
-
-    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
+  @Test void version5() {
+    IndexTemplates template = storage.versionSpecificTemplates(5.0f);
 
     assertThat(template.version()).isEqualTo(5.0f);
     assertThat(template.autocomplete())
@@ -150,10 +44,8 @@ class VersionSpecificTemplatesTest {
       .contains("\"index.mapper.dynamic\": false");
   }
 
-  @Test void version6() throws Exception {
-    server.enqueue(VERSION_RESPONSE_6);
-
-    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
+  @Test void version6() {
+    IndexTemplates template = storage.versionSpecificTemplates(6.7f);
 
     assertThat(template.version()).isEqualTo(6.7f);
     assertThat(template.autocomplete())
@@ -163,10 +55,8 @@ class VersionSpecificTemplatesTest {
       .contains("\"index.mapper.dynamic\": false");
   }
 
-  @Test void version6_wrapsPropertiesWithType() throws Exception {
-    server.enqueue(VERSION_RESPONSE_6);
-
-    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
+  @Test void version6_wrapsPropertiesWithType() {
+    IndexTemplates template = storage.versionSpecificTemplates(6.7f);
 
     assertThat(template.dependency()).contains(""
       + "  \"mappings\": {\n"
@@ -187,10 +77,8 @@ class VersionSpecificTemplatesTest {
       + "  }");
   }
 
-  @Test void version7() throws Exception {
-    server.enqueue(VERSION_RESPONSE_7);
-
-    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
+  @Test void version7() {
+    IndexTemplates template = storage.versionSpecificTemplates(7.0f);
 
     assertThat(template.version()).isEqualTo(7.0f);
     assertThat(template.autocomplete())
@@ -201,10 +89,8 @@ class VersionSpecificTemplatesTest {
       .doesNotContain("\"index.mapper.dynamic\": false");
   }
 
-  @Test void version7_doesntWrapPropertiesWithType() throws Exception {
-    server.enqueue(VERSION_RESPONSE_7);
-
-    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
+  @Test void version7_doesntWrapPropertiesWithType() {
+    IndexTemplates template = storage.versionSpecificTemplates(7.0f);
 
     assertThat(template.dependency()).contains(""
       + "  \"mappings\": {\n"
@@ -221,15 +107,13 @@ class VersionSpecificTemplatesTest {
       + "  }");
   }
 
-  @Test void searchEnabled_minimalSpanIndexing_6x() throws Exception {
+  @Test void searchEnabled_minimalSpanIndexing_6x() {
     storage.close();
-    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri()))
+    storage = ElasticsearchStorage.newBuilder(() -> mock(WebClient.class))
       .searchEnabled(false)
       .build();
 
-    server.enqueue(VERSION_RESPONSE_6);
-
-    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
+    IndexTemplates template = storage.versionSpecificTemplates(6.7f);
 
     assertThat(template.span())
       .contains(""
@@ -244,14 +128,12 @@ class VersionSpecificTemplatesTest {
         + "  }");
   }
 
-  @Test void searchEnabled_minimalSpanIndexing_7x() throws Exception {
-    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri()))
+  @Test void searchEnabled_minimalSpanIndexing_7x() {
+    storage = ElasticsearchStorage.newBuilder(() -> mock(WebClient.class))
       .searchEnabled(false)
       .build();
 
-    server.enqueue(VERSION_RESPONSE_7);
-
-    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
+    IndexTemplates template = storage.versionSpecificTemplates(7.0f);
 
     // doesn't wrap in a type name
     assertThat(template.span())
@@ -265,23 +147,19 @@ class VersionSpecificTemplatesTest {
         + "  }");
   }
 
-  @Test void strictTraceId_doesNotIncludeAnalysisSection() throws Exception {
-    server.enqueue(VERSION_RESPONSE_6);
-
-    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
+  @Test void strictTraceId_doesNotIncludeAnalysisSection() {
+    IndexTemplates template = storage.versionSpecificTemplates(6.7f);
 
     assertThat(template.span()).doesNotContain("analysis");
   }
 
-  @Test void strictTraceId_false_includesAnalysisForMixedLengthTraceId() throws Exception {
+  @Test void strictTraceId_false_includesAnalysisForMixedLengthTraceId() {
     storage.close();
-    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri()))
+    storage = ElasticsearchStorage.newBuilder(() -> mock(WebClient.class))
       .strictTraceId(false)
       .build();
 
-    server.enqueue(VERSION_RESPONSE_6);
-
-    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
+    IndexTemplates template = storage.versionSpecificTemplates(6.7f);
 
     assertThat(template.span()).contains("analysis");
   }

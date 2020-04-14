@@ -33,6 +33,7 @@ import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
  *   date-separator: -
  *   index-shards: 5
  *   index-replicas: 1
+ *   ensure-templates: true
  *   username: username
  *   password: password
  *   credentials-file: credentialsFile
@@ -164,6 +165,8 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   private Integer indexShards;
   /** Number of replicas (redundancy factor) per index. */
   private Integer indexReplicas;
+  /** False disables automatic index template creation. */
+  private boolean ensureTemplates;
   /** username used for basic auth. Needed when Shield or X-Pack security is enabled */
   private String username;
   /** password used for basic auth. Needed when Shield or X-Pack security is enabled */
@@ -224,6 +227,14 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
 
   public void setIndexShards(Integer indexShards) {
     this.indexShards = indexShards;
+  }
+
+  public boolean isEnsureTemplates() {
+    return ensureTemplates;
+  }
+
+  public void setEnsureTemplates(boolean ensureTemplates) {
+    this.ensureTemplates = ensureTemplates;
   }
 
   public String getDateSeparator() {
