@@ -80,7 +80,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.11.1</version>
+      <version>3.11.4</version>
     </dependency>
 
     <dependency>
