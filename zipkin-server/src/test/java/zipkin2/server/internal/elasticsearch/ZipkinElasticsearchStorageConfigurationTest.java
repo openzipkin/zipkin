@@ -18,6 +18,7 @@ import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.common.SessionProtocol;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.junit.After;
@@ -32,6 +33,7 @@ import org.springframework.context.annotation.Configuration;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.server.internal.elasticsearch.ITElasticsearchDynamicCredentials.pathOfResource;
 
 public class ZipkinElasticsearchStorageConfigurationTest {
   final AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
@@ -306,6 +308,55 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .option(ClientOption.DECORATION, factory.options.decoration())
       .build();
     assertThat(client.as(BasicAuthInterceptor.class)).isNotNull();
+  }
+
+  @Test
+  public void providesBasicAuthInterceptor_whenDynamicCredentialsConfigured() {
+    String credentialsFile = pathOfResource("es-credentials");
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
+      "zipkin.storage.elasticsearch.credentials-file:" + credentialsFile,
+      "zipkin.storage.elasticsearch.credentials-refresh-interval:2")
+      .applyTo(context);
+    Access.registerElasticsearch(context);
+    context.refresh();
+
+    HttpClientFactory factory = context.getBean(HttpClientFactory.class);
+
+    WebClient client = WebClient.builder("http://127.0.0.1:1234")
+      .option(ClientOption.DECORATION, factory.options.decoration())
+      .build();
+    assertThat(client.as(BasicAuthInterceptor.class)).isNotNull();
+    BasicCredentials basicCredentials =
+      Objects.requireNonNull(client.as(BasicAuthInterceptor.class)).basicCredentials;
+    String credentials = basicCredentials.getCredentials();
+    assertThat(credentials).isEqualTo("Basic Zm9vOmJhcg==");
+  }
+
+  @Test(expected = BeanCreationException.class)
+  public void providesBasicAuthInterceptor_whenInvalidDynamicCredentialsConfigured() {
+    String credentialsFile = pathOfResource("es-credentials-invalid");
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
+      "zipkin.storage.elasticsearch.credentials-file:" + credentialsFile,
+      "zipkin.storage.elasticsearch.credentials-refresh-interval:2")
+      .applyTo(context);
+    Access.registerElasticsearch(context);
+    context.refresh();
+  }
+
+  @Test(expected = BeanCreationException.class)
+  public void providesBasicAuthInterceptor_whenDynamicCredentialsConfiguredButFileAbsent() {
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
+      "zipkin.storage.elasticsearch.credentials-file:no-this-file",
+      "zipkin.storage.elasticsearch.credentials-refresh-interval:2")
+      .applyTo(context);
+    Access.registerElasticsearch(context);
+    context.refresh();
   }
 
   @Test public void searchEnabled_false() {
