@@ -63,6 +63,7 @@ public class ITZipkinUiConfiguration {
       + "  \"archivePostUrl\" : null,\n"
       + "  \"archiveUrl\" : null,\n"
       + "  \"dependency\" : {\n"
+      + "    \"enabled\" : true,\n"
       + "    \"lowErrorRate\" : 0.5,\n"
       + "    \"highErrorRate\" : 0.75\n"
       + "  }\n"

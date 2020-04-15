@@ -174,13 +174,14 @@ Attribute | Property | Description
 --- | --- | ---
 environment | zipkin.ui.environment | The value here becomes a label in the top-right corner. Not required.
 defaultLookback | zipkin.ui.default-lookback | Default duration in millis to look back when finding traces. Affects the "Start time" element in the UI. Defaults to 900000 (15 minutes in millis).
-searchEnabled | zipkin.ui.search-enabled | If the Find Traces screen is enabled. Defaults to true.
+searchEnabled | zipkin.ui.search-enabled | If the Discover screen is enabled. Defaults to true.
 queryLimit | zipkin.ui.query-limit | Default limit for Find Traces. Defaults to 10.
 instrumented | zipkin.ui.instrumented | Which sites this Zipkin UI covers. Regex syntax. e.g. `http:\/\/example.com\/.*` Defaults to match all websites (`.*`).
 logsUrl | zipkin.ui.logs-url | Logs query service url pattern. If specified, a button will appear on the trace page and will replace {traceId} in the url by the traceId. Not required.
 supportUrl | zipkin.ui.support-url | A URL where a user can ask for support. If specified, a link will be placed in the side menu to this URL, for example a page to file support tickets. Not required.
 archivePostUrl | zipkin.ui.archive-post-url | Url to POST the current trace in Zipkin v2 json format. e.g. 'https://longterm/api/v2/spans'. If specified, a button will appear on the trace page accordingly. Not required.
 archiveUrl | zipkin.ui.archive-url | Url to a web application serving an archived trace, templated by '{traceId}'. e.g. https://longterm/zipkin/trace/{traceId}'. This is shown in a confirmation message after a trace is successfully POSTed to the `archivePostUrl`. Not required.
+dependency.enabled | zipkin.ui.dependency.enabled | If the Dependencies screen is enabled. Defaults to true.
 dependency.lowErrorRate | zipkin.ui.dependency.low-error-rate | The rate of error calls on a dependency link that turns it yellow. Defaults to 0.5 (50%) set to >1 to disable.
 dependency.highErrorRate | zipkin.ui.dependency.high-error-rate | The rate of error calls on a dependency link that turns it red. Defaults to 0.75 (75%) set to >1 to disable.
 basePath | zipkin.ui.basepath | path prefix placed into the <base> tag in the UI HTML; useful when running behind a reverse proxy. Default "/zipkin"

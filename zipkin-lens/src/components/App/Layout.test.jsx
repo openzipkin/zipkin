@@ -31,7 +31,7 @@ describe('<Layout />', () => {
 
   it('does render help link when defined', () => {
     // children is required so avoid warning by passing dummy children
-    const { getByTitle } = render(
+    const { queryByTitle } = render(
       <Layout>
         <span>Test</span>
         <span>Test</span>
@@ -42,8 +42,37 @@ describe('<Layout />', () => {
         },
       },
     );
-    const helpLink = getByTitle('Support');
+    const helpLink = queryByTitle('Support');
     expect(helpLink).toBeInTheDocument();
     expect(helpLink.href).toEqual('https://gitter.im/openzipkin/zipkin');
+  });
+
+  it('does render Dependencies Page with default config', () => {
+    // children is required so avoid warning by passing dummy children
+    const { queryByTitle } = render(
+      <Layout>
+        <span>Test</span>
+        <span>Test</span>
+      </Layout>,
+    );
+    expect(queryByTitle('Dependencies Page')).toBeInTheDocument();
+  });
+
+  it('does not render Dependencies Page when disabled', () => {
+    // children is required so avoid warning by passing dummy children
+    const { queryByTitle } = render(
+      <Layout>
+        <span>Test</span>
+        <span>Test</span>
+      </Layout>,
+      {
+        uiConfig: {
+          dependency: {
+            enabled: false,
+          },
+        },
+      },
+    );
+    expect(queryByTitle('Dependencies Page')).not.toBeInTheDocument();
   });
 });

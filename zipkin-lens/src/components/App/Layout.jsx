@@ -104,11 +104,13 @@ const Layout = ({ children }) => {
               path="/"
               icon={faSearch}
             />
-            <SidebarMenu
-              title={i18n._(t`Dependencies Page`)}
-              path="/dependency"
-              icon={faProjectDiagram}
-            />
+            {config.dependency.enabled && (
+              <SidebarMenu
+                title={i18n._(t`Dependencies Page`)}
+                path="/dependency"
+                icon={faProjectDiagram}
+              />
+            )}
           </List>
         </Box>
         <List>

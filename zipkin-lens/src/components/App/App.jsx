@@ -49,11 +49,13 @@ const App = () => {
                       <BrowserRouter basename={BASE_PATH}>
                         <Layout>
                           <Route exact path="/" component={DiscoverPage} />
-                          <Route
-                            exact
-                            path="/dependency"
-                            component={DependenciesPage}
-                          />
+                          {config.dependency.enabled && (
+                            <Route
+                              exact
+                              path="/dependency"
+                              component={DependenciesPage}
+                            />
+                          )}
                           <Route
                             exact
                             path={['/traces/:traceId', '/traceViewer']}

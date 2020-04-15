@@ -127,6 +127,7 @@ public class ZipkinUiConfiguration {
   // defaultLookback: 15 * 60 * 1000, // 15 minutes
   // searchEnabled: true,
   // dependency: {
+  //   enabled: true,
   //   lowErrorRate: 0.5, // 50% of calls in error turns line yellow
   //   highErrorRate: 0.75 // 75% of calls in error turns line red
   // }
@@ -144,6 +145,7 @@ public class ZipkinUiConfiguration {
       generator.writeStringField("archivePostUrl", ui.getArchivePostUrl());
       generator.writeStringField("archiveUrl", ui.getArchiveUrl());
       generator.writeObjectFieldStart("dependency");
+      generator.writeBooleanField("enabled", ui.getDependency().isEnabled());
       generator.writeNumberField("lowErrorRate", ui.getDependency().getLowErrorRate());
       generator.writeNumberField("highErrorRate", ui.getDependency().getHighErrorRate());
       generator.writeEndObject(); // .dependency

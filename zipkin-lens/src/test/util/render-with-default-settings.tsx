@@ -56,6 +56,7 @@ export default (
     defaultLookback: 15 * 60 * 1000,
     searchEnabled: true,
     dependency: {
+      enabled: true,
       lowErrorRate: 0.5,
       highErrorRate: 0.75,
     },
