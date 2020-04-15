@@ -127,11 +127,11 @@ class ElasticsearchVersionTest {
   }
 
   /** Unsupported, but we should test that parsing works */
-  @Test void version2_unsupported() {
+  @Test void version2() throws Exception {
     server.enqueue(VERSION_RESPONSE_2);
 
-    assertThatThrownBy(() -> ElasticsearchVersion.INSTANCE.get(storage.http()))
-      .hasMessage("Elasticsearch versions 5-7.x are supported, was: 2.4");
+    assertThat(ElasticsearchVersion.INSTANCE.get(storage.http()))
+      .isEqualTo(2.4f);
   }
 
   @Test void version5() throws Exception {

@@ -26,7 +26,7 @@ class VersionSpecificTemplatesTest {
 
   /** Unsupported, but we should test that parsing works */
   @Test void version2_unsupported() {
-    assertThatThrownBy(() -> storage.versionSpecificTemplates(2.2f))
+    assertThatThrownBy(() -> storage.versionSpecificTemplates(2.4f))
       .hasMessage("Elasticsearch versions 5-7.x are supported, was: 2.4");
   }
 

@@ -286,6 +286,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
    */
   CheckResult ensureIndexTemplatesAndClusterReady(String index) {
     try {
+      version(); // ensure the version is available (even if we already cached it)
       ensureIndexTemplates(); // called only once, so we have to double-check health
       AggregatedHttpRequest request = AggregatedHttpRequest.of(GET, "/_cluster/health/" + index);
       CheckResult result = http().newCall(request, READ_STATUS, "get-cluster-health").execute();
@@ -304,11 +305,12 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     }
   }
 
-  volatile boolean ensuredTemplates = !ensureTemplates();
+  volatile boolean ensuredTemplates;
 
   // synchronized since we don't want overlapping calls to apply the index templates
   void ensureIndexTemplates() {
     if (ensuredTemplates) return;
+    if (!ensureTemplates()) ensuredTemplates = true;
     synchronized (this) {
       if (ensuredTemplates) return;
       doEnsureIndexTemplates();

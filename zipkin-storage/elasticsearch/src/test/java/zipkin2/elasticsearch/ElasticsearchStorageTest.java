@@ -36,7 +36,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
 
 class ElasticsearchStorageTest {
-
   static final AggregatedHttpResponse SUCCESS_RESPONSE =
     AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.OK), HttpData.empty());
 
@@ -153,7 +152,7 @@ class ElasticsearchStorageTest {
     CheckResult result = storage.check();
     assertThat(result.ok()).isFalse();
     assertThat(result.error().getMessage())
-      .isEqualTo("No content reading cluster health");
+      .isEqualTo("No content reading Elasticsearch version");
   }
 
   // TODO: when Armeria's mock server supports it, add a test for IOException
