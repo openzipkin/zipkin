@@ -46,4 +46,33 @@ describe('<Layout />', () => {
     expect(helpLink).toBeInTheDocument();
     expect(helpLink.href).toEqual('https://gitter.im/openzipkin/zipkin');
   });
+
+  it('does render Dependencies with default config', () => {
+    // children is required so avoid warning by passing dummy children
+    const { queryByTitle } = render(
+      <Layout>
+        <span>Test</span>
+        <span>Test</span>
+      </Layout>,
+    );
+    expect(queryByTitle('Dependencies')).toBeInTheDocument();
+  });
+
+  it('does not render Dependencies link when disabled', () => {
+    // children is required so avoid warning by passing dummy children
+    const { getByTitle } = render(
+      <Layout>
+        <span>Test</span>
+        <span>Test</span>
+      </Layout>,
+      {
+        uiConfig: {
+          dependency: {
+            'enabled': false,
+          },
+        },
+      },
+    );
+    expect(queryByTitle('Dependencies')).not.toBeInTheDocument();
+  });
 });

@@ -135,6 +135,13 @@ public class ZipkinUiConfigurationTest {
   }
 
   @Test
+  public void canOverridesProperty_dependenciesEnabled() {
+    context = createContextWithOverridenProperty("zipkin.ui.dependency.enabled:false");
+
+    assertThat(context.getBean(ZipkinUiProperties.class).getDependency().isEnabled()).isFalse();
+  }
+
+  @Test
   public void canOverrideProperty_dependencyLowErrorRate() {
     context = createContextWithOverridenProperty("zipkin.ui.dependency.low-error-rate:0.1");
 

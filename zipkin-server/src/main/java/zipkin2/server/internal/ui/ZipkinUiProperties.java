@@ -133,8 +133,17 @@ class ZipkinUiProperties {
   }
 
   public static class Dependency {
+    private boolean enabled = true;
     private float lowErrorRate = 0.5f; // 50% of calls in error turns line yellow
     private float highErrorRate = 0.75f; // 75% of calls in error turns line red
+
+    public boolean isEnabled() {
+      return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+      this.enabled = enabled;
+    }
 
     public float getLowErrorRate() {
       return lowErrorRate;
