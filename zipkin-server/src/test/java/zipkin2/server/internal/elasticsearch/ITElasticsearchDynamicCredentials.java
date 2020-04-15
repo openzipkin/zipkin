@@ -17,7 +17,6 @@ import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
 import java.io.File;
-import java.io.IOException;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -29,6 +28,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.server.internal.elasticsearch.TestResponses.VERSION_RESPONSE;
 import static zipkin2.server.internal.elasticsearch.TestResponses.YELLOW_RESPONSE;
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties.Ssl;
 
@@ -56,7 +56,7 @@ class ITElasticsearchDynamicCredentials {
   ElasticsearchStorage storage;
   String credentialsFile;
 
-  @BeforeEach void init() throws IOException {
+  @BeforeEach void init() {
     credentialsFile = pathOfResource("es-credentials");
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
@@ -80,6 +80,7 @@ class ITElasticsearchDynamicCredentials {
   }
 
   @Test void healthcheck_usesDynamicCredentialsAndTls() {
+    server.enqueue(VERSION_RESPONSE.toHttpResponse());
     server.enqueue(YELLOW_RESPONSE.toHttpResponse());
     assertThat(storage.check().ok()).isTrue();
     AggregatedHttpRequest next = server.takeRequest().request();

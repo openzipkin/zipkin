@@ -24,6 +24,7 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.server.internal.brave.ZipkinSelfTracingConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.server.internal.elasticsearch.TestResponses.VERSION_RESPONSE;
 import static zipkin2.server.internal.elasticsearch.TestResponses.YELLOW_RESPONSE;
 
 class ITElasticsearchSelfTracing {
@@ -57,6 +58,7 @@ class ITElasticsearchSelfTracing {
    * we are nicer.
    */
   @Test void healthcheck_usesB3Single() {
+    server.enqueue(VERSION_RESPONSE.toHttpResponse());
     server.enqueue(YELLOW_RESPONSE.toHttpResponse());
 
     assertThat(storage.check().ok()).isTrue();

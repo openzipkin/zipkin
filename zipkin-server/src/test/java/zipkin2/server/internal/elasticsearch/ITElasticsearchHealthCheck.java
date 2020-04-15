@@ -30,6 +30,7 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static zipkin2.server.internal.elasticsearch.TestResponses.GREEN_RESPONSE;
+import static zipkin2.server.internal.elasticsearch.TestResponses.VERSION_RESPONSE;
 
 /**
  * These tests focus on http client health checks not currently in zipkin-storage-elasticsearch.
@@ -39,6 +40,7 @@ public class ITElasticsearchHealthCheck {
 
   @ClassRule public static ServerRule server1 = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) {
+      sb.service("/", (ctx, req) -> VERSION_RESPONSE.toHttpResponse());
       sb.service("/_cluster/health", HealthCheckService.of(server1Health));
       sb.serviceUnder("/_cluster/health/", (ctx, req) -> GREEN_RESPONSE.toHttpResponse());
     }
@@ -48,6 +50,7 @@ public class ITElasticsearchHealthCheck {
 
   @ClassRule public static ServerRule server2 = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) {
+      sb.service("/", (ctx, req) -> VERSION_RESPONSE.toHttpResponse());
       sb.service("/_cluster/health", HealthCheckService.of(server2Health));
       sb.serviceUnder("/_cluster/health/", (ctx, req) -> GREEN_RESPONSE.toHttpResponse());
     }
