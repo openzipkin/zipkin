@@ -269,6 +269,11 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                            performance, but not write performance. Number of replicas can be changed
                            for existing indices. Defaults to 1. It is highly discouraged to set this
                            to 0 as it would mean a machine failure results in data loss.
+    * `ES_ENSURE_TEMPLATES`: Installs Zipkin index templates when missing. Setting this to false can
+                             lead to corrupted data when index templates mismatch expectations. If
+                             you set this to false, you choose to troubleshoot your own data or
+                             migration problems as opposed to relying on the community for this.
+                             Defaults to true.
     * `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch basic authentication, which defaults to empty string.
                                        Use when X-Pack security (formerly Shield) is in place.
     * `ES_CREDENTIALS_FILE`: The location of a file containing Elasticsearch basic authentication

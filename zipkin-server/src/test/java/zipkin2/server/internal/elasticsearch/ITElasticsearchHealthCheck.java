@@ -29,21 +29,18 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static zipkin2.elasticsearch.Access.pretendIndexTemplatesExist;
 import static zipkin2.server.internal.elasticsearch.TestResponses.GREEN_RESPONSE;
+import static zipkin2.server.internal.elasticsearch.TestResponses.VERSION_RESPONSE;
 
 /**
  * These tests focus on http client health checks not currently in zipkin-storage-elasticsearch.
- *
- * <p>We invoke {@link zipkin2.elasticsearch.Access#pretendIndexTemplatesExist(ElasticsearchStorage)}
- * to ensure focus on http health checks, and away from repeating template dependency tests already
- * done in zipkin-storage-elasticsearch.
  */
 public class ITElasticsearchHealthCheck {
   static final SettableHealthChecker server1Health = new SettableHealthChecker(true);
 
   @ClassRule public static ServerRule server1 = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) {
+      sb.service("/", (ctx, req) -> VERSION_RESPONSE.toHttpResponse());
       sb.service("/_cluster/health", HealthCheckService.of(server1Health));
       sb.serviceUnder("/_cluster/health/", (ctx, req) -> GREEN_RESPONSE.toHttpResponse());
     }
@@ -53,6 +50,7 @@ public class ITElasticsearchHealthCheck {
 
   @ClassRule public static ServerRule server2 = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) {
+      sb.service("/", (ctx, req) -> VERSION_RESPONSE.toHttpResponse());
       sb.service("/_cluster/health", HealthCheckService.of(server2Health));
       sb.serviceUnder("/_cluster/health/", (ctx, req) -> GREEN_RESPONSE.toHttpResponse());
     }
@@ -70,11 +68,12 @@ public class ITElasticsearchHealthCheck {
   private void initWithHosts(String hosts) {
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.timeout:200",
-      "zipkin.storage.elasticsearch.health-check.enabled:true",
-      "zipkin.storage.elasticsearch.health-check.interval:100ms",
-      "zipkin.storage.elasticsearch.hosts:" + hosts)
+      "zipkin.storage.type=elasticsearch",
+      "zipkin.storage.elasticsearch.ensure-templates=false",
+      "zipkin.storage.elasticsearch.timeout=200",
+      "zipkin.storage.elasticsearch.health-check.enabled=true",
+      "zipkin.storage.elasticsearch.health-check.interval=100ms",
+      "zipkin.storage.elasticsearch.hosts=" + hosts)
       .applyTo(context);
     Access.registerElasticsearch(context);
     context.refresh();
@@ -82,8 +81,6 @@ public class ITElasticsearchHealthCheck {
 
   @Test public void allHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      pretendIndexTemplatesExist(storage);
-
       CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
     }
@@ -93,8 +90,6 @@ public class ITElasticsearchHealthCheck {
     server1Health.setHealthy(false);
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      pretendIndexTemplatesExist(storage);
-
       CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
     }
@@ -131,7 +126,6 @@ public class ITElasticsearchHealthCheck {
 
   @Test public void healthyThenNotHealthyThenHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      pretendIndexTemplatesExist(storage);
       CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
 
@@ -159,7 +153,6 @@ public class ITElasticsearchHealthCheck {
       assertThat(result.ok()).isFalse();
 
       server2Health.setHealthy(true);
-      pretendIndexTemplatesExist(storage);
 
       // Health check interval is 100ms
       await().timeout(300, TimeUnit.MILLISECONDS).untilAsserted(() ->
@@ -179,10 +172,11 @@ public class ITElasticsearchHealthCheck {
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
       "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.timeout:200",
-      "zipkin.storage.elasticsearch.health-check.enabled:false",
-      "zipkin.storage.elasticsearch.health-check.interval:100ms",
-      "zipkin.storage.elasticsearch.hosts:127.0.0.1:" +
+      "zipkin.storage.elasticsearch.ensure-templates=false",
+      "zipkin.storage.elasticsearch.timeout=200",
+      "zipkin.storage.elasticsearch.health-check.enabled=false",
+      "zipkin.storage.elasticsearch.health-check.interval=100ms",
+      "zipkin.storage.elasticsearch.hosts=127.0.0.1:" +
         server1.httpPort() + ",127.0.0.1:" + server2.httpPort())
       .applyTo(context);
     Access.registerElasticsearch(context);
@@ -192,8 +186,6 @@ public class ITElasticsearchHealthCheck {
     server2Health.setHealthy(false);
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      pretendIndexTemplatesExist(storage);
-
       // Even though cluster health is false, we ignore that and continue to check index health,
       // which is correctly returned by our mock server.
       CheckResult result = storage.check();

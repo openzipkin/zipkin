@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -54,7 +54,6 @@ import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 @AutoValue
 public abstract class ElasticsearchStorage extends zipkin2.storage.StorageComponent {
-
   /**
    * This defers creation of an {@link WebClient}. This is needed because routinely, I/O occurs in
    * constructors and this can delay or cause startup to crash. For example, an underlying {@link
@@ -84,6 +83,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       .dateSeparator('-')
       .indexShards(5)
       .indexReplicas(1)
+      .ensureTemplates(true)
       .namesLookback(86400000)
       .flushOnWrites(false)
       .autocompleteKeys(Collections.emptyList())
@@ -159,6 +159,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      */
     public abstract Builder indexReplicas(int indexReplicas);
 
+    /** False disables automatic index template installation. */
+    public abstract Builder ensureTemplates(boolean ensureTemplates);
+
     /** {@inheritDoc} */
     @Override public abstract Builder strictTraceId(boolean strictTraceId);
 
@@ -206,6 +209,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   public abstract IndexNameFormatter indexNameFormatter();
 
+  abstract boolean ensureTemplates();
+
   public abstract int namesLookback();
 
   @Override public SpanStore spanStore() {
@@ -232,12 +237,16 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   /** Returns the Elasticsearch version of the connected cluster. Internal use only */
-  public float version() {
-    return ensureIndexTemplates().version();
+  @Memoized public float version() {
+    try {
+      return ElasticsearchVersion.INSTANCE.get(http());
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   char indexTypeDelimiter() {
-    return ensureIndexTemplates().indexTypeDelimiter();
+    return VersionSpecificTemplates.indexTypeDelimiter(version());
   }
 
   /** This is an internal blocking call, only used in tests. */
@@ -277,6 +286,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
    */
   CheckResult ensureIndexTemplatesAndClusterReady(String index) {
     try {
+      version(); // ensure the version is available (even if we already cached it)
       ensureIndexTemplates(); // called only once, so we have to double-check health
       AggregatedHttpRequest request = AggregatedHttpRequest.of(GET, "/_cluster/health/" + index);
       CheckResult result = http().newCall(request, READ_STATUS, "get-cluster-health").execute();
@@ -295,22 +305,23 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     }
   }
 
-  volatile IndexTemplates indexTemplates; // visible for testing
+  volatile boolean ensuredTemplates;
 
-  // Memoized since we don't want overlapping calls to apply the index templates
-  IndexTemplates ensureIndexTemplates() {
-    if (indexTemplates == null) {
-      synchronized (this) {
-        if (indexTemplates == null) indexTemplates = doEnsureIndexTemplates();
-      }
+  // synchronized since we don't want overlapping calls to apply the index templates
+  void ensureIndexTemplates() {
+    if (ensuredTemplates) return;
+    if (!ensureTemplates()) ensuredTemplates = true;
+    synchronized (this) {
+      if (ensuredTemplates) return;
+      doEnsureIndexTemplates();
+      ensuredTemplates = true;
     }
-    return indexTemplates;
   }
 
   IndexTemplates doEnsureIndexTemplates() {
     try {
       HttpCall.Factory http = http();
-      IndexTemplates templates = versionSpecificTemplates(http);
+      IndexTemplates templates = versionSpecificTemplates(version());
       ensureIndexTemplate(http, buildUrl(templates, TYPE_SPAN), templates.span());
       ensureIndexTemplate(http, buildUrl(templates, TYPE_DEPENDENCY), templates.dependency());
       ensureIndexTemplate(http, buildUrl(templates, TYPE_AUTOCOMPLETE), templates.autocomplete());
@@ -320,8 +331,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     }
   }
 
-  IndexTemplates versionSpecificTemplates(HttpCall.Factory http) throws IOException {
-    float version = ElasticsearchVersion.INSTANCE.get(http);
+  IndexTemplates versionSpecificTemplates(float version) {
     return new VersionSpecificTemplates(
       indexNameFormatter().index(),
       indexReplicas(),

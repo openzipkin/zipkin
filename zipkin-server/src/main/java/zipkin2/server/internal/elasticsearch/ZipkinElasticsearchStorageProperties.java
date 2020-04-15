@@ -33,6 +33,7 @@ import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
  *   date-separator: -
  *   index-shards: 5
  *   index-replicas: 1
+ *   ensure-templates: true
  *   username: username
  *   password: password
  *   credentials-file: credentialsFile
@@ -65,10 +66,12 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
 
   public static class Ssl {
     private String keyStore = emptyToNull(System.getProperty("javax.net.ssl.keyStore"));
-    private String keyStorePassword = emptyToNull(System.getProperty("javax.net.ssl.keyStorePassword"));
+    private String keyStorePassword =
+      emptyToNull(System.getProperty("javax.net.ssl.keyStorePassword"));
     private String keyStoreType = emptyToNull(System.getProperty("javax.net.ssl.keyStoreType"));
     private String trustStore = emptyToNull(System.getProperty("javax.net.ssl.trustStore"));
-    private String trustStorePassword = emptyToNull(System.getProperty("javax.net.ssl.trustStorePassword"));
+    private String trustStorePassword =
+      emptyToNull(System.getProperty("javax.net.ssl.trustStorePassword"));
     private String trustStoreType = emptyToNull(System.getProperty("javax.net.ssl.trustStoreType"));
 
     public String getKeyStore() {
@@ -164,6 +167,8 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   private Integer indexShards;
   /** Number of replicas (redundancy factor) per index. */
   private Integer indexReplicas;
+  /** False disables automatic index template creation. */
+  private Boolean ensureTemplates;
   /** username used for basic auth. Needed when Shield or X-Pack security is enabled */
   private String username;
   /** password used for basic auth. Needed when Shield or X-Pack security is enabled */
@@ -224,6 +229,14 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
 
   public void setIndexShards(Integer indexShards) {
     this.indexShards = indexShards;
+  }
+
+  public Boolean isEnsureTemplates() {
+    return ensureTemplates;
+  }
+
+  public void setEnsureTemplates(Boolean ensureTemplates) {
+    this.ensureTemplates = ensureTemplates;
   }
 
   public String getDateSeparator() {
@@ -321,6 +334,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     if (pipeline != null) builder.pipeline(pipeline);
     if (indexShards != null) builder.indexShards(indexShards);
     if (indexReplicas != null) builder.indexReplicas(indexReplicas);
+    if (ensureTemplates != null) builder.ensureTemplates(ensureTemplates);
 
     if (maxRequests != null) {
       log.warning("ES_MAX_REQUESTS is no longer honored. Use STORAGE_THROTTLE_ENABLED instead");
