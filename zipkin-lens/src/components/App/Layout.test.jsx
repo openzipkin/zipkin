@@ -68,7 +68,7 @@ describe('<Layout />', () => {
       {
         uiConfig: {
           dependency: {
-            'enabled': false,
+            enabled: false,
           },
         },
       },
