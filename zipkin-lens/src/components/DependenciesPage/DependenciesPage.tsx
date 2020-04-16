@@ -226,7 +226,7 @@ const DependenciesPage: React.FC<Props> = ({ history, location }) => {
             inputVariant="outlined"
             value={tempTimeRange.startTime}
             onChange={handleStartTimeChange}
-            format="M/DD/YYYY H:mm:ss"
+            format="MM/DD/YYYY HH:mm:ss"
             className={classes.dateTimePicker}
             InputProps={{ classes: { input: classes.dateTimePickerInput } }}
           />
@@ -236,7 +236,7 @@ const DependenciesPage: React.FC<Props> = ({ history, location }) => {
             inputVariant="outlined"
             value={tempTimeRange.endTime}
             onChange={handleEndTimeChange}
-            format="M/DD/YYYY H:mm:ss"
+            format="MM/DD/YYYY HH:mm:ss"
             className={classes.dateTimePicker}
             InputProps={{ classes: { input: classes.dateTimePickerInput } }}
           />
