@@ -34,7 +34,9 @@ import { selectServiceColor } from '../../colors';
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     title: {
-      textTransform: 'uppercase',
+      overflowWrap: 'break-word',
+      flexGrow: 1,
+      minWidth: 10, // break-word in flex-box
     },
     searchTracesButton: {
       display: 'flex',
@@ -43,11 +45,11 @@ const useStyles = makeStyles((theme: Theme) =>
       opacity: 0.8,
     },
     tablePaper: {
-      marginRight: theme.spacing(1),
-      marginLeft: theme.spacing(1),
+      marginRight: theme.spacing(2),
+      marginLeft: theme.spacing(2),
       flexGrow: 1,
       overflowY: 'auto',
-      borderRadius: 1,
+      borderRadius: 3,
     },
     tableCell: {
       padding: `${theme.spacing(1)}px ${theme.spacing(2)}px`,
@@ -66,7 +68,7 @@ const NodeDetailData: React.FC<Props> = ({
   targetEdges,
   sourceEdges,
   history,
-}): JSX.Element => {
+}) => {
   const classes = useStyles();
 
   const handleSearchTracesButtonClick = React.useCallback(() => {
@@ -78,6 +80,121 @@ const NodeDetailData: React.FC<Props> = ({
     });
   }, [serviceName, history]);
 
+  let content: JSX.Element;
+  if (targetEdges.length === 0 && sourceEdges.length === 0) {
+    content = <div>no data</div>;
+  } else {
+    const arr = [] as {
+      title: string;
+      edges: Edge[];
+      selectNodeName: (edge: Edge) => string;
+    }[];
+
+    if (targetEdges.length !== 0) {
+      arr.push({
+        title: 'Uses',
+        edges: targetEdges,
+        selectNodeName: (edge: Edge) => edge.target,
+      });
+    }
+    if (sourceEdges.length !== 0) {
+      arr.push({
+        title: 'Used',
+        edges: sourceEdges,
+        selectNodeName: (edge: Edge) => edge.source,
+      });
+    }
+
+    content = (
+      <>
+        {arr.map((e) => (
+          <Box height="50%" display="flex" flexDirection="column">
+            <Box height="50%" position="relative">
+              <Box
+                position="absolute"
+                top={15}
+                left={15}
+                display="flex"
+                alignItems="center"
+              >
+                <Box color="text.secondary">
+                  <Typography variant="h6">{e.title}</Typography>
+                </Box>
+                <Box color="text.hint" ml={1}>
+                  (traced requests)
+                </Box>
+              </Box>
+              {e.edges.length === 0 ? (
+                <Box
+                  height="100%"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Box
+                    bgcolor="grey.800"
+                    color="common.white"
+                    borderRadius={3}
+                    p={1}
+                    className={classes.noDataMessage}
+                  >
+                    NO DATA
+                  </Box>
+                </Box>
+              ) : (
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={e.edges.map((edge) => ({
+                        name: e.selectNodeName(edge),
+                        value: edge.metrics.normal + edge.metrics.danger,
+                      }))}
+                      nameKey="name"
+                      dataKey="value"
+                      outerRadius={60}
+                    >
+                      {e.edges.map((edge) => (
+                        <Cell
+                          key={e.selectNodeName(edge)}
+                          fill={selectServiceColor(e.selectNodeName(edge))}
+                        />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </Box>
+            <Paper className={classes.tablePaper}>
+              <Table>
+                <TableBody>
+                  {e.edges.map((edge) => (
+                    <TableRow>
+                      <TableCell className={classes.tableCell}>
+                        <FontAwesomeIcon
+                          icon={faSquare}
+                          color={selectServiceColor(e.selectNodeName(edge))}
+                        />
+                        <Box component="span" ml={0.5}>
+                          {e.selectNodeName(edge)}
+                        </Box>
+                      </TableCell>
+                      <TableCell className={classes.tableCell}>
+                        {edge.metrics.normal}
+                      </TableCell>
+                      <TableCell className={classes.tableCell}>
+                        {edge.metrics.danger}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Paper>
+          </Box>
+        ))}
+      </>
+    );
+  }
+
   return (
     <Box height="100%" boxShadow={10} display="flex" flexDirection="column">
       <Box
@@ -87,11 +204,6 @@ const NodeDetailData: React.FC<Props> = ({
         pl={2}
         bgcolor="grey.200"
         color="text.secondary"
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        boxShadow={3}
-        zIndex={9000}
       >
         <Box display="flex" alignItems="center">
           <Box mr={0.75}>
@@ -105,117 +217,23 @@ const NodeDetailData: React.FC<Props> = ({
             {serviceName}
           </Typography>
         </Box>
-        <Button variant="outlined" onClick={handleSearchTracesButtonClick}>
-          <FontAwesomeIcon icon={faSearch} />
-          <Box component="span" ml={0.75}>
-            Traces
-          </Box>
-        </Button>
+        <Box display="flex" justifyContent="flex-end">
+          <Button variant="outlined" onClick={handleSearchTracesButtonClick}>
+            <FontAwesomeIcon icon={faSearch} />
+            <Box component="span" ml={0.75}>
+              Traces
+            </Box>
+          </Button>
+        </Box>
       </Box>
       <Box
         flexGrow={1}
         bgcolor="background.default"
         borderColor="divider"
         borderTop={1}
-        marginBottom={1}
+        marginBottom={2}
       >
-        {[
-          {
-            title: 'Uses',
-            edges: targetEdges,
-            selectNodeName: (edge: Edge) => edge.target,
-          },
-          {
-            title: 'Used',
-            edges: sourceEdges,
-            selectNodeName: (edge: Edge) => edge.source,
-          },
-        ].map((e) => {
-          return (
-            <Box height="50%" display="flex" flexDirection="column">
-              <Box height="50%" position="relative">
-                <Box
-                  position="absolute"
-                  top={10}
-                  left={10}
-                  display="flex"
-                  alignItems="center"
-                >
-                  <Box color="text.secondary">
-                    <Typography variant="h6">{e.title}</Typography>
-                  </Box>
-                  <Box color="text.hint" ml={1}>
-                    (traced requests)
-                  </Box>
-                </Box>
-                {e.edges.length === 0 ? (
-                  <Box
-                    height="100%"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Box
-                      bgcolor="grey.800"
-                      color="common.white"
-                      borderRadius={3}
-                      p={1}
-                      className={classes.noDataMessage}
-                    >
-                      NO DATA
-                    </Box>
-                  </Box>
-                ) : (
-                  <ResponsiveContainer>
-                    <PieChart>
-                      <Pie
-                        data={e.edges.map((edge) => ({
-                          name: e.selectNodeName(edge),
-                          value: edge.metrics.normal + edge.metrics.danger,
-                        }))}
-                        nameKey="name"
-                        dataKey="value"
-                        outerRadius={60}
-                      >
-                        {e.edges.map((edge) => (
-                          <Cell
-                            key={e.selectNodeName(edge)}
-                            fill={selectServiceColor(e.selectNodeName(edge))}
-                          />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-              </Box>
-              <Paper className={classes.tablePaper}>
-                <Table>
-                  <TableBody>
-                    {e.edges.map((edge) => (
-                      <TableRow>
-                        <TableCell className={classes.tableCell}>
-                          <FontAwesomeIcon
-                            icon={faSquare}
-                            color={selectServiceColor(e.selectNodeName(edge))}
-                          />
-                          <Box component="span" ml={0.5}>
-                            {e.selectNodeName(edge)}
-                          </Box>
-                        </TableCell>
-                        <TableCell className={classes.tableCell}>
-                          {edge.metrics.normal}
-                        </TableCell>
-                        <TableCell className={classes.tableCell}>
-                          {edge.metrics.danger}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Paper>
-            </Box>
-          );
-        })}
+        {content}
       </Box>
     </Box>
   );

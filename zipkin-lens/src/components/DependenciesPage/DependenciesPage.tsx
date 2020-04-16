@@ -107,6 +107,7 @@ const useFetchDependencies = (timeRange: {
 
   React.useEffect(() => {
     if (!timeRange.startTime || !timeRange.endTime) {
+      dispatch(clearDependencies());
       return;
     }
     const lookback = timeRange.endTime.diff(timeRange.startTime);
@@ -116,10 +117,7 @@ const useFetchDependencies = (timeRange: {
   }, [dispatch, timeRange.endTime, timeRange.startTime]);
 };
 
-const DependenciesPage: React.FC<Props> = ({
-  history,
-  location,
-}): JSX.Element => {
+const DependenciesPage: React.FC<Props> = ({ history, location }) => {
   const classes = useStyles();
   const { i18n } = useLingui();
   const dispatch = useDispatch();
@@ -138,8 +136,6 @@ const DependenciesPage: React.FC<Props> = ({
   const { isLoading, dependencies } = useSelector(
     (state: RootState) => state.dependencies,
   );
-
-  console.log(isLoading, dependencies);
 
   const handleStartTimeChange = React.useCallback(
     (startTime: MaterialUiPickersDate) => {
@@ -200,14 +196,13 @@ const DependenciesPage: React.FC<Props> = ({
 
   return (
     <Box width="100%" height="100vh" display="flex" flexDirection="column">
-      <Box boxShadow={3} zIndex={10000}>
+      <Box boxShadow={3} zIndex={2}>
         <Box
           pl={3}
           pr={3}
           display="flex"
           justifyContent="space-between"
           alignItems="center"
-          color="text.secondary"
         >
           <Typography variant="h5">
             <Trans>Dependencies</Trans>

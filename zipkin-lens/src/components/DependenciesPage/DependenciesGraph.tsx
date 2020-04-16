@@ -13,10 +13,10 @@
  */
 /* eslint-disable no-shadow */
 import React, { CSSProperties } from 'react';
-import ReactSelect, { ValueType } from 'react-select';
+import ReactSelect, { ValueType, ActionMeta } from 'react-select';
 import { AutoSizer } from 'react-virtualized';
 import { Box, Grid, useTheme } from '@material-ui/core';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import { createStyles, makeStyles } from '@material-ui/core/styles';
 import moment from 'moment';
 
 import Dependencies from '../../types/Dependencies';
@@ -55,22 +55,27 @@ const reactSelectStyles = {
     ...base,
     width: '15rem',
   }),
+  option: (base: CSSProperties) => ({
+    ...base,
+    cursor: 'pointer',
+  }),
+  clearIndicator: (base: CSSProperties) => ({
+    ...base,
+    cursor: 'pointer',
+  }),
+  dropdownIndicator: (base: CSSProperties) => ({
+    ...base,
+    cursor: 'pointer',
+  }),
 };
 
-const useStyles = makeStyles((theme: Theme) =>
+const useStyles = makeStyles(() =>
   createStyles({
     containerGrid: {
       height: '100%',
     },
     itemGrid: {
       height: '100%',
-    },
-    searchButton: {
-      fontSize: '1.2rem',
-      padding: theme.spacing(1),
-      minWidth: 0,
-      width: 32,
-      height: 32,
     },
   }),
 );
@@ -79,7 +84,7 @@ interface Props {
   dependencies: Dependencies;
 }
 
-const DependenciesGraph: React.FC<Props> = ({ dependencies }): JSX.Element => {
+const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
   const classes = useStyles();
   const theme = useTheme();
   const vizStyle = {
@@ -100,13 +105,19 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }): JSX.Element => {
     },
   };
 
-  const [nodeName, setNodeName] = React.useState('');
+  const [focusedNodeName, setFocusedNodeName] = React.useState('');
 
   const [filter, setFilter] = React.useState('');
   const handleFilterChange = React.useCallback(
-    (selected: ValueType<{ value: string }>) => {
-      if (selected && 'value' in selected /* Refinement */) {
-        setFilter(selected.value);
+    (selected: ValueType<{ value: string }>, actionMeta: ActionMeta) => {
+      if (actionMeta.action === 'clear') {
+        setFilter('');
+        return;
+      }
+      if (actionMeta.action === 'select-option') {
+        if (selected && 'value' in selected /* Type refinement */) {
+          setFilter(selected.value);
+        }
       }
     },
     [],
@@ -118,12 +129,14 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }): JSX.Element => {
 
     dependencies.forEach((edge) => {
       const nodeNames = nodes.map((node) => node.name);
+
       if (!nodeNames.includes(edge.parent)) {
         nodes.push({ name: edge.parent });
       }
       if (!nodeNames.includes(edge.child)) {
         nodes.push({ name: edge.child });
       }
+
       edges.push({
         source: edge.parent,
         target: edge.child,
@@ -138,34 +151,34 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }): JSX.Element => {
   }, [dependencies]);
 
   const targetEdges = React.useMemo(() => {
-    if (nodeName) {
-      return edges.filter((edge) => edge.source === nodeName);
+    if (focusedNodeName) {
+      return edges.filter((edge) => edge.source === focusedNodeName);
     }
     return [];
-  }, [edges, nodeName]);
+  }, [edges, focusedNodeName]);
 
   const sourceEdges = React.useMemo(() => {
-    if (nodeName) {
-      return edges.filter((edge) => edge.target === nodeName);
+    if (focusedNodeName) {
+      return edges.filter((edge) => edge.target === focusedNodeName);
     }
     return [];
-  }, [edges, nodeName]);
+  }, [edges, focusedNodeName]);
 
   // These filter functions use any type because they are passed directly to untyped JS code.
   const handleObjectHighlight = React.useCallback(
     (highlightedObject?: any) => {
       if (!highlightedObject) {
-        setNodeName('');
+        setFocusedNodeName('');
         return;
       }
       if (
         highlightedObject.type === 'node' &&
-        highlightedObject.getName() !== nodeName
+        highlightedObject.getName() !== focusedNodeName
       ) {
-        setNodeName(highlightedObject.getName());
+        setFocusedNodeName(highlightedObject.getName());
       }
     },
-    [nodeName],
+    [focusedNodeName],
   );
 
   const maxVolume = React.useMemo(() => {
@@ -189,7 +202,7 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }): JSX.Element => {
   return (
     <Box width="100%" height="100%" bgcolor="background.paper">
       <Grid container className={classes.containerGrid}>
-        <Grid item xs={nodeName ? 8 : 12} className={classes.itemGrid}>
+        <Grid item xs={focusedNodeName ? 8 : 12} className={classes.itemGrid}>
           <AutoSizer>
             {({ width, height }) => (
               <Box width={width} height={height} position="relative">
@@ -244,10 +257,10 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }): JSX.Element => {
             />
           </Box>
         </Grid>
-        {nodeName ? (
+        {focusedNodeName ? (
           <Grid item xs={4} className={classes.itemGrid}>
             <NodeDetailData
-              serviceName={nodeName}
+              serviceName={focusedNodeName}
               targetEdges={targetEdges}
               sourceEdges={sourceEdges}
             />
