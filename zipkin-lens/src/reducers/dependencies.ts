@@ -43,6 +43,12 @@ const dependencies = (
         isLoading: false,
         error: action.payload.error,
       };
+    case ActionTypes.CLEAR_DEPENDENCIES:
+      return {
+        dependencies: [],
+        isLoading: false,
+        error: null,
+      };
     default:
       return state;
   }
