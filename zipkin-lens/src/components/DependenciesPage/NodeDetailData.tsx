@@ -80,119 +80,24 @@ const NodeDetailData: React.FC<Props> = ({
     });
   }, [serviceName, history]);
 
-  let content: JSX.Element;
-  if (targetEdges.length === 0 && sourceEdges.length === 0) {
-    content = <div>no data</div>;
-  } else {
-    const arr = [] as {
-      title: string;
-      edges: Edge[];
-      selectNodeName: (edge: Edge) => string;
-    }[];
-
-    if (targetEdges.length !== 0) {
-      arr.push({
-        title: 'Uses',
-        edges: targetEdges,
-        selectNodeName: (edge: Edge) => edge.target,
-      });
-    }
-    if (sourceEdges.length !== 0) {
-      arr.push({
-        title: 'Used',
-        edges: sourceEdges,
-        selectNodeName: (edge: Edge) => edge.source,
-      });
-    }
-
-    content = (
-      <>
-        {arr.map((e) => (
-          <Box height="50%" display="flex" flexDirection="column">
-            <Box height="50%" position="relative">
-              <Box
-                position="absolute"
-                top={15}
-                left={15}
-                display="flex"
-                alignItems="center"
-              >
-                <Box color="text.secondary">
-                  <Typography variant="h6">{e.title}</Typography>
-                </Box>
-                <Box color="text.hint" ml={1}>
-                  (traced requests)
-                </Box>
-              </Box>
-              {e.edges.length === 0 ? (
-                <Box
-                  height="100%"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Box
-                    bgcolor="grey.800"
-                    color="common.white"
-                    borderRadius={3}
-                    p={1}
-                    className={classes.noDataMessage}
-                  >
-                    NO DATA
-                  </Box>
-                </Box>
-              ) : (
-                <ResponsiveContainer>
-                  <PieChart>
-                    <Pie
-                      data={e.edges.map((edge) => ({
-                        name: e.selectNodeName(edge),
-                        value: edge.metrics.normal + edge.metrics.danger,
-                      }))}
-                      nameKey="name"
-                      dataKey="value"
-                      outerRadius={60}
-                    >
-                      {e.edges.map((edge) => (
-                        <Cell
-                          key={e.selectNodeName(edge)}
-                          fill={selectServiceColor(e.selectNodeName(edge))}
-                        />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </Box>
-            <Paper className={classes.tablePaper}>
-              <Table>
-                <TableBody>
-                  {e.edges.map((edge) => (
-                    <TableRow>
-                      <TableCell className={classes.tableCell}>
-                        <FontAwesomeIcon
-                          icon={faSquare}
-                          color={selectServiceColor(e.selectNodeName(edge))}
-                        />
-                        <Box component="span" ml={0.5}>
-                          {e.selectNodeName(edge)}
-                        </Box>
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        {edge.metrics.normal}
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        {edge.metrics.danger}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Paper>
-          </Box>
-        ))}
-      </>
-    );
+  const shownDataList = [] as {
+    title: string;
+    edges: Edge[];
+    selectNodeName: (edge: Edge) => string;
+  }[];
+  if (targetEdges.length !== 0) {
+    shownDataList.push({
+      title: 'Uses',
+      edges: targetEdges,
+      selectNodeName: (edge: Edge) => edge.target,
+    });
+  }
+  if (sourceEdges.length !== 0) {
+    shownDataList.push({
+      title: 'Used',
+      edges: sourceEdges,
+      selectNodeName: (edge: Edge) => edge.source,
+    });
   }
 
   return (
@@ -233,7 +138,90 @@ const NodeDetailData: React.FC<Props> = ({
         borderTop={1}
         marginBottom={2}
       >
-        {content}
+        {shownDataList.map((d) => (
+          <Box height="50%" display="flex" flexDirection="column">
+            <Box height="50%" position="relative">
+              <Box
+                position="absolute"
+                top={15}
+                left={15}
+                display="flex"
+                alignItems="center"
+              >
+                <Box color="text.secondary">
+                  <Typography variant="h6">{d.title}</Typography>
+                </Box>
+                <Box color="text.hint" ml={1}>
+                  (traced requests)
+                </Box>
+              </Box>
+              {d.edges.length === 0 ? (
+                <Box
+                  height="100%"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <Box
+                    bgcolor="grey.800"
+                    color="common.white"
+                    borderRadius={3}
+                    p={1}
+                    className={classes.noDataMessage}
+                  >
+                    NO DATA
+                  </Box>
+                </Box>
+              ) : (
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={d.edges.map((edge) => ({
+                        name: d.selectNodeName(edge),
+                        value: edge.metrics.normal + edge.metrics.danger,
+                      }))}
+                      nameKey="name"
+                      dataKey="value"
+                      outerRadius={60}
+                    >
+                      {d.edges.map((edge) => (
+                        <Cell
+                          key={d.selectNodeName(edge)}
+                          fill={selectServiceColor(d.selectNodeName(edge))}
+                        />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </Box>
+            <Paper className={classes.tablePaper}>
+              <Table>
+                <TableBody>
+                  {d.edges.map((edge) => (
+                    <TableRow>
+                      <TableCell className={classes.tableCell}>
+                        <FontAwesomeIcon
+                          icon={faSquare}
+                          color={selectServiceColor(d.selectNodeName(edge))}
+                        />
+                        <Box component="span" ml={0.5}>
+                          {d.selectNodeName(edge)}
+                        </Box>
+                      </TableCell>
+                      <TableCell className={classes.tableCell}>
+                        {edge.metrics.normal}
+                      </TableCell>
+                      <TableCell className={classes.tableCell}>
+                        {edge.metrics.danger}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Paper>
+          </Box>
+        ))}
       </Box>
     </Box>
   );
