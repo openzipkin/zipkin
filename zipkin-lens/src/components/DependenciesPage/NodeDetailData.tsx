@@ -123,7 +123,11 @@ const NodeDetailData: React.FC<Props> = ({
           </Typography>
         </Box>
         <Box display="flex" justifyContent="flex-end">
-          <Button variant="outlined" onClick={handleSearchTracesButtonClick}>
+          <Button
+            variant="outlined"
+            onClick={handleSearchTracesButtonClick}
+            data-testid="search-traces-button"
+          >
             <FontAwesomeIcon icon={faSearch} />
             <Box component="span" ml={0.75}>
               Traces
@@ -155,45 +159,26 @@ const NodeDetailData: React.FC<Props> = ({
                   (traced requests)
                 </Box>
               </Box>
-              {d.edges.length === 0 ? (
-                <Box
-                  height="100%"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Box
-                    bgcolor="grey.800"
-                    color="common.white"
-                    borderRadius={3}
-                    p={1}
-                    className={classes.noDataMessage}
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={d.edges.map((edge) => ({
+                      name: d.selectNodeName(edge),
+                      value: edge.metrics.normal + edge.metrics.danger,
+                    }))}
+                    nameKey="name"
+                    dataKey="value"
+                    outerRadius={60}
                   >
-                    NO DATA
-                  </Box>
-                </Box>
-              ) : (
-                <ResponsiveContainer>
-                  <PieChart>
-                    <Pie
-                      data={d.edges.map((edge) => ({
-                        name: d.selectNodeName(edge),
-                        value: edge.metrics.normal + edge.metrics.danger,
-                      }))}
-                      nameKey="name"
-                      dataKey="value"
-                      outerRadius={60}
-                    >
-                      {d.edges.map((edge) => (
-                        <Cell
-                          key={d.selectNodeName(edge)}
-                          fill={selectServiceColor(d.selectNodeName(edge))}
-                        />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
+                    {d.edges.map((edge) => (
+                      <Cell
+                        key={d.selectNodeName(edge)}
+                        fill={selectServiceColor(d.selectNodeName(edge))}
+                      />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
             </Box>
             <Paper className={classes.tablePaper}>
               <Table>
