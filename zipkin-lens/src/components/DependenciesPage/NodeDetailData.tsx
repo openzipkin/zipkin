@@ -22,6 +22,7 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  TableHead,
 } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -47,11 +48,19 @@ const useStyles = makeStyles((theme: Theme) =>
     tablePaper: {
       marginRight: theme.spacing(2),
       marginLeft: theme.spacing(2),
-      flexGrow: 1,
+      maxHeight: 180,
       overflowY: 'auto',
       borderRadius: 3,
     },
+    tableHeadCell: {
+      top: 0,
+      position: 'sticky',
+      padding: `${theme.spacing(1)}px ${theme.spacing(2)}px`,
+      backgroundColor: theme.palette.grey[200],
+      zIndex: 1,
+    },
     tableCell: {
+      wordBreak: 'break-all',
       padding: `${theme.spacing(1)}px ${theme.spacing(2)}px`,
     },
   }),
@@ -101,7 +110,7 @@ const NodeDetailData: React.FC<Props> = ({
   }
 
   return (
-    <Box height="100%" boxShadow={10} display="flex" flexDirection="column">
+    <Box height="100%" display="flex" flexDirection="column">
       <Box
         pt={2}
         pb={1}
@@ -136,15 +145,17 @@ const NodeDetailData: React.FC<Props> = ({
         </Box>
       </Box>
       <Box
+        height={100}
         flexGrow={1}
         bgcolor="background.default"
         borderColor="divider"
         borderTop={1}
-        marginBottom={2}
+        paddingBottom={2}
+        overflow="auto"
       >
         {shownDataList.map((d) => (
-          <Box height="50%" display="flex" flexDirection="column">
-            <Box height="50%" position="relative">
+          <Box display="flex" flexDirection="column">
+            <Box height={180} position="relative">
               <Box
                 position="absolute"
                 top={15}
@@ -182,6 +193,19 @@ const NodeDetailData: React.FC<Props> = ({
             </Box>
             <Paper className={classes.tablePaper}>
               <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell className={classes.tableHeadCell}>
+                      Service Name
+                    </TableCell>
+                    <TableCell className={classes.tableHeadCell}>
+                      Call
+                    </TableCell>
+                    <TableCell className={classes.tableHeadCell}>
+                      Error
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
                 <TableBody>
                   {d.edges.map((edge) => (
                     <TableRow>

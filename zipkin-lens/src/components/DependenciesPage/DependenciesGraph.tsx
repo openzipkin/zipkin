@@ -16,7 +16,7 @@ import React, { CSSProperties } from 'react';
 import ReactSelect, { ValueType, ActionMeta } from 'react-select';
 import { AutoSizer } from 'react-virtualized';
 import { Box, Grid, useTheme } from '@material-ui/core';
-import { createStyles, makeStyles } from '@material-ui/core/styles';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import moment from 'moment';
 
 import Dependencies from '../../types/Dependencies';
@@ -96,13 +96,24 @@ const reactSelectStyles = {
   }),
 };
 
-const useStyles = makeStyles(() =>
+const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     containerGrid: {
       height: '100%',
     },
-    itemGrid: {
+    graphItemGrid: {
       height: '100%',
+    },
+    nodeDetailDataItemGrid: {
+      height: '100%',
+      boxShadow: theme.shadows[10],
+      zIndex: 1,
+    },
+    vizceralWrapper: {
+      // In Firefox, 100% height does not work...
+      '& .vizceral': {
+        height: '99%',
+      },
     },
   }),
 );
@@ -216,10 +227,20 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
       data-testid="dependencies-graph"
     >
       <Grid container className={classes.containerGrid}>
-        <Grid item xs={focusedNodeName ? 8 : 12} className={classes.itemGrid}>
+        <Grid
+          item
+          xs={focusedNodeName ? 7 : 12}
+          className={classes.graphItemGrid}
+        >
           <AutoSizer>
             {({ width, height }) => (
-              <Box width={width} height={height} position="relative">
+              <Box
+                width={width}
+                height={height}
+                position="relative"
+                bgcolor="background.paper"
+                className={classes.vizceralWrapper}
+              >
                 <VizceralWrapper
                   allowDraggingOfNodes
                   targetFramerate={30}
@@ -272,7 +293,7 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
           </Box>
         </Grid>
         {focusedNodeName ? (
-          <Grid item xs={4} className={classes.itemGrid}>
+          <Grid item xs={5} className={classes.nodeDetailDataItemGrid}>
             <NodeDetailData
               serviceName={focusedNodeName}
               targetEdges={targetEdges}
