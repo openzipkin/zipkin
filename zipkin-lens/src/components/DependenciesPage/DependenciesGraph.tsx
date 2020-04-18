@@ -148,6 +148,7 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
   const [filter, setFilter] = React.useState('');
   const handleFilterChange = React.useCallback(
     (selected: ValueType<{ value: string }>, actionMeta: ActionMeta) => {
+      setFocusedNodeName('');
       if (actionMeta.action === 'clear') {
         setFilter('');
         return;
