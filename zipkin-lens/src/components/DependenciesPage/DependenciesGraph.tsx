@@ -213,10 +213,12 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
 
   const filterOptions = React.useMemo(
     () =>
-      nodes.map((node) => ({
-        value: node.name,
-        label: node.name,
-      })),
+      nodes
+        .map((node) => ({
+          value: node.name,
+          label: node.name,
+        }))
+        .sort((a, b) => a.value.localeCompare(b.value)),
     [nodes],
   );
 
