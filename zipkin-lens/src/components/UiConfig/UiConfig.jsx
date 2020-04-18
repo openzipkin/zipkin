@@ -35,6 +35,7 @@ export const defaultConfig = {
   dependency: {
     lowErrorRate: 0.5, // 50% of calls in error turns line yellow
     highErrorRate: 0.75, // 75% of calls in error turns line red
+    enabled: true,
   },
 };
 
