@@ -93,12 +93,15 @@ const NodeDetailData: React.FC<Props> = ({
     title: string;
     edges: Edge[];
     selectNodeName: (edge: Edge) => string;
+    formatter: (totalEdges: number) => string;
   }[];
   if (targetEdges.length !== 0) {
     shownDataList.push({
       title: 'Uses',
       edges: targetEdges,
       selectNodeName: (edge: Edge) => edge.target,
+      formatter: (totalEdges: number) =>
+        `This service uses ${totalEdges} service${totalEdges <= 1 ? '' : 's'}`,
     });
   }
   if (sourceEdges.length !== 0) {
@@ -106,6 +109,10 @@ const NodeDetailData: React.FC<Props> = ({
       title: 'Used',
       edges: sourceEdges,
       selectNodeName: (edge: Edge) => edge.source,
+      formatter: (totalEdges: number) =>
+        `This service is used by ${totalEdges} service${
+          totalEdges <= 1 ? '' : 's'
+        }`,
     });
   }
 
@@ -118,6 +125,8 @@ const NodeDetailData: React.FC<Props> = ({
         pl={2}
         bgcolor="grey.200"
         color="text.secondary"
+        display="flex"
+        justifyContent="space-between"
       >
         <Box display="flex" alignItems="center">
           <Box mr={0.75}>
@@ -131,18 +140,16 @@ const NodeDetailData: React.FC<Props> = ({
             {serviceName}
           </Typography>
         </Box>
-        <Box display="flex" justifyContent="flex-end">
-          <Button
-            variant="outlined"
-            onClick={handleSearchTracesButtonClick}
-            data-testid="search-traces-button"
-          >
-            <FontAwesomeIcon icon={faSearch} />
-            <Box component="span" ml={0.75}>
-              Traces
-            </Box>
-          </Button>
-        </Box>
+        <Button
+          variant="outlined"
+          onClick={handleSearchTracesButtonClick}
+          data-testid="search-traces-button"
+        >
+          <FontAwesomeIcon icon={faSearch} />
+          <Box component="span" ml={0.75}>
+            Traces
+          </Box>
+        </Button>
       </Box>
       <Box
         height={100}
@@ -168,6 +175,11 @@ const NodeDetailData: React.FC<Props> = ({
                 </Box>
                 <Box color="text.hint" ml={1}>
                   (traced requests)
+                </Box>
+              </Box>
+              <Box position="absolute" bottom={10} right={15}>
+                <Box color="text.hint" ml={1}>
+                  {d.formatter(d.edges.length)}
                 </Box>
               </Box>
               <ResponsiveContainer>
