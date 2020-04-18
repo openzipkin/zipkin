@@ -50,6 +50,33 @@ const filterNodes = (object: any, value: any) => {
   );
 };
 
+// Export for testing.
+export const getNodesAndEdges = (dependencies: Dependencies) => {
+  const nodes = [] as { name: string }[];
+  const edges = [] as Edge[];
+
+  dependencies.forEach((edge) => {
+    const nodeNames = nodes.map((node) => node.name);
+
+    if (!nodeNames.includes(edge.parent)) {
+      nodes.push({ name: edge.parent });
+    }
+    if (!nodeNames.includes(edge.child)) {
+      nodes.push({ name: edge.child });
+    }
+
+    edges.push({
+      source: edge.parent,
+      target: edge.child,
+      metrics: {
+        normal: edge.callCount || 0,
+        danger: edge.errorCount || 0,
+      },
+    });
+  });
+  return { nodes, edges };
+};
+
 const reactSelectStyles = {
   control: (base: CSSProperties) => ({
     ...base,
@@ -124,30 +151,12 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
   );
 
   const { nodes, edges, createdTs } = React.useMemo(() => {
-    const nodes = [] as { name: string }[];
-    const edges = [] as Edge[];
-
-    dependencies.forEach((edge) => {
-      const nodeNames = nodes.map((node) => node.name);
-
-      if (!nodeNames.includes(edge.parent)) {
-        nodes.push({ name: edge.parent });
-      }
-      if (!nodeNames.includes(edge.child)) {
-        nodes.push({ name: edge.child });
-      }
-
-      edges.push({
-        source: edge.parent,
-        target: edge.child,
-        metrics: {
-          normal: edge.callCount || 0,
-          danger: edge.errorCount || 0,
-        },
-      });
-    });
-
-    return { nodes, edges, createdTs: moment().valueOf() };
+    const { nodes, edges } = getNodesAndEdges(dependencies);
+    return {
+      nodes,
+      edges,
+      createdTs: moment().valueOf(),
+    };
   }, [dependencies]);
 
   const targetEdges = React.useMemo(() => {
@@ -200,7 +209,12 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
   );
 
   return (
-    <Box width="100%" height="100%" bgcolor="background.paper">
+    <Box
+      width="100%"
+      height="100%"
+      bgcolor="background.paper"
+      data-testid="dependencies-graph"
+    >
       <Grid container className={classes.containerGrid}>
         <Grid item xs={focusedNodeName ? 8 : 12} className={classes.itemGrid}>
           <AutoSizer>

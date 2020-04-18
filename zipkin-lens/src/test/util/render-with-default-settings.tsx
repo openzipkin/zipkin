@@ -15,7 +15,7 @@ import MomentUtils from '@date-io/moment';
 import { setupI18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { ThemeProvider } from '@material-ui/styles';
-import { MuiPickersUtilsProvider } from '@material-ui/pickers';
+import MuiPickersUtilsProvider from '@material-ui/pickers/MuiPickersUtilsProvider';
 import { render } from '@testing-library/react';
 import { createMemoryHistory, History } from 'history';
 import React from 'react';

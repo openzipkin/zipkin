@@ -174,6 +174,7 @@ const DependenciesPage: React.FC<Props> = ({ history, location }) => {
         display="flex"
         justifyContent="center"
         alignItems="center"
+        data-testid="loading-indicator"
       >
         <CircularProgress />
       </Box>
@@ -188,6 +189,7 @@ const DependenciesPage: React.FC<Props> = ({ history, location }) => {
         display="flex"
         justifyContent="center"
         alignItems="center"
+        data-testid="explain-box"
       >
         <ExplainBox />
       </Box>
@@ -245,6 +247,7 @@ const DependenciesPage: React.FC<Props> = ({ history, location }) => {
             variant="contained"
             onClick={handleSearchButtonClick}
             className={classes.searchButton}
+            data-testid="search-button"
           >
             <FontAwesomeIcon icon={faSearch} />
           </Button>
