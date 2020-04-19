@@ -19,7 +19,7 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { RootState } from '../../store';
 
-import { appActions } from './slice';
+import { clearAlert } from './slice';
 
 /**
  * Renders a message at the top of the page, usually to indicate success / failure of a background
@@ -29,7 +29,7 @@ const AlertSnackbar: React.FC = () => {
   const dispatch = useDispatch();
   const { alert, alertOpen } = useSelector((state: RootState) => state.app);
   const closeErrorMessageSnackbar = useCallback(
-    () => dispatch(appActions.clearAlert()),
+    () => dispatch(clearAlert()),
     [dispatch],
   );
   return (

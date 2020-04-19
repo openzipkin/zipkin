@@ -58,4 +58,4 @@ const appSlice = createSlice({
 
 export default appSlice;
 
-export const appActions = appSlice.actions;
+export const { clearAlert, setAlert } = appSlice.actions;

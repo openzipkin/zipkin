@@ -24,7 +24,7 @@ import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 
-import { appActions } from '../App/slice';
+import { setAlert } from '../App/slice';
 
 import { useUiConfig } from '../UiConfig';
 
@@ -104,11 +104,6 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
   const { i18n } = useLingui();
   const config = useUiConfig();
 
-  const setAlert = useCallback(
-    (alert) => dispatch(appActions.setAlert(alert)),
-    [dispatch],
-  );
-
   const logsUrl =
     config.logsUrl && traceSummary
       ? config.logsUrl.replace(/{traceId}/g, traceSummary.traceId)
@@ -166,24 +161,30 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
           throw new Error('Failed to archive the trace');
         }
         if (archiveUrl) {
-          setAlert({
-            message: `Archive successful! This trace is now accessible at ${archiveUrl}`,
-            severity: 'success',
-          });
+          dispatch(
+            setAlert({
+              message: `Archive successful! This trace is now accessible at ${archiveUrl}`,
+              severity: 'success',
+            }),
+          );
         } else {
-          setAlert({
-            message: `Archive successful!`,
-            severity: 'success',
-          });
+          dispatch(
+            setAlert({
+              message: `Archive successful!`,
+              severity: 'success',
+            }),
+          );
         }
       })
       .catch(() => {
-        setAlert({
-          message: 'Failed to archive the trace',
-          severity: 'error',
-        });
+        dispatch(
+          setAlert({
+            message: 'Failed to archive the trace',
+            severity: 'error',
+          }),
+        );
       });
-  }, [archivePostUrl, archiveUrl, setAlert, traceSummary]);
+  }, [archivePostUrl, archiveUrl, dispatch, traceSummary.traceId]);
 
   const traceInfo = traceSummary ? (
     <Box className={classes.traceInfo}>
