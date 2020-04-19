@@ -184,7 +184,7 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
           }),
         );
       });
-  }, [archivePostUrl, archiveUrl, dispatch, traceSummary.traceId]);
+  }, [archivePostUrl, archiveUrl, dispatch, traceSummary]);
 
   const traceInfo = traceSummary ? (
     <Box className={classes.traceInfo}>
