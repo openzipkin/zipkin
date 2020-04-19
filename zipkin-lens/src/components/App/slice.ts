@@ -15,7 +15,7 @@
 import { Color } from '@material-ui/lab/Alert';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-export interface Alert {
+interface Alert {
   message: string;
   severity: Color;
 }
