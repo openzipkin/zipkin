@@ -28,15 +28,12 @@ import { clearAlert } from './slice';
 const AlertSnackbar: React.FC = () => {
   const dispatch = useDispatch();
   const { alert, alertOpen } = useSelector((state: RootState) => state.app);
-  const closeErrorMessageSnackbar = useCallback(
-    () => dispatch(clearAlert()),
-    [dispatch],
-  );
+  const onSnackbarClose = useCallback(() => dispatch(clearAlert()), [dispatch]);
   return (
     <Snackbar
       open={alertOpen}
       autoHideDuration={10000}
-      onClose={closeErrorMessageSnackbar}
+      onClose={onSnackbarClose}
       anchorOrigin={{
         vertical: 'top',
         horizontal: 'center',
