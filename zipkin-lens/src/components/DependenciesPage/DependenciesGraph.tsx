@@ -12,7 +12,7 @@
  * the License.
  */
 /* eslint-disable no-shadow */
-import React, { CSSProperties } from 'react';
+import React, { CSSProperties, useState, useCallback, useMemo } from 'react';
 import ReactSelect, { ValueType, ActionMeta } from 'react-select';
 import { AutoSizer } from 'react-virtualized';
 import { Box, Grid, useTheme } from '@material-ui/core';
@@ -21,8 +21,7 @@ import moment from 'moment';
 
 import Dependencies from '../../types/Dependencies';
 import VizceralWrapper from './VizceralWrapper';
-import NodeDetailData from './NodeDetailData';
-import { Edge } from './types';
+import NodeDetailData, { Edge } from './NodeDetailData';
 
 // These filter functions use any type because they are passed directly to untyped JS code.
 const filterConnections = (object: any, value: any) => {
@@ -52,8 +51,8 @@ const filterNodes = (object: any, value: any) => {
 
 // Export for testing.
 export const getNodesAndEdges = (dependencies: Dependencies) => {
-  const nodes = [] as { name: string }[];
-  const edges = [] as Edge[];
+  const nodes: { name: string }[] = [];
+  const edges: Edge[] = [];
 
   dependencies.forEach((edge) => {
     const nodeNames = nodes.map((node) => node.name);
@@ -118,11 +117,13 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-interface Props {
+interface DependenciesGraphProps {
   dependencies: Dependencies;
 }
 
-const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
+const DependenciesGraph: React.FC<DependenciesGraphProps> = ({
+  dependencies,
+}) => {
   const classes = useStyles();
   const theme = useTheme();
   const vizStyle = {
@@ -143,10 +144,10 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
     },
   };
 
-  const [focusedNodeName, setFocusedNodeName] = React.useState('');
+  const [focusedNodeName, setFocusedNodeName] = useState('');
 
-  const [filter, setFilter] = React.useState('');
-  const handleFilterChange = React.useCallback(
+  const [filter, setFilter] = useState('');
+  const handleFilterChange = useCallback(
     (selected: ValueType<{ value: string }>, actionMeta: ActionMeta) => {
       setFocusedNodeName('');
       if (actionMeta.action === 'clear') {
@@ -162,7 +163,7 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
     [],
   );
 
-  const { nodes, edges, createdTs } = React.useMemo(() => {
+  const { nodes, edges, createdTs } = useMemo(() => {
     const { nodes, edges } = getNodesAndEdges(dependencies);
     return {
       nodes,
@@ -171,14 +172,14 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
     };
   }, [dependencies]);
 
-  const targetEdges = React.useMemo(() => {
+  const targetEdges = useMemo(() => {
     if (focusedNodeName) {
       return edges.filter((edge) => edge.source === focusedNodeName);
     }
     return [];
   }, [edges, focusedNodeName]);
 
-  const sourceEdges = React.useMemo(() => {
+  const sourceEdges = useMemo(() => {
     if (focusedNodeName) {
       return edges.filter((edge) => edge.target === focusedNodeName);
     }
@@ -186,7 +187,7 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
   }, [edges, focusedNodeName]);
 
   // These filter functions use any type because they are passed directly to untyped JS code.
-  const handleObjectHighlight = React.useCallback(
+  const handleObjectHighlight = useCallback(
     (highlightedObject?: any) => {
       if (!highlightedObject) {
         setFocusedNodeName('');
@@ -202,7 +203,7 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
     [focusedNodeName],
   );
 
-  const maxVolume = React.useMemo(() => {
+  const maxVolume = useMemo(() => {
     if (edges.length > 0) {
       return edges
         .map((edge) => edge.metrics.normal + edge.metrics.danger)
@@ -211,7 +212,7 @@ const DependenciesGraph: React.FC<Props> = ({ dependencies }) => {
     return 0;
   }, [edges]);
 
-  const filterOptions = React.useMemo(
+  const filterOptions = useMemo(
     () =>
       nodes
         .map((node) => ({

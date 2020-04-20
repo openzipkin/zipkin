@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
+import React, { useCallback } from 'react';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
 import {
   Box,
@@ -29,8 +29,16 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSquare, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
-import { Edge } from './types';
 import { selectServiceColor } from '../../colors';
+
+export interface Edge {
+  source: string;
+  target: string;
+  metrics: {
+    normal: number;
+    danger: number;
+  };
+}
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -66,13 +74,13 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-interface Props extends RouteComponentProps {
+interface NodeDetailDataProps extends RouteComponentProps {
   serviceName: string;
   targetEdges: Edge[];
   sourceEdges: Edge[];
 }
 
-const NodeDetailData: React.FC<Props> = ({
+const NodeDetailData: React.FC<NodeDetailDataProps> = ({
   serviceName,
   targetEdges,
   sourceEdges,
@@ -80,7 +88,7 @@ const NodeDetailData: React.FC<Props> = ({
 }) => {
   const classes = useStyles();
 
-  const handleSearchTracesButtonClick = React.useCallback(() => {
+  const handleSearchTracesButtonClick = useCallback(() => {
     const params = new URLSearchParams();
     params.set('serviceName', serviceName);
     history.push({

@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
 import { t, Trans } from '@lingui/macro';
@@ -56,10 +56,10 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-interface Props extends RouteComponentProps {}
+interface DependenciesPageProps extends RouteComponentProps {}
 
 const useTimeRange = (history: History, location: Location) => {
-  const setTimeRange = React.useCallback(
+  const setTimeRange = useCallback(
     (timeRange: { startTime: moment.Moment; endTime: moment.Moment }) => {
       const ps = new URLSearchParams(location.search);
       ps.set('startTime', timeRange.startTime.valueOf().toString());
@@ -72,7 +72,7 @@ const useTimeRange = (history: History, location: Location) => {
     [history, location.pathname, location.search],
   );
 
-  const timeRange = React.useMemo(() => {
+  const timeRange = useMemo(() => {
     const ps = new URLSearchParams(location.search);
     const startTimeStr = ps.get('startTime');
     let startTime;
@@ -101,7 +101,7 @@ const useFetchDependencies = (timeRange: {
 }) => {
   const dispatch = useDispatch();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!timeRange.startTime || !timeRange.endTime) {
       dispatch(clearDependencies());
       return;
@@ -113,7 +113,10 @@ const useFetchDependencies = (timeRange: {
   }, [dispatch, timeRange.endTime, timeRange.startTime]);
 };
 
-const DependenciesPage: React.FC<Props> = ({ history, location }) => {
+const DependenciesPage: React.FC<DependenciesPageProps> = ({
+  history,
+  location,
+}) => {
   const classes = useStyles();
   const { i18n } = useLingui();
   const dispatch = useDispatch();
@@ -121,7 +124,7 @@ const DependenciesPage: React.FC<Props> = ({ history, location }) => {
   // tempTimeRange manages a time range which is inputted in the form.
   // On the other hand, timeRange is a time range obtained from the URL search params.
   const { timeRange, setTimeRange } = useTimeRange(history, location);
-  const [tempTimeRange, setTempTimeRange] = React.useState({
+  const [tempTimeRange, setTempTimeRange] = useState({
     startTime: timeRange.startTime
       ? timeRange.startTime
       : moment().subtract({ days: 1 }),
@@ -133,7 +136,7 @@ const DependenciesPage: React.FC<Props> = ({ history, location }) => {
     (state: RootState) => state.dependencies,
   );
 
-  const handleStartTimeChange = React.useCallback(
+  const handleStartTimeChange = useCallback(
     (startTime: MaterialUiPickersDate) => {
       if (startTime) {
         setTempTimeRange({ ...tempTimeRange, startTime });
@@ -142,7 +145,7 @@ const DependenciesPage: React.FC<Props> = ({ history, location }) => {
     [tempTimeRange],
   );
 
-  const handleEndTimeChange = React.useCallback(
+  const handleEndTimeChange = useCallback(
     (endTime: MaterialUiPickersDate) => {
       if (endTime) {
         setTempTimeRange({ ...tempTimeRange, endTime });
@@ -151,11 +154,11 @@ const DependenciesPage: React.FC<Props> = ({ history, location }) => {
     [tempTimeRange],
   );
 
-  const handleSearchButtonClick = React.useCallback(() => {
+  const handleSearchButtonClick = useCallback(() => {
     setTimeRange(tempTimeRange);
   }, [setTimeRange, tempTimeRange]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       dispatch(clearDependencies());
     };
