@@ -11,24 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
-declare module '@lingui/macro' {
-  // Copied from @lingui/macro/index.d.ts, not clear why this doesn't work by default.
-
-  export function t(
-    literals: TemplateStringsArray,
-    ...placeholders: any[]
-  ): string;
-
-  export interface TransProps {
-    id?: string;
-    comment?: string;
-    render?: TransRenderType;
-  }
-
-  export const Trans: ComponentType<TransProps>;
-}
-
 declare module 'vizceral-react' {
   export default class extends React.Component<any, any> {
     public vizceral: any;

@@ -13,14 +13,19 @@
  */
 
 import { setupI18n } from '@lingui/core';
+import {
+  en as enPlurals,
+  es as esPlurals,
+  zh as zhPlurals,
+} from 'make-plural/plurals';
 
-import enMessages from '../translations/en/messages';
-import esMessages from '../translations/es/messages';
-import zhCnMessages from '../translations/zh-cn/messages';
+import { messages as enMessages } from '../translations/en/messages';
+import { messages as esMessages } from '../translations/es/messages';
+import { messages as zhCnMessages } from '../translations/zh-cn/messages';
 
 const localeStorageKey = 'localeOverride';
 
-const catalogs = {
+const allMessages = {
   en: enMessages,
   es: esMessages,
   'zh-cn': zhCnMessages,
@@ -34,14 +39,14 @@ export function getLocale(): string {
 
   const browserLanguage = navigator.language.toLowerCase();
 
-  if (Object.prototype.hasOwnProperty.call(catalogs, browserLanguage)) {
+  if (Object.prototype.hasOwnProperty.call(allMessages, browserLanguage)) {
     return browserLanguage;
   }
 
   const hyphenIndex = browserLanguage.indexOf('-');
   if (hyphenIndex >= 0) {
     const stripped = browserLanguage.substring(0, hyphenIndex);
-    if (Object.prototype.hasOwnProperty.call(catalogs, stripped)) {
+    if (Object.prototype.hasOwnProperty.call(allMessages, stripped)) {
       return stripped;
     }
   }
@@ -55,6 +60,17 @@ export function setLocale(locale: string) {
 }
 
 export const i18n = setupI18n({
-  catalogs: catalogs as any,
+  messages: allMessages as any,
   locale: getLocale(),
+  localeData: {
+    en: {
+      plurals: enPlurals,
+    },
+    es: {
+      plurals: esPlurals,
+    },
+    zh: {
+      plurals: zhPlurals,
+    },
+  },
 });
