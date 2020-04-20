@@ -18,11 +18,6 @@ import Vizceral from 'vizceral-react';
 // Therefore, when Vizceral is mounted many times, rendering speed decreases.
 // So this class inherits Vizceral and overrides componentWillUnmount for releasing resources.
 class VizceralExt extends Vizceral {
-  constructor(props) {
-    super(props);
-    console.log(props);
-  }
-
   componentWillUnmount() {
     this.vizceral.animate = () => {};
     delete this.vizceral;
@@ -30,7 +25,7 @@ class VizceralExt extends Vizceral {
 }
 
 // This component is defined to avoid the strict type checking.
-const VizceralWrapper = (props) => {
+const VizceralWrapper = (props: any) => {
   return <VizceralExt {...props} />;
 };
 

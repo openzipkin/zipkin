@@ -20,3 +20,9 @@ declare module '@lingui/macro' {
     ...placeholders: any[]
   ): string;
 }
+
+declare module 'vizceral-react' {
+  export default class extends React.Component<any, any> {
+    public vizceral: any;
+  }
+}
