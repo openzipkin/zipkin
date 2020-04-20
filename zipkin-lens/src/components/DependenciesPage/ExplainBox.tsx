@@ -17,10 +17,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-
-// Do require because tsc cannot find the definition of trans.
-// TODO: Give a strict type.
-const { Trans } = require('@lingui/macro');
+import { Trans } from '@lingui/macro';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

@@ -19,6 +19,14 @@ declare module '@lingui/macro' {
     literals: TemplateStringsArray,
     ...placeholders: any[]
   ): string;
+
+  export interface TransProps {
+    id?: string;
+    comment?: string;
+    render?: TransRenderType;
+  }
+
+  export const Trans: ComponentType<TransProps>;
 }
 
 declare module 'vizceral-react' {

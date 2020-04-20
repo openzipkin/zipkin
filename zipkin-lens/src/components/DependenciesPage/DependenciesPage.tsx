@@ -14,7 +14,7 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
-import { t } from '@lingui/macro';
+import { t, Trans } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { Box, Typography, Button, CircularProgress } from '@material-ui/core';
@@ -34,10 +34,6 @@ import {
 } from '../../actions/dependencies-action';
 import RootState from '../../types/RootState';
 import DependenciesGraph from './DependenciesGraph';
-
-// Do require because tsc cannot find the definition of trans.
-// TODO: Give a strict type.
-const { Trans } = require('@lingui/macro');
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
