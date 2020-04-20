@@ -198,9 +198,7 @@ const DiscoverPageContent = ({
         endTs: lookbackConditionFromUrl.endTs || moment().valueOf(),
         startTs:
           lookbackConditionFromUrl.startTs ||
-          moment()
-            .subtract(15, 'minutes')
-            .valueOf(),
+          moment().subtract(15, 'minutes').valueOf(),
       });
     }
     setLimitCondition(limitConditionFromUrl || 10);

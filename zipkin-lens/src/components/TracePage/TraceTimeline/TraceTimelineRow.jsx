@@ -136,9 +136,9 @@ const TraceTimelineRow = React.memo(
           </text>
         ) : (
           <text
-            x={`${spanBarOffsetXPercent(left) +
-              spanBarWidthPercent(width) -
-              1}%`}
+            x={`${
+              spanBarOffsetXPercent(left) + spanBarWidthPercent(width) - 1
+            }%`}
             y={spanBarOffsetY(index) + spanBarRowHeight / 2}
             textAnchor="end"
             className={classes.text}

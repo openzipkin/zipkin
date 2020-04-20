@@ -12,8 +12,6 @@
  * the License.
  */
 
-@import '~rc-slider/assets/index.css';
-@import '~react-table/react-table.css';
 @import '~vizceral-react/dist/vizceral.css';
 
 @import 'base.css';

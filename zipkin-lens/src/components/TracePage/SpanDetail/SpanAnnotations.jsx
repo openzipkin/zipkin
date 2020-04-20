@@ -73,22 +73,24 @@ const SpanAnnotations = React.memo(({ span }) => {
         onAnnotationCircleClick={handleAnnotationCircleClick}
         currentAnnotaionKey={currentAnnotationKey}
       />
-      {/* eslint no-nested-ternary: 0 */
-      areAllAnnotationsOpened ? (
-        span.annotations.map((annotation) => (
-          <Box
-            mt={1}
-            key={generateAnnotationKey(annotation)}
-            data-testid="span-annotations--annotation"
-          >
-            <SpanAnnotation annotation={annotation} />
+      {
+        /* eslint no-nested-ternary: 0 */
+        areAllAnnotationsOpened ? (
+          span.annotations.map((annotation) => (
+            <Box
+              mt={1}
+              key={generateAnnotationKey(annotation)}
+              data-testid="span-annotations--annotation"
+            >
+              <SpanAnnotation annotation={annotation} />
+            </Box>
+          ))
+        ) : currentAnnotation ? (
+          <Box mt={1} data-testid="span-annotations--annotation">
+            <SpanAnnotation annotation={currentAnnotation} />
           </Box>
-        ))
-      ) : currentAnnotation ? (
-        <Box mt={1} data-testid="span-annotations--annotation">
-          <SpanAnnotation annotation={currentAnnotation} />
-        </Box>
-      ) : null}
+        ) : null
+      }
       <Box width="100%" display="flex" justifyContent="flex-end" mt={2}>
         <Button
           variant="contained"
