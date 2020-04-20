@@ -11,25 +11,23 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { DependenciesAction, ActionTypes } from '../types/action-types';
+import { ActionTypes } from '../types/action-types';
 import Dependencies from '../types/Dependencies';
 import AppThunk from '../types/AppThunk';
 import * as api from '../constants/api';
 
-export const loadDependenciesRequest = (): DependenciesAction => ({
+export const loadDependenciesRequest = () => ({
   type: ActionTypes.LOAD_DEPENDENCIES_REQUEST,
 });
 
-export const loadDependenciesSuccess = (
-  dependencies: Dependencies,
-): DependenciesAction => ({
+export const loadDependenciesSuccess = (dependencies: Dependencies) => ({
   type: ActionTypes.LOAD_DEPENDENCIES_SUCCESS,
   payload: {
     dependencies,
   },
 });
 
-export const loadDependenciesFailure = (error: any): DependenciesAction => ({
+export const loadDependenciesFailure = (error: any) => ({
   type: ActionTypes.LOAD_DEPENDENCIES_FAILURE,
   payload: {
     error,
@@ -64,6 +62,6 @@ export const loadDependencies = (params: {
   }
 };
 
-export const clearDependencies = (): DependenciesAction => ({
+export const clearDependencies = () => ({
   type: ActionTypes.CLEAR_DEPENDENCIES,
 });
