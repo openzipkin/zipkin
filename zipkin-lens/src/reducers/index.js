@@ -13,6 +13,8 @@
  */
 import { combineReducers } from 'redux';
 
+import appSlice from '../components/App/slice';
+
 import remoteServices from './remote-services';
 import spans from './spans';
 import trace from './trace';
@@ -26,6 +28,7 @@ import traceViewer from './trace-viewer';
 
 const createReducer = (config) =>
   combineReducers({
+    [appSlice.name]: appSlice.reducer,
     remoteServices,
     spans,
     trace,

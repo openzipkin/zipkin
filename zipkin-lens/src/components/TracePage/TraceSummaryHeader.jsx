@@ -15,6 +15,7 @@ import { t, Trans } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 import { faDownload, faFileAlt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';
@@ -22,7 +23,8 @@ import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
-import { useSnackbar } from 'notistack';
+
+import { setAlert } from '../App/slice';
 
 import { useUiConfig } from '../UiConfig';
 
@@ -97,6 +99,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
+  const dispatch = useDispatch();
   const classes = useStyles();
   const { i18n } = useLingui();
   const config = useUiConfig();
@@ -118,20 +121,7 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
       ? config.archiveUrl.replace('{traceId}', traceSummary.traceId)
       : undefined;
 
-  const { enqueueSnackbar } = useSnackbar();
-
   const archiveClick = useCallback(() => {
-    const notify = (message, variant) => {
-      enqueueSnackbar(message, {
-        variant,
-        anchorOrigin: {
-          vertical: 'top',
-          horizontal: 'center',
-        },
-        autoHideDuration: 10000, // 10 seconds
-      });
-    };
-
     // We don't store the raw json in the browser yet, so we need to make an
     // HTTP call to retrieve it again.
     fetch(`${api.TRACE}/${traceSummary.traceId}`)
@@ -171,18 +161,30 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
           throw new Error('Failed to archive the trace');
         }
         if (archiveUrl) {
-          notify(
-            `Archive successful! This trace is now accessible at ${archiveUrl}`,
-            'success',
+          dispatch(
+            setAlert({
+              message: `Archive successful! This trace is now accessible at ${archiveUrl}`,
+              severity: 'success',
+            }),
           );
         } else {
-          notify(`Archive successful!`, 'success');
+          dispatch(
+            setAlert({
+              message: `Archive successful!`,
+              severity: 'success',
+            }),
+          );
         }
       })
       .catch(() => {
-        notify('Failed to archive the trace', 'error');
+        dispatch(
+          setAlert({
+            message: 'Failed to archive the trace',
+            severity: 'error',
+          }),
+        );
       });
-  }, [archivePostUrl, archiveUrl, traceSummary, enqueueSnackbar]);
+  }, [archivePostUrl, archiveUrl, dispatch, traceSummary]);
 
   const traceInfo = traceSummary ? (
     <Box className={classes.traceInfo}>
