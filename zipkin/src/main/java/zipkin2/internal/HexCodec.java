@@ -35,7 +35,7 @@ public final class HexCodec {
 
   /**
    * Parses a 16 character lower-hex string with no prefix into an unsigned long, starting at the
-   * spe index.
+   * specified index.
    */
   public static long lowerHexToUnsignedLong(String lowerHex, int index) {
     long result = 0;
