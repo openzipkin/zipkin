@@ -31,18 +31,6 @@ const { location } = window;
 // Allow redefining browser language.
 const { language } = window.navigator;
 
-// Mock out createRange until jest-environment-jsdom is updated to latest jsdom
-// https://github.com/mui-org/material-ui/issues/15726
-document.createRange = () =>
-  ({
-    setStart: () => {},
-    setEnd: () => {},
-    commonAncestorContainer: {
-      nodeName: 'BODY',
-      ownerDocument: document,
-    },
-  } as any); // Only partial mock so don't enforce full type.
-
 beforeAll(() => {
   delete window.location;
   window.location = {

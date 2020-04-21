@@ -41,11 +41,13 @@ export const spanTreeLineWidthPercentPerDepth = (depth) =>
   spanTreeWidthPercent / (depth + 1); // %
 export const serviceNameBadgeWidth = serviceNameWidthPercent - 2;
 export const serviceNameBadgeHeight = 20;
-export const serviceNameBadgeTranslate = `translate(16,${-serviceNameBadgeHeight /
-  2})`; // px
+export const serviceNameBadgeTranslate = `translate(16,${
+  -serviceNameBadgeHeight / 2
+})`; // px
 export const spanToggleButtonLengthOfSide = 16; // px
-export const spanToggleButtonTranslate = `translate(${-spanToggleButtonLengthOfSide /
-  2},${-spanToggleButtonLengthOfSide / 2})`; // px
+export const spanToggleButtonTranslate = `translate(${
+  -spanToggleButtonLengthOfSide / 2
+},${-spanToggleButtonLengthOfSide / 2})`; // px
 
 //
 //                                                             _     _    _
