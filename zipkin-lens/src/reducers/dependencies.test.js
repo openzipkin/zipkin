@@ -12,44 +12,48 @@
  * the License.
  */
 import reducer from './dependencies';
-import * as types from '../constants/action-types';
+import { ActionTypes } from '../types/action-types';
 
 describe('dependencies reducer', () => {
   it('shoud return the initial state', () => {
     expect(reducer(undefined, {})).toEqual({
       isLoading: false,
       dependencies: [],
+      error: null,
     });
   });
 
-  it('should handle FETCH_DEPENDENCIES_REQUEST', () => {
+  it('should handle LOAD_DEPENDENCIES_REQUEST', () => {
     expect(
       reducer(undefined, {
-        type: types.FETCH_DEPENDENCIES_REQUEST,
+        type: ActionTypes.LOAD_DEPENDENCIES_REQUEST,
       }),
     ).toEqual({
-      isLoading: true,
       dependencies: [],
+      isLoading: true,
+      error: null,
     });
   });
 
-  it('should handle FETCH_DEPENDENCIES_SUCCESS', () => {
+  it('should handle LOAD_DEPENDENCIES_SUCCESS', () => {
     expect(
       reducer(undefined, {
-        type: types.FETCH_DEPENDENCIES_SUCCESS,
-        dependencies: [
-          {
-            parent: 'service1',
-            child: 'service2',
-            callCount: 100,
-            errorCount: 5,
-          },
-          {
-            parent: 'service3',
-            child: 'service2',
-            callCount: 4,
-          },
-        ],
+        type: ActionTypes.LOAD_DEPENDENCIES_SUCCESS,
+        payload: {
+          dependencies: [
+            {
+              parent: 'service1',
+              child: 'service2',
+              callCount: 100,
+              errorCount: 5,
+            },
+            {
+              parent: 'service3',
+              child: 'service2',
+              callCount: 4,
+            },
+          ],
+        },
       }),
     ).toEqual({
       isLoading: false,
@@ -66,6 +70,7 @@ describe('dependencies reducer', () => {
           callCount: 4,
         },
       ],
+      error: null,
     });
 
     expect(
@@ -82,20 +87,22 @@ describe('dependencies reducer', () => {
           ],
         },
         {
-          type: types.FETCH_DEPENDENCIES_SUCCESS,
-          dependencies: [
-            {
-              parent: 'service1',
-              child: 'service2',
-              callCount: 100,
-              errorCount: 5,
-            },
-            {
-              parent: 'service3',
-              child: 'service2',
-              callCount: 4,
-            },
-          ],
+          type: ActionTypes.LOAD_DEPENDENCIES_SUCCESS,
+          payload: {
+            dependencies: [
+              {
+                parent: 'service1',
+                child: 'service2',
+                callCount: 100,
+                errorCount: 5,
+              },
+              {
+                parent: 'service3',
+                child: 'service2',
+                callCount: 4,
+              },
+            ],
+          },
         },
       ),
     ).toEqual({
@@ -113,10 +120,11 @@ describe('dependencies reducer', () => {
           callCount: 4,
         },
       ],
+      error: null,
     });
   });
 
-  it('should handle FETCH_DEPENDENCIES_FAILURE', () => {
+  it('should handle LOAD_DEPENDENCIES_FAILURE', () => {
     expect(
       reducer(
         {
@@ -136,16 +144,20 @@ describe('dependencies reducer', () => {
           ],
         },
         {
-          type: types.FETCH_DEPENDENCIES_FAILURE,
+          type: ActionTypes.LOAD_DEPENDENCIES_FAILURE,
+          payload: {
+            error: { message: 'error' },
+          },
         },
       ),
     ).toEqual({
       isLoading: false,
       dependencies: [],
+      error: { message: 'error' },
     });
   });
 
-  it('should handle CLEAN_DEPENDENCIES', () => {
+  it('should handle CLEAR_DEPENDENCIES', () => {
     expect(
       reducer(
         {
@@ -165,12 +177,13 @@ describe('dependencies reducer', () => {
           ],
         },
         {
-          type: types.CLEAR_DEPENDENCIES,
+          type: ActionTypes.CLEAR_DEPENDENCIES,
         },
       ),
     ).toEqual({
-      isLoading: true,
+      isLoading: false,
       dependencies: [],
+      error: null,
     });
   });
 });

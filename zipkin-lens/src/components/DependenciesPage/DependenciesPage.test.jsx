@@ -11,149 +11,112 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+/* eslint-disable no-shadow */
 import React from 'react';
-import { cleanup, fireEvent } from '@testing-library/react';
+import { createMemoryHistory } from 'history';
+import moment from 'moment';
+import { fireEvent, waitForElement } from '@testing-library/react';
+import fetchMock from 'fetch-mock';
 
-import { DependenciesPageImpl } from './DependenciesPage';
 import render from '../../test/util/render-with-default-settings';
+import DependenciesPage from './DependenciesPage';
 
-jest.mock('./VizceralExt', () =>
-  jest.fn(({ objectHighlighted }) => (
-    <div>
-      <button
-        aria-label="button"
-        type="button"
-        data-testid="graph-background"
-        onClick={() => objectHighlighted(undefined)}
+jest.mock('@material-ui/pickers', () => {
+  // eslint-disable-next-line global-require
+  const moment = require('moment');
+  return {
+    // eslint-disable-next-line react/prop-types
+    KeyboardDateTimePicker: ({ value, onChange }) => (
+      <input
+        // eslint-disable-next-line react/prop-types
+        value={value.format('MM/DD/YYYY HH:mm:ss')}
+        onChange={(event) => onChange(moment(event.target.value))}
+        data-testid="date-time-picker"
       />
-      {[
-        'serviceA',
-        'serviceB',
-        'serviceC',
-        'serviceD',
-        'serviceE',
-        'serviceF',
-        'serviceG',
-      ].map((nodeName) => (
-        <button
-          key={nodeName}
-          type="button"
-          data-testid={`${nodeName}-button`}
-          onClick={() =>
-            objectHighlighted({ type: 'node', getName: () => nodeName })
-          }
-        >
-          {nodeName}
-        </button>
-      ))}
-    </div>
-  )),
-);
+    ),
+  };
+});
+
+// vizceral uses setTimeout internally, so if you use jest.runAllTimers
+// in the test, problems will occur.
+// To avoid it, mock Vizceral (VizceralWrapper).
+jest.mock('./VizceralWrapper', () => () => <div />);
+
+jest.useFakeTimers();
 
 describe('<DependenciesPage />', () => {
-  const exampleDependencies = [
-    { parent: 'serviceA', child: 'serviceB', callCount: 1000 },
-    { parent: 'serviceB', child: 'serviceC', callCount: 3200 },
-    { parent: 'serviceB', child: 'serviceD', callCount: 200 },
-    { parent: 'serviceD', child: 'serviceE', callCount: 500 },
-    { parent: 'serviceE', child: 'serviceF', callCount: 1000 },
-    { parent: 'serviceC', child: 'serviceE', callCount: 2000 },
-    { parent: 'serviceC', child: 'serviceG', callCount: 1200 },
-  ];
+  it('should manage the temporary time range with DateTimePicker and reflect it in the URL when the search button is clicked', () => {
+    const history = createMemoryHistory();
+    const { getAllByTestId, getByTestId } = render(<DependenciesPage />, {
+      history,
+    });
 
-  const commonProps = {
-    isLoading: false,
-    dependencies: [],
-    fetchDependencies: () => {},
-    clearDependencies: () => {},
-    location: {
-      search: '?endTs=1571979713227&startTs=1571893313227',
-    },
-    history: { push: () => {} },
-  };
+    const dateTimePickers = getAllByTestId('date-time-picker');
+    const [startDateTimePicker, endDateTimePicker] = dateTimePickers;
 
-  afterEach(() => {
-    cleanup();
+    const startTimeStr = '2013-02-08 09:30:26';
+    const endTimeStr = '2013-02-09 10:40:45';
+    const startTime = moment(startTimeStr);
+    const endTime = moment(endTimeStr);
+
+    fireEvent.change(startDateTimePicker, {
+      target: { value: startTimeStr },
+    });
+    expect(startDateTimePicker.value).toBe('02/08/2013 09:30:26');
+
+    fireEvent.change(endDateTimePicker, {
+      target: { value: endTimeStr },
+    });
+    expect(endDateTimePicker.value).toBe('02/09/2013 10:40:45');
+
+    // When the search button is clicked, reflect the temp time range changes to URL search params.
+    fireEvent.click(getByTestId('search-button'));
+    const params = new URLSearchParams(history.location.search);
+    expect(params.get('startTime')).toBe(startTime.valueOf().toString());
+    expect(params.get('endTime')).toBe(endTime.valueOf().toString());
   });
 
-  it('should render a loading indicator when isLoading is true', () => {
-    const { queryAllByTestId } = render(
-      <DependenciesPageImpl {...commonProps} isLoading />,
-    );
-    const loadingIndicators = queryAllByTestId('loading-indicator');
-    expect(loadingIndicators.length).toBe(1);
-  });
+  it('should fetch or clear dependencies when URL is changed', async () => {
+    fetchMock.get('*', [
+      {
+        parent: 'serviceA',
+        child: 'serverB',
+        callCount: 10,
+        errorCount: 20,
+      },
+    ]);
 
-  it('should render an explain box if there is no graph, yet', () => {
-    const { queryAllByTestId } = render(
-      <DependenciesPageImpl {...commonProps} dependencies={[]} />,
-    );
-    const explainBoxes = queryAllByTestId('explain-box');
-    expect(explainBoxes.length).toBe(1);
-  });
+    const history = createMemoryHistory();
+    const { rerender, getAllByTestId } = render(<DependenciesPage />, {
+      history,
+    });
 
-  it('should render a dependency graph when isLoading is false and there is graph data', () => {
-    const { queryAllByTestId } = render(
-      <DependenciesPageImpl
-        {...commonProps}
-        dependencies={exampleDependencies}
-      />,
+    // When the query parameter is set, dependencies will be fetched
+    // and loading-indicator will be displayed.
+    history.push({
+      location: '/dependencies',
+      search: '?startTime=1586268120000&endTime=1587132132201',
+    });
+    rerender(
+      <DependenciesPage history={history} location={history.location} />,
     );
-    const dependenciesGraphs = queryAllByTestId('dependencies-graph');
-    expect(dependenciesGraphs.length).toBe(1);
-  });
+    expect(getAllByTestId('loading-indicator').length).toBe(1);
 
-  it('should render node details when nodes are clicked', () => {
-    const { getByTestId, queryAllByTestId } = render(
-      <DependenciesPageImpl
-        {...commonProps}
-        dependencies={exampleDependencies}
-      />,
+    // Because setTimeout is used in the action creator that fetches dependencies,
+    // use jest.runAllTimers to complete all timers.
+    jest.runAllTimers();
+    // If wait a while after loading-indicator is displayed,
+    // dependencies-graph will appear.
+    const components = await waitForElement(() =>
+      getAllByTestId('dependencies-graph'),
     );
-    const serviceA = getByTestId('serviceA-button');
-    fireEvent.click(serviceA);
-    let nodeDetails = queryAllByTestId('node-detail');
-    expect(nodeDetails.length).toBe(1);
+    expect(components.length).toBe(1);
 
-    // When the graph's background is clicked, the node detail should be removed.
-    const graphBackground = getByTestId('graph-background');
-    fireEvent.click(graphBackground);
-    nodeDetails = queryAllByTestId('node-detail');
-    expect(nodeDetails.length).toBe(0);
-  });
-
-  it('should fetch dependencies when mounted using query parameters', () => {
-    const fetchDependencies = jest.fn();
-    render(
-      <DependenciesPageImpl
-        {...commonProps}
-        fetchDependencies={fetchDependencies}
-      />,
+    // When query parameter is empty, dependencies are cleared and explain-box is displayed.
+    history.push('/dependencies');
+    rerender(
+      <DependenciesPage history={history} location={history.location} />,
     );
-    expect(fetchDependencies.mock.calls.length).toBe(1);
-  });
-
-  it('should not fetch dependencies when query parameters are missing', () => {
-    const fetchDependencies = jest.fn();
-    render(
-      <DependenciesPageImpl
-        {...commonProps}
-        fetchDependencies={fetchDependencies}
-        location={{ search: '' }}
-      />,
-    );
-    expect(fetchDependencies.mock.calls.length).toBe(0);
-  });
-
-  it('should clear dependencies when unmounted', () => {
-    const clearDependencies = jest.fn();
-    const { unmount } = render(
-      <DependenciesPageImpl
-        {...commonProps}
-        clearDependencies={clearDependencies}
-      />,
-    );
-    unmount();
-    expect(clearDependencies.mock.calls.length).toBe(1);
+    expect(getAllByTestId('explain-box').length).toBe(1);
   });
 });

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,9 +15,8 @@ import configureMockStore from 'redux-mock-store';
 import thunk from 'redux-thunk';
 import fetchMock from 'fetch-mock';
 
+import { ActionTypes } from '../types/action-types';
 import * as actions from './dependencies-action';
-import * as types from '../constants/action-types';
-import * as api from '../constants/api';
 
 const middlewares = [thunk];
 const mockStore = configureMockStore(middlewares);
@@ -25,7 +24,7 @@ const mockStore = configureMockStore(middlewares);
 describe('dependencies actions', () => {
   it('should create an action to clear dependencies', () => {
     const expectedAction = {
-      type: types.CLEAR_DEPENDENCIES,
+      type: ActionTypes.CLEAR_DEPENDENCIES,
     };
     expect(actions.clearDependencies()).toEqual(expectedAction);
   });
@@ -36,8 +35,8 @@ describe('dependencies async actions', () => {
     fetchMock.restore();
   });
 
-  it('create FETCH_DEPENDENCIES_SUCCESS when fetching dependencies has been done', () => {
-    fetchMock.getOnce(api.DEPENDENCIES, {
+  it('create LOAD_DEPENDENCIES_SUCCESS when fetching dependencies has been done', () => {
+    fetchMock.getOnce('*', {
       body: [
         {
           parent: 'service1',
@@ -57,28 +56,32 @@ describe('dependencies async actions', () => {
     });
 
     const expectedActions = [
-      { type: types.FETCH_DEPENDENCIES_REQUEST },
+      { type: ActionTypes.LOAD_DEPENDENCIES_REQUEST },
       {
-        type: types.FETCH_DEPENDENCIES_SUCCESS,
-        dependencies: [
-          {
-            parent: 'service1',
-            child: 'service2',
-            callCount: 100,
-            errorCount: 5,
-          },
-          {
-            parent: 'service3',
-            child: 'service2',
-            callCount: 4,
-          },
-        ],
+        type: ActionTypes.LOAD_DEPENDENCIES_SUCCESS,
+        payload: {
+          dependencies: [
+            {
+              parent: 'service1',
+              child: 'service2',
+              callCount: 100,
+              errorCount: 5,
+            },
+            {
+              parent: 'service3',
+              child: 'service2',
+              callCount: 4,
+            },
+          ],
+        },
       },
     ];
     const store = mockStore({});
 
-    return store.dispatch(actions.fetchDependencies()).then(() => {
-      expect(store.getActions()).toEqual(expectedActions);
-    });
+    return store
+      .dispatch(actions.loadDependencies({ endTs: 1587132132201 }))
+      .then(() => {
+        expect(store.getActions()).toEqual(expectedActions);
+      });
   });
 });
