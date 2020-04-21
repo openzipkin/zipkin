@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,36 +11,43 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import * as types from '../constants/action-types';
+import { ActionTypes, DependenciesAction } from '../types/action-types';
+import { DependenciesState } from '../types/state-types';
 
-const initialState = {
-  isLoading: false,
+const initialState: DependenciesState = {
   dependencies: [],
+  isLoading: false,
+  error: null,
 };
 
-const dependencies = (state = initialState, action) => {
+const dependencies = (
+  state = initialState,
+  action: DependenciesAction,
+): DependenciesState => {
   switch (action.type) {
-    case types.FETCH_DEPENDENCIES_REQUEST:
+    case ActionTypes.LOAD_DEPENDENCIES_REQUEST:
       return {
-        ...state,
+        dependencies: [],
         isLoading: true,
+        error: null,
       };
-    case types.FETCH_DEPENDENCIES_SUCCESS:
+    case ActionTypes.LOAD_DEPENDENCIES_SUCCESS:
       return {
-        ...state,
+        dependencies: action.payload.dependencies,
         isLoading: false,
-        dependencies: action.dependencies,
+        error: null,
       };
-    case types.FETCH_DEPENDENCIES_FAILURE:
+    case ActionTypes.LOAD_DEPENDENCIES_FAILURE:
       return {
-        ...state,
+        dependencies: [],
         isLoading: false,
-        dependencies: [],
+        error: action.payload.error,
       };
-    case types.CLEAR_DEPENDENCIES:
+    case ActionTypes.CLEAR_DEPENDENCIES:
       return {
-        ...state,
         dependencies: [],
+        isLoading: false,
+        error: null,
       };
     default:
       return state;
