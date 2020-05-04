@@ -99,6 +99,7 @@ const SuggestionList: React.FC<SuggestionListProps> = ({
       boxShadow={3}
       maxHeight={300}
       overflow="auto"
+      zIndex="modal"
     >
       <ul className={classes.list}>
         {suggestions.map((suggestion, index) => (
