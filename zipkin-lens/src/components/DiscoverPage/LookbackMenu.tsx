@@ -151,7 +151,7 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
       endTime,
     });
     close();
-  }, [startTime, endTime, onChange]);
+  }, [startTime, endTime, onChange, close]);
 
   return (
     <Paper ref={el} elevation={5} className={classes.root}>
@@ -172,7 +172,12 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
               '2d',
               '7d',
             ] as FixedLookbackValue[]).map((value) => (
-              <ListItem button onClick={handleListItemClick(value)} key={value}>
+              <ListItem
+                button
+                onClick={handleListItemClick(value)}
+                key={value}
+                data-testid={`lookback-${value}`}
+              >
                 <ListItemText primary={fixedLookbackMap[value].display} />
               </ListItem>
             ))}
@@ -192,6 +197,7 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
                 onChange={handleStartTimeChange}
                 onOpen={handleDialogOpen}
                 onClose={handleDialogClose}
+                data-testid="date-time-picker"
               />
             </Box>
             <Box mb={2}>
@@ -203,6 +209,7 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
                 onChange={handleEndTimeChange}
                 onOpen={handleDialogOpen}
                 onClose={handleDialogClose}
+                data-testid="date-time-picker"
               />
             </Box>
             <Box display="flex" justifyContent="flex-end">
@@ -210,6 +217,7 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
                 variant="contained"
                 color="secondary"
                 onClick={handleApplyButtonClick}
+                data-testid="apply-button"
               >
                 Apply
               </Button>
