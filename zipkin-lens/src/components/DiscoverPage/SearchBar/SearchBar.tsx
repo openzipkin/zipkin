@@ -12,7 +12,8 @@
  * the License.
  */
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { ThunkDispatch } from 'redux-thunk';
+import { connect } from 'react-redux';
 import { Box, Button } from '@material-ui/core';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -24,7 +25,7 @@ import RootState from '../../../types/RootState';
 import { fetchServices } from '../../../actions/services-action';
 import { fetchSpans } from '../../../actions/spans-action';
 import { fetchRemoteServices } from '../../../actions/remote-services-action';
-import {fetchAutocompleteKeys} from "../../../actions/autocomplete-keys-action";
+import { fetchAutocompleteKeys } from '../../../actions/autocomplete-keys-action';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -40,9 +41,40 @@ const useStyles = makeStyles((theme: Theme) =>
 type SearchBarProps = {
   criteria: Criterion[];
   onChange: (criteria: Criterion[]) => void;
+  serviceNames: string[];
+  isLoadingServiceNames: boolean;
+  spanNames: string[];
+  isLoadingSpanNames: boolean;
+  remoteServiceNames: string[];
+  isLoadingRemoteServiceNames: boolean;
+  autocompleteKeys: string[];
+  isLoadingAutocompleteKeys: boolean;
+  autocompleteValues: string[];
+  isLoadingAutocompleteValues: boolean;
+  loadServices: () => void;
+  loadAutocompleteKeys: () => void;
+  loadRemoteServices: (serviceName: string) => void;
+  loadSpans: (serviceName: string) => void;
 };
 
-const SearchBar: React.FC<SearchBarProps> = ({ criteria, onChange }) => {
+export const SearchBarImpl: React.FC<SearchBarProps> = ({
+  criteria,
+  onChange,
+  serviceNames,
+  isLoadingServiceNames,
+  spanNames,
+  isLoadingSpanNames,
+  remoteServiceNames,
+  isLoadingRemoteServiceNames,
+  autocompleteKeys,
+  isLoadingAutocompleteKeys,
+  autocompleteValues,
+  isLoadingAutocompleteValues,
+  loadServices,
+  loadAutocompleteKeys,
+  loadRemoteServices,
+  loadSpans,
+}) => {
   const classes = useStyles();
 
   const inputEls = React.useRef<HTMLInputElement[]>([]);
@@ -90,40 +122,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ criteria, onChange }) => {
     }, 0);
   }, [criteria, onChange]);
 
-  const [
-    serviceNames,
-    isLoadingServiceNames,
-  ] = useSelector((state: RootState) => [
-    state.services.services,
-    state.services.isLoading,
-  ]);
-
-  const [spanNames, isLoadingSpanNames] = useSelector((state: RootState) => [
-    state.spans.spans,
-    state.spans.isLoading,
-  ]);
-
-  const [
-    remoteServiceNames,
-    isLoadingRemoteServiceNames,
-  ] = useSelector((state: RootState) => [
-    state.remoteServices.remoteServices,
-    state.remoteServices.isLoading,
-  ]);
-
-  const [
-    autocompleteKeys,
-    isLoadingAutocompleteKeys,
-  ] = useSelector((state: RootState) => [
-    state.autocompleteKeys.autocompleteKeys,
-    state.autocompleteKeys.isLoading,
-  ]);
-
-  const dispatch = useDispatch();
-
   React.useEffect(() => {
-    dispatch(fetchServices());
-    dispatch(fetchAutocompleteKeys());
+    loadServices();
+    loadAutocompleteKeys();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -133,21 +134,13 @@ const SearchBar: React.FC<SearchBarProps> = ({ criteria, onChange }) => {
       // eslint-disable-next-line no-shadow
       (criterion) => criterion.key === 'serviceName',
     );
-    const serviceName = criterion ? criterion.key : '';
+    const serviceName = criterion ? criterion.value : '';
     if (serviceName !== prevServiceName.current) {
       prevServiceName.current = serviceName;
-      dispatch(fetchSpans(serviceName));
-      dispatch(fetchRemoteServices(serviceName));
+      loadSpans(serviceName);
+      loadRemoteServices(serviceName);
     }
-  }, [criteria, dispatch]);
-
-  const [
-    autocompleteValues,
-    isLoadingAutocompleteValues,
-  ] = useSelector((state: RootState) => [
-    state.autocompleteValues.autocompleteValues,
-    state.autocompleteValues.isLoading,
-  ]);
+  }, [criteria, loadSpans, loadRemoteServices]);
 
   return (
     <Box
@@ -165,7 +158,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ criteria, onChange }) => {
     >
       {criteria.map((criterion, index) => (
         <CriterionBox
+          key={`${criterion.key}=${criterion.value}`}
           setInputEl={setInputEl(index)}
+          criteria={criteria}
           criterion={criterion}
           serviceNames={serviceNames}
           remoteServiceNames={remoteServiceNames}
@@ -189,6 +184,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ criteria, onChange }) => {
         variant="contained"
         onClick={handleAddButtonClick}
         className={classes.addButton}
+        data-testid="add-button"
       >
         <FontAwesomeIcon icon={faPlus} size="lg" />
       </Button>
@@ -196,4 +192,37 @@ const SearchBar: React.FC<SearchBarProps> = ({ criteria, onChange }) => {
   );
 };
 
-export default SearchBar;
+// For unit testing, `connect` is easier to use than
+// useSelector or useDispatch hooks.
+const mapStateToProps = (state: RootState) => ({
+  serviceNames: state.services.services,
+  isLoadingServiceNames: state.services.isLoading,
+  spanNames: state.spans.spans,
+  isLoadingSpanNames: state.spans.isLoading,
+  remoteServiceNames: state.remoteServices.remoteServices,
+  isLoadingRemoteServiceNames: state.remoteServices.isLoading,
+  autocompleteKeys: state.autocompleteKeys.autocompleteKeys,
+  isLoadingAutocompleteKeys: state.autocompleteKeys.isLoading,
+  autocompleteValues: state.autocompleteValues.autocompleteValues,
+  isLoadingAutocompleteValues: state.autocompleteValues.isLoading,
+});
+
+// TODO: Give the appropriate type to ThunkDispatch after TypeScriptizing all action creators.
+const mapDispatchToProps = (
+  dispatch: ThunkDispatch<RootState, undefined, any>,
+) => ({
+  loadServices: () => {
+    dispatch(fetchServices());
+  },
+  loadAutocompleteKeys: () => {
+    dispatch(fetchAutocompleteKeys());
+  },
+  loadRemoteServices: (serviceName: string) => {
+    dispatch(fetchRemoteServices(serviceName));
+  },
+  loadSpans: (serviceName: string) => {
+    dispatch(fetchSpans(serviceName));
+  },
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(SearchBarImpl);
