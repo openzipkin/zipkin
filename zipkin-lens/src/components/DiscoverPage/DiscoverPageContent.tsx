@@ -1,4 +1,3 @@
-/* eslint-disable no-shadow */
 /*
  * Copyright 2015-2020 The OpenZipkin Authors
  *
@@ -12,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+/* eslint-disable no-shadow */
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router-dom';

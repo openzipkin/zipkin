@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+/* eslint-disable no-shadow */
 import React from 'react';
 import { Box } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
@@ -48,6 +49,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface CriterionBoxProps {
   setInputEl: (el: HTMLInputElement) => void;
+  criteria: Criterion[];
   criterion: Criterion;
   serviceNames: string[];
   remoteServiceNames: string[];
@@ -66,8 +68,19 @@ interface CriterionBoxProps {
   onDelete: () => void;
 }
 
+const initialText = (criterion: Criterion) => {
+  if (criterion.key) {
+    if (criterion.value) {
+      return `${criterion.key}=${criterion.value}`;
+    }
+    return `${criterion.key}=`;
+  }
+  return '';
+};
+
 const CriterionBox: React.FC<CriterionBoxProps> = ({
   setInputEl,
+  criteria,
   criterion,
   serviceNames,
   remoteServiceNames,
@@ -97,8 +110,8 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     [setInputEl],
   );
 
-  const [text, setText] = React.useState('');
-  const [fixedText, setFixedText] = React.useState('');
+  const [text, setText] = React.useState(initialText(criterion));
+  const [fixedText, setFixedText] = React.useState(initialText(criterion));
 
   const keyText = React.useMemo(() => {
     const ss = fixedText.split('=', 2);
@@ -143,7 +156,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
         'maxDuration',
         'minDuration',
         ...autocompleteKeys,
-      ];
+      ].filter((key) => !criteria.find((criterion) => criterion.key === key));
     }
     switch (keyText) {
       case 'serviceName':
@@ -166,6 +179,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     remoteServiceNames,
     isEnteringKey,
     keyText,
+    criteria,
   ]);
 
   const [suggestionIndex, setSuggestionIndex] = React.useState(-1);
@@ -308,23 +322,27 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
         <Box
           maxWidth={150}
           height="100%"
-          display="flex"
-          alignItems="center"
           bgcolor="primary.dark"
           p={1}
+          overflow="hidden"
+          whiteSpace="nowrap"
+          textOverflow="ellipsis"
         >
           {criterion.key}
         </Box>
-        <Box
-          maxWidth={200}
-          height="100%"
-          display="flex"
-          alignItems="center"
-          bgcolor="primary.main"
-          p={1}
-        >
-          {criterion.value}
-        </Box>
+        {criterion.value && (
+          <Box
+            maxWidth={200}
+            height="100%"
+            bgcolor="primary.main"
+            p={1}
+            overflow="hidden"
+            whiteSpace="nowrap"
+            textOverflow="ellipsis"
+          >
+            {criterion.value}
+          </Box>
+        )}
         <button
           type="button"
           onClick={handleDeleteButtonClick}
