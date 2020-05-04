@@ -58,29 +58,30 @@ const useStyles = makeStyles((theme: Theme) =>
 
 interface Props extends RouteComponentProps {}
 
-const useQueryParams = (history: History, location: Location) => {
+// Export for testing
+export const useQueryParams = (history: History, location: Location) => {
   const setQueryParams = React.useCallback(
     (criteria: Criterion[], lookback: Lookback, limit: number) => {
-      const ps = new URLSearchParams();
+      const params = new URLSearchParams();
       criteria.forEach((criterion) => {
-        ps.set(criterion.key, criterion.value);
+        params.set(criterion.key, criterion.value);
       });
       switch (lookback.type) {
         case 'fixed':
-          ps.set('lookback', lookback.value);
-          ps.set('endTs', lookback.endTime.valueOf().toString());
+          params.set('lookback', lookback.value);
+          params.set('endTs', lookback.endTime.valueOf().toString());
           break;
         case 'custom':
-          ps.set('lookback', 'custom');
-          ps.set('endTs', lookback.endTime.valueOf().toString());
-          ps.set('startTs', lookback.startTime.valueOf().toString());
+          params.set('lookback', 'custom');
+          params.set('endTs', lookback.endTime.valueOf().toString());
+          params.set('startTs', lookback.startTime.valueOf().toString());
           break;
         default:
       }
-      ps.set('limit', limit.toString());
+      params.set('limit', limit.toString());
       history.push({
         pathname: location.pathname,
-        search: ps.toString(),
+        search: params.toString(),
       });
     },
     [history, location.pathname],
@@ -157,6 +158,55 @@ const useQueryParams = (history: History, location: Location) => {
   };
 };
 
+// Export for testing
+export const buildApiQuery = (
+  criteria: Criterion[],
+  lookback: Lookback,
+  limit: number,
+) => {
+  const params: { [key: string]: string } = {};
+  const annotationQuery: string[] = [];
+  criteria.forEach((criterion) => {
+    switch (criterion.key) {
+      case 'serviceName':
+      case 'spanName':
+      case 'remoteServiceName':
+      case 'maxDuration':
+      case 'minDuration':
+        params[criterion.key] = criterion.value;
+        break;
+      default:
+        // All criterions except serviceName, spanName, remoteServiceName, maxDuration,
+        // and minDuration are AnnotationQuery.
+        if (criterion.value) {
+          annotationQuery.push(`${criterion.key}=${criterion.value}`);
+        } else {
+          annotationQuery.push(`${criterion.key}`);
+        }
+    }
+  });
+  if (annotationQuery.length > 0) {
+    params.annotationQuery = annotationQuery.join(' and ');
+  }
+  params.endTs = lookback.endTime.valueOf().toString();
+  switch (lookback.type) {
+    case 'custom': {
+      const lb = lookback.endTime.valueOf() - lookback.startTime.valueOf();
+      params.lookback = lb.toString();
+      break;
+    }
+    case 'fixed': {
+      params.lookback = fixedLookbackMap[lookback.value].duration
+        .asMilliseconds()
+        .toString();
+      break;
+    }
+    default:
+  }
+  params.limit = limit.toString();
+  return params;
+};
+
 const useFetchTraces = (
   criteria: Criterion[],
   lookback: Lookback | null,
@@ -172,45 +222,7 @@ const useFetchTraces = (
       return;
     }
 
-    const params: { [key: string]: string } = {};
-    const annotationQuery: string[] = [];
-    criteria.forEach((criterion) => {
-      switch (criterion.key) {
-        case 'serviceName':
-        case 'spanName':
-        case 'remoteServiceName':
-        case 'maxDuration':
-        case 'minDuration':
-          params[criterion.key] = criterion.value;
-          break;
-        default:
-          if (criterion.value) {
-            annotationQuery.push(`${criterion.key}=${criterion.value}`);
-          } else {
-            annotationQuery.push(`${criterion.key}`);
-          }
-      }
-    });
-    if (annotationQuery.length > 0) {
-      params.annotationQuery = annotationQuery.join(' and ');
-    }
-    params.endTs = lookback.endTime.valueOf().toString();
-    switch (lookback.type) {
-      case 'custom': {
-        const lb = lookback.endTime.valueOf() - lookback.startTime.valueOf();
-        params.lookback = lb.toString();
-        break;
-      }
-      case 'fixed': {
-        params.lookback = fixedLookbackMap[lookback.value].duration
-          .asMilliseconds()
-          .toString();
-        break;
-      }
-      default:
-    }
-    params.limit = limit.toString();
-
+    const params = buildApiQuery(criteria, lookback, limit);
     dispatch(loadTraces(params));
   }, [criteria, dispatch, limit, lookback]);
 };
@@ -256,7 +268,16 @@ const DiscoverPageContent: React.FC<Props> = ({ history, location }) => {
   );
 
   const handleSearchButtonClick = React.useCallback(() => {
-    setQueryParams(tempCriteria, tempLookback, tempLimit);
+    // If the lookback is fixed, need to set the click time to endTime.
+    if (tempLookback.type === 'fixed') {
+      setQueryParams(
+        tempCriteria,
+        { ...tempLookback, endTime: moment() },
+        tempLimit,
+      );
+    } else {
+      setQueryParams(tempCriteria, tempLookback, tempLimit);
+    }
   }, [setQueryParams, tempCriteria, tempLookback, tempLimit]);
 
   const [traces, isLoadingTraces] = useSelector((state: RootState) => [
