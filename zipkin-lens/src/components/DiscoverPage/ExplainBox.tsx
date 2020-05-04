@@ -17,25 +17,27 @@ import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
-import { makeStyles } from '@material-ui/styles';
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    color: theme.palette.text.secondary,
-  },
-  iconWrapper: {
-    fontSize: '10rem',
-    lineHeight: '1',
-  },
-  description: {
-    marginTop: theme.spacing(1.4),
-    textAlign: 'center',
-    whiteSpace: 'pre-line',
-  },
-}));
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    root: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      color: theme.palette.text.secondary,
+    },
+    iconWrapper: {
+      fontSize: '10rem',
+      lineHeight: '1',
+    },
+    description: {
+      marginTop: theme.spacing(1.4),
+      textAlign: 'center',
+      whiteSpace: 'pre-line',
+    },
+  }),
+);
 
 const ExplainBox = React.memo(() => {
   const classes = useStyles();
