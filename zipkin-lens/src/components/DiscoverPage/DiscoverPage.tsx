@@ -12,20 +12,14 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { Box, Typography, LinearProgress } from '@material-ui/core';
+import React from 'react';
+import { Box, Typography } from '@material-ui/core';
+import { Trans } from '@lingui/macro';
 
 import { useUiConfig } from '../UiConfig';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import DiscoverPageContent from './DiscoverPageContent';
-import RootState from '../../types/RootState';
-import { fetchAutocompleteKeys } from '../../actions/autocomplete-keys-action';
-
-// Do require because tsc cannot find the definition of trans.
-// TODO: Give a strict type.
-const { Trans } = require('@lingui/macro');
 
 const DiscoverPage: React.FC = () => {
   const config = useUiConfig();
