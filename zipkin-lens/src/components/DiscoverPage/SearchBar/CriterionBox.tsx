@@ -64,6 +64,7 @@ interface CriterionBoxProps {
   isFocused: boolean;
   onFocus: () => void;
   onBlur: () => void;
+  onDecide: () => void;
   onChange: (criterion: Criterion) => void;
   onDelete: () => void;
 }
@@ -94,6 +95,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
   isFocused,
   onFocus,
   onBlur,
+  onDecide,
   onChange,
   onDelete,
 }) => {
@@ -101,14 +103,31 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
 
   const inputEl = React.useRef<HTMLInputElement>(null);
 
+  const [text, setText] = React.useState(initialText(criterion));
+  const [fixedText, setFixedText] = React.useState(initialText(criterion));
+
   useMount(() => {
     if (inputEl.current) {
       inputEl.current.focus();
     }
   });
 
-  const [text, setText] = React.useState(initialText(criterion));
-  const [fixedText, setFixedText] = React.useState(initialText(criterion));
+  const prevIsFocused = React.useRef(isFocused);
+  React.useEffect(() => {
+    if (prevIsFocused.current && !isFocused) {
+      if (!fixedText) {
+        onDelete();
+        return;
+      }
+      const ss = fixedText.split('=', 2);
+      onChange({ key: ss[0], value: ss[1] || '' });
+    } else if (!prevIsFocused.current && isFocused) {
+      if (inputEl.current) {
+        inputEl.current.focus();
+      }
+    }
+    prevIsFocused.current = isFocused;
+  }, [isFocused, fixedText, onChange, onDelete]);
 
   const keyText = React.useMemo(() => {
     const ss = fixedText.split('=', 2);
@@ -197,11 +216,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
           event.preventDefault();
           if (isEnteringKey) {
             if (!text) {
-              onDelete();
-              onBlur();
-              if (inputEl.current) {
-                inputEl.current.blur();
-              }
+              onDecide();
               return;
             }
             const newText = `${text}=`;
@@ -211,16 +226,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
           } else {
             setFixedText(text);
             setSuggestionIndex(-1);
-            const ss = text.split('=', 2);
-            if (!ss[0]) {
-              onDelete();
-            } else {
-              onChange({ key: ss[0], value: ss[1] || '' });
-            }
-            onBlur();
-            if (inputEl.current) {
-              inputEl.current.blur();
-            }
+            onDecide();
           }
           break;
         case 'ArrowUp': {
@@ -267,7 +273,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
           break;
         }
         case 'Escape': {
-          onDelete();
+          onDecide();
           break;
         }
         default:
@@ -281,9 +287,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
       keyText,
       suggestionIndex,
       suggestions,
-      onBlur,
-      onChange,
-      onDelete,
+      onDecide,
     ],
   );
 
@@ -305,34 +309,18 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
       setFixedText(newText);
       setSuggestionIndex(-1);
       if (inputEl.current) {
+        // When the suggestion is clicked, the focus is removed from input.
+        // So need to refocus.
         inputEl.current.focus();
       }
     } else {
       const newText = `${keyText}=${suggestions[index]}`;
       setText(newText);
       setFixedText(newText);
-      onChange({ key: keyText, value: suggestions[index] });
       setSuggestionIndex(-1);
-      onBlur();
-      if (inputEl.current) {
-        inputEl.current.blur();
-      }
+      onDecide();
     }
   };
-
-  const handleClickAway = React.useCallback(() => {
-    const ss = fixedText.split('=', 2);
-    setSuggestionIndex(-1);
-    if (!ss[0]) {
-      onDelete();
-    } else {
-      onChange({ key: ss[0], value: ss[1] || '' });
-    }
-    onBlur();
-    if (inputEl.current) {
-      inputEl.current.blur();
-    }
-  }, [fixedText, onChange, onBlur, onDelete]);
 
   if (!isFocused) {
     return (
@@ -382,8 +370,9 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
       </Box>
     );
   }
+
   return (
-    <ClickAwayListener onClickAway={handleClickAway}>
+    <ClickAwayListener onClickAway={onBlur}>
       <Box mr={2} position="relative">
         <input
           ref={inputEl}

@@ -100,6 +100,18 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
     onChange(newCriteria);
   };
 
+  const handleCriterionDecide = (index: number) => () => {
+    if (index === criteria.length - 1) {
+      const newCriteria = [...criteria];
+      newCriteria.push({ key: '', value: '' });
+      onChange(newCriteria);
+      const nextCriterionIndex = criteria.length;
+      setCriterionIndex(nextCriterionIndex);
+    } else {
+      setCriterionIndex(-1);
+    }
+  };
+
   const handleAddButtonClick = React.useCallback(() => {
     const newCriteria = [...criteria];
     newCriteria.push({ key: '', value: '' });
@@ -144,7 +156,7 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
     >
       {criteria.map((criterion, index) => (
         <CriterionBox
-          key={`${criterion.key}=${criterion.value}`}
+          key={index}
           criteria={criteria}
           criterion={criterion}
           serviceNames={serviceNames}
@@ -160,6 +172,7 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
           isFocused={index === criterionIndex}
           onFocus={handleCriterionFocus(index)}
           onBlur={handleCriterionBlur()}
+          onDecide={handleCriterionDecide(index)}
           onChange={handleCriterionChange(index)}
           onDelete={handleCriterionDelete(index)}
         />
