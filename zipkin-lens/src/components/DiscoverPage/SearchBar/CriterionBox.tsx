@@ -13,6 +13,7 @@
  */
 /* eslint-disable no-shadow */
 import React from 'react';
+import { useMount } from 'react-use';
 import { Box, ClickAwayListener } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -48,7 +49,6 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 interface CriterionBoxProps {
-  setInputEl: (el: HTMLInputElement) => void;
   criteria: Criterion[];
   criterion: Criterion;
   serviceNames: string[];
@@ -79,7 +79,6 @@ const initialText = (criterion: Criterion) => {
 };
 
 const CriterionBox: React.FC<CriterionBoxProps> = ({
-  setInputEl,
   criteria,
   criterion,
   serviceNames,
@@ -100,15 +99,13 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
 }) => {
   const classes = useStyles();
 
-  const inputEl = React.useRef<HTMLInputElement>();
+  const inputEl = React.useRef<HTMLInputElement>(null);
 
-  const handleRef = React.useCallback(
-    (el: HTMLInputElement) => {
-      inputEl.current = el;
-      setInputEl(el);
-    },
-    [setInputEl],
-  );
+  useMount(() => {
+    if (inputEl.current) {
+      inputEl.current.focus();
+    }
+  });
 
   const [text, setText] = React.useState(initialText(criterion));
   const [fixedText, setFixedText] = React.useState(initialText(criterion));
@@ -202,6 +199,9 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
             if (!text) {
               onDelete();
               onBlur();
+              if (inputEl.current) {
+                inputEl.current.blur();
+              }
               return;
             }
             const newText = `${text}=`;
@@ -218,6 +218,9 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
               onChange({ key: ss[0], value: ss[1] || '' });
             }
             onBlur();
+            if (inputEl.current) {
+              inputEl.current.blur();
+            }
           }
           break;
         case 'ArrowUp': {
@@ -311,6 +314,9 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
       onChange({ key: keyText, value: suggestions[index] });
       setSuggestionIndex(-1);
       onBlur();
+      if (inputEl.current) {
+        inputEl.current.blur();
+      }
     }
   };
 
@@ -323,6 +329,9 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
       onChange({ key: ss[0], value: ss[1] || '' });
     }
     onBlur();
+    if (inputEl.current) {
+      inputEl.current.blur();
+    }
   }, [fixedText, onChange, onBlur, onDelete]);
 
   if (!isFocused) {
@@ -377,7 +386,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     <ClickAwayListener onClickAway={handleClickAway}>
       <Box mr={2} position="relative">
         <input
-          ref={handleRef}
+          ref={inputEl}
           value={text}
           onKeyDown={handleKeyDown}
           onChange={handleChange}

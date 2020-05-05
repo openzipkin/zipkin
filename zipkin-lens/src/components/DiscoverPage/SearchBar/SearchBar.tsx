@@ -77,24 +77,12 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
 }) => {
   const classes = useStyles();
 
-  const inputEls = React.useRef<HTMLInputElement[]>([]);
-  const setInputEl = (index: number) => (el: HTMLInputElement) => {
-    inputEls.current[index] = el;
-  };
-
   // criterionIndex is the index of the criterion currently being edited.
   // If the value is -1, there is no criterion being edited.
   const [criterionIndex, setCriterionIndex] = React.useState(-1);
 
   const handleCriterionFocus = (index: number) => () => {
     setCriterionIndex(index);
-    // Use setTimeout to blur the old criterion and then
-    // focus on the new criterion.
-    window.setTimeout(() => {
-      if (inputEls.current[index]) {
-        inputEls.current[index].focus();
-      }
-    }, 0);
   };
 
   const handleCriterionChange = (index: number) => (criterion: Criterion) => {
@@ -103,11 +91,8 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
     onChange(newCriteria);
   };
 
-  const handleCriterionBlur = (index: number) => () => {
+  const handleCriterionBlur = () => () => {
     setCriterionIndex(-1);
-    if (inputEls.current[index]) {
-      inputEls.current[index].blur();
-    }
   };
 
   const handleCriterionDelete = (index: number) => () => {
@@ -121,12 +106,6 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
     onChange(newCriteria);
     const nextCriterionIndex = criteria.length;
     setCriterionIndex(nextCriterionIndex);
-    // Use setTimeout to wait mounting a new acriterion's input.
-    window.setTimeout(() => {
-      if (inputEls.current[nextCriterionIndex]) {
-        inputEls.current[nextCriterionIndex].focus();
-      }
-    }, 0);
   }, [criteria, onChange]);
 
   React.useEffect(() => {
@@ -166,7 +145,6 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
       {criteria.map((criterion, index) => (
         <CriterionBox
           key={`${criterion.key}=${criterion.value}`}
-          setInputEl={setInputEl(index)}
           criteria={criteria}
           criterion={criterion}
           serviceNames={serviceNames}
@@ -181,7 +159,7 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
           isLoadingAutocompleteValues={isLoadingAutocompleteValues}
           isFocused={index === criterionIndex}
           onFocus={handleCriterionFocus(index)}
-          onBlur={handleCriterionBlur(index)}
+          onBlur={handleCriterionBlur()}
           onChange={handleCriterionChange(index)}
           onDelete={handleCriterionDelete(index)}
         />
