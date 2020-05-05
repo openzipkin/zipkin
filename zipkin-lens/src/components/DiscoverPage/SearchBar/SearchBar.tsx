@@ -88,10 +88,12 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
 
   const handleCriterionFocus = (index: number) => () => {
     setCriterionIndex(index);
-    // Use setTimeout to blur from the old criterion and then
+    // Use setTimeout to blur the old criterion and then
     // focus on the new criterion.
-    setTimeout(() => {
-      inputEls.current[index].focus();
+    window.setTimeout(() => {
+      if (inputEls.current[index]) {
+        inputEls.current[index].focus();
+      }
     }, 0);
   };
 
@@ -103,7 +105,9 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
 
   const handleCriterionBlur = (index: number) => () => {
     setCriterionIndex(-1);
-    inputEls.current[index].blur();
+    if (inputEls.current[index]) {
+      inputEls.current[index].blur();
+    }
   };
 
   const handleCriterionDelete = (index: number) => () => {
@@ -117,8 +121,11 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
     onChange(newCriteria);
     const nextCriterionIndex = criteria.length;
     setCriterionIndex(nextCriterionIndex);
-    setTimeout(() => {
-      inputEls.current[nextCriterionIndex].focus();
+    // Use setTimeout to wait mounting a new acriterion's input.
+    window.setTimeout(() => {
+      if (inputEls.current[nextCriterionIndex]) {
+        inputEls.current[nextCriterionIndex].focus();
+      }
     }, 0);
   }, [criteria, onChange]);
 

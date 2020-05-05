@@ -13,7 +13,7 @@
  */
 /* eslint-disable no-shadow */
 import React from 'react';
-import { Box } from '@material-ui/core';
+import { Box, ClickAwayListener } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
@@ -199,15 +199,24 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
         case 'Enter':
           event.preventDefault();
           if (isEnteringKey) {
+            if (!text) {
+              onDelete();
+              onBlur();
+              return;
+            }
             const newText = `${text}=`;
             setText(newText);
             setFixedText(newText);
             setSuggestionIndex(-1);
           } else {
             setFixedText(text);
-            const ss = text.split('=', 2);
-            onChange({ key: ss[0], value: ss[1] || '' });
             setSuggestionIndex(-1);
+            const ss = text.split('=', 2);
+            if (!ss[0]) {
+              onDelete();
+            } else {
+              onChange({ key: ss[0], value: ss[1] || '' });
+            }
             onBlur();
           }
           break;
@@ -305,6 +314,17 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     }
   };
 
+  const handleClickAway = React.useCallback(() => {
+    const ss = fixedText.split('=', 2);
+    setSuggestionIndex(-1);
+    if (!ss[0]) {
+      onDelete();
+    } else {
+      onChange({ key: ss[0], value: ss[1] || '' });
+    }
+    onBlur();
+  }, [fixedText, onChange, onBlur, onDelete]);
+
   if (!isFocused) {
     return (
       <Box
@@ -354,23 +374,26 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     );
   }
   return (
-    <Box mr={1} position="relative">
-      <input
-        ref={handleRef}
-        value={text}
-        onKeyDown={handleKeyDown}
-        onChange={handleChange}
-        className={classes.input}
-      />
-      {(isLoadingSuggestions || (suggestions && suggestions.length !== 0)) && (
-        <SuggestionList
-          suggestions={suggestions || []}
-          isLoadingSuggestions={isLoadingSuggestions}
-          suggestionIndex={suggestionIndex}
-          onItemClick={handleSuggestionItemClick}
+    <ClickAwayListener onClickAway={handleClickAway}>
+      <Box mr={2} position="relative">
+        <input
+          ref={handleRef}
+          value={text}
+          onKeyDown={handleKeyDown}
+          onChange={handleChange}
+          className={classes.input}
         />
-      )}
-    </Box>
+        {(isLoadingSuggestions ||
+          (suggestions && suggestions.length !== 0)) && (
+          <SuggestionList
+            suggestions={suggestions || []}
+            isLoadingSuggestions={isLoadingSuggestions}
+            suggestionIndex={suggestionIndex}
+            onItemClick={handleSuggestionItemClick}
+          />
+        )}
+      </Box>
+    </ClickAwayListener>
   );
 };
 
