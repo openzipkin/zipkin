@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   Box,
   Button,
@@ -83,13 +83,13 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
   // LookbackMenu is closed when click on the outside of the component.
   // This state is needed to prevent LookbackMenu component from closing
   // when the dialog of DateTimePicker is clicked.
-  const [isOpeningDialog, setIsOpeningDialog] = React.useState(false);
+  const [isOpeningDialog, setIsOpeningDialog] = useState(false);
 
-  const handleDialogOpen = React.useCallback(() => {
+  const handleDialogOpen = useCallback(() => {
     setIsOpeningDialog(true);
   }, []);
 
-  const handleDialogClose = React.useCallback(() => {
+  const handleDialogClose = useCallback(() => {
     // Use setTimeout to change isOpeningDialog state after
     // handleOutsideClick callback function is executed.
     window.setTimeout(() => {
@@ -97,9 +97,9 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
     }, 0);
   }, []);
 
-  const el = React.useRef<HTMLDivElement>();
+  const el = useRef<HTMLDivElement>();
 
-  const handleOutsideClick = React.useCallback(
+  const handleOutsideClick = useCallback(
     (event: any) => {
       if (!isOpeningDialog) {
         if (!el.current) {
@@ -114,26 +114,20 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
 
   useEvent('click', handleOutsideClick, window, false);
 
-  const [startTime, setStartTime] = React.useState(initialStartTime(lookback));
-  const [endTime, setEndTime] = React.useState(initialEndTime(lookback));
+  const [startTime, setStartTime] = useState(initialStartTime(lookback));
+  const [endTime, setEndTime] = useState(initialEndTime(lookback));
 
-  const handleStartTimeChange = React.useCallback(
-    (date: MaterialUiPickersDate) => {
-      if (date) {
-        setStartTime(date);
-      }
-    },
-    [],
-  );
+  const handleStartTimeChange = useCallback((date: MaterialUiPickersDate) => {
+    if (date) {
+      setStartTime(date);
+    }
+  }, []);
 
-  const handleEndTimeChange = React.useCallback(
-    (date: MaterialUiPickersDate) => {
-      if (date) {
-        setEndTime(date);
-      }
-    },
-    [],
-  );
+  const handleEndTimeChange = useCallback((date: MaterialUiPickersDate) => {
+    if (date) {
+      setEndTime(date);
+    }
+  }, []);
 
   const handleListItemClick = (value: FixedLookbackValue) => () => {
     onChange({
@@ -144,7 +138,7 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
     close();
   };
 
-  const handleApplyButtonClick = React.useCallback(() => {
+  const handleApplyButtonClick = useCallback(() => {
     onChange({
       type: 'custom',
       startTime,

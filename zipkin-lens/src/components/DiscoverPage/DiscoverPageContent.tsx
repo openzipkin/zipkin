@@ -12,7 +12,7 @@
  * the License.
  */
 /* eslint-disable no-shadow */
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
 import {
@@ -60,7 +60,7 @@ interface Props extends RouteComponentProps {}
 
 // Export for testing
 export const useQueryParams = (history: History, location: Location) => {
-  const setQueryParams = React.useCallback(
+  const setQueryParams = useCallback(
     (criteria: Criterion[], lookback: Lookback, limit: number) => {
       const params = new URLSearchParams();
       criteria.forEach((criterion) => {
@@ -87,7 +87,7 @@ export const useQueryParams = (history: History, location: Location) => {
     [history, location.pathname],
   );
 
-  const criteria = React.useMemo(() => {
+  const criteria = useMemo(() => {
     const ret: Criterion[] = [];
     const params = new URLSearchParams(location.search);
 
@@ -106,7 +106,7 @@ export const useQueryParams = (history: History, location: Location) => {
     return ret;
   }, [location.search]);
 
-  const lookback = React.useMemo<Lookback | null>(() => {
+  const lookback = useMemo<Lookback | null>(() => {
     const ps = new URLSearchParams(location.search);
     const lookback = ps.get('lookback');
     if (!lookback) {
@@ -141,7 +141,7 @@ export const useQueryParams = (history: History, location: Location) => {
     };
   }, [location.search]);
 
-  const limit = React.useMemo(() => {
+  const limit = useMemo(() => {
     const ps = new URLSearchParams(location.search);
     const limit = ps.get('limit');
     if (!limit) {
@@ -235,17 +235,17 @@ const DiscoverPageContent: React.FC<Props> = ({ history, location }) => {
     location,
   );
 
-  const [tempCriteria, setTempCriteria] = React.useState(criteria);
-  const [tempLookback, setTempLookback] = React.useState<Lookback>(
+  const [tempCriteria, setTempCriteria] = useState(criteria);
+  const [tempLookback, setTempLookback] = useState<Lookback>(
     lookback || {
       type: 'fixed',
       value: '15m',
       endTime: moment(),
     },
   );
-  const [tempLimit, setTempLimit] = React.useState(limit || 10);
+  const [tempLimit, setTempLimit] = useState(limit || 10);
 
-  const lookbackDisplay = React.useMemo<string>(() => {
+  const lookbackDisplay = useMemo<string>(() => {
     switch (tempLookback.type) {
       case 'fixed':
         return fixedLookbackMap[tempLookback.value].display;
@@ -260,14 +260,14 @@ const DiscoverPageContent: React.FC<Props> = ({ history, location }) => {
 
   useFetchTraces(criteria, lookback, limit);
 
-  const handleLimitChange = React.useCallback(
+  const handleLimitChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setTempLimit(parseInt(event.target.value, 10));
     },
     [],
   );
 
-  const handleSearchButtonClick = React.useCallback(() => {
+  const handleSearchButtonClick = useCallback(() => {
     // If the lookback is fixed, need to set the click time to endTime.
     if (tempLookback.type === 'fixed') {
       setQueryParams(
@@ -285,15 +285,15 @@ const DiscoverPageContent: React.FC<Props> = ({ history, location }) => {
     state.traces.isLoading,
   ]);
 
-  const [isShowingLookbackMenu, setIsShowingLookbackMenu] = React.useState(
+  const [isShowingLookbackMenu, setIsShowingLookbackMenu] = useState(
     false,
   );
 
-  const toggleLookbackMenu = React.useCallback(() => {
+  const toggleLookbackMenu = useCallback(() => {
     setIsShowingLookbackMenu((prev) => !prev);
   }, []);
 
-  const closeLookbackMenu = React.useCallback(() => {
+  const closeLookbackMenu = useCallback(() => {
     setIsShowingLookbackMenu(false);
   }, []);
 

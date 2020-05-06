@@ -67,6 +67,7 @@ interface CriterionBoxProps {
   onDecide: () => void;
   onChange: (criterion: Criterion) => void;
   onDelete: () => void;
+  loadAutocompleteValues: (autocompleteKey: string) => void;
 }
 
 const initialText = (criterion: Criterion) => {
@@ -98,6 +99,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
   onDecide,
   onChange,
   onDelete,
+  loadAutocompleteValues,
 }) => {
   const classes = useStyles();
 
@@ -197,6 +199,12 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     keyText,
     criteria,
   ]);
+
+  React.useEffect(() => {
+    if (autocompleteKeys.includes(keyText)) {
+      loadAutocompleteValues(keyText);
+    }
+  }, [keyText, autocompleteKeys, loadAutocompleteValues]);
 
   const [suggestionIndex, setSuggestionIndex] = React.useState(-1);
 

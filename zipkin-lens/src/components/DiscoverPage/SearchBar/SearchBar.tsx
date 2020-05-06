@@ -26,6 +26,7 @@ import { fetchServices } from '../../../actions/services-action';
 import { fetchSpans } from '../../../actions/spans-action';
 import { fetchRemoteServices } from '../../../actions/remote-services-action';
 import { fetchAutocompleteKeys } from '../../../actions/autocomplete-keys-action';
+import {fetchAutocompleteValues} from "../../../actions/autocomplete-values-action";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -55,6 +56,7 @@ type SearchBarProps = {
   loadAutocompleteKeys: () => void;
   loadRemoteServices: (serviceName: string) => void;
   loadSpans: (serviceName: string) => void;
+  loadAutocompleteValues: (autocompleteKey: string) => void;
 };
 
 export const SearchBarImpl: React.FC<SearchBarProps> = ({
@@ -74,6 +76,7 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
   loadAutocompleteKeys,
   loadRemoteServices,
   loadSpans,
+  loadAutocompleteValues,
 }) => {
   const classes = useStyles();
 
@@ -175,6 +178,7 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
           onDecide={handleCriterionDecide(index)}
           onChange={handleCriterionChange(index)}
           onDelete={handleCriterionDelete(index)}
+          loadAutocompleteValues={loadAutocompleteValues}
         />
       ))}
       <Button
@@ -220,6 +224,9 @@ const mapDispatchToProps = (
   },
   loadSpans: (serviceName: string) => {
     dispatch(fetchSpans(serviceName));
+  },
+  loadAutocompleteValues: (autocompleteKey: string) => {
+    dispatch(fetchAutocompleteValues(autocompleteKey));
   },
 });
 
