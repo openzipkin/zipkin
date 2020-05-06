@@ -121,7 +121,15 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
         onDelete();
         return;
       }
-      const ss = fixedText.split('=', 2);
+      let ss = fixedText.split('=');
+
+      // If the length is greater than 2, there is more than one "=" in the text.
+      // Service names, span names, and tag's keys and values can contain '=',
+      // so this is also valid.
+      // In this case, treat the first "=" as a separator between key and value.
+      if (ss.length > 2) {
+        ss = fixedText.split(/=(.+)/);
+      }
       onChange({ key: ss[0], value: ss[1] || '' });
     } else if (!prevIsFocused.current && isFocused) {
       if (inputEl.current) {
@@ -132,7 +140,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
   }, [isFocused, fixedText, onChange, onDelete]);
 
   const keyText = React.useMemo(() => {
-    const ss = fixedText.split('=', 2);
+    const ss = fixedText.split('=');
     return ss[0];
   }, [fixedText]);
 
