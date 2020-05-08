@@ -579,6 +579,16 @@ of known open source libraries on 128-bit trace identifiers.
 
 See `zipkin2.storage.StorageComponent.Builder` for even more details!
 
+## TLS/SSL
+Zipkin-server can be made to run with TLS if needed:
+
+```bash
+# assuming you generate the key like this
+keytool -genkeypair -alias mysite -keyalg RSA -keysize 2048 -storetype PKCS12 -keystore zipkin.p12 -validity 3650
+
+java -jar zipkin.jar --armeria.ssl.key-store=zipkin.p12 --armeria.ssl.key-store-type=PKCS12 --armeria.ssl.key-store-password=123123 --armeria.ssl.key-alias=mysite  --armeria.ssl.enabled=true --armeria.ports[0].port=9411 --armeria.ports[0].protocols[0]=https
+```
+
 ## Running with Docker
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin`.
 See [docker-zipkin](https://github.com/openzipkin/docker-zipkin) for details.
