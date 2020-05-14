@@ -641,7 +641,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
    */
   public static String normalizeTraceId(String traceId) {
     if (traceId == null) throw new NullPointerException("traceId == null");
-    int length = traceId.length();
+    int length = traceId.trim().length();
     if (length == 0) throw new IllegalArgumentException("traceId is empty");
     if (length > 32) throw new IllegalArgumentException("traceId.length > 32");
     int zeros = validateHexAndReturnZeroPrefix(traceId);
