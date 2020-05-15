@@ -151,6 +151,7 @@ public class ZipkinQueryApiV2 {
   @Get("/api/v2/trace/{traceId}")
   @Blocking
   public AggregatedHttpResponse getTrace(@Param("traceId") String traceId) throws IOException {
+    traceId = traceId != null ? traceId.trim() : null;
     traceId = Span.normalizeTraceId(traceId);
     List<Span> trace = storage.traces().getTrace(traceId).execute();
     if (trace.isEmpty()) {
