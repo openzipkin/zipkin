@@ -15,7 +15,7 @@
 
 
 echo Starting Zookeeper
-/busybox/sh /kafka/bin/kafka-run-class.sh -Dlog4j.configuration=file:/kafka/config/log4j.properties org.apache.zookeeper.server.quorum.QuorumPeerMain /kafka/zookeeper/conf/zoo_sample.cfg &
+/busybox/sh /kafka/bin/kafka-run-class.sh -Dlog4j.configuration=file:/kafka/config/log4j.properties org.apache.zookeeper.server.quorum.QuorumPeerMain /kafka/config/zookeeper.properties &
 /busybox/sh /kafka/bin/wait-for-zookeeper.sh
 
 if [[ -z "$KAFKA_ADVERTISED_HOST_NAME" ]]; then

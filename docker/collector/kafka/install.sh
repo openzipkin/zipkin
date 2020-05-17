@@ -20,10 +20,6 @@ apk add --update --no-cache jq curl
 
 APACHE_MIRROR=$(curl --stderr /dev/null https://www.apache.org/dyn/closer.cgi\?as_json\=1 | jq -r '.preferred')
 
-curl -sSL $APACHE_MIRROR/zookeeper/zookeeper-$ZOOKEEPER_VERSION/apache-zookeeper-$ZOOKEEPER_VERSION.tar.gz | tar xz
-mkdir zookeeper
-mv apache-zookeeper-$ZOOKEEPER_VERSION/conf zookeeper/
-
 # download kafka binaries
 curl -sSL $APACHE_MIRROR/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz | tar xz
 mv kafka_$SCALA_VERSION-$KAFKA_VERSION/* .
