@@ -29,7 +29,10 @@
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
     <!-- when changing this, a change to the version of kafka-junit is likely needed, too -->
-    <kafka.version>2.4.1</kafka.version>
+    <kafka.version>2.5.0</kafka.version>
+    <!-- This version is tightly coupled to the version of kafka-clients being used.
+     https://github.com/charithe/kafka-junit -->
+    <kafka-junit.version>4.1.9</kafka-junit.version>
   </properties>
 
   <dependencies>
@@ -48,9 +51,7 @@
     <dependency>
       <groupId>com.github.charithe</groupId>
       <artifactId>kafka-junit</artifactId>
-      <!-- This version is tightly coupled to the version of kafka-clients being used.
-       https://github.com/charithe/kafka-junit -->
-      <version>4.1.8</version>
+      <version>${kafka-junit.version}</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>

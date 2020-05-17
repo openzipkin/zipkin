@@ -15,8 +15,7 @@
 FROM alpine
 
 ENV SCALA_VERSION 2.12
-ENV KAFKA_VERSION 2.4.1
-ENV ZOOKEEPER_VERSION 3.5.7
+ENV KAFKA_VERSION 2.5.0
 
 WORKDIR /kafka
 ADD docker/collector/kafka/install.sh /kafka/install
