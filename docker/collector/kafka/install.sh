@@ -38,7 +38,4 @@ EOF
 
 mkdir /kafka/logs
 
-echo "*** Cleaning Up"
-rm -rf apache-zookeeper-$ZOOKEEPER_VERSION
-
 echo "*** Image build complete"
