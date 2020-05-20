@@ -16,7 +16,6 @@ package zipkin2.server.internal.elasticsearch;
 import brave.CurrentSpanCustomizer;
 import brave.SpanCustomizer;
 import brave.http.HttpTracing;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.linecorp.armeria.client.ClientFactory;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
@@ -26,6 +25,7 @@ import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.logging.RequestLog;
 import com.linecorp.armeria.common.logging.RequestLogProperty;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.util.NamedThreadFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -163,9 +163,7 @@ public class ZipkinElasticsearchStorageConfiguration {
     @Value("${" + CREDENTIALS_REFRESH_INTERVAL + "}") Integer credentialsRefreshInterval,
     @Qualifier(QUALIFIER) BasicCredentials basicCredentials) throws IOException {
     ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor(
-      new ThreadFactoryBuilder()
-        .setNameFormat("LoadElasticSearchCredentials-%d")
-        .build());
+      new NamedThreadFactory("zipkin-load-es-credentials"));
     DynamicCredentialsFileLoader credentialsFileLoader =
       new DynamicCredentialsFileLoader(basicCredentials, credentialsFile);
     credentialsFileLoader.updateCredentialsFromProperties();
