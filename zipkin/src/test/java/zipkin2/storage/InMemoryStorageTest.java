@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.Test;
+import zipkin2.Component;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
 import zipkin2.Span;
@@ -182,5 +183,17 @@ public class InMemoryStorageTest {
       asList(trace1Span1, trace1Span2),
       asList(trace2Span1, trace2Span2)
     );
+  }
+
+  /**
+   * The {@code toString()} of {@link Component} implementations appear in health check endpoints.
+   * Since these are likely to be exposed in logs and other monitoring tools, care should be taken
+   * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
+   * information.
+   */
+  @Test public void toStringContainsOnlySummaryInformation() {
+    try (InMemoryStorage storage = InMemoryStorage.newBuilder().build()) {
+      assertThat(storage).hasToString("InMemoryStorage{}");
+    }
   }
 }
