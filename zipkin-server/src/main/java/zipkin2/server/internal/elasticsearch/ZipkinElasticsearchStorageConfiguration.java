@@ -163,7 +163,7 @@ public class ZipkinElasticsearchStorageConfiguration {
     @Value("${" + CREDENTIALS_REFRESH_INTERVAL + "}") Integer credentialsRefreshInterval,
     @Qualifier(QUALIFIER) BasicCredentials basicCredentials) throws IOException {
     ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor(
-      new NamedThreadFactory("zipkin-load-es-credentials-pool"));
+      new NamedThreadFactory("zipkin-load-es-credentials"));
     DynamicCredentialsFileLoader credentialsFileLoader =
       new DynamicCredentialsFileLoader(basicCredentials, credentialsFile);
     credentialsFileLoader.updateCredentialsFromProperties();
