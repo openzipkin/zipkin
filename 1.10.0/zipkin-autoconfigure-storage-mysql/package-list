@@ -1,2 +1,0 @@
-zipkin.autoconfigure.storage.mysql
-zipkin.autoconfigure.storage.mysql.brave

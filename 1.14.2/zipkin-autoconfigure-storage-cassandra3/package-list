@@ -1,2 +1,0 @@
-zipkin.autoconfigure.storage.cassandra3
-zipkin.autoconfigure.storage.cassandra3.brave
