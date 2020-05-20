@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Created-By: Maven Javadoc Plugin 3.2.0
-Build-Jdk-Spec: 13
-
