@@ -632,6 +632,7 @@
               </mapping>
               <excludes>
                 <exclude>**/simplelogger.properties</exclude>
+                <exclude>**/continuous-build.yml</exclude>
                 <exclude>.travis.yml</exclude>
                 <exclude>**/*.dockerignore</exclude>
                 <exclude>.editorconfig</exclude>
