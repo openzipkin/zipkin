@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,7 +21,7 @@ import static zipkin2.internal.JsonEscaper.jsonEscapedSizeInBytes;
 
 public class JsonEscaperTest {
 
-  @Test public void testJjsonEscapedSizeInBytes() {
+  @Test public void testJsonEscapedSizeInBytes() {
     assertThat(jsonEscapedSizeInBytes(new String(new char[] {0, 'a', 1})))
       .isEqualTo(13);
     assertThat(jsonEscapedSizeInBytes(new String(new char[] {'"', '\\', '\t', '\b'})))
