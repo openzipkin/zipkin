@@ -14,7 +14,7 @@
 
 FROM alpine
 
-ENV ELASTICSEARCH_VERSION 7.6.2
+ENV ELASTICSEARCH_VERSION 7.7.0
 
 RUN apk add --update curl
 
@@ -30,7 +30,7 @@ COPY docker/storage/elasticsearch7/config /elasticsearch/config
 # Overwrite environment script to fix parse failures when run with busybox.
 COPY docker/storage/elasticsearch7/elasticsearch-env /elasticsearch/bin/elasticsearch-env
 
-FROM openzipkin/jre-full:11.0.6-11.37
+FROM openzipkin/jre-full:11.0.7-11.39.15
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # https://github.com/elastic/elasticsearch/pull/31003 was closed won't fix

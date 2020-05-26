@@ -29,7 +29,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <frontend-maven-plugin.version>1.9.1</frontend-maven-plugin.version>
+    <frontend-maven-plugin.version>1.10.0</frontend-maven-plugin.version>
     <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
   </properties>
 
@@ -66,7 +66,7 @@
         <version>${frontend-maven-plugin.version}</version>
         <configuration>
           <installDirectory>target</installDirectory>
-          <nodeVersion>v12.16.2</nodeVersion>
+          <nodeVersion>v12.16.3</nodeVersion>
           <environmentVariables>
             <!--
             create-react-app runs tests in watch mode unless this is defined. We define it here for running Maven locally.
