@@ -31,8 +31,8 @@ jobs:
         with:
          path: .mvn/wrapper/maven-wrapper.jar
          key: mvn-wrapper
-      - name: Execute Build Server
-        run: ./mvnw -DskipTests --also-make -pl zipkin-server clean install
+      - name: Execute Server Build
+        run: ./mvnw --batch-mode -DskipTests --also-make -pl zipkin-server clean install
         shell: bash
         env:
           CI: true
