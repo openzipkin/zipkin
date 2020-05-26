@@ -32,7 +32,7 @@ jobs:
          path: .mvn/wrapper
          key: mvn-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
       - name: Execute Server Build
-        run: ./mvnw --batch-mode -DskipTests --also-make -pl zipkin-server clean install
+        run: ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server clean install
         shell: bash
         env:
           CI: true
