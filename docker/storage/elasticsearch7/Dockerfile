@@ -30,7 +30,7 @@ COPY docker/storage/elasticsearch7/config /elasticsearch/config
 # Overwrite environment script to fix parse failures when run with busybox.
 COPY docker/storage/elasticsearch7/elasticsearch-env /elasticsearch/bin/elasticsearch-env
 
-FROM openzipkin/jre-full:11.0.7-11.39.15
+FROM openzipkin/jre-full:13.0.3-13.31.11
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # https://github.com/elastic/elasticsearch/pull/31003 was closed won't fix
