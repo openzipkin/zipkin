@@ -22,7 +22,6 @@ jdk: openjdk13
 
 services:
   - docker
-  - rabbitmq
 
 before_install:
 
