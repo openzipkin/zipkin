@@ -1,0 +1,38 @@
+name: Continuous Build Server
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build Server
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 10
+      - name: Cache NPM Packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: npm-packages
+      - name: Cache Maven Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository
+          key: m2-repository
+      - name: Cache Maven Wrapper
+        uses: actions/cache@v1
+        with:
+         path: .mvn/wrapper/maven-wrapper.jar
+         key: mvn-wrapper
+      - name: Execute Build Server
+        run: ./mvnw -DskipTests --also-make -pl zipkin-server clean install
+        shell: bash
+        env:
+          CI: true
