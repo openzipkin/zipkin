@@ -23,7 +23,6 @@ import zipkin2.Component;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static zipkin2.TestObjects.CLIENT_SPAN;
 
 public class RabbitMQCollectorTest {
 
@@ -40,15 +39,14 @@ public class RabbitMQCollectorTest {
   @Test public void checkFalseWhenRabbitMQIsDown() {
     CheckResult check = collector.check();
     assertThat(check.ok()).isFalse();
-    assertThat(check.error())
-        .isInstanceOf(RuntimeException.class);
+    assertThat(check.error()).isInstanceOf(UncheckedIOException.class);
   }
 
   @Test public void startFailsWhenRabbitMQIsDown() {
     // NOTE.. This is probably not good as it can crash on transient failure..
     assertThatThrownBy(collector::start)
         .isInstanceOf(UncheckedIOException.class)
-        .hasMessage("Unable to establish connection to RabbitMQ server: Connection refused");
+        .hasMessageStartingWith("Unable to establish connection to RabbitMQ server");
   }
 
   /**
