@@ -20,17 +20,17 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ~/.npm
-          key: npm-packages
+          key: npm-packages-${{ runner.os }}-${{ hashFiles('zipkin-lens/package-lock.json') }}
       - name: Cache Maven Modules
         uses: actions/cache@v1
         with:
           path: ~/.m2/repository
-          key: m2-repository
+          key: m2-repository-${{ hashFiles('**/pom.xml') }}
       - name: Cache Maven Wrapper
         uses: actions/cache@v1
         with:
-         path: .mvn/wrapper/maven-wrapper.jar
-         key: mvn-wrapper
+         path: .mvn/wrapper
+         key: mvn-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
       - name: Execute Server Build
         run: ./mvnw --batch-mode -DskipTests --also-make -pl zipkin-server clean install
         shell: bash
