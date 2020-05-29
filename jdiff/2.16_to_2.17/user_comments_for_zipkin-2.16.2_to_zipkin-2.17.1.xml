@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="no"?>
+<comments
+  xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+  xsi:noNamespaceSchemaLocation='comments.xsd'
+  name="zipkin-2.16.2_to_zipkin-2.17.1"
+  jdversion="1.0.9">
+
+<!-- This file contains comments for a JDiff report. -->
+<!-- It is used only in generating the report, and does not need to ship with the final report. -->
+
+<!-- The id attribute in an identifier element identifiers the change as noted in the report. -->
+<!-- An id has the form package[.class[.[ctor|method|field].signature]], where [] indicates optional text. -->
+<!-- A comment element can have multiple identifier elements, which will -->
+<!-- will cause the same text to appear at each place in the report, but -->
+<!-- will be converted to separate comments when the comments file is used. -->
+<!-- HTML tags in the text field will appear in the report. -->
+<comment>
+  <identifier id="zipkin2.storage"/>
+  <text>
+    InsertCommentsHere
+  </text>
+</comment>
+<comment>
+  <identifier id="zipkin2.storage.ForwardingStorageComponent"/>
+  <text>
+    InsertCommentsHere
+  </text>
+</comment>
+<comment>
+  <identifier id="zipkin2.storage.ForwardingStorageComponent.traces_added()"/>
+  <text>
+    InsertCommentsHere
+  </text>
+</comment>
+<comment>
+  <identifier id="zipkin2.storage.InMemoryStorage"/>
+  <text>
+    InsertCommentsHere
+  </text>
+</comment>
+<comment>
+  <identifier id="zipkin2.storage.InMemoryStorage.getTraces_added(java.lang.Iterable)"/>
+  <text>
+    InsertCommentsHere
+  </text>
+</comment>
+<comment>
+  <identifier id="zipkin2.storage.InMemoryStorage.traces_added()"/>
+  <text>
+    InsertCommentsHere
+  </text>
+</comment>
+<comment>
+  <identifier id="zipkin2.storage.SpanStore"/>
+  <text>
+    InsertCommentsHere
+  </text>
+</comment>
+<comment>
+  <identifier id="zipkin2.storage.SpanStore.getTrace_changed(java.lang.String)"/>
+  <text>
+    InsertCommentsHere
+  </text>
+</comment>
+<comment>
+  <identifier id="zipkin2.storage.StorageComponent"/>
+  <text>
+    InsertCommentsHere
+  </text>
+</comment>
+<comment>
+  <identifier id="zipkin2.storage.StorageComponent.traces_added()"/>
+  <text>
+    InsertCommentsHere
+  </text>
+</comment>
+<comment>
+  <identifier id="zipkin2.storage.StrictTraceId"/>
+  <text>
+    InsertCommentsHere
+  </text>
+</comment>
+<comment>
+  <identifier id="zipkin2.storage.StrictTraceId.filterTraces_added(java.lang.Iterable)"/>
+  <text>
+    InsertCommentsHere
+  </text>
+</comment>
+<comment>
+  <identifier id="zipkin2.storage.Traces"/>
+  <text>
+    InsertCommentsHere
+  </text>
+</comment>
+
+</comments>

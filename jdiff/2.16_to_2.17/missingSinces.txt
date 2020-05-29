@@ -1,0 +1,6 @@
+OK: zipkin2.storage.Traces Interface
+MISSING @SINCE TAG: zipkin2.storage.StrictTraceId Method filterTraces(java.lang.Iterable)
+NO DOC BLOCK: zipkin2.storage.InMemoryStorage Method getTraces(java.lang.Iterable)
+NO DOC BLOCK: zipkin2.storage.ForwardingStorageComponent Method traces()
+NO DOC BLOCK: zipkin2.storage.InMemoryStorage Method traces()
+NO DOC BLOCK: zipkin2.storage.StorageComponent Method traces()

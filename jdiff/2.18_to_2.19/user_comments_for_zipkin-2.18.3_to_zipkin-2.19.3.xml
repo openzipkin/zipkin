@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="no"?>
+<comments
+  xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+  xsi:noNamespaceSchemaLocation='comments.xsd'
+  name="zipkin-2.18.3_to_zipkin-2.19.3"
+  jdversion="1.0.9">
+
+<!-- This file contains comments for a JDiff report. -->
+<!-- It is used only in generating the report, and does not need to ship with the final report. -->
+
+<!-- The id attribute in an identifier element identifiers the change as noted in the report. -->
+<!-- An id has the form package[.class[.[ctor|method|field].signature]], where [] indicates optional text. -->
+<!-- A comment element can have multiple identifier elements, which will -->
+<!-- will cause the same text to appear at each place in the report, but -->
+<!-- will be converted to separate comments when the comments file is used. -->
+<!-- HTML tags in the text field will appear in the report. -->
+
+</comments>
