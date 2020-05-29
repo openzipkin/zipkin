@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"zipkin.collector.kafka10"}]

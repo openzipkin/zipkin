@@ -1,2 +1,0 @@
-zipkin.autoconfigure.storage.elasticsearch.http
-zipkin.autoconfigure.storage.elasticsearch.http.brave

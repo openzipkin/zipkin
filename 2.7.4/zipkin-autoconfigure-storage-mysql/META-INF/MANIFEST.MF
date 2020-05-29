@@ -1,5 +1,0 @@
-Manifest-Version: 1.0
-Created-By: Apache Maven 3.5.3
-Built-By: acole
-Build-Jdk: 9.0.4
-

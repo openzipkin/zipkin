@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"zipkin.storage.elasticsearch.http"}]

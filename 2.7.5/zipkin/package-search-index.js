@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"zipkin2"},{"l":"zipkin2.codec"},{"l":"zipkin2.internal"},{"l":"zipkin2.storage"}]
