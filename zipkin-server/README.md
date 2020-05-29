@@ -287,6 +287,9 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                                          credentials. Any errors reading the credentials file occur in logs at this rate.
     * `ES_HTTP_LOGGING`: When set, controls the volume of HTTP logging of the Elasticsearch API.
                          Options are BASIC, HEADERS, BODY
+    * `ES_SSL_NO_VERIFY`: When true, disables the verification of server's key certificate chain.
+                          This is not appropriate for production. Defaults to false.
+
 Example usage:
 
 To connect normally:
