@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -30,7 +30,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
  * This type helps load the actuator functionality we currently support without a compilation
  * dependency on actuator, and without relying on auto-configuration being enabled.
  *
- * <p><h3>Implementation note</h3>*
+ * <p><h3>Implementation note</h3>
  * <p>It may be possible to re-implement this as {@link ImportSelector} to provide {@link
  * #ACTUATOR_IMPL_CLASS} and the endpoint configuration types from {@link
  * #PROPERTY_NAME_ACTUATOR_INCLUDE}.
