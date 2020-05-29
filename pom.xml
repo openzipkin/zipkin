@@ -647,9 +647,13 @@
                 <exclude>**/nginx.conf</exclude>
                 <exclude>**/.idea/**</exclude>
                 <exclude>**/node_modules/**</exclude>
+                <exclude>**/build/**</exclude>
+                <exclude>**/coverage/**</exclude>
                 <exclude>**/.babelrc</exclude>
                 <exclude>**/.bowerrc</exclude>
                 <exclude>**/.editorconfig</exclude>
+                <exclude>**/.env.development</exclude>
+                <exclude>**/.eslintignore</exclude>
                 <exclude>**/.eslintrc</exclude>
                 <exclude>**/.eslintrc</exclude>
                 <exclude>**/.eslintrc.js</exclude>
