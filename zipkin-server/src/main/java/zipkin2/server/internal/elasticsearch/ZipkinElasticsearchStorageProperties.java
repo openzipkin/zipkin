@@ -73,6 +73,8 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     private String trustStorePassword =
       emptyToNull(System.getProperty("javax.net.ssl.trustStorePassword"));
     private String trustStoreType = emptyToNull(System.getProperty("javax.net.ssl.trustStoreType"));
+    /** Disables the verification of server's key certificate chain. */
+    boolean noVerify = false;
 
     public String getKeyStore() {
       return keyStore;
@@ -120,6 +122,14 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
 
     public void setTrustStoreType(String trustStoreType) {
       this.trustStoreType = trustStoreType;
+    }
+
+    public boolean isNoVerify() {
+      return noVerify;
+    }
+
+    public void setNoVerify(boolean noVerify) {
+      this.noVerify = noVerify;
     }
   }
 

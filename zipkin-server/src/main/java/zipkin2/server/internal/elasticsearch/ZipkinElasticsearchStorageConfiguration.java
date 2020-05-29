@@ -88,12 +88,13 @@ public class ZipkinElasticsearchStorageConfiguration {
     MeterRegistry meterRegistry) throws Exception {
     ClientFactoryBuilder builder = ClientFactory.builder();
 
-    // Allow use of a custom KeyStore or TrustStore when connecting to Elasticsearch
     Ssl ssl = es.getSsl();
+    if (ssl.isNoVerify()) builder.tlsNoVerify();
+    // Allow use of a custom KeyStore or TrustStore when connecting to Elasticsearch
     if (ssl.getKeyStore() != null || ssl.getTrustStore() != null) configureSsl(builder, ssl);
 
     // Elasticsearch 7 never returns a response when receiving an HTTP/2 preface instead of the more
-    // valid behavior of returning a bad request response, so we can't use the preface.\
+    // valid behavior of returning a bad request response, so we can't use the preface.
     // TODO: find or raise a bug with Elastic
     return builder.useHttp2Preface(false)
       .connectTimeoutMillis(es.getTimeout())
@@ -223,7 +224,6 @@ public class ZipkinElasticsearchStorageConfiguration {
   static ClientFactoryBuilder configureSsl(ClientFactoryBuilder builder, Ssl ssl) throws Exception {
     final KeyManagerFactory keyManagerFactory = SslUtil.getKeyManagerFactory(ssl);
     final TrustManagerFactory trustManagerFactory = SslUtil.getTrustManagerFactory(ssl);
-
     return builder.tlsCustomizer(sslContextBuilder -> {
       sslContextBuilder.keyManager(keyManagerFactory);
       sslContextBuilder.trustManager(trustManagerFactory);

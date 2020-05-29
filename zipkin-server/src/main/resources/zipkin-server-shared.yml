@@ -159,6 +159,8 @@ zipkin:
       credentials-file: ${ES_CREDENTIALS_FILE:}
       credentials-refresh-interval: ${ES_CREDENTIALS_REFRESH_INTERVAL:5}
       http-logging: ${ES_HTTP_LOGGING:}
+      ssl:
+        no-verify: ${ES_SSL_NO_VERIFY:false}
       health-check:
         enabled: ${ES_HEALTH_CHECK_ENABLED:true}
         interval: ${ES_HEALTH_CHECK_INTERVAL:3s}
