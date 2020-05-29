@@ -39,9 +39,6 @@ export const sortTraceSummaries = (traceSummaries, sortingMethod) => {
 export const extractAllServiceNames = (traceSummaries) => {
   const result = [];
   traceSummaries.forEach((traceSummary) => {
-    if (!traceSummary.serviceSummaries) {
-      return;
-    }
     traceSummary.serviceSummaries.forEach((serviceSummary) => {
       result.push(serviceSummary.serviceName);
     });
