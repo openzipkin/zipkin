@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -37,9 +37,9 @@ final class EnsureIndexTemplate {
       callFactory.newCall(getTemplate, BodyConverters.NULL, "get-template").execute();
     } catch (FileNotFoundException e) { // TODO: handle 404 slightly more nicely
       AggregatedHttpRequest updateTemplate = AggregatedHttpRequest.of(
-          RequestHeaders.of(
-              HttpMethod.PUT, templateUrl, HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),
-          HttpData.ofUtf8(indexTemplate));
+        RequestHeaders.of(
+          HttpMethod.PUT, templateUrl, HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),
+        HttpData.ofUtf8(indexTemplate));
       callFactory.newCall(updateTemplate, BodyConverters.NULL, "update-template").execute();
     }
   }

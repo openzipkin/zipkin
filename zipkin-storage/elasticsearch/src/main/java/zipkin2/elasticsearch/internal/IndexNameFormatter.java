@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -166,12 +166,12 @@ public abstract class IndexNameFormatter {
 
   String formatIndexPattern(String format, GregorianCalendar current, String prefix) {
     return String.format(
-        format,
-        prefix,
-        current.get(Calendar.YEAR),
-        dateSeparator(),
-        current.get(Calendar.MONTH) + 1,
-        dateSeparator());
+      format,
+      prefix,
+      current.get(Calendar.YEAR),
+      dateSeparator(),
+      current.get(Calendar.MONTH) + 1,
+      dateSeparator());
   }
 
   static GregorianCalendar midnightUTC(long epochMillis) {
@@ -182,7 +182,7 @@ public abstract class IndexNameFormatter {
 
   /** On insert, require a version-specific index-type delimiter as ES 7+ dropped colons */
   public String formatTypeAndTimestampForInsert(String type, char indexTypeDelimiter,
-      long timestampMillis) {
+    long timestampMillis) {
     return index() + indexTypeDelimiter + type + '-' + format(timestampMillis);
   }
 
