@@ -26,6 +26,7 @@ import com.datastax.driver.mapping.MappingManager;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closer;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +72,7 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
       try {
         closer.close();
       } catch (IOException ignored) {
+        throw e;
       }
       throw e;
     }

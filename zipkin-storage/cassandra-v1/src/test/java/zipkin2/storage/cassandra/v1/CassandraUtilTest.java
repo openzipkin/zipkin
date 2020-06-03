@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,12 +13,15 @@
  */
 package zipkin2.storage.cassandra.v1;
 
+import java.util.Date;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin2.Span;
+import zipkin2.internal.DateUtil;
 import zipkin2.storage.QueryRequest;
 
+import static java.util.concurrent.TimeUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.FRONTEND;
@@ -97,5 +100,12 @@ public class CassandraUtilTest {
 
     assertThat(CassandraUtil.annotationKeys(span))
         .containsOnly("frontend:aws.arn", "frontend:aws.arn:" + arn);
+  }
+
+  @Test
+  public void getDays_consistentWithDateUtil() {
+    assertThat(CassandraUtil.getDays(DAYS.toMillis(2), DAYS.toMillis(1)))
+        .extracting(Date::getTime)
+        .containsExactlyElementsOf(DateUtil.epochDays(DAYS.toMillis(2), DAYS.toMillis(1)));
   }
 }

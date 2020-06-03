@@ -118,6 +118,7 @@ final class ActiveMQSpanConsumer implements TransportListener, MessageListener, 
     collector.acceptSpans(serialized, NOOP);
   }
 
+  @SuppressWarnings("EmptyCatch")
   @Override public void close() {
     if (checkResult == CLOSED) return;
     checkResult = CLOSED;

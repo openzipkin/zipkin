@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -30,8 +30,6 @@ import zipkin2.internal.Dependencies;
 import zipkin2.internal.DependencyLinker;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static zipkin2.internal.DateUtil.getDays;
-
 final class SelectDependencies extends ResultSetFutureCall<List<DependencyLink>> {
   static class Factory {
     final Session session;
@@ -47,32 +45,32 @@ final class SelectDependencies extends ResultSetFutureCall<List<DependencyLink>>
     }
 
     Call<List<DependencyLink>> create(long endTs, long lookback) {
-      List<Date> days = getDays(endTs, lookback);
+      List<Date> days = CassandraUtil.getDays(endTs, lookback);
       return new SelectDependencies(this, days);
     }
   }
 
   final Factory factory;
-  final List<Date> days;
+  final List<Date> epochDays;
 
-  SelectDependencies(Factory factory, List<Date> days) {
+  SelectDependencies(Factory factory, List<Date> epochDays) {
     this.factory = factory;
-    this.days = days;
+    this.epochDays = epochDays;
   }
 
   @Override
   protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement.bind().setList("days", days));
+    return factory.session.executeAsync(factory.preparedStatement.bind().setList("days", epochDays));
   }
 
   @Override
   public String toString() {
-    return "SelectDependencies{days=" + days + "}";
+    return "SelectDependencies{days=" + epochDays + "}";
   }
 
   @Override
   public SelectDependencies clone() {
-    return new SelectDependencies(factory, days);
+    return new SelectDependencies(factory, epochDays);
   }
 
   @Override

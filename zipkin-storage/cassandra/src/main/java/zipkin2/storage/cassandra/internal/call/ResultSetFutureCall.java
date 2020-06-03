@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -78,7 +78,7 @@ public abstract class ResultSetFutureCall<V> extends Call.Base<V>
     return maybeFuture != null && maybeFuture.isCancelled();
   }
 
-  /** @see zipkin2.storage.StorageComponent#isOverCapacity(java.lang.Throwable) */
+  /** Sets {@link zipkin2.storage.StorageComponent#isOverCapacity(java.lang.Throwable)} */
   public static boolean isOverCapacity(Throwable e) {
     return e instanceof QueryConsistencyException ||
       e instanceof BusyConnectionException ||

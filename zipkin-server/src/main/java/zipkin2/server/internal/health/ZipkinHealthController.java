@@ -48,6 +48,7 @@ public class ZipkinHealthController {
     return health(ctx, MediaType.JSON_UTF_8);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   CompletableFuture<HttpResponse> health(ServiceRequestContext ctx, MediaType mediaType) {
     CompletableFuture<HttpResponse> responseFuture = new CompletableFuture<>();
     ctx.setRequestTimeoutHandler(() -> {

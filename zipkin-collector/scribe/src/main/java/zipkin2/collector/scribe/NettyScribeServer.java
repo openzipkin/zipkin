@@ -61,9 +61,11 @@ final class NettyScribeServer {
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   void close() {
     if (channel == null) return;
     // TODO: chain these futures, and probably block a bit
+    // https://line-armeria.slack.com/archives/C1NGPBUH2/p1591167918430500
     channel.close();
     bossGroup.shutdownGracefully();
   }

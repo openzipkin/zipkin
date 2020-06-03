@@ -41,6 +41,7 @@ final class ZipkinRetryPolicy implements RetryPolicy {
       try {
         Thread.sleep(100);
       } catch (InterruptedException expected) {
+        Thread.currentThread().interrupt();
       }
     }
     return stmt.isIdempotent()

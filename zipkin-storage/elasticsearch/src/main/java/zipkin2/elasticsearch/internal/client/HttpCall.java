@@ -241,6 +241,7 @@ public final class HttpCall<V> extends Call.Base<V> {
     return responseFuture;
   }
 
+  @SuppressWarnings("EmptyCatch")
   V parseResponse(AggregatedHttpResponse response, BodyConverter<V> bodyConverter)
     throws IOException {
     // Handle the case where there is no content, as that means we have no resources to release.

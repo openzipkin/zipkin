@@ -33,7 +33,11 @@ import zipkin2.internal.HexCodec;
 public abstract class CollectorSampler {
   public static final CollectorSampler ALWAYS_SAMPLE = CollectorSampler.create(1.0f);
 
-  /** @param rate minimum sample rate is 0.0001, or 0.01% of traces */
+  /**
+   * Returns a trace ID sampler with the indicated rate.
+   *
+   * @param rate minimum sample rate is 0.0001, or 0.01% of traces
+   */
   public static CollectorSampler create(float rate) {
     if (rate < 0 || rate > 1)
       throw new IllegalArgumentException("rate should be between 0 and 1: was " + rate);

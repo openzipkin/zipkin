@@ -18,7 +18,7 @@ cache:
 
 language: java
 
-jdk: openjdk13
+jdk: openjdk14
 
 services:
   - docker

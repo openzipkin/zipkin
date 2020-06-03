@@ -31,6 +31,12 @@
     <!-- Matches Export-Package in bnd.bnd -->
     <module.name>zipkin2</module.name>
 
+    <!--
+      MutablePublicArray: We share an array of hex chars in internal code
+      JdkObsolete: SortedMap was replaced by NavigableMap, but the focus is Sorted not Navigable
+    -->
+    <errorprone.args>-Xep:MutablePublicArray:OFF -Xep:JdkObsolete:OFF</errorprone.args>
+
     <main.basedir>${project.basedir}/..</main.basedir>
     <main.java.version>1.6</main.java.version>
     <main.signature.artifact>java16</main.signature.artifact>

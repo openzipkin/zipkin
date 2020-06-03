@@ -63,6 +63,7 @@ public interface SessionFactory {
         try {
           closer.close();
         } catch (IOException ignored) {
+          throw e;
         }
         throw e;
       }

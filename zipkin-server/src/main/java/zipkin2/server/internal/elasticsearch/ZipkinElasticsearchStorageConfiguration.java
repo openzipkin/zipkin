@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -168,8 +169,9 @@ public class ZipkinElasticsearchStorageConfiguration {
     DynamicCredentialsFileLoader credentialsFileLoader =
       new DynamicCredentialsFileLoader(basicCredentials, credentialsFile);
     credentialsFileLoader.updateCredentialsFromProperties();
-    ses.scheduleAtFixedRate(credentialsFileLoader,
-      0, credentialsRefreshInterval, TimeUnit.SECONDS);
+    ScheduledFuture<?> future = ses.scheduleAtFixedRate(credentialsFileLoader,
+        0, credentialsRefreshInterval, TimeUnit.SECONDS);
+    if (future.isDone()) throw new RuntimeException("credential refresh thread didn't start");
     return ses;
   }
 
@@ -211,7 +213,7 @@ public class ZipkinElasticsearchStorageConfiguration {
         condition.getEnvironment().getProperty(PASSWORD);
       String credentialsFile =
         condition.getEnvironment().getProperty(CREDENTIALS_FILE);
-      return !isEmpty(userName) && !isEmpty(password) || !isEmpty(credentialsFile);
+      return (!isEmpty(userName) && !isEmpty(password)) || !isEmpty(credentialsFile);
     }
   }
 

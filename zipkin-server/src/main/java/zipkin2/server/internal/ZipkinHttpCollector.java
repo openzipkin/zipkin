@@ -57,6 +57,7 @@ public class ZipkinHttpCollector {
   static volatile CollectorMetrics metrics;
   final Collector collector;
 
+  @SuppressWarnings("StaticAssignmentInConstructor")
   ZipkinHttpCollector(
     StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics) {
     metrics = metrics.forTransport("http");

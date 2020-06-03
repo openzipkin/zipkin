@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,6 @@
  */
 package zipkin2.storage.mysql.v1;
 
-import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
 import org.jooq.DSLContext;
@@ -26,11 +25,11 @@ import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependenc
 
 final class SelectDependencies implements Function<DSLContext, List<DependencyLink>> {
   final Schema schema;
-  final List<Date> days;
+  final List<Long> epochDays;
 
-  SelectDependencies(Schema schema, List<Date> days) {
+  SelectDependencies(Schema schema, List<Long> epochDays) {
     this.schema = schema;
-    this.days = days;
+    this.epochDays = epochDays;
   }
 
   @Override
@@ -39,7 +38,7 @@ final class SelectDependencies implements Function<DSLContext, List<DependencyLi
         context
             .select(schema.dependencyLinkFields)
             .from(ZIPKIN_DEPENDENCIES)
-            .where(ZIPKIN_DEPENDENCIES.DAY.in(days))
+            .where(ZIPKIN_DEPENDENCIES.DAY.in(epochDays))
             .fetch(
                 (Record l) ->
                     DependencyLink.newBuilder()
@@ -53,6 +52,6 @@ final class SelectDependencies implements Function<DSLContext, List<DependencyLi
 
   @Override
   public String toString() {
-    return "SelectDependencies{days=" + days + "}";
+    return "SelectDependencies{epochDays=" + epochDays + "}";
   }
 }

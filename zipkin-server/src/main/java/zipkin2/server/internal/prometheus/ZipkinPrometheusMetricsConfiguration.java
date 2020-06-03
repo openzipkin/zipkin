@@ -127,6 +127,7 @@ public class ZipkinPrometheusMetricsConfiguration {
   private static final AttributeKey<Boolean> PROMETHEUS_METRICS_SET =
     AttributeKey.valueOf(Boolean.class, "PROMETHEUS_METRICS_SET");
 
+  @SuppressWarnings("FutureReturnValueIgnored") // no known action to take following .thenAccept
   public static void setup(RequestContext ctx, MeterRegistry registry, String metricName) {
     if (ctx.setAttrIfAbsent(PROMETHEUS_METRICS_SET, true) != null) {
       return;

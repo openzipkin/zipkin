@@ -58,6 +58,7 @@ final class LazyInit {
     if (maybe != null) result.close();
   }
 
+  @SuppressWarnings("EmptyCatch")
   ActiveMQSpanConsumer doInit() {
     final ActiveMQConnection connection;
     try {

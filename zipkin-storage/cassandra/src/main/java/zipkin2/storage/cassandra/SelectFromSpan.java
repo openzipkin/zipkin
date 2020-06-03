@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -196,6 +196,7 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
       return ArrayList::new;
     }
 
+    @SuppressWarnings("EmptyCatch")
     @Override
     protected BiConsumer<Row, List<Span>> accumulator() {
       return (row, result) -> {
@@ -234,7 +235,7 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
         for (Schema.AnnotationUDT udt : row.getList("annotations", Schema.AnnotationUDT.class)) {
           builder.addAnnotation(udt.toAnnotation().timestamp(), udt.toAnnotation().value());
         }
-        for (Entry<String, String> tag :
+        for (Map.Entry<String, String> tag :
             row.getMap("tags", String.class, String.class).entrySet()) {
           builder.putTag(tag.getKey(), tag.getValue());
         }
