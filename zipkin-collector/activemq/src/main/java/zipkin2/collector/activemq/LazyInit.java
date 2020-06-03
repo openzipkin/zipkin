@@ -58,7 +58,6 @@ final class LazyInit {
     if (maybe != null) result.close();
   }
 
-  @SuppressWarnings("EmptyCatch")
   ActiveMQSpanConsumer doInit() {
     final ActiveMQConnection connection;
     try {
@@ -80,6 +79,7 @@ final class LazyInit {
       try {
         connection.close();
       } catch (JMSException ignored) {
+        // EmptyCatch ignored
       }
       throw uncheckedException("Unable to create queueReceiver(" + queue + "): ", e);
     }

@@ -21,10 +21,9 @@ import zipkin2.codec.SpanBytesDecoder;
  * Detecting decoder used in transports which don't include means to identify the type of the data.
  *
  * <p>For example, we can identify the encoding and also the format in http via the request path
- * and
- * content-type. However, in Kafka it could be that folks send mixed Zipkin data without identifying
- * its format. For example, Kafka historically has no content-type and users don't always segregate
- * different queues by instrumentation format.
+ * and content-type. However, in Kafka it could be that folks send mixed Zipkin data without
+ * identifying its format. For example, Kafka historically has no content-type and users don't
+ * always segregate different queues by instrumentation format.
  */
 // In TBinaryProtocol encoding, the first byte is the TType, in a range 0-16
 // .. If the first byte isn't in that range, it isn't a thrift.

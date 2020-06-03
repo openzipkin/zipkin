@@ -196,7 +196,6 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
       return ArrayList::new;
     }
 
-    @SuppressWarnings("EmptyCatch")
     @Override
     protected BiConsumer<Row, List<Span>> accumulator() {
       return (row, result) -> {
@@ -218,6 +217,7 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
           try {
             builder.kind(Span.Kind.valueOf(row.getString("kind")));
           } catch (IllegalArgumentException ignored) {
+            // EmptyCatch ignored
           }
         }
         if (!row.isNull("l_ep")) {

@@ -148,7 +148,7 @@ final class CassandraUtil {
   @SuppressWarnings("JdkObsolete")
   static List<Date> getDays(long endTs, @Nullable Long lookback) {
     List<Date> result = new ArrayList<>();
-    for (Long epochMillis : DateUtil.epochDays(endTs, lookback)) {
+    for (long epochMillis : DateUtil.epochDays(endTs, lookback)) {
       result.add(new Date(epochMillis));
     }
     return result;

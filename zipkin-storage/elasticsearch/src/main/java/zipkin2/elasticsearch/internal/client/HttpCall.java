@@ -241,7 +241,6 @@ public final class HttpCall<V> extends Call.Base<V> {
     return responseFuture;
   }
 
-  @SuppressWarnings("EmptyCatch")
   V parseResponse(AggregatedHttpResponse response, BodyConverter<V> bodyConverter)
     throws IOException {
     // Handle the case where there is no content, as that means we have no resources to release.
@@ -267,6 +266,7 @@ public final class HttpCall<V> extends Call.Base<V> {
           message = root.findPath("reason").textValue();
           if (message == null) message = root.at("/Message").textValue();
         } catch (RuntimeException | IOException possiblyParseException) {
+          // EmptyCatch ignored
         }
         throw new RuntimeException(message != null ? message
           : "response for " + request.headers().path() + " failed: " + contentString.get());

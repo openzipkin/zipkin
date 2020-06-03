@@ -121,7 +121,7 @@ final class CassandraUtil {
 
   static List<LocalDate> getDays(long endTs, @Nullable Long lookback) {
     List<LocalDate> result = new ArrayList<>();
-    for (Long epochMillis : DateUtil.epochDays(endTs, lookback)) {
+    for (long epochMillis : DateUtil.epochDays(endTs, lookback)) {
       result.add(LocalDate.fromMillisSinceEpoch(epochMillis));
     }
     return result;

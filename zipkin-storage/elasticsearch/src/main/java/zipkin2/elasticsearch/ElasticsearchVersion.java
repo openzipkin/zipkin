@@ -39,8 +39,7 @@ enum ElasticsearchVersion implements HttpCall.BodyConverter<Float> {
     try {
       if (enterPath(parser, "version", "number") != null) version = parser.getText();
     } catch (RuntimeException | IOException possiblyParseException) {
-      throw new IllegalArgumentException(
-          "could not parse .version.number in response: " + contentString.get());
+      // EmptyCatch ignored
     }
     if (version == null) {
       throw new IllegalArgumentException(

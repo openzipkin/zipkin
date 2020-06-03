@@ -261,7 +261,7 @@ public final class RabbitMQCollector extends CollectorComponent {
       try {
         if (splitAddress.length == 2) port = Integer.parseInt(splitAddress[1]);
       } catch (NumberFormatException ignore) {
-        port = 0;
+        // EmptyCatch ignored
       }
       addressArray[i] = (port > 0) ? new Address(host, port) : new Address(host);
     }
