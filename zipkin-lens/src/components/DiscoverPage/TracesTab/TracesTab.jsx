@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { Plural } from '@lingui/macro';
+import { Trans } from '@lingui/macro';
 import React, { useState, useMemo, useCallback } from 'react';
 import { connect } from 'react-redux';
 import Box from '@material-ui/core/Box';
@@ -94,11 +94,15 @@ export const TracesTab = ({ traceSummaries }) => {
           fontSize="1.05rem"
           data-test="count-results"
         >
-          <Plural
-            value={traceSummaries.length}
-            one="# Result"
-            other="# Results"
-          />
+          {
+            // DiscoverPage.jsx renders an explain screen when there are no traces. The only
+            // options here are one or more traces matching the search criteria.
+            traceSummaries.length === 1 ? (
+              <Trans>One Result</Trans>
+            ) : (
+              <Trans>{traceSummaries.length} Results</Trans>
+            )
+          }
         </Box>
         <Box mr={2}>
           <ServiceFilter

@@ -18,7 +18,6 @@ import { ThemeProvider } from '@material-ui/styles';
 import MuiPickersUtilsProvider from '@material-ui/pickers/MuiPickersUtilsProvider';
 import { render } from '@testing-library/react';
 import { createMemoryHistory, History } from 'history';
-import { en as enPlurals } from 'make-plural/plurals';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { Router } from 'react-router-dom';
@@ -31,9 +30,7 @@ import configureStore from '../../store/configure-store';
 
 const i18n = setupI18n();
 i18n.load('en', enMessages as any);
-i18n.loadLocaleData('en', {
-  plurals: enPlurals,
-});
+i18n.loadLocaleData('en', {});
 i18n.activate('en');
 
 interface RenderProps {

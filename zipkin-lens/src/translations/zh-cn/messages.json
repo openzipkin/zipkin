@@ -1,6 +1,7 @@
 {
   "Address": "地址",
   "Annotations": "Annotations",
+  "Archive Trace": "存档Trace",
   "Change Language": "改变语言",
   "Dependencies": "依赖",
   "Dependencies Page": "依赖页面",
@@ -14,6 +15,7 @@
   "Filter": "过滤",
   "Limit": "数量",
   "None": "空",
+  "One Result": "1条结果",
   "Only V2 format is supported": "仅支持V2格式",
   "Parent ID": "Parent ID",
   "Please select criteria in the search bar. Then, click the search button.": "请在搜索栏中选择条件， 然后点击按钮进行查找",
@@ -36,10 +38,10 @@
   "Trace ID": "Trace ID",
   "Upload JSON": "上传JSON数据",
   "View Logs": "查看日志",
-  "Archive Trace": "存档Trace",
+  "Zipkin": "",
   "Zipkin Home": "Zipkin Home",
   "hide annotations": "隐藏annotations",
   "show all annotations": "显示全部annotations",
   "trace id...": "trace id...",
-  "{0, plural, one {# Result} other {# Results}}": ""
+  "{0} Results": "{0} 条结果"
 }

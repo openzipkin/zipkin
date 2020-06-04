@@ -13,12 +13,6 @@
  */
 
 import { setupI18n } from '@lingui/core';
-import {
-  en as enPlurals,
-  es as esPlurals,
-  zh as zhPlurals,
-} from 'make-plural/plurals';
-
 import { messages as enMessages } from '../translations/en/messages';
 import { messages as esMessages } from '../translations/es/messages';
 import { messages as zhCnMessages } from '../translations/zh-cn/messages';
@@ -63,14 +57,8 @@ export const i18n = setupI18n({
   messages: allMessages as any,
   locale: getLocale(),
   localeData: {
-    en: {
-      plurals: enPlurals,
-    },
-    es: {
-      plurals: esPlurals,
-    },
-    zh: {
-      plurals: zhPlurals,
-    },
+    en: {},
+    es: {},
+    zh: {},
   },
 });
