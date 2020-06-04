@@ -1,6 +1,7 @@
 {
   "Address": "Dirección",
   "Annotations": "Anotaciones",
+  "Archive Trace": "Archivar Traza",
   "Change Language": "Cambiar Idioma",
   "Dependencies": "Dependencias",
   "Dependencies Page": "Página de Dependencies",
@@ -14,6 +15,7 @@
   "Filter": "Filtro",
   "Limit": "Límite",
   "None": "Ninguno",
+  "One Result": "",
   "Only V2 format is supported": "Solo el formato V2 es soportado",
   "Parent ID": "ID de Traza Padre",
   "Please select criteria in the search bar. Then, click the search button.": "Por favor, selecciona un criterio en la barra de búsqueda. Luego, haz clic en el botón buscar.",
@@ -36,10 +38,10 @@
   "Trace ID": "ID de Traza",
   "Upload JSON": "Subir JSON",
   "View Logs": "Ver Logs",
-  "Archive Trace": "Archivar Traza",
+  "Zipkin": "",
   "Zipkin Home": "Zipkin Inicio",
   "hide annotations": "ocultar anotaciones",
   "show all annotations": "mostrar todas las anotaciones",
   "trace id...": "id de traza...",
-  "{0, plural, one {# Result} other {# Results}}": ""
+  "{0} Results": ""
 }
