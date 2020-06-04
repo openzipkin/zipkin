@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -217,6 +217,7 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
           try {
             builder.kind(Span.Kind.valueOf(row.getString("kind")));
           } catch (IllegalArgumentException ignored) {
+            // EmptyCatch ignored
           }
         }
         if (!row.isNull("l_ep")) {
@@ -234,7 +235,7 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
         for (Schema.AnnotationUDT udt : row.getList("annotations", Schema.AnnotationUDT.class)) {
           builder.addAnnotation(udt.toAnnotation().timestamp(), udt.toAnnotation().value());
         }
-        for (Entry<String, String> tag :
+        for (Map.Entry<String, String> tag :
             row.getMap("tags", String.class, String.class).entrySet()) {
           builder.putTag(tag.getKey(), tag.getValue());
         }

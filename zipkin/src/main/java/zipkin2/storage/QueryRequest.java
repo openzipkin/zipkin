@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -158,13 +158,13 @@ public final class QueryRequest {
       limit = source.limit;
     }
 
-    /** @see QueryRequest#serviceName() */
+    /** Sets {@link QueryRequest#serviceName()} */
     public Builder serviceName(@Nullable String serviceName) {
       this.serviceName = serviceName;
       return this;
     }
 
-    /** @see QueryRequest#remoteServiceName() */
+    /** Sets {@link QueryRequest#remoteServiceName()} */
     public Builder remoteServiceName(@Nullable String remoteServiceName) {
       this.remoteServiceName = remoteServiceName;
       return this;
@@ -205,38 +205,38 @@ public final class QueryRequest {
       return annotationQuery(map);
     }
 
-    /** @see QueryRequest#annotationQuery() */
+    /** Sets {@link QueryRequest#annotationQuery()} */
     public Builder annotationQuery(Map<String, String> annotationQuery) {
       if (annotationQuery == null) throw new NullPointerException("annotationQuery == null");
       this.annotationQuery = annotationQuery;
       return this;
     }
 
-    /** @see QueryRequest#minDuration() */
+    /** Sets {@link QueryRequest#minDuration()} */
     public Builder minDuration(@Nullable Long minDuration) {
       this.minDuration = minDuration;
       return this;
     }
 
-    /** @see QueryRequest#maxDuration() */
+    /** Sets {@link QueryRequest#maxDuration()} */
     public Builder maxDuration(@Nullable Long maxDuration) {
       this.maxDuration = maxDuration;
       return this;
     }
 
-    /** @see QueryRequest#endTs() */
+    /** Sets {@link QueryRequest#endTs()} */
     public Builder endTs(long endTs) {
       this.endTs = endTs;
       return this;
     }
 
-    /** @see QueryRequest#lookback() */
+    /** Sets {@link QueryRequest#lookback()} */
     public Builder lookback(long lookback) {
       this.lookback = lookback;
       return this;
     }
 
-    /** @see QueryRequest#limit() */
+    /** Sets {@link QueryRequest#limit()} */
     public Builder limit(int limit) {
       this.limit = limit;
       return this;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,13 +17,11 @@ import com.datastax.driver.core.LocalDate;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import zipkin2.Annotation;
 import zipkin2.Call;
@@ -101,7 +99,7 @@ final class CassandraUtil {
     public Set<String> map(Map<String, Long> map) {
       // timestamps can collide, so we need to add some random digits on end before using them as
       // serviceSpanKeys
-      SortedMap<BigInteger, String> sorted = new TreeMap<>(Collections.reverseOrder());
+      TreeMap<BigInteger, String> sorted = new TreeMap<>(Collections.reverseOrder());
       for (Map.Entry<String, Long> entry : map.entrySet()) {
         BigInteger uncollided =
           BigInteger.valueOf(entry.getValue())
@@ -123,8 +121,8 @@ final class CassandraUtil {
 
   static List<LocalDate> getDays(long endTs, @Nullable Long lookback) {
     List<LocalDate> result = new ArrayList<>();
-    for (Date javaDate : DateUtil.getDays(endTs, lookback)) {
-      result.add(LocalDate.fromMillisSinceEpoch(javaDate.getTime()));
+    for (long epochMillis : DateUtil.epochDays(endTs, lookback)) {
+      result.add(LocalDate.fromMillisSinceEpoch(epochMillis));
     }
     return result;
   }

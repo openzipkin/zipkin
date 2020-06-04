@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,7 +16,9 @@ package zipkin2.codec;
 import java.util.List;
 
 /**
- * @param <T> type of the object to deserialize
+ * Utility for encoding one or more elements of a type into a byte array.
+ *
+ * @param <T> type of the object to encode
  */
 public interface BytesEncoder<T> {
   Encoding encoding();

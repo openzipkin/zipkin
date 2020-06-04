@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -51,10 +51,7 @@ public interface BytesDecoder<T> {
   /** Visible for testing. This returns the first element parsed from the serialized object or null */
   @Nullable T decodeOne(byte[] serialized);
 
-  /**
-   * @return true if an element was decoded
-   * @throws {@linkplain IllegalArgumentException} if the type couldn't be decoded
-   */
+  /** Returns {@code true} if an element was decoded or throws {@link IllegalArgumentException}. */
   boolean decodeList(byte[] serialized, Collection<T> out);
 
   /** Convenience method for {@link #decodeList(byte[], Collection)} */

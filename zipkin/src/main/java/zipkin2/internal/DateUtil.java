@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -34,14 +34,14 @@ public final class DateUtil {
     return day.getTimeInMillis();
   }
 
-  public static List<Date> getDays(long endTs, long lookback) {
+  public static List<Long> epochDays(long endTs, long lookback) {
     long to = midnightUTC(endTs);
     long startMillis = endTs - (lookback != 0 ? lookback : endTs);
     long from = startMillis <= 0 ? 0 : midnightUTC(startMillis); // >= 1970
 
-    List<Date> days = new ArrayList<>();
+    List<Long> days = new ArrayList<>();
     for (long time = from; time <= to; time += TimeUnit.DAYS.toMillis(1)) {
-      days.add(new Date(time));
+      days.add(time);
     }
     return days;
   }

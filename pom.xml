@@ -43,7 +43,7 @@
 
     <!-- override to set exclusions per-project -->
     <errorprone.args />
-    <errorprone.version>2.3.4</errorprone.version>
+    <errorprone.version>2.4.0</errorprone.version>
 
     <main.basedir>${project.basedir}</main.basedir>
 
@@ -578,7 +578,7 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[1.8,14)</version>
+                  <version>[1.8,15)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -696,10 +696,9 @@
       </build>
     </profile>
     <profile>
-      <!-- don't JDK 13 until https://github.com/google/error-prone/issues/1106 -->
       <id>error-prone-9+</id>
       <activation>
-        <jdk>[9,12)</jdk>
+        <jdk>[9,15)</jdk>
         <activeByDefault>false</activeByDefault>
       </activation>
       <build>

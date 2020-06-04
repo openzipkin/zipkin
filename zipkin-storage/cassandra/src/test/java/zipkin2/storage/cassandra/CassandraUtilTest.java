@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,8 +13,8 @@
  */
 package zipkin2.storage.cassandra;
 
+import com.datastax.driver.core.LocalDate;
 import com.google.common.collect.ImmutableMap;
-import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.junit.Rule;
@@ -152,7 +152,7 @@ public class CassandraUtilTest {
   @Test
   public void getDays_consistentWithDateUtil() {
     assertThat(CassandraUtil.getDays(DAYS.toMillis(2), DAYS.toMillis(1)))
-      .extracting(d -> new Date(d.getMillisSinceEpoch()))
-      .containsExactlyElementsOf(DateUtil.getDays(DAYS.toMillis(2), DAYS.toMillis(1)));
+      .extracting(LocalDate::getMillisSinceEpoch)
+      .containsExactlyElementsOf(DateUtil.epochDays(DAYS.toMillis(2), DAYS.toMillis(1)));
   }
 }

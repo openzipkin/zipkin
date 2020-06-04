@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,12 +32,12 @@ public final class V1Annotation implements Comparable<V1Annotation> {
     return new V1Annotation(timestamp, value, endpoint);
   }
 
-  /** @see Annotation#timestamp() */
+  /** Sets {@link Annotation#timestamp()} */
   public long timestamp() {
     return timestamp;
   }
 
-  /** @see Annotation#value() */
+  /** Sets {@link Annotation#value()} */
   public String value() {
     return value;
   }

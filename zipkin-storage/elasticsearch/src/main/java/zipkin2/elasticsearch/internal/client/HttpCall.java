@@ -266,6 +266,7 @@ public final class HttpCall<V> extends Call.Base<V> {
           message = root.findPath("reason").textValue();
           if (message == null) message = root.at("/Message").textValue();
         } catch (RuntimeException | IOException possiblyParseException) {
+          // EmptyCatch ignored
         }
         throw new RuntimeException(message != null ? message
           : "response for " + request.headers().path() + " failed: " + contentString.get());

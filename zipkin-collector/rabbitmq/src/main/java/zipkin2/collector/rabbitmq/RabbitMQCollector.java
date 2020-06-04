@@ -257,12 +257,13 @@ public final class RabbitMQCollector extends CollectorComponent {
     for (int i = 0; i < addresses.size(); i++) {
       String[] splitAddress = addresses.get(i).split(":", 100);
       String host = splitAddress[0];
-      Integer port = null;
+      int port = -1;
       try {
         if (splitAddress.length == 2) port = Integer.parseInt(splitAddress[1]);
       } catch (NumberFormatException ignore) {
+        // EmptyCatch ignored
       }
-      addressArray[i] = (port != null) ? new Address(host, port) : new Address(host);
+      addressArray[i] = (port > 0) ? new Address(host, port) : new Address(host);
     }
     return addressArray;
   }
