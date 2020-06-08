@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"zipkin2.junit","l":"HttpFailure"},{"p":"zipkin2.junit","l":"ZipkinRule"}]
