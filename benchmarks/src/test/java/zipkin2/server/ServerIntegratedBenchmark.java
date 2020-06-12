@@ -314,6 +314,8 @@ class ServerIntegratedBenchmark {
       }
       zipkin.withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint("java"));
       zipkin.setCommand("-cp", String.join(":", classpath), "zipkin.server.ZipkinServer");
+      // Don't fail on classpath problem from missing lens, as we don't use it.
+      env.put("ZIPKIN_UI_ENABLED", "false");
     } else {
       zipkin = new GenericContainer<>("openzipkin/zipkin:" + RELEASED_ZIPKIN_VERSION);
     }
