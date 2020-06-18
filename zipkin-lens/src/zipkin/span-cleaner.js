@@ -288,8 +288,8 @@ export function mergeV2ById(spans) {
   // Look to see if there is a root span, in case we need to correct its shared flag
   if (sorted[0].parentId || !sorted[0].shared) return sorted;
 
-  // Sorting puts root spans first. If there's only one root, and it has shared flag, remove it.
-  if (sorted.length === 1 || !sorted[1].shared) {
+  // Sorting puts root spans first. If there's only one root, remove any shared flag.
+  if (sorted.length === 1 || sorted[1].parentId) {
     delete sorted[0].shared;
   }
 

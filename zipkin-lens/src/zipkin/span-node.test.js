@@ -270,4 +270,43 @@ describe('SpanNodeBuilder', () => {
     root.traverse((span) => spans.push(span));
     expect(spans).toEqual(trace);
   });
+
+  it('should remove incorrect shared flag on only root span', () => {
+    const a = {
+      traceId: '1',
+      id: 'a',
+      kind: 'SERVER',
+      shared: true,
+      timestamp: 1,
+      localEndpoint: { serviceName: 'routing' },
+    };
+    // intentionally missing client per #3001
+    const b = {
+      traceId: '1',
+      parentId: 'a',
+      id: 'b',
+      kind: 'SERVER',
+      shared: true,
+      timestamp: 2,
+      localEndpoint: { serviceName: 'routing' },
+    };
+    // Also, intentionally missing client per #3001
+    const c = {
+      traceId: '1',
+      parentId: 'a',
+      id: 'c',
+      kind: 'SERVER',
+      shared: true,
+      timestamp: 3,
+      localEndpoint: { serviceName: 'yelp_main/biz' },
+    };
+
+    const trace = [a, b, c].map(clean);
+
+    const root = new SpanNodeBuilder({}).build(trace);
+    expect(root.span.id).toBe('000000000000000a');
+    expect(root.span.shared).toBeUndefined();
+
+    expect(root.children.map((n) => n.span)).toEqual([trace[1], trace[2]]);
+  });
 });
