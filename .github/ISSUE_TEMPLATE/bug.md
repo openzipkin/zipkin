@@ -10,7 +10,7 @@ If this is a UI issue...
   * Attach a screen shot or animated gif showing what you think is wrong
   * Include JSON of a trace that produces it, being careful to not include private data
     * You can literally include the JSON in [triple-backticks](https://help.github.com/en/github/writing-on-github/basic-writing-and-formatting-syntax#quoting-code)
-    * Otherwise, you can use a pastebin such as [fluffy](https://fluffy.cc/)
+    * Otherwise, you can use a [gist](https://gist.github.com/) or pastebin such as [fluffy](https://fluffy.cc/)
 
 Regardless, the best is to spend some time to write a failing test. Bugs with tests get fixed and stay fixed.
 
