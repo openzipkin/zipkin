@@ -18,4 +18,4 @@ Regardless, the best is to spend some time to write a failing test. Bugs with te
 Steps to reproduce the behavior:
 
 ## Expected Behaviour
-Suggest what you think correct should be. Note, it may be solved differently depending on the problem.
+Suggest what you think correct behaviour should be. Note, it may be solved differently depending on the problem.
