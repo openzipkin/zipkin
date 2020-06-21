@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -161,6 +161,8 @@ final class MySQLSpanConsumer implements SpanConsumer {
           inserts.add(insert.onDuplicateKeyIgnore());
         }
       }
+      // TODO: See if DSLContext.batchMerge() can be used to avoid some of the complexity
+      // https://github.com/jOOQ/jOOQ/issues/3172
       create.batch(inserts).execute();
       return null;
     }
