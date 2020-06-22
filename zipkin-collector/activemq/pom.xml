@@ -29,7 +29,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <activemq.version>5.15.12</activemq.version>
+    <activemq.version>5.15.13</activemq.version>
   </properties>
 
   <dependencies>
