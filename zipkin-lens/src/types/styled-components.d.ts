@@ -11,8 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-declare module 'vizceral-react' {
-  export default class extends React.Component<any, any> {
-    public vizceral: any;
-  }
+import 'styled-components';
+import { Theme } from '@material-ui/core';
+
+declare module 'styled-components' {
+  // eslint-disable-next-line @typescript-eslint/no-empty-interface
+  export interface DefaultTheme extends Theme {}
 }
