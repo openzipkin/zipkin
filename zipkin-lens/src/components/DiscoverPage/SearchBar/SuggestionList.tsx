@@ -11,35 +11,53 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
-import { Box, CircularProgress } from '@material-ui/core';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import classNames from 'classnames';
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    list: {
-      listStyleType: 'none',
-      margin: 0,
-      padding: 0,
-      fontSize: '1.1rem',
-    },
-    listItem: {
-      paddingTop: 8,
-      paddingBottom: 8,
-      paddingRight: 12,
-      paddingLeft: 12,
-      borderLeft: '5px solid rgba(0,0,0,0)',
-      cursor: 'pointer',
-      '&:hover': {
-        backgroundColor: theme.palette.grey[300],
-      },
-    },
-    'listItem--focused': {
-      borderLeft: `5px solid ${theme.palette.primary.main}`,
-    },
-  }),
-);
+import React from 'react';
+import { CircularProgress } from '@material-ui/core';
+import styled from 'styled-components';
+
+const Root = styled.div<{ isLoading: boolean }>`
+  position: absolute;
+  top: 45px;
+  left: 0px;
+  right: 0px;
+  border-radius: 1px;
+  background-color: ${({ theme }) => theme.palette.background.paper};
+  box-shadow: ${({ theme }) => theme.shadows[3]};
+  max-height: 300px;
+  overflow: auto;
+  z-index: ${({ theme }) => theme.zIndex.modal};
+
+  ${({ isLoading, theme }) =>
+    !isLoading
+      ? ''
+      : `
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: ${theme.spacing(1)}px;
+      `}
+`;
+
+const List = styled.ul`
+  list-style-type: none;
+  margin: 0px;
+  padding: 0px;
+  font-size: 1.1rem;
+`;
+
+const ListItem = styled.li<{ isFocused: boolean }>`
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-right: 12px;
+  padding-left: 12px;
+  border-left: ${({ isFocused, theme }) =>
+    `5px solid ${isFocused ? theme.palette.primary.main : 'rgba(0, 0, 0, 0)'}`};
+  cursor: pointer;
+  &:hover {
+    background-color: ${({ theme }) => theme.palette.grey[300]};
+  }
+`;
 
 interface SuggestionListProps {
   suggestions: string[];
@@ -54,8 +72,6 @@ const SuggestionList: React.FC<SuggestionListProps> = ({
   suggestionIndex,
   onItemClick,
 }) => {
-  const classes = useStyles();
-
   const listEls = React.useRef<HTMLLIElement[]>([]);
   const setListEl = (index: number) => (el: HTMLLIElement) => {
     listEls.current[index] = el;
@@ -70,52 +86,26 @@ const SuggestionList: React.FC<SuggestionListProps> = ({
 
   if (isLoadingSuggestions) {
     return (
-      <Box
-        position="absolute"
-        top={45}
-        left={0}
-        right={0}
-        borderRadius={3}
-        bgcolor="background.paper"
-        boxShadow={3}
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        p={1}
-      >
-        <CircularProgress />
-      </Box>
+      <Root isLoading>
+        <CircularProgress size={20} />
+      </Root>
     );
   }
 
   return (
-    <Box
-      position="absolute"
-      top={45}
-      left={0}
-      right={0}
-      borderRadius={1}
-      bgcolor="background.paper"
-      boxShadow={3}
-      maxHeight={300}
-      overflow="auto"
-      zIndex="modal"
-    >
-      <ul className={classes.list}>
+    <Root isLoading={false}>
+      <List>
         {suggestions.map((suggestion, index) => (
-          // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-noninteractive-element-interactions
-          <li
+          <ListItem
             ref={setListEl(index)}
-            className={classNames(classes.listItem, {
-              [classes['listItem--focused']]: suggestionIndex === index,
-            })}
+            isFocused={suggestionIndex === index}
             onClick={onItemClick(index)}
           >
             {suggestion}
-          </li>
+          </ListItem>
         ))}
-      </ul>
-    </Box>
+      </List>
+    </Root>
   );
 };
 
