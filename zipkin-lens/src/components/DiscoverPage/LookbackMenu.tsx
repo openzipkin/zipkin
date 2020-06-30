@@ -192,6 +192,7 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
                 onOpen={handleDialogOpen}
                 onClose={handleDialogClose}
                 data-testid="date-time-picker"
+                size="small"
               />
             </Box>
             <Box mb={2}>
@@ -204,6 +205,7 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
                 onOpen={handleDialogOpen}
                 onClose={handleDialogClose}
                 data-testid="date-time-picker"
+                size="small"
               />
             </Box>
             <Box display="flex" justifyContent="flex-end">
