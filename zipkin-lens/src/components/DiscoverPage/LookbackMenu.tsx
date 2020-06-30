@@ -29,7 +29,6 @@ import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import { useEvent } from 'react-use';
 
 import { fixedLookbackMap, FixedLookbackValue, Lookback } from './lookback';
-import { useUiConfig } from '../UiConfig';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

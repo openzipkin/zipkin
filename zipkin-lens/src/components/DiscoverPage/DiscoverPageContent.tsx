@@ -29,12 +29,13 @@ import { faHistory, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import Criterion from './Criterion';
-import { Lookback, fixedLookbackMap } from './lookback';
+import { Lookback, fixedLookbackMap, millisecondsToValue } from './lookback';
 import { clearTraces, loadTraces } from '../../actions/traces-action';
 import SearchBar from './SearchBar';
 import { RootState } from '../../store';
 import ExplainBox from './ExplainBox';
 import LookbackMenu from './LookbackMenu';
+import { useUiConfig } from '../UiConfig';
 
 const TracesTab = require('./TracesTab').default;
 
@@ -236,10 +237,13 @@ const DiscoverPageContent: React.FC<Props> = ({ history, location }) => {
   );
 
   const [tempCriteria, setTempCriteria] = useState(criteria);
+
+  const { defaultLookback } = useUiConfig();
   const [tempLookback, setTempLookback] = useState<Lookback>(
     lookback || {
       type: 'fixed',
-      value: '15m',
+      // If defaultLookback in config.json is incorrect, use 15m as an initial value.
+      value: millisecondsToValue[defaultLookback] || '15m',
       endTime: moment(),
     },
   );

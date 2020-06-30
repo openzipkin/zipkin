@@ -29,6 +29,21 @@ export type FixedLookbackValue =
   | '2d'
   | '7d';
 
+export const millisecondsToValue: { [key: number]: FixedLookbackValue } = {
+  [60 * 1000]: '1m',
+  [60 * 1000 * 5]: '5m',
+  [60 * 1000 * 15]: '15m',
+  [60 * 1000 * 30]: '30m',
+  [60 * 1000 * 60]: '1h',
+  [60 * 1000 * 60 * 2]: '2h',
+  [60 * 1000 * 60 * 3]: '3h',
+  [60 * 1000 * 60 * 6]: '6h',
+  [60 * 1000 * 60 * 12]: '12h',
+  [60 * 1000 * 60 * 24]: '1d',
+  [60 * 1000 * 60 * 24 * 2]: '2d',
+  [60 * 1000 * 60 * 24 * 7]: '7d',
+};
+
 export interface FixedLookback {
   type: 'fixed';
   value: FixedLookbackValue;
