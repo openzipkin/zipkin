@@ -25,7 +25,7 @@ RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch
 
 COPY docker/storage/elasticsearch6/config /elasticsearch/config
 
-FROM openzipkin/jre-full:13.0.3-13.31.11
+FROM openzipkin/jre-full:14.0.1-14.28.21
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # https://github.com/elastic/elasticsearch/pull/31003 was closed won't fix
