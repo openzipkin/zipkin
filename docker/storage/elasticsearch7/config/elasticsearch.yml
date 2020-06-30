@@ -15,6 +15,9 @@
 network.host: 0.0.0.0
 node.name: zipkin-elasticsearch
 cluster.name: "docker-cluster"
-cluster.initial_master_nodes: 
+cluster.initial_master_nodes:
   - zipkin-elasticsearch
 xpack.ml.enabled: false
+xpack.monitoring.enabled: false
+xpack.security.enabled: false
+xpack.watcher.enabled: false

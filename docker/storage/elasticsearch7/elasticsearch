@@ -1,0 +1,17 @@
+# This file inlines what's done by the Elasticsearch script machinery, which doesn't work here due
+# to our images using busybox (not bash). See #3044
+#
+# Notable settings:
+# * tmpdir manual as https://github.com/elastic/elasticsearch/pull/31003 was closed won't fix
+# * ES JRE as ours lacks thai support
+# * disable log4j JMX not just because we don't use it...
+#  * ES enables security manager https://github.com/elastic/elasticsearch/issues/21932#issuecomment-264435034
+
+exec /elasticsearch/jdk/bin/java \
+$ES_JAVA_OPTS \
+-Xms1g -Xmx1g \
+-Djava.io.tmpdir=/tmp \
+-Dlog4j2.disable.jmx=true \
+-Des.path.home=/elasticsearch -Des.path.conf=/elasticsearch/config \
+-cp '/elasticsearch/lib/*' org.elasticsearch.bootstrap.Elasticsearch \
+"$@"
