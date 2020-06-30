@@ -26,8 +26,8 @@ import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.RequestHeaders;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.common.logging.RequestLog;
-import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
-import com.linecorp.armeria.unsafe.ByteBufHttpData;
+import com.linecorp.armeria.common.unsafe.PooledHttpData;
+import com.linecorp.armeria.testing.junit5.server.mock.MockWebServerExtension;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import java.io.FileNotFoundException;
@@ -175,7 +175,7 @@ class HttpCallTest {
     encodedBuf.writeBytes(message);
     AggregatedHttpResponse response = AggregatedHttpResponse.of(
       ResponseHeaders.of(HttpStatus.FORBIDDEN),
-      new ByteBufHttpData(encodedBuf, true)
+      PooledHttpData.wrap(encodedBuf)
     );
 
     HttpCall<Object> call = http.newCall(REQUEST, NULL, "test");
@@ -248,8 +248,7 @@ class HttpCallTest {
 
     http = new HttpCall.Factory(WebClient.builder(server.httpUri())
       .decorator((client, ctx, req) -> {
-        throw new UnprocessedRequestException("Could not process request.",
-          new EndpointGroupException("No endpoints"));
+        throw UnprocessedRequestException.of(new EndpointGroupException("No endpoints"));
       })
       .build());
 

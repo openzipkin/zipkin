@@ -29,6 +29,8 @@ import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.HttpStatusClass;
 import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.RequestHeaders;
+import com.linecorp.armeria.common.unsafe.PooledAggregatedHttpResponse;
+import com.linecorp.armeria.common.unsafe.PooledHttpResponse;
 import com.linecorp.armeria.common.util.Exceptions;
 import com.linecorp.armeria.common.util.SafeCloseable;
 import io.netty.buffer.ByteBuf;
@@ -143,14 +145,13 @@ public final class HttpCall<V> extends Call.Base<V> {
 
   final WebClient httpClient;
 
-  volatile CompletableFuture<AggregatedHttpResponse> responseFuture;
+  volatile CompletableFuture<PooledAggregatedHttpResponse> responseFuture;
 
   HttpCall(WebClient httpClient, RequestSupplier request, BodyConverter<V> bodyConverter,
     String name) {
     this.httpClient = httpClient;
     this.name = name;
     this.request = request;
-
     this.bodyConverter = bodyConverter;
   }
 
@@ -194,7 +195,7 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   @Override protected void doCancel() {
-    CompletableFuture<AggregatedHttpResponse> responseFuture = this.responseFuture;
+    CompletableFuture<PooledAggregatedHttpResponse> responseFuture = this.responseFuture;
     if (responseFuture != null) {
       responseFuture.cancel(false);
     }
@@ -208,7 +209,7 @@ public final class HttpCall<V> extends Call.Base<V> {
     return "HttpCall(" + request + ")";
   }
 
-  CompletableFuture<AggregatedHttpResponse> sendRequest() {
+  CompletableFuture<PooledAggregatedHttpResponse> sendRequest() {
     final HttpResponse response;
     try (SafeCloseable ignored =
            Clients.withContextCustomizer(ctx -> ctx.logBuilder().name(name))) {
@@ -217,12 +218,15 @@ public final class HttpCall<V> extends Call.Base<V> {
       request.writeBody(httpRequest::tryWrite);
       httpRequest.close();
     }
-    CompletableFuture<AggregatedHttpResponse> responseFuture =
+    PooledHttpResponse pooledResponse = PooledHttpResponse.of(response);
+    CompletableFuture<PooledAggregatedHttpResponse> responseFuture =
       RequestContext.mapCurrent(
-        ctx -> response.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()),
+        ctx -> pooledResponse.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()),
         // This should never be used in practice since the module runs in an Armeria server.
-        response::aggregate);
+        pooledResponse::aggregateWithPooledObjects);
     responseFuture = responseFuture.exceptionally(t -> {
+      // unwrap is needed when PooledHttpResponse.of is used
+      if (t instanceof CompletionException) t = t.getCause();
       if (t instanceof UnprocessedRequestException) {
         Throwable cause = t.getCause();
         // Go ahead and reduce the output in logs since this is usually a configuration or

@@ -49,12 +49,12 @@
 
     <!-- This allows you to test feature branches with jitpack -->
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>0.99.6</armeria.version>
+    <armeria.version>0.99.8</armeria.version>
     <!-- This should only be used in tests, and be careful to avoid >= v20 apis -->
     <guava.version>28.1-jre</guava.version>
 
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
-    <jackson.version>2.11.0</jackson.version>
+    <jackson.version>2.11.1</jackson.version>
 
     <!-- Only used for proto interop testing; wire-maven-plugin is usually behind latest. -->
     <wire.version>3.0.2</wire.version>
@@ -69,7 +69,7 @@
 
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
-    <mariadb-java-client.version>2.6.0</mariadb-java-client.version>
+    <mariadb-java-client.version>2.6.1</mariadb-java-client.version>
     <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
     <HikariCP.version>3.4.5</HikariCP.version>
     <slf4j.version>1.7.30</slf4j.version>
@@ -166,7 +166,7 @@
 
       <dependency>
         <groupId>${armeria.groupId}</groupId>
-        <artifactId>armeria-spring-boot-autoconfigure</artifactId>
+        <artifactId>armeria-spring-boot2-autoconfigure</artifactId>
         <version>${armeria.version}</version>
         <exclusions>
           <exclusion>

@@ -17,8 +17,8 @@ import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpRequest;
-import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.RequestHeaders;
+import com.linecorp.armeria.common.unsafe.PooledHttpResponse;
 import com.linecorp.armeria.common.util.Exceptions;
 import com.linecorp.armeria.common.util.SafeCloseable;
 import com.linecorp.armeria.server.ServiceRequestContext;
@@ -77,9 +77,9 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
 
     ServiceRequestContext requestContext = requestContextBuilder.build();
 
-    final HttpResponse response;
+    final PooledHttpResponse response;
     try (SafeCloseable unused = requestContext.push()) {
-      response = scribeService.serve(requestContext, request);
+      response = PooledHttpResponse.of(scribeService.serve(requestContext, request));
     } catch (Throwable t) {
       propagateIfFatal(t);
       exceptionCaught(ctx, t);
