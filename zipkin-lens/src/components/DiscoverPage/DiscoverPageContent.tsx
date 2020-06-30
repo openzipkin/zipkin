@@ -251,8 +251,8 @@ const DiscoverPageContent: React.FC<Props> = ({ history, location }) => {
         return fixedLookbackMap[tempLookback.value].display;
       case 'custom':
         return `${tempLookback.startTime.format(
-          'MM/DD/YYYY HH:mm:ss',
-        )} - ${tempLookback.endTime.format('MM/DD/YYYY HH:mm:ss')}`;
+          'MM/DD/YYYY HH:mm:ss:SSS',
+        )} - ${tempLookback.endTime.format('MM/DD/YYYY HH:mm:ss:SSS')}`;
       default:
         return '';
     }
@@ -285,9 +285,7 @@ const DiscoverPageContent: React.FC<Props> = ({ history, location }) => {
     state.traces.isLoading,
   ]);
 
-  const [isShowingLookbackMenu, setIsShowingLookbackMenu] = useState(
-    false,
-  );
+  const [isShowingLookbackMenu, setIsShowingLookbackMenu] = useState(false);
 
   const toggleLookbackMenu = useCallback(() => {
     setIsShowingLookbackMenu((prev) => !prev);
@@ -335,10 +333,11 @@ const DiscoverPageContent: React.FC<Props> = ({ history, location }) => {
     <Box pr={3} pl={3} flexGrow={1} display="flex" flexDirection="column">
       <Box display="flex" mb={1.25}>
         <Box mr={1} position="relative">
-          <Button variant="outlined" onClick={toggleLookbackMenu}>
-            <Box mr={0.75}>
-              <FontAwesomeIcon icon={faHistory} />
-            </Box>
+          <Button
+            variant="outlined"
+            onClick={toggleLookbackMenu}
+            startIcon={<FontAwesomeIcon icon={faHistory} />}
+          >
             {lookbackDisplay}
           </Button>
           {isShowingLookbackMenu && (

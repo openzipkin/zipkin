@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 import React, { useState, useCallback, useRef } from 'react';
 import {
   Box,
@@ -28,6 +29,7 @@ import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import { useEvent } from 'react-use';
 
 import { fixedLookbackMap, FixedLookbackValue, Lookback } from './lookback';
+import { useUiConfig } from '../UiConfig';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -186,26 +188,28 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
               <KeyboardDateTimePicker
                 label="Start Time"
                 inputVariant="outlined"
-                format="MM/DD/YYYY HH:mm:ss"
+                format="MM/DD/YYYY HH:mm:ss:SSS"
                 value={startTime}
                 onChange={handleStartTimeChange}
                 onOpen={handleDialogOpen}
                 onClose={handleDialogClose}
                 data-testid="date-time-picker"
                 size="small"
+                fullWidth
               />
             </Box>
             <Box mb={2}>
               <KeyboardDateTimePicker
                 label="End Time"
                 inputVariant="outlined"
-                format="MM/DD/YYYY HH:mm:ss"
+                format="MM/DD/YYYY HH:mm:ss:SSS"
                 value={endTime}
                 onChange={handleEndTimeChange}
                 onOpen={handleDialogOpen}
                 onClose={handleDialogClose}
                 data-testid="date-time-picker"
                 size="small"
+                fullWidth
               />
             </Box>
             <Box display="flex" justifyContent="flex-end">
