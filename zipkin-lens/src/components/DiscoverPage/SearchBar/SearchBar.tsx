@@ -25,8 +25,7 @@ import RootState from '../../../types/RootState';
 import { fetchServices } from '../../../actions/services-action';
 import { fetchSpans } from '../../../actions/spans-action';
 import { fetchRemoteServices } from '../../../actions/remote-services-action';
-import { fetchAutocompleteKeys } from '../../../actions/autocomplete-keys-action';
-import {fetchAutocompleteValues} from "../../../actions/autocomplete-values-action";
+import { fetchAutocompleteValues } from '../../../actions/autocomplete-values-action';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -49,11 +48,9 @@ type SearchBarProps = {
   remoteServiceNames: string[];
   isLoadingRemoteServiceNames: boolean;
   autocompleteKeys: string[];
-  isLoadingAutocompleteKeys: boolean;
   autocompleteValues: string[];
   isLoadingAutocompleteValues: boolean;
   loadServices: () => void;
-  loadAutocompleteKeys: () => void;
   loadRemoteServices: (serviceName: string) => void;
   loadSpans: (serviceName: string) => void;
   loadAutocompleteValues: (autocompleteKey: string) => void;
@@ -69,11 +66,9 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
   remoteServiceNames,
   isLoadingRemoteServiceNames,
   autocompleteKeys,
-  isLoadingAutocompleteKeys,
   autocompleteValues,
   isLoadingAutocompleteValues,
   loadServices,
-  loadAutocompleteKeys,
   loadRemoteServices,
   loadSpans,
   loadAutocompleteValues,
@@ -125,7 +120,6 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
 
   React.useEffect(() => {
     loadServices();
-    loadAutocompleteKeys();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -170,7 +164,6 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
           isLoadingServiceNames={isLoadingServiceNames}
           isLoadingRemoteServiceNames={isLoadingRemoteServiceNames}
           isLoadingSpanNames={isLoadingSpanNames}
-          isLoadingAutocompleteKeys={isLoadingAutocompleteKeys}
           isLoadingAutocompleteValues={isLoadingAutocompleteValues}
           isFocused={index === criterionIndex}
           onFocus={handleCriterionFocus(index)}
@@ -204,7 +197,6 @@ const mapStateToProps = (state: RootState) => ({
   remoteServiceNames: state.remoteServices.remoteServices,
   isLoadingRemoteServiceNames: state.remoteServices.isLoading,
   autocompleteKeys: state.autocompleteKeys.autocompleteKeys,
-  isLoadingAutocompleteKeys: state.autocompleteKeys.isLoading,
   autocompleteValues: state.autocompleteValues.autocompleteValues,
   isLoadingAutocompleteValues: state.autocompleteValues.isLoading,
 });
@@ -215,9 +207,6 @@ const mapDispatchToProps = (
 ) => ({
   loadServices: () => {
     dispatch(fetchServices());
-  },
-  loadAutocompleteKeys: () => {
-    dispatch(fetchAutocompleteKeys());
   },
   loadRemoteServices: (serviceName: string) => {
     dispatch(fetchRemoteServices(serviceName));

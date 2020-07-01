@@ -59,7 +59,6 @@ interface CriterionBoxProps {
   isLoadingServiceNames: boolean;
   isLoadingRemoteServiceNames: boolean;
   isLoadingSpanNames: boolean;
-  isLoadingAutocompleteKeys: boolean;
   isLoadingAutocompleteValues: boolean;
   isFocused: boolean;
   onFocus: () => void;
@@ -91,7 +90,6 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
   isLoadingServiceNames,
   isLoadingRemoteServiceNames,
   isLoadingSpanNames,
-  isLoadingAutocompleteKeys,
   isLoadingAutocompleteValues,
   isFocused,
   onFocus,
@@ -147,7 +145,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
   const isEnteringKey = !text.includes('=');
   const isLoadingSuggestions = React.useMemo(() => {
     if (isEnteringKey) {
-      return isLoadingAutocompleteKeys;
+      return false;
     }
     switch (keyText) {
       case 'serviceName':
@@ -165,7 +163,6 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
   }, [
     keyText,
     isEnteringKey,
-    isLoadingAutocompleteKeys,
     isLoadingServiceNames,
     isLoadingSpanNames,
     isLoadingRemoteServiceNames,
@@ -181,6 +178,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
         'remoteServiceName',
         'maxDuration',
         'minDuration',
+        'tags',
         ...autocompleteKeys,
       ].filter((key) => !criteria.find((criterion) => criterion.key === key));
     }

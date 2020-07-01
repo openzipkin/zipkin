@@ -57,16 +57,36 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-interface Props extends RouteComponentProps {}
+interface DiscoverPageContentProps extends RouteComponentProps {
+  autocompleteKeys: string[];
+}
 
 // Export for testing
-export const useQueryParams = (history: History, location: Location) => {
+export const useQueryParams = (
+  history: History,
+  location: Location,
+  autocompleteKeys: string[],
+) => {
   const setQueryParams = useCallback(
     (criteria: Criterion[], lookback: Lookback, limit: number) => {
       const params = new URLSearchParams();
+      const annotationQuery: string[] = [];
       criteria.forEach((criterion) => {
-        params.set(criterion.key, criterion.value);
+        // If the key is 'tag' or a string included in autocompleteKeys,
+        // the criterion will be included in annotationQuery.
+        if (criterion.key === 'tags') {
+          annotationQuery.push(criterion.value);
+        } else if (autocompleteKeys.includes(criterion.key)) {
+          if (criterion.value) {
+            annotationQuery.push(`${criterion.key}=${criterion.value}`);
+          } else {
+            annotationQuery.push(criterion.key);
+          }
+        } else {
+          params.set(criterion.key, criterion.value);
+        }
       });
+      params.set('annotationQuery', annotationQuery.join(' and '));
       switch (lookback.type) {
         case 'fixed':
           params.set('lookback', lookback.value);
@@ -85,7 +105,7 @@ export const useQueryParams = (history: History, location: Location) => {
         search: params.toString(),
       });
     },
-    [history, location.pathname],
+    [autocompleteKeys, history, location.pathname],
   );
 
   const criteria = useMemo(() => {
@@ -99,13 +119,40 @@ export const useQueryParams = (history: History, location: Location) => {
         case 'endTs':
         case 'limit':
           break;
+        case 'annotationQuery': {
+          // Split annotationQuery into keys of autocompleteKeys and the others.
+          // If the autocompleteKeys is ['projectID', 'phase'] and the annotationQuery is
+          // 'projectID=projectA and phase=BETA and http.path=/api/v1/users and http.method=GET',
+          // criterion will be like the following.
+          // [
+          //   { key: 'tags', value: 'http.path=/api/v1/users and http.method=GET' },
+          //   { key: 'projectID', value: 'projectA' },
+          //   { key: 'phase', value: 'BETA' },
+          // ]
+          const tags: string[] = [];
+          const exps = value.split(' and ');
+          exps.forEach((exp) => {
+            const strs = exp.split('=');
+            if (strs.length === 0) {
+              return;
+            }
+            const [key, value] = strs;
+            if (autocompleteKeys.includes(key)) {
+              ret.push({ key, value: value || '' });
+            } else {
+              tags.push(exp);
+            }
+          });
+          ret.push({ key: 'tags', value: tags.join(' and ') });
+          break;
+        }
         default:
           ret.push({ key, value });
           break;
       }
     });
     return ret;
-  }, [location.search]);
+  }, [autocompleteKeys, location.search]);
 
   const lookback = useMemo<Lookback | null>(() => {
     const ps = new URLSearchParams(location.search);
@@ -164,31 +211,27 @@ export const buildApiQuery = (
   criteria: Criterion[],
   lookback: Lookback,
   limit: number,
+  autocompleteKeys: string[],
 ) => {
   const params: { [key: string]: string } = {};
   const annotationQuery: string[] = [];
   criteria.forEach((criterion) => {
-    switch (criterion.key) {
-      case 'serviceName':
-      case 'spanName':
-      case 'remoteServiceName':
-      case 'maxDuration':
-      case 'minDuration':
-        params[criterion.key] = criterion.value;
-        break;
-      default:
-        // All criterions except serviceName, spanName, remoteServiceName, maxDuration,
-        // and minDuration are AnnotationQuery.
-        if (criterion.value) {
-          annotationQuery.push(`${criterion.key}=${criterion.value}`);
-        } else {
-          annotationQuery.push(`${criterion.key}`);
-        }
+    if (criterion.key === 'tags') {
+      annotationQuery.push(criterion.value);
+    } else if (autocompleteKeys.includes(criterion.key)) {
+      if (criterion.value) {
+        annotationQuery.push(`${criterion.key}=${criterion.value}`);
+      } else {
+        annotationQuery.push(criterion.key);
+      }
+    } else {
+      params[criterion.key] = criterion.value;
     }
   });
   if (annotationQuery.length > 0) {
     params.annotationQuery = annotationQuery.join(' and ');
   }
+
   params.endTs = lookback.endTime.valueOf().toString();
   switch (lookback.type) {
     case 'custom': {
@@ -204,6 +247,7 @@ export const buildApiQuery = (
     }
     default:
   }
+
   params.limit = limit.toString();
   return params;
 };
@@ -212,6 +256,7 @@ const useFetchTraces = (
   criteria: Criterion[],
   lookback: Lookback | null,
   limit: number | null,
+  autocompleteKeys: string[],
 ) => {
   const dispatch = useDispatch();
 
@@ -223,17 +268,22 @@ const useFetchTraces = (
       return;
     }
 
-    const params = buildApiQuery(criteria, lookback, limit);
+    const params = buildApiQuery(criteria, lookback, limit, autocompleteKeys);
     dispatch(loadTraces(params));
-  }, [criteria, dispatch, limit, lookback]);
+  }, [autocompleteKeys, criteria, dispatch, limit, lookback]);
 };
 
-const DiscoverPageContent: React.FC<Props> = ({ history, location }) => {
+const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
+  history,
+  location,
+  autocompleteKeys,
+}) => {
   const classes = useStyles();
 
   const { setQueryParams, criteria, lookback, limit } = useQueryParams(
     history,
     location,
+    autocompleteKeys,
   );
 
   const [tempCriteria, setTempCriteria] = useState(criteria);
@@ -262,7 +312,7 @@ const DiscoverPageContent: React.FC<Props> = ({ history, location }) => {
     }
   }, [tempLookback]);
 
-  useFetchTraces(criteria, lookback, limit);
+  useFetchTraces(criteria, lookback, limit, autocompleteKeys);
 
   const handleLimitChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {

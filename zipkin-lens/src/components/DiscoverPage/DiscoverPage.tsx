@@ -12,19 +12,38 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
-import { Box, Typography } from '@material-ui/core';
 import { Trans } from '@lingui/macro';
+import { Box, Typography, CircularProgress } from '@material-ui/core';
+import React, { useEffect } from 'react';
+import { connect } from 'react-redux';
+import { ThunkDispatch } from 'redux-thunk';
 
 import { useUiConfig } from '../UiConfig';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import DiscoverPageContent from './DiscoverPageContent';
+import RootState from '../../types/RootState';
+import { fetchAutocompleteKeys } from '../../actions/autocomplete-keys-action';
 
-const DiscoverPage: React.FC = () => {
+interface DiscoverPageImplProps {
+  autocompleteKeys: string[];
+  isLoadingAutocompleteKeys: boolean;
+  loadAutocompleteKeys: () => void;
+}
+
+const DiscoverPageImpl: React.FC<DiscoverPageImplProps> = ({
+  autocompleteKeys,
+  isLoadingAutocompleteKeys,
+  loadAutocompleteKeys,
+}) => {
   const config = useUiConfig();
 
   let content: JSX.Element;
+
+  useEffect(() => {
+    loadAutocompleteKeys();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!config.searchEnabled) {
     content = (
@@ -36,8 +55,22 @@ const DiscoverPage: React.FC = () => {
         </Trans>
       </Typography>
     );
+  } else if (isLoadingAutocompleteKeys) {
+    // Need to fetch autocompleteKeys before displaying a search bar,
+    // because SearchBar uses autocompleteKeys inside.
+    content = (
+      <Box
+        height="100%"
+        width="100%"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <CircularProgress />
+      </Box>
+    );
   } else {
-    content = <DiscoverPageContent />;
+    content = <DiscoverPageContent autocompleteKeys={autocompleteKeys} />;
   }
 
   return (
@@ -62,4 +95,19 @@ const DiscoverPage: React.FC = () => {
   );
 };
 
-export default DiscoverPage;
+// For unit testing, `connect` is easier to use than
+// `useSelector` or `useDispatch` hooks.
+const mapStateToProps = (state: RootState) => ({
+  autocompleteKeys: state.autocompleteKeys.autocompleteKeys,
+  isLoadingAutocompleteKeys: state.autocompleteKeys.isLoading,
+});
+
+const mapDispatchToProps = (
+  dispatch: ThunkDispatch<RootState, undefined, any>,
+) => ({
+  loadAutocompleteKeys: () => {
+    dispatch(fetchAutocompleteKeys());
+  },
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(DiscoverPageImpl);
