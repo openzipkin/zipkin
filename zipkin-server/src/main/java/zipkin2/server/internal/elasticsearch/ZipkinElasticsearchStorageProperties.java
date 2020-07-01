@@ -48,6 +48,7 @@ import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
  *     trust-store-type: PKCS12
  *   health-check:
  *     enabled: true
+ *     http-logging: HEADERS
  *     interval: 3s
  * }</pre>
  */
@@ -139,6 +140,8 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   public static class HealthCheck {
     /** Indicates health checking is enabled. */
     private boolean enabled = true;
+    /** When set, controls the volume of HTTP logging of the Elasticsearch API. */
+    private HttpLogging httpLogging = HttpLogging.NONE;
 
     /** The time to wait between sending health check requests. */
     @DurationUnit(ChronoUnit.MILLIS)
@@ -150,6 +153,14 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
 
     public void setEnabled(boolean enabled) {
       this.enabled = enabled;
+    }
+
+    public HttpLogging getHttpLogging() {
+      return httpLogging;
+    }
+
+    public void setHttpLogging(HttpLogging httpLogging) {
+      this.httpLogging = httpLogging;
     }
 
     public Duration getInterval() {
@@ -190,9 +201,9 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   private String credentialsFile;
   /** Credentials refresh interval (in seconds) */
   private Integer credentialsRefreshInterval = 1;
-  /** When set, controls the volume of HTTP logging of the Elasticsearch Api. */
+  /** When set, controls the volume of HTTP logging of the Elasticsearch API. */
   private HttpLogging httpLogging = HttpLogging.NONE;
-  /** Connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api requests. */
+  /** Connect, read and write socket timeouts (in milliseconds) for Elasticsearch API requests. */
   private Integer timeout = 10_000;
   /** Overrides ssl configuration relating to the Elasticsearch client connection. */
   private Ssl ssl = new Ssl();

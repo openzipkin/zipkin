@@ -72,6 +72,8 @@ public class ITElasticsearchHealthCheck {
       "zipkin.storage.elasticsearch.ensure-templates=false",
       "zipkin.storage.elasticsearch.timeout=200",
       "zipkin.storage.elasticsearch.health-check.enabled=true",
+      // uncomment (and also change log4j2.properties) to see health-checks requests in the console
+      //"zipkin.storage.elasticsearch.health-check.http-logging=headers",
       "zipkin.storage.elasticsearch.health-check.interval=100ms",
       "zipkin.storage.elasticsearch.hosts=" + hosts)
       .applyTo(context);

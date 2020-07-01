@@ -55,35 +55,38 @@ public class HttpClientFactory implements Function<EndpointGroup, WebClient>, Cl
         MeterIdPrefixFunction.ofDefault("elasticsearch")))
       .decorator(DecodingClient.newDecorator());
 
-    if (httpLogging != HttpLogging.NONE) {
-      LoggingClientBuilder loggingBuilder = LoggingClient.builder()
-        .requestLogLevel(LogLevel.INFO)
-        .successfulResponseLogLevel(LogLevel.INFO)
-        .requestHeadersSanitizer(headers -> {
-          if (!headers.contains(HttpHeaderNames.AUTHORIZATION)) {
-            return headers;
-          }
-          // TODO(anuraaga): Add unit tests after https://github.com/line/armeria/issues/2220
-          return headers.toBuilder().set(HttpHeaderNames.AUTHORIZATION, "****").build();
-        });
-      switch (httpLogging) {
-        case HEADERS:
-          loggingBuilder.contentSanitizer(unused -> "");
-          break;
-        case BASIC:
-          loggingBuilder.contentSanitizer(unused -> "");
-          loggingBuilder.headersSanitizer(unused -> HttpHeaders.of());
-          break;
-        case BODY:
-        default:
-          break;
-      }
-      options.decorator(loggingBuilder.newDecorator());
-      if (httpLogging == HttpLogging.BODY) {
-        options.decorator(ContentPreviewingClient.newDecorator(Integer.MAX_VALUE));
-      }
+    configureHttpLogging(httpLogging, options);
+    this.options = configureOptionsExceptHttpLogging(options).build();
+  }
+
+  void configureHttpLogging(HttpLogging httpLogging, ClientOptionsBuilder options) {
+    if (httpLogging == HttpLogging.NONE) return;
+    LoggingClientBuilder loggingBuilder = LoggingClient.builder()
+      .requestLogLevel(LogLevel.INFO)
+      .successfulResponseLogLevel(LogLevel.INFO)
+      .requestHeadersSanitizer(headers -> {
+        if (!headers.contains(HttpHeaderNames.AUTHORIZATION)) {
+          return headers;
+        }
+        // TODO(anuraaga): Add unit tests after https://github.com/line/armeria/issues/2220
+        return headers.toBuilder().set(HttpHeaderNames.AUTHORIZATION, "****").build();
+      });
+    switch (httpLogging) {
+      case HEADERS:
+        loggingBuilder.contentSanitizer(unused -> "");
+        break;
+      case BASIC:
+        loggingBuilder.contentSanitizer(unused -> "");
+        loggingBuilder.headersSanitizer(unused -> HttpHeaders.of());
+        break;
+      case BODY:
+      default:
+        break;
     }
-    this.options = configureOptionsExceptLogging(options).build();
+    options.decorator(loggingBuilder.newDecorator());
+    if (httpLogging == HttpLogging.BODY) {
+      options.decorator(ContentPreviewingClient.newDecorator(Integer.MAX_VALUE));
+    }
   }
 
   @Override public WebClient apply(EndpointGroup endpoint) {
@@ -97,7 +100,7 @@ public class HttpClientFactory implements Function<EndpointGroup, WebClient>, Cl
   }
 
   /** This takes care to not expose health checks into wire level logging */
-  ClientOptionsBuilder configureOptionsExceptLogging(ClientOptionsBuilder options) {
+  ClientOptionsBuilder configureOptionsExceptHttpLogging(ClientOptionsBuilder options) {
     options.factory(clientFactory).responseTimeoutMillis(timeout).writeTimeoutMillis(timeout);
     customizers.forEach(c -> c.accept(options));
     return options;
