@@ -96,7 +96,8 @@ final class LazyHttpClientImpl implements LazyHttpClient {
         .useGet(true)
         .clientFactory(factory.clientFactory)
         .withClientOptions(options -> {
-          factory.configureOptionsExceptLogging(options);
+          factory.configureHttpLogging(healthCheck.getHttpLogging(), options);
+          factory.configureOptionsExceptHttpLogging(options);
           options.decorator(MetricCollectingClient.newDecorator(
             MeterIdPrefixFunction.ofDefault("elasticsearch-healthcheck")));
           options.decorator((delegate, ctx, req) -> {
