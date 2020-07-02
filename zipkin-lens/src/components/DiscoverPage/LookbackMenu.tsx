@@ -12,7 +12,6 @@
  * the License.
  */
 
-import React, { useState, useCallback, useRef } from 'react';
 import {
   Box,
   Button,
@@ -21,11 +20,14 @@ import {
   ListItem,
   ListItemText,
   Paper,
+  Theme,
+  createStyles,
+  makeStyles,
 } from '@material-ui/core';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import moment, { Moment } from 'moment';
 import { KeyboardDateTimePicker } from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
+import moment, { Moment } from 'moment';
+import React, { useCallback, useRef, useState } from 'react';
 import { useEvent } from 'react-use';
 
 import { fixedLookbackMap, FixedLookbackValue, Lookback } from './lookback';

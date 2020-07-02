@@ -11,21 +11,27 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
-import { ThunkDispatch } from 'redux-thunk';
-import { connect } from 'react-redux';
-import { Box, Button } from '@material-ui/core';
-import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
 
-import CriterionBox from './CriterionBox';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  Box,
+  Button,
+  Theme,
+  createStyles,
+  makeStyles,
+} from '@material-ui/core';
+import React from 'react';
+import { connect } from 'react-redux';
+import { ThunkDispatch } from 'redux-thunk';
+
 import Criterion from '../Criterion';
-import RootState from '../../../types/RootState';
+import CriterionBox from './CriterionBox';
+import { fetchAutocompleteValues } from '../../../actions/autocomplete-values-action';
+import { fetchRemoteServices } from '../../../actions/remote-services-action';
 import { fetchServices } from '../../../actions/services-action';
 import { fetchSpans } from '../../../actions/spans-action';
-import { fetchRemoteServices } from '../../../actions/remote-services-action';
-import { fetchAutocompleteValues } from '../../../actions/autocomplete-values-action';
+import RootState from '../../../types/RootState';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

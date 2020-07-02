@@ -11,13 +11,20 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 /* eslint-disable no-shadow */
+
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  Box,
+  ClickAwayListener,
+  Theme,
+  createStyles,
+  makeStyles,
+} from '@material-ui/core';
 import React from 'react';
 import { useMount } from 'react-use';
-import { Box, ClickAwayListener } from '@material-ui/core';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
 
 import Criterion from '../Criterion';
 import SuggestionList from './SuggestionList';

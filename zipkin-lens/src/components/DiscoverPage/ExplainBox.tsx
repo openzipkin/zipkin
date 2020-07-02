@@ -11,13 +11,18 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { Trans } from '@lingui/macro';
-import React from 'react';
+
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import Box from '@material-ui/core/Box';
-import Typography from '@material-ui/core/Typography';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
+import { Trans } from '@lingui/macro';
+import {
+  Box,
+  Theme,
+  Typography,
+  createStyles,
+  makeStyles,
+} from '@material-ui/core';
+import React from 'react';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

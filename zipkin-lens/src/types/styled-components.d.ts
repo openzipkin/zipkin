@@ -11,8 +11,9 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import 'styled-components';
+
 import { Theme } from '@material-ui/core';
+import 'styled-components';
 
 declare module 'styled-components' {
   // eslint-disable-next-line @typescript-eslint/no-empty-interface

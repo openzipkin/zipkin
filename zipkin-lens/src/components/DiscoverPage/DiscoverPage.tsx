@@ -12,18 +12,19 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 import { Trans } from '@lingui/macro';
-import { Box, Typography, CircularProgress } from '@material-ui/core';
+import { Box, CircularProgress, Typography } from '@material-ui/core';
 import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk';
 
-import { useUiConfig } from '../UiConfig';
-import TraceJsonUploader from '../Common/TraceJsonUploader';
-import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import DiscoverPageContent from './DiscoverPageContent';
-import RootState from '../../types/RootState';
+import TraceIdSearchInput from '../Common/TraceIdSearchInput';
+import TraceJsonUploader from '../Common/TraceJsonUploader';
+import { useUiConfig } from '../UiConfig';
 import { fetchAutocompleteKeys } from '../../actions/autocomplete-keys-action';
+import RootState from '../../types/RootState';
 
 interface DiscoverPageImplProps {
   autocompleteKeys: string[];

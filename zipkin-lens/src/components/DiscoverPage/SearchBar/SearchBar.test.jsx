@@ -11,11 +11,12 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
-import { fireEvent } from '@testing-library/react';
 
-import render from '../../../test/util/render-with-default-settings';
+import { fireEvent } from '@testing-library/react';
+import React from 'react';
+
 import { SearchBarImpl } from './SearchBar';
+import render from '../../../test/util/render-with-default-settings';
 
 jest.mock('./CriterionBox', () => {
   // eslint-disable-next-line react/prop-types

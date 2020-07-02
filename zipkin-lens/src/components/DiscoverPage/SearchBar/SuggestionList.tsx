@@ -12,8 +12,8 @@
  * the License.
  */
 
-import React from 'react';
 import { CircularProgress } from '@material-ui/core';
+import React from 'react';
 import styled from 'styled-components';
 
 const Root = styled.div<{ isLoading: boolean }>`

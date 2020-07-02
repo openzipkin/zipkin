@@ -11,31 +11,35 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 /* eslint-disable no-shadow */
-import React, { useEffect, useCallback, useState, useMemo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { RouteComponentProps, withRouter } from 'react-router-dom';
+
+import { faHistory, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   Box,
   Button,
-  TextField,
   CircularProgress,
   Paper,
+  TextField,
+  Theme,
+  createStyles,
+  makeStyles,
 } from '@material-ui/core';
 import { History, Location } from 'history';
 import moment from 'moment';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import { faHistory, faSearch } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
 
 import Criterion from './Criterion';
-import { Lookback, fixedLookbackMap, millisecondsToValue } from './lookback';
-import { clearTraces, loadTraces } from '../../actions/traces-action';
-import SearchBar from './SearchBar';
-import { RootState } from '../../store';
 import ExplainBox from './ExplainBox';
 import LookbackMenu from './LookbackMenu';
+import SearchBar from './SearchBar';
+import { Lookback, fixedLookbackMap, millisecondsToValue } from './lookback';
 import { useUiConfig } from '../UiConfig';
+import { clearTraces, loadTraces } from '../../actions/traces-action';
+import { RootState } from '../../store';
 
 const TracesTab = require('./TracesTab').default;
 

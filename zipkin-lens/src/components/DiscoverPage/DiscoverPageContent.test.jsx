@@ -11,16 +11,17 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
+
 import { act, renderHook } from '@testing-library/react-hooks';
 import { createMemoryHistory } from 'history';
 import moment from 'moment';
+import React from 'react';
 
-import render from '../../test/util/render-with-default-settings';
 import DiscoverPageContent, {
   buildApiQuery,
   useQueryParams,
 } from './DiscoverPageContent';
+import render from '../../test/util/render-with-default-settings';
 
 describe('useQueryParams', () => {
   it('should extract criteria from query string', () => {
