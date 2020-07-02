@@ -11,11 +11,16 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import React from 'react';
 import { act, renderHook } from '@testing-library/react-hooks';
 import { createMemoryHistory } from 'history';
 import moment from 'moment';
 
-import { buildApiQuery, useQueryParams } from './DiscoverPageContent';
+import render from '../../test/util/render-with-default-settings';
+import DiscoverPageContent, {
+  buildApiQuery,
+  useQueryParams,
+} from './DiscoverPageContent';
 
 describe('useQueryParams', () => {
   it('should extract criteria from query string', () => {
@@ -34,8 +39,9 @@ describe('useQueryParams', () => {
           //   key2
           //   key3: value3
           search:
-            '?serviceName=serviceA&spanName=spanB&remoteServiceName=remoteServiceNameC&minDuration=10&maxDuration=100&key1=value1&key2&key3=value3&limit=10',
+            '?serviceName=serviceA&spanName=spanB&remoteServiceName=remoteServiceNameC&minDuration=10&maxDuration=100&annotationQuery=key1%3Dvalue1+and+key2+and+key3%3Dvalue3&limit=10',
         },
+        ['key3'],
       ),
     );
     expect(result.current.criteria).toEqual([
@@ -45,9 +51,8 @@ describe('useQueryParams', () => {
       { key: 'minDuration', value: '10' },
       { key: 'maxDuration', value: '100' },
       // AnnotationQuery
-      { key: 'key1', value: 'value1' },
-      { key: 'key2', value: '' },
       { key: 'key3', value: 'value3' },
+      { key: 'tags', value: 'key1=value1 and key2' },
     ]);
   });
 
@@ -97,7 +102,7 @@ describe('useQueryParams', () => {
   it('should set query string using setQueryParams', () => {
     const history = createMemoryHistory();
     const { result } = renderHook(() =>
-      useQueryParams(history, history.location),
+      useQueryParams(history, history.location, ['key3']),
     );
 
     act(() => {
@@ -109,8 +114,7 @@ describe('useQueryParams', () => {
           { key: 'minDuration', value: '10' },
           { key: 'maxDuration', value: '100' },
           // AnnotationQuery
-          { key: 'key1', value: 'value1' },
-          { key: 'key2', value: '' },
+          { key: 'tags', value: 'key1=value1 and key2' },
           { key: 'key3', value: 'value3' },
         ],
         {
@@ -122,7 +126,7 @@ describe('useQueryParams', () => {
       );
     });
     expect(history.location.search).toBe(
-      '?serviceName=serviceA&spanName=spanB&remoteServiceName=remoteServiceNameC&minDuration=10&maxDuration=100&key1=value1&key2=&key3=value3&lookback=2h&endTs=1588558961791&limit=10',
+      '?serviceName=serviceA&spanName=spanB&remoteServiceName=remoteServiceNameC&minDuration=10&maxDuration=100&annotationQuery=key1%3Dvalue1+and+key2+and+key3%3Dvalue3&lookback=2h&endTs=1588558961791&limit=10',
     );
   });
 });
@@ -137,8 +141,7 @@ describe('buildApiQuery', () => {
         { key: 'minDuration', value: '10' },
         { key: 'maxDuration', value: '100' },
         // AnnotationQuery
-        { key: 'key1', value: 'value1' },
-        { key: 'key2', value: '' },
+        { key: 'tags', value: 'key1=value1 and key2' },
         { key: 'key3', value: 'value3' },
       ],
       {
@@ -147,6 +150,7 @@ describe('buildApiQuery', () => {
         value: '2h',
       },
       30,
+      ['key3'],
     );
     expect(params.serviceName).toBe('serviceA');
     expect(params.spanName).toBe('spanB');
@@ -157,5 +161,16 @@ describe('buildApiQuery', () => {
     expect(params.lookback).toBe('7200000');
     expect(params.endTs).toBe('1588558961791');
     expect(params.limit).toBe('30');
+  });
+});
+
+describe('<DiscoverPageContent />', () => {
+  it('should initialize the lookback using config.json', () => {
+    const { getAllByText } = render(<DiscoverPageContent />, {
+      uiConfig: {
+        defaultLookback: 60 * 1000 * 5, // 5m
+      },
+    });
+    expect(getAllByText('Last 5 minutes').length).toBe(1);
   });
 });
