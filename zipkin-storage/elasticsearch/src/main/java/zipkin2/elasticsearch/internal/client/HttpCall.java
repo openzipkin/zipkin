@@ -18,13 +18,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.linecorp.armeria.client.Clients;
 import com.linecorp.armeria.client.UnprocessedRequestException;
 import com.linecorp.armeria.client.WebClient;
+import com.linecorp.armeria.client.unsafe.PooledWebClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpRequestWriter;
-import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.HttpStatusClass;
 import com.linecorp.armeria.common.RequestContext;
@@ -120,10 +120,10 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   public static class Factory {
-    final WebClient httpClient;
+    final PooledWebClient httpClient;
 
     public Factory(WebClient httpClient) {
-      this.httpClient = httpClient;
+      this.httpClient = PooledWebClient.of(httpClient);
     }
 
     public <V> HttpCall<V> newCall(
@@ -143,11 +143,11 @@ public final class HttpCall<V> extends Call.Base<V> {
   final BodyConverter<V> bodyConverter;
   final String name;
 
-  final WebClient httpClient;
+  final PooledWebClient httpClient;
 
   volatile CompletableFuture<PooledAggregatedHttpResponse> responseFuture;
 
-  HttpCall(WebClient httpClient, RequestSupplier request, BodyConverter<V> bodyConverter,
+  HttpCall(PooledWebClient httpClient, RequestSupplier request, BodyConverter<V> bodyConverter,
     String name) {
     this.httpClient = httpClient;
     this.name = name;
@@ -210,7 +210,7 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   CompletableFuture<PooledAggregatedHttpResponse> sendRequest() {
-    final HttpResponse response;
+    final PooledHttpResponse response;
     try (SafeCloseable ignored =
            Clients.withContextCustomizer(ctx -> ctx.logBuilder().name(name))) {
       HttpRequestWriter httpRequest = HttpRequest.streaming(request.headers());
@@ -218,12 +218,11 @@ public final class HttpCall<V> extends Call.Base<V> {
       request.writeBody(httpRequest::tryWrite);
       httpRequest.close();
     }
-    PooledHttpResponse pooledResponse = PooledHttpResponse.of(response);
     CompletableFuture<PooledAggregatedHttpResponse> responseFuture =
       RequestContext.mapCurrent(
-        ctx -> pooledResponse.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()),
+        ctx -> response.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()),
         // This should never be used in practice since the module runs in an Armeria server.
-        pooledResponse::aggregateWithPooledObjects);
+        response::aggregateWithPooledObjects);
     responseFuture = responseFuture.exceptionally(t -> {
       // unwrap is needed when PooledHttpResponse.of is used
       if (t instanceof CompletionException) t = t.getCause();
