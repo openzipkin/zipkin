@@ -78,7 +78,7 @@
     <!-- More efficient, gRPC ready server with brave tracing built-in -->
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-spring-boot-autoconfigure</artifactId>
+      <artifactId>armeria-spring-boot2-autoconfigure</artifactId>
       <version>${armeria.version}</version>
     </dependency>
     <dependency>
@@ -293,13 +293,13 @@
 
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-testing-junit</artifactId>
+      <artifactId>armeria-junit5</artifactId>
       <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-testing-junit4</artifactId>
+      <artifactId>armeria-junit4</artifactId>
       <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>
@@ -349,7 +349,7 @@
         <!-- /actuator endpoints -->
         <dependency>
           <groupId>${armeria.groupId}</groupId>
-          <artifactId>armeria-spring-boot-actuator-autoconfigure</artifactId>
+          <artifactId>armeria-spring-boot2-actuator-autoconfigure</artifactId>
           <version>${armeria.version}</version>
           <optional>true</optional>
         </dependency>
@@ -513,7 +513,7 @@
                 <!-- Actuator -->
                 <dependency>
                   <groupId>${armeria.groupId}</groupId>
-                  <artifactId>armeria-spring-boot-actuator-autoconfigure</artifactId>
+                  <artifactId>armeria-spring-boot2-actuator-autoconfigure</artifactId>
                 </dependency>
                 <dependency>
                   <groupId>org.springframework.boot</groupId>
@@ -598,11 +598,11 @@
                 <!-- Scribe Collector -->
                 <dependency>
                   <groupId>${project.groupId}.zipkin2</groupId>
-                  <artifactId>zipkin-collector-rabbitmq</artifactId>
+                  <artifactId>zipkin-collector-scribe</artifactId>
                 </dependency>
                 <exclude>
                   <groupId>${armeria.groupId}</groupId>
-                  <artifactId>armeria-thrift</artifactId>
+                  <artifactId>armeria-thrift0.13</artifactId>
                 </exclude>
               </excludes>
             </configuration>

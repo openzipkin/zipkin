@@ -66,13 +66,13 @@
 
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-testing-junit4</artifactId>
+      <artifactId>armeria-junit5</artifactId>
       <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-testing-junit</artifactId>
+      <artifactId>armeria-junit4</artifactId>
       <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,16 +13,15 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import com.linecorp.armeria.client.WebClient;
+import com.linecorp.armeria.client.unsafe.PooledWebClient;
 import org.junit.Test;
-import org.mockito.Mock;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class SearchCallFactoryTest {
-
-  @Mock WebClient httpClient;
+  PooledWebClient httpClient = mock(PooledWebClient.class);
 
   SearchCallFactory client = new SearchCallFactory(new HttpCall.Factory(httpClient));
 

@@ -21,7 +21,6 @@ import com.linecorp.armeria.client.metric.MetricCollectingClient;
 import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.metric.MeterIdPrefixFunction;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 
@@ -60,32 +59,10 @@ final class LazyHttpClientImpl implements LazyHttpClient {
   EndpointGroup getEndpoint() {
     EndpointGroup initial = initialEndpoints.get();
     // Only health-check when there are alternative endpoints. There aren't when instanceof Endpoint
-    if (initial instanceof Endpoint) return initial;
+    if (initial instanceof Endpoint || !healthCheck.isEnabled()) return initial;
 
     // Wrap the result when health checking is enabled.
-    EndpointGroup result = initial;
-    if (healthCheck.isEnabled()) result = decorateHealthCheck(initial);
-
-    boolean empty = true;
-    Exception thrown = null;
-    try {
-      // Since we aren't holding up server startup, or sitting on the event loop, it is ok to
-      // block. The alternative is round-robin, which could be unlucky and hit a bad node first.
-      //
-      // We are blocking up to the connection timeout which should be enough time for any DNS
-      // resolution that hasn't happened yet to finish.
-      empty = result.whenReady().get(timeoutMillis, TimeUnit.MILLISECONDS).isEmpty();
-    } catch (Exception e) {
-      thrown = e;
-    }
-
-    // If health-checking is enabled, we can end up with no endpoints after waiting
-    if (empty) {
-      result.close(); // no-op when not health checked
-      throw new IllegalStateException("couldn't connect any of " + initial.endpoints(), thrown);
-    }
-
-    return result;
+    return decorateHealthCheck(initial);
   }
 
   // Enables health-checking of an endpoint group, so we only send requests to endpoints that are up

@@ -15,7 +15,7 @@ package zipkin2.server.internal.elasticsearch;
 
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.server.ServerBuilder;
-import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
+import com.linecorp.armeria.testing.junit5.server.mock.MockWebServerExtension;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 import org.junit.jupiter.api.AfterEach;

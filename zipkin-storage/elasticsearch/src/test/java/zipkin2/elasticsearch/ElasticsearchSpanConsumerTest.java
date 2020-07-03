@@ -20,7 +20,7 @@ import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
-import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
+import com.linecorp.armeria.testing.junit5.server.mock.MockWebServerExtension;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;

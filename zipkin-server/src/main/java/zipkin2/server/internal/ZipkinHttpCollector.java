@@ -21,6 +21,8 @@ import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.ResponseHeaders;
+import com.linecorp.armeria.common.unsafe.PooledAggregatedHttpRequest;
+import com.linecorp.armeria.common.unsafe.PooledHttpRequest;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.annotation.Consumes;
 import com.linecorp.armeria.server.annotation.ConsumesJson;
@@ -108,7 +110,9 @@ public class ZipkinHttpCollector {
     HttpRequest req) {
     CompletableCallback result = new CompletableCallback();
 
-    req.aggregateWithPooledObjects(ctx.contextAwareEventLoop(), ctx.alloc()).handle((msg, t) -> {
+    CompletableFuture<PooledAggregatedHttpRequest> aggregatedRequest = PooledHttpRequest.of(req)
+      .aggregateWithPooledObjects(ctx.contextAwareEventLoop(), ctx.alloc());
+    aggregatedRequest.handle((msg, t) -> {
       if (t != null) {
         result.onError(t);
         return null;

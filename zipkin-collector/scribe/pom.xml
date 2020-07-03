@@ -42,7 +42,7 @@
 
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-thrift</artifactId>
+      <artifactId>armeria-thrift0.13</artifactId>
       <version>${armeria.version}</version>
     </dependency>
 
@@ -55,7 +55,7 @@
 
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-testing-junit4</artifactId>
+      <artifactId>armeria-junit4</artifactId>
       <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>
