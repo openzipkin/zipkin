@@ -17,7 +17,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.linecorp.armeria.client.Clients;
 import com.linecorp.armeria.client.UnprocessedRequestException;
-import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.unsafe.PooledWebClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
@@ -122,8 +121,8 @@ public final class HttpCall<V> extends Call.Base<V> {
   public static class Factory {
     final PooledWebClient httpClient;
 
-    public Factory(WebClient httpClient) {
-      this.httpClient = PooledWebClient.of(httpClient);
+    public Factory(PooledWebClient httpClient) {
+      this.httpClient = httpClient;
     }
 
     public <V> HttpCall<V> newCall(

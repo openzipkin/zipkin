@@ -17,6 +17,7 @@ import com.google.common.util.concurrent.SimpleTimeLimiter;
 import com.linecorp.armeria.client.UnprocessedRequestException;
 import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroupException;
+import com.linecorp.armeria.client.unsafe.PooledWebClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
@@ -68,7 +69,7 @@ class HttpCallTest {
   HttpCall.Factory http;
 
   @BeforeEach void setUp() {
-    http = new HttpCall.Factory(WebClient.of(server.httpUri()));
+    http = new HttpCall.Factory(PooledWebClient.of(WebClient.of(server.httpUri())));
   }
 
   @Test void emptyContent() throws Exception {
@@ -219,12 +220,12 @@ class HttpCallTest {
     server.enqueue(SUCCESS_RESPONSE);
 
     AtomicReference<RequestLog> log = new AtomicReference<>();
-    http = new HttpCall.Factory(WebClient.builder(server.httpUri())
+    http = new HttpCall.Factory(PooledWebClient.of(WebClient.builder(server.httpUri())
       .decorator((client, ctx, req) -> {
         ctx.log().whenComplete().thenAccept(log::set);
         return client.execute(ctx, req);
       })
-      .build());
+      .build()));
 
     http.newCall(REQUEST, NULL, "custom-name").execute();
 
@@ -235,8 +236,8 @@ class HttpCallTest {
   @Test void wrongScheme() {
     server.enqueue(SUCCESS_RESPONSE);
 
-    http = new HttpCall.Factory(WebClient.builder("https://localhost:" + server.httpPort())
-      .build());
+    http = new HttpCall.Factory(PooledWebClient.of(
+      WebClient.builder("https://localhost:" + server.httpPort()).build()));
 
     assertThatThrownBy(() -> http.newCall(REQUEST, NULL, "test").execute())
       .isInstanceOf(RejectedExecutionException.class)
@@ -246,11 +247,11 @@ class HttpCallTest {
   @Test void unprocessedRequest() {
     server.enqueue(SUCCESS_RESPONSE);
 
-    http = new HttpCall.Factory(WebClient.builder(server.httpUri())
+    http = new HttpCall.Factory(PooledWebClient.of(WebClient.builder(server.httpUri())
       .decorator((client, ctx, req) -> {
         throw UnprocessedRequestException.of(new EndpointGroupException("No endpoints"));
       })
-      .build());
+      .build()));
 
     assertThatThrownBy(() -> http.newCall(REQUEST, NULL, "test").execute())
       .isInstanceOf(RejectedExecutionException.class)
