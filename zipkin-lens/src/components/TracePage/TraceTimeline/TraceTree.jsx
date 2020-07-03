@@ -294,6 +294,7 @@ const TraceTree = React.memo(
                 className={classes.serviceBadgeText}
               >
                 {serviceName}
+                <title>{serviceName}</title>
               </text>
             </svg>
           </g>
