@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,8 +28,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import zipkin2.Call;
 import zipkin2.internal.Nullable;
-import zipkin2.storage.cassandra.Schema.AnnotationUDT;
-import zipkin2.storage.cassandra.Schema.EndpointUDT;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
@@ -133,8 +131,8 @@ final class InsertSpan extends ResultSetFutureCall<Void> {
           span.name(),
           span.timestampAsLong(),
           span.durationAsLong(),
-          span.localEndpoint() != null ? new EndpointUDT(span.localEndpoint()) : null,
-          span.remoteEndpoint() != null ? new EndpointUDT(span.remoteEndpoint()) : null,
+          EndpointUDT.create(span.localEndpoint()),
+          EndpointUDT.create(span.remoteEndpoint()),
           annotations,
           span.tags(),
           annotation_query,

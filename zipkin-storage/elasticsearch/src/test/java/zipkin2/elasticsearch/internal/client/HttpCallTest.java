@@ -13,7 +13,6 @@
  */
 package zipkin2.elasticsearch.internal.client; // to access package-private stuff
 
-import com.google.common.util.concurrent.SimpleTimeLimiter;
 import com.linecorp.armeria.client.UnprocessedRequestException;
 import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroupException;
@@ -23,7 +22,6 @@ import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpStatus;
-import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.RequestHeaders;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.common.logging.RequestLog;
@@ -32,15 +30,14 @@ import com.linecorp.armeria.testing.junit5.server.mock.MockWebServerExtension;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,9 +46,9 @@ import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.internal.Nullable;
 
+import static com.linecorp.armeria.common.MediaType.PLAIN_TEXT_UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
 import static zipkin2.TestObjects.UTF_8;
@@ -72,12 +69,13 @@ class HttpCallTest {
     http = new HttpCall.Factory(PooledWebClient.of(WebClient.of(server.httpUri())));
   }
 
-  @Test void emptyContent() throws Exception {
-    server.enqueue(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.PLAIN_TEXT_UTF_8, ""));
+  @Test void emptyContent() throws IOException {
+    server.enqueue(AggregatedHttpResponse.of(HttpStatus.OK, PLAIN_TEXT_UTF_8, ""));
 
-    assertThat(http.newCall(REQUEST, (parser, contentString) -> fail(), "test").execute()).isNull();
+    HttpCall<String> call = http.newCall(REQUEST, (parser, contentString) -> fail(), "test");
+    assertThat(call.execute()).isNull();
 
-    server.enqueue(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.PLAIN_TEXT_UTF_8, ""));
+    server.enqueue(AggregatedHttpResponse.of(HttpStatus.OK, PLAIN_TEXT_UTF_8, ""));
     CompletableCallback<String> future = new CompletableCallback<>();
     http.newCall(REQUEST, (parser, contentString) -> "hello", "test").enqueue(future);
     assertThat(future.join()).isNull();
@@ -87,7 +85,9 @@ class HttpCallTest {
     server.enqueue(SUCCESS_RESPONSE);
 
     final LinkedBlockingQueue<Object> q = new LinkedBlockingQueue<>();
+    CountDownLatch latch = new CountDownLatch(1);
     http.newCall(REQUEST, (parser, contentString) -> {
+      latch.countDown();
       throw new LinkageError();
     }, "test").enqueue(new Callback<Object>() {
       @Override public void onSuccess(@Nullable Object value) {
@@ -99,30 +99,23 @@ class HttpCallTest {
       }
     });
 
-    ExecutorService cached = Executors.newCachedThreadPool();
-    SimpleTimeLimiter timeLimiter = SimpleTimeLimiter.create(cached);
-    try {
-      timeLimiter.callWithTimeout(q::take, 100, TimeUnit.MILLISECONDS);
-      failBecauseExceptionWasNotThrown(TimeoutException.class);
-    } catch (TimeoutException expected) {
-    } finally {
-      cached.shutdownNow();
-    }
+    // It can take some time for the HTTP response to process. Wait until we reach the parser
+    latch.await();
+
+    // Wait a little longer for a callback to fire (it should never do this)
+    assertThat(q.poll(100, TimeUnit.MILLISECONDS))
+      .as("expected callbacks to never signal")
+      .isNull();
   }
 
-  @Test void executionException_conversionException() throws Exception {
+  @Test void executionException_conversionException() {
     server.enqueue(SUCCESS_RESPONSE);
 
     Call<?> call = http.newCall(REQUEST, (parser, contentString) -> {
       throw new IllegalArgumentException("eeek");
     }, "test");
 
-    try {
-      call.execute();
-      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
-    } catch (IllegalArgumentException expected) {
-      assertThat(expected).isInstanceOf(IllegalArgumentException.class);
-    }
+    assertThatThrownBy(call::execute).isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test void cloned() throws Exception {
@@ -131,42 +124,31 @@ class HttpCallTest {
     Call<?> call = http.newCall(REQUEST, (parser, contentString) -> null, "test");
     call.execute();
 
-    try {
-      call.execute();
-      failBecauseExceptionWasNotThrown(IllegalStateException.class);
-    } catch (IllegalStateException expected) {
-      assertThat(expected).isInstanceOf(IllegalStateException.class);
-    }
+    assertThatThrownBy(call::execute).isInstanceOf(IllegalStateException.class);
 
     server.enqueue(SUCCESS_RESPONSE);
 
     call.clone().execute();
   }
 
-  @Test void executionException_5xx() throws Exception {
+  @Test void executionException_5xx() {
     server.enqueue(AggregatedHttpResponse.of(HttpStatus.INTERNAL_SERVER_ERROR));
 
     Call<?> call = http.newCall(REQUEST, NULL, "test");
 
-    try {
-      call.execute();
-      failBecauseExceptionWasNotThrown(RuntimeException.class);
-    } catch (RuntimeException expected) {
-      assertThat(expected).hasMessage("response for / failed: 500 Internal Server Error");
-    }
+    assertThatThrownBy(call::execute)
+      .isInstanceOf(RuntimeException.class)
+      .hasMessage("response for / failed: 500 Internal Server Error");
   }
 
-  @Test void executionException_404() throws Exception {
+  @Test void executionException_404() {
     server.enqueue(AggregatedHttpResponse.of(HttpStatus.NOT_FOUND));
 
     Call<?> call = http.newCall(REQUEST, NULL, "test");
 
-    try {
-      call.execute();
-      failBecauseExceptionWasNotThrown(FileNotFoundException.class);
-    } catch (FileNotFoundException expected) {
-      assertThat(expected).hasMessage("/");
-    }
+    assertThatThrownBy(call::execute)
+      .isInstanceOf(FileNotFoundException.class)
+      .hasMessage("/");
   }
 
   @Test void releasesAllReferencesToByteBuf() {
@@ -187,7 +169,7 @@ class HttpCallTest {
   }
 
   // For simplicity, we also parse messages from AWS Elasticsearch, as it prevents copy/paste.
-  @Test void executionException_message() throws Exception {
+  @Test void executionException_message() {
     Map<AggregatedHttpResponse, String> responseToMessage = new LinkedHashMap<>();
     responseToMessage.put(AggregatedHttpResponse.of(
       ResponseHeaders.of(HttpStatus.FORBIDDEN),
@@ -207,12 +189,10 @@ class HttpCallTest {
     for (Map.Entry<AggregatedHttpResponse, String> entry : responseToMessage.entrySet()) {
       server.enqueue(entry.getKey());
 
-      try {
-        call.clone().execute();
-        failBecauseExceptionWasNotThrown(RuntimeException.class);
-      } catch (RuntimeException expected) {
-        assertThat(expected).hasMessage(entry.getValue());
-      }
+      call = call.clone();
+      assertThatThrownBy(call::execute)
+        .isInstanceOf(RuntimeException.class)
+        .hasMessage(entry.getValue());
     }
   }
 

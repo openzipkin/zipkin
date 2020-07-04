@@ -15,12 +15,10 @@ package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.Host;
 import com.datastax.driver.core.Session;
-import com.google.common.util.concurrent.Uninterruptibles;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
@@ -43,7 +41,7 @@ import static zipkin2.storage.cassandra.v1.InternalForTests.writeDependencyLinks
 class ITCassandraStorage {
 
   @RegisterExtension CassandraStorageExtension backend =
-    new CassandraStorageExtension("openzipkin/zipkin-cassandra:2.21.4");
+    new CassandraStorageExtension("openzipkin/zipkin-cassandra:2.21.5");
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<CassandraStorage> {
@@ -312,7 +310,12 @@ class ITCassandraStorage {
     while (true) {
       for (Host host : state.getConnectedHosts()) {
         if (state.getInFlightQueries(host) > 0) {
-          Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
+          try {
+            Thread.sleep(100);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(e);
+          }
           state = storage.session().getState();
           continue refresh;
         }

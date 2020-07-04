@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,9 +21,8 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -162,11 +161,10 @@ final class Indexer {
     }
   }
 
-  @VisibleForTesting
   static ImmutableSetMultimap<PartitionKeyToTraceId, Long> entriesThatIncreaseGap(
       ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState,
       ImmutableSetMultimap<PartitionKeyToTraceId, Long> updates) {
-    ImmutableSet.Builder<PartitionKeyToTraceId> toUpdate = ImmutableSet.builder();
+    Set<PartitionKeyToTraceId> toUpdate = new LinkedHashSet<>();
 
     // Enter a loop that affects shared state when an update widens the time interval for a key.
     for (Map.Entry<PartitionKeyToTraceId, Long> input : updates.entries()) {
@@ -203,7 +201,7 @@ final class Indexer {
     // end up with less Cassandra writes.
     ImmutableSetMultimap.Builder<PartitionKeyToTraceId, Long> result =
       ImmutableSetMultimap.builder();
-    for (PartitionKeyToTraceId needsUpdate : toUpdate.build()) {
+    for (PartitionKeyToTraceId needsUpdate : toUpdate) {
       Pair firstLast = sharedState.get(needsUpdate);
       if (updates.containsEntry(needsUpdate, firstLast.left)) {
         result.put(needsUpdate, firstLast.left);

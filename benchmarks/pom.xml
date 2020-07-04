@@ -36,11 +36,6 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
-    </dependency>
     <!-- for codec benchmarks -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -114,7 +109,6 @@
       <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-storage-cassandra</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
       <exclusions>
         <exclusion>
           <groupId>io.netty</groupId>

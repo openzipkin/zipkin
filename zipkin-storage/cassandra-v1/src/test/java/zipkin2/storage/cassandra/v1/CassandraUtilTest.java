@@ -14,21 +14,18 @@
 package zipkin2.storage.cassandra.v1;
 
 import java.util.Date;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import zipkin2.Span;
 import zipkin2.internal.DateUtil;
 import zipkin2.storage.QueryRequest;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.FRONTEND;
 
 public class CassandraUtilTest {
-
-  @Rule public ExpectedException thrown = ExpectedException.none();
   QueryRequest request = QueryRequest.newBuilder().endTs(1).limit(1).lookback(1).build();
 
   @Test
@@ -38,9 +35,10 @@ public class CassandraUtilTest {
 
   @Test
   public void annotationKeys_serviceNameRequired() {
-    thrown.expect(IllegalArgumentException.class);
+    request = request.toBuilder().parseAnnotationQuery("error").build();
 
-    CassandraUtil.annotationKeys(request.toBuilder().parseAnnotationQuery("sr").build());
+    assertThatThrownBy(() -> CassandraUtil.annotationKeys(request))
+      .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test

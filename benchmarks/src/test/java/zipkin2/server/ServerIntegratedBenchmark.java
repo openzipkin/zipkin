@@ -14,7 +14,6 @@
 package zipkin2.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.Closer;
 import com.linecorp.armeria.client.WebClient;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import java.io.File;
@@ -71,14 +70,14 @@ class ServerIntegratedBenchmark {
 
   static final boolean WAIT_AFTER_BENCHMARK = "true".equals(System.getenv("ZIPKIN_BENCHMARK_WAIT"));
 
-  Closer closer;
+  List<GenericContainer<?>> containers;
 
   @BeforeEach void setUp() {
-    closer = Closer.create();
+    containers = new ArrayList<>();
   }
 
-  @AfterEach void tearDown() throws Exception {
-    closer.close();
+  @AfterEach void tearDown() {
+    containers.forEach(GenericContainer::stop);
   }
 
   @Test void inMemory() throws Exception {
@@ -93,7 +92,7 @@ class ServerIntegratedBenchmark {
       .withLabel("storageType", "elasticsearch")
       .withExposedPorts(9200)
       .waitingFor(new HttpWaitStrategy().forPath("/_cluster/health"));
-    closer.register(elasticsearch::stop);
+    containers.add(elasticsearch);
 
     runBenchmark(elasticsearch);
   }
@@ -114,7 +113,7 @@ class ServerIntegratedBenchmark {
       .withLabel("storageType", storageType)
       .withExposedPorts(9042)
       .waitingFor(Wait.forLogMessage(".*Starting listening for CQL clients.*", 1));
-    closer.register(cassandra::stop);
+    containers.add(cassandra);
     return cassandra;
   }
 
@@ -125,7 +124,7 @@ class ServerIntegratedBenchmark {
       .withLabel("name", "mysql")
       .withLabel("storageType", "mysql")
       .withExposedPorts(3306);
-    closer.register(mysql::stop);
+    containers.add(mysql);
 
     runBenchmark(mysql);
   }
@@ -134,12 +133,12 @@ class ServerIntegratedBenchmark {
   // send to, we can reuse our benchmark logic here to check it. Note, this benchmark always uses
   // a docker image and ignores RELEASED_ZIPKIN_SERVER.
   @Test void xrayUdp() throws Exception {
-    GenericContainer<?> zipkin = new GenericContainer<>("openzipkin/zipkin-aws:0.20.0")
+    GenericContainer<?> zipkin = new GenericContainer<>("openzipkin/zipkin-aws")
       .withNetwork(Network.SHARED)
       .withNetworkAliases("zipkin")
       .withEnv("STORAGE_TYPE", "xray")
       .withExposedPorts(9411);
-    closer.register(zipkin::stop);
+    containers.add(zipkin);
 
     runBenchmark(null, zipkin);
   }
@@ -156,7 +155,7 @@ class ServerIntegratedBenchmark {
       .withCommand("backend")
       .withExposedPorts(9000)
       .waitingFor(Wait.forHttp("/actuator/health"));
-    closer.register(backend::stop);
+    containers.add(backend);
 
     GenericContainer<?> frontend = new GenericContainer<>("openzipkin/example-sleuth-webmvc")
       .withNetwork(Network.SHARED)
@@ -164,7 +163,7 @@ class ServerIntegratedBenchmark {
       .withCommand("frontend")
       .withExposedPorts(8081)
       .waitingFor(Wait.forHttp("/actuator/health"));
-    closer.register(frontend::stop);
+    containers.add(frontend);
 
     GenericContainer<?> prometheus = new GenericContainer<>("prom/prometheus")
       .withNetwork(Network.SHARED)
@@ -172,7 +171,7 @@ class ServerIntegratedBenchmark {
       .withExposedPorts(9090)
       .withCopyFileToContainer(
         MountableFile.forClasspathResource("prometheus.yml"), "/etc/prometheus/prometheus.yml");
-    closer.register(prometheus::stop);
+    containers.add(prometheus);
 
     GenericContainer<?> grafana = new GenericContainer<>("grafana/grafana")
       .withNetwork(Network.SHARED)
@@ -180,19 +179,19 @@ class ServerIntegratedBenchmark {
       .withExposedPorts(3000)
       .withEnv("GF_AUTH_ANONYMOUS_ENABLED", "true")
       .withEnv("GF_AUTH_ANONYMOUS_ORG_ROLE", "Admin");
-    closer.register(grafana::stop);
+    containers.add(grafana);
 
     GenericContainer<?> grafanaDashboards = new GenericContainer<>("appropriate/curl")
       .withNetwork(Network.SHARED)
       .withCommand("/create.sh")
       .withCopyFileToContainer(
         MountableFile.forClasspathResource("create-datasource-and-dashboard.sh"), "/create.sh");
-    closer.register(grafanaDashboards::stop);
+    containers.add(grafanaDashboards);
 
     GenericContainer<?> wrk = new GenericContainer<>("skandyla/wrk")
       .withNetwork(Network.SHARED)
       .withCommand("-t4 -c128 -d100s http://frontend:8081 --latency");
-    closer.register(wrk::stop);
+    containers.add(wrk);
 
     grafanaDashboards.dependsOn(grafana);
     wrk.dependsOn(frontend, backend, prometheus, grafanaDashboards, zipkin);
@@ -326,7 +325,7 @@ class ServerIntegratedBenchmark {
       .withExposedPorts(9411)
       .withEnv(env)
       .waitingFor(new HttpWaitStrategy().forPath("/health"));
-    closer.register(zipkin::stop);
+    containers.add(zipkin);
     return zipkin;
   }
 

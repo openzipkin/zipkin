@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,12 +17,11 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.exceptions.BusyConnectionException;
 import com.datastax.driver.core.exceptions.BusyPoolException;
 import com.datastax.driver.core.exceptions.QueryConsistencyException;
+import com.google.common.util.concurrent.SettableFuture;
 import java.net.InetSocketAddress;
-import java.util.concurrent.Future;
 import org.junit.Test;
 import zipkin2.Callback;
 
-import static com.google.common.util.concurrent.JdkFutureAdapters.listenInPoolThread;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.Answers.CALLS_REAL_METHODS;
@@ -34,7 +33,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
 public class ResultSetFutureCallTest {
-  Future<ResultSet> future = mock(Future.class);
+  SettableFuture<ResultSet> future = SettableFuture.create();
   ResultSet resultSet = mock(ResultSet.class);
 
   ResultSetFutureCall<ResultSet> call =
@@ -48,28 +47,24 @@ public class ResultSetFutureCallTest {
   }
 
   @Test public void submit_callsFutureGet() throws Exception {
-    when(call.newFuture()).thenReturn(listenInPoolThread(future));
+    when(call.newFuture()).thenReturn(future);
     when(call.map(resultSet)).thenReturn(resultSet);
-
-    when(future.isDone()).thenReturn(true);
-    when(future.get()).thenReturn(resultSet);
 
     call.enqueue(callback);
 
-    verify(future).isDone();
-    verify(future).get();
+    future.set(resultSet);
 
     verify(callback).onSuccess(resultSet);
-    verifyNoMoreInteractions(future, callback);
+    verifyNoMoreInteractions(callback);
   }
 
   @Test public void submit_cancel_afterEnqueue() {
-    when(call.newFuture()).thenReturn(listenInPoolThread(future));
+    when(call.newFuture()).thenReturn(future);
     call.enqueue(callback);
     call.cancel();
 
     assertThat(call.isCanceled()).isTrue();
-    verify(future).cancel(true);
+    assertThat(future.isCancelled()).isTrue();
   }
 
   @Test public void submit_callbackError_onErrorCreatingFuture() {
