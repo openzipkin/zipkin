@@ -133,7 +133,7 @@ final class CassandraUtil {
     return result;
   }
 
-  @Nullable static InetAddress InetAddressOrNull(@Nullable String string, @Nullable byte[] bytes) {
+  @Nullable static InetAddress inetAddressOrNull(@Nullable String string, @Nullable byte[] bytes) {
     try {
       return bytes == null ? null : InetAddress.getByAddress(bytes);
     } catch (UnknownHostException e) {

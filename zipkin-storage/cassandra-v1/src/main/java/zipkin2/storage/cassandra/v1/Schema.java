@@ -17,14 +17,10 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.Session;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static zipkin2.storage.cassandra.internal.Resources.resourceToString;
 import static zipkin2.storage.cassandra.v1.Tables.AUTOCOMPLETE_TAGS;
 import static zipkin2.storage.cassandra.v1.Tables.REMOTE_SERVICE_NAMES;
@@ -144,15 +140,11 @@ final class Schema {
   }
 
   static void applyCqlFile(String keyspace, Session session, String resource) {
-    try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(resource), UTF_8)) {
-      for (String cmd : resourceToString(resource).split(";", 100)) {
-        cmd = cmd.trim().replace(" zipkin", " " + keyspace);
-        if (!cmd.isEmpty()) {
-          session.execute(cmd);
-        }
+    for (String cmd : resourceToString(resource).split(";", 100)) {
+      cmd = cmd.trim().replace(" zipkin", " " + keyspace);
+      if (!cmd.isEmpty()) {
+        session.execute(cmd);
       }
-    } catch (IOException ex) {
-      LOG.error(ex.getMessage(), ex);
     }
   }
 }

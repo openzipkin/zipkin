@@ -19,7 +19,7 @@ import java.net.InetAddress;
 import zipkin2.Endpoint;
 import zipkin2.internal.Nullable;
 
-import static zipkin2.storage.cassandra.CassandraUtil.InetAddressOrNull;
+import static zipkin2.storage.cassandra.CassandraUtil.inetAddressOrNull;
 
 @UDT(name = "endpoint")
 final class EndpointUDT implements Serializable { // for Spark jobs
@@ -29,8 +29,8 @@ final class EndpointUDT implements Serializable { // for Spark jobs
     if (endpoint == null) return null;
     EndpointUDT result = new EndpointUDT();
     result.service = endpoint.serviceName();
-    result.ipv4 = InetAddressOrNull(endpoint.ipv4(), endpoint.ipv4Bytes());
-    result.ipv6 = InetAddressOrNull(endpoint.ipv6(), endpoint.ipv6Bytes());
+    result.ipv4 = inetAddressOrNull(endpoint.ipv4(), endpoint.ipv4Bytes());
+    result.ipv6 = inetAddressOrNull(endpoint.ipv6(), endpoint.ipv6Bytes());
     result.port = endpoint.portAsInt();
     return result;
   }
