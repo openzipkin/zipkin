@@ -16,44 +16,48 @@
 
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  Box,
-  ClickAwayListener,
-  Theme,
-  createStyles,
-  makeStyles,
-} from '@material-ui/core';
+import { Box, ClickAwayListener } from '@material-ui/core';
 import React from 'react';
 import { useMount } from 'react-use';
+import styled from 'styled-components';
 
 import Criterion from '../Criterion';
 import SuggestionList from './SuggestionList';
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    root: {
-      cursor: 'pointer',
-      '& > *:hover': {
-        opacity: 0.9,
-      },
-    },
-    deleteButton: {
-      height: '100%',
-      width: 30,
-      color: theme.palette.common.white,
-      backgroundColor: theme.palette.primary.main,
-      cursor: 'pointer',
-      border: 'none',
-    },
-    input: {
-      width: 350,
-      height: 40,
-      padding: 10,
-      boxSizing: 'border-box',
-      fontSize: '1.1rem',
-    },
-  }),
-);
+const Root = styled(Box)`
+  display: flex;
+  height: 40px;
+  border-radius: 3px;
+  box-shadow: ${({ theme }) => theme.shadows[1]};
+  overflow: hidden;
+  margin-right: ${({ theme }) => theme.spacing(1)}px;
+  font-size: 1.1rem;
+  color: ${({ theme }) => theme.palette.common.white};
+  cursor: pointer;
+  & > *:hover {
+    opacity: 0.9;
+  }
+`;
+
+const DeleteButton = styled.button`
+  height: 100%;
+  width: 30;
+  color: ${({ theme }) => theme.palette.common.white};
+  background-color: ${({ theme }) => theme.palette.primary.main};
+  cursor: pointer;
+  border: none;
+  &:focus {
+    outline: none;
+  }
+`;
+
+const Input = styled.input`
+  width: 350px;
+  height: 40px;
+  padding: 10px;
+  box-sizing: border-box;
+  font-size: 1.1rem;
+`;
 
 interface CriterionBoxProps {
   criteria: Criterion[];
@@ -106,8 +110,6 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
   onDelete,
   loadAutocompleteValues,
 }) => {
-  const classes = useStyles();
-
   const inputEl = React.useRef<HTMLInputElement>(null);
 
   const [text, setText] = React.useState(initialText(criterion));
@@ -345,18 +347,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
 
   if (!isFocused) {
     return (
-      <Box
-        display="flex"
-        height={40}
-        borderRadius={3}
-        boxShadow={1}
-        overflow="hidden"
-        onClick={onFocus}
-        mr={1}
-        fontSize="1.1rem"
-        color="common.white"
-        className={classes.root}
-      >
+      <Root onClick={onFocus}>
         <Box
           maxWidth={150}
           height="100%"
@@ -381,26 +372,21 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
             {criterion.value}
           </Box>
         )}
-        <button
-          type="button"
-          onClick={handleDeleteButtonClick}
-          className={classes.deleteButton}
-        >
+        <DeleteButton type="button" onClick={handleDeleteButtonClick}>
           <FontAwesomeIcon icon={faTimes} size="lg" />
-        </button>
-      </Box>
+        </DeleteButton>
+      </Root>
     );
   }
 
   return (
     <ClickAwayListener onClickAway={onBlur}>
       <Box mr={2} position="relative">
-        <input
+        <Input
           ref={inputEl}
           value={text}
           onKeyDown={handleKeyDown}
           onChange={handleChange}
-          className={classes.input}
         />
         {(isLoadingSuggestions ||
           (suggestions && suggestions.length !== 0)) && (
