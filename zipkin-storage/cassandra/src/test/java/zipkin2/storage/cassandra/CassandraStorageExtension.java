@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,8 +17,6 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.Session;
-import com.google.common.io.Closer;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -37,8 +35,8 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
   static final int CASSANDRA_PORT = 9042;
   final String image;
   CassandraContainer container;
+  Cluster cluster;
   Session session;
-  Closer closer = Closer.create();
 
   CassandraStorageExtension(String image) {
     this.image = image;
@@ -67,27 +65,26 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
     }
 
     try {
-      session = tryToInitializeSession();
+      tryToInitializeSession();
     } catch (RuntimeException | Error e) {
       if (container == null) throw e;
       LOGGER.warn("Couldn't connect to docker image " + image + ": " + e.getMessage(), e);
       container.stop();
       container = null; // try with local connection instead
-      session = tryToInitializeSession();
+      tryToInitializeSession();
     }
-    closer.register(session);
   }
 
-  Session tryToInitializeSession() throws IOException {
-    Cluster cluster = closer.register(getCluster(contactPoint()));
-    Session session = closer.register(cluster.newSession());
+  void tryToInitializeSession() {
     try {
+      cluster = getCluster(contactPoint());
+      session = cluster.newSession();
       session.execute("SELECT now() FROM system.local");
-    } catch (RuntimeException e) {
-      closer.close();
+    } catch (RuntimeException e) { // don't leak on unexpected exception!
+      if (session != null) session.close();
+      if (cluster != null) cluster.close();
       assumeTrue(false, e.getMessage());
     }
-    return session;
   }
 
   CassandraStorage.Builder computeStorageBuilder() {
@@ -114,7 +111,8 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
     }
 
     try {
-      closer.close();
+      if (session != null) session.close();
+      if (cluster != null) cluster.close();
     } catch (Exception | Error e) {
       LOGGER.warn("error closing session " + e.getMessage(), e);
     } finally {

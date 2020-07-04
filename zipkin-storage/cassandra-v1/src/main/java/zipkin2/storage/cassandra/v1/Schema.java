@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,7 +17,6 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.Session;
-import com.google.common.io.CharStreams;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -26,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static zipkin2.storage.cassandra.internal.Resources.resourceToString;
 import static zipkin2.storage.cassandra.v1.Tables.AUTOCOMPLETE_TAGS;
 import static zipkin2.storage.cassandra.v1.Tables.REMOTE_SERVICE_NAMES;
 
@@ -145,7 +145,7 @@ final class Schema {
 
   static void applyCqlFile(String keyspace, Session session, String resource) {
     try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(resource), UTF_8)) {
-      for (String cmd : CharStreams.toString(reader).split(";", 100)) {
+      for (String cmd : resourceToString(resource).split(";", 100)) {
         cmd = cmd.trim().replace(" zipkin", " " + keyspace);
         if (!cmd.isEmpty()) {
           session.execute(cmd);

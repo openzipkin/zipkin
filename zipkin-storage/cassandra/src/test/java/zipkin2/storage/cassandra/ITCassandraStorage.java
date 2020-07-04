@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -35,7 +34,6 @@ import zipkin2.TestObjects;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
-import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
@@ -45,7 +43,7 @@ import static zipkin2.storage.cassandra.InternalForTests.writeDependencyLinks;
 class ITCassandraStorage {
 
   @RegisterExtension CassandraStorageExtension backend = new CassandraStorageExtension(
-    "openzipkin/zipkin-cassandra:2.21.4");
+    "openzipkin/zipkin-cassandra:2.21.5");
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<CassandraStorage> {
@@ -320,7 +318,12 @@ class ITCassandraStorage {
     while (true) {
       for (Host host : state.getConnectedHosts()) {
         if (state.getInFlightQueries(host) > 0) {
-          sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
+          try {
+            Thread.sleep(100);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(e);
+          }
           state = storage.session().getState();
           continue refresh;
         }

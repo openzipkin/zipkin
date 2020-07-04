@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -23,8 +23,6 @@ import com.google.auto.value.AutoValue;
 import java.util.Set;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 final class SelectTraceIdTimestampFromServiceSpanName extends ResultSetFutureCall<ResultSet> {
   @AutoValue
@@ -61,8 +59,9 @@ final class SelectTraceIdTimestampFromServiceSpanName extends ResultSetFutureCal
 
     Call<Set<Pair>> newCall(
         String serviceName, String spanName, long endTs, long lookback, int limit) {
-      checkArgument(serviceName != null, "serviceName required on spanName query");
-      checkArgument(spanName != null, "spanName required on spanName query");
+      // These are checked before calling, but verify pre-conditions as otherwise bugs are subtle
+      if (serviceName == null) throw new NullPointerException("serviceName == null");
+      if (spanName == null) throw new NullPointerException("spanName == null");
       String serviceSpanName = serviceName + "." + spanName;
       long startTs = Math.max(endTs - lookback, 0); // >= 1970
       Input input =

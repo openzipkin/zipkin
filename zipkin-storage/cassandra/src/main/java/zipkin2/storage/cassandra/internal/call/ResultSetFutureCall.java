@@ -21,7 +21,6 @@ import com.datastax.driver.core.exceptions.DriverException;
 import com.datastax.driver.core.exceptions.DriverInternalError;
 import com.datastax.driver.core.exceptions.QueryConsistencyException;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.Uninterruptibles;
 import java.util.concurrent.ExecutionException;
 import zipkin2.Call;
 import zipkin2.Callback;
@@ -89,13 +88,29 @@ public abstract class ResultSetFutureCall<V> extends Call.Base<V>
     if (future instanceof ResultSetFuture) {
       return ((ResultSetFuture) future).getUninterruptibly();
     }
-    try { // emulate ResultSetFuture.getUninterruptibly
-      return Uninterruptibles.getUninterruptibly(future);
+
+    // Like Guava's Uninterruptables.getUninterruptibly, except we process exceptions
+    boolean interrupted = false;
+    try {
+      // loop on interrupted until get() returns or throws something else
+      while (true) {
+        try {
+          return future.get();
+        } catch (InterruptedException e) {
+          interrupted = true;
+        }
+      }
     } catch (ExecutionException e) {
+      // emulate ResultSetFuture.getUninterruptibly unwrapping of driver exceptions
       Throwable cause = e.getCause();
       if (cause instanceof Error) throw ((Error) cause);
       if (cause instanceof DriverException) throw ((DriverException) cause).copy();
       throw new DriverInternalError("Unexpected exception thrown", cause);
+    } finally {
+      // Reset once, instead of doing so each get() was interrupted.
+      if (interrupted) {
+        Thread.currentThread().interrupt();
+      }
     }
   }
 }

@@ -15,6 +15,8 @@ package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.LocalDate;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -23,6 +25,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin2.Annotation;
 import zipkin2.Call;
 import zipkin2.Span;
@@ -34,6 +38,8 @@ import zipkin2.storage.QueryRequest;
 import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
 
 final class CassandraUtil {
+  static final Logger LOG = LoggerFactory.getLogger(CassandraUtil.class);
+
   /**
    * Time window covered by a single bucket of the {@link Schema#TABLE_TRACE_BY_SERVICE_SPAN} and
    * {@link Schema#TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE}, in seconds. Default: 1 day
@@ -125,5 +131,14 @@ final class CassandraUtil {
       result.add(LocalDate.fromMillisSinceEpoch(epochMillis));
     }
     return result;
+  }
+
+  @Nullable static InetAddress InetAddressOrNull(@Nullable String string, @Nullable byte[] bytes) {
+    try {
+      return bytes == null ? null : InetAddress.getByAddress(bytes);
+    } catch (UnknownHostException e) {
+      LOG.debug("InetAddress.getByAddress failed with input {}: {}", string, e.getMessage());
+      return null;
+    }
   }
 }
