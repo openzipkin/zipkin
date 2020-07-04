@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,11 +19,11 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.List;
+import java.util.Locale;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.DistinctSortedStrings;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_SPANS;
 
 final class SelectSpanNames extends ResultSetFutureCall<ResultSet> {
@@ -44,7 +44,7 @@ final class SelectSpanNames extends ResultSetFutureCall<ResultSet> {
 
     Call<List<String>> create(String serviceName) {
       if (serviceName == null || serviceName.isEmpty()) return Call.emptyList();
-      String service = checkNotNull(serviceName, "serviceName").toLowerCase();
+      String service = serviceName.toLowerCase(Locale.ROOT); // service names are always lowercase!
       return new SelectSpanNames(this, service).flatMap(spans);
     }
   }

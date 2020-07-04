@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -31,8 +31,6 @@ import zipkin2.storage.StorageComponent;
 import zipkin2.storage.Traces;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * CQL3 implementation of zipkin storage.
@@ -117,13 +115,15 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
 
     /** Override to control how sessions are created. */
     public Builder sessionFactory(SessionFactory sessionFactory) {
-      this.sessionFactory = checkNotNull(sessionFactory, "sessionFactory");
+      if (sessionFactory == null) throw new NullPointerException("sessionFactory == null");
+      this.sessionFactory = sessionFactory;
       return this;
     }
 
     /** Keyspace to store span and index data. Defaults to "zipkin" */
     public Builder keyspace(String keyspace) {
-      this.keyspace = checkNotNull(keyspace, "keyspace");
+      if (keyspace == null) throw new NullPointerException("keyspace == null");
+      this.keyspace = keyspace;
       return this;
     }
 
@@ -132,7 +132,8 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
      * custom port with 'host:port'. Defaults to localhost on port 9042 *
      */
     public Builder contactPoints(String contactPoints) {
-      this.contactPoints = checkNotNull(contactPoints, "contactPoints");
+      if (contactPoints == null) throw new NullPointerException("contactPoints == null");
+      this.contactPoints = contactPoints;
       return this;
     }
 

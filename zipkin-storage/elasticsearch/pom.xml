@@ -56,14 +56,6 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- For HttpCallTest -->
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
-      <scope>test</scope>
-    </dependency>
-
     <dependency>
       <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-junit5</artifactId>

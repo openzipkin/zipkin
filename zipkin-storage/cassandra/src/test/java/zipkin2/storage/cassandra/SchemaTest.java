@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,20 +19,18 @@ import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Metadata;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.VersionNumber;
-import com.google.common.collect.ImmutableSet;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SchemaTest {
-
-  @Rule public ExpectedException thrown = ExpectedException.none();
 
   @Test public void getKeyspaceMetadata_failsWhenVersionLessThan3_11_3() {
     Session session = mock(Session.class);
@@ -46,11 +44,10 @@ public class SchemaTest {
     when(host.getHostId()).thenReturn(UUID.fromString("11111111-1111-1111-1111-111111111111"));
     when(host.getCassandraVersion()).thenReturn(VersionNumber.parse("3.11.2"));
 
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage(
-      "Host 11111111-1111-1111-1111-111111111111 is running Cassandra 3.11.2, but minimum version is 3.11.3");
-
-    Schema.getKeyspaceMetadata(session, "zipkin2");
+    assertThatThrownBy(() -> Schema.getKeyspaceMetadata(session, "zipkin2"))
+      .isInstanceOf(RuntimeException.class)
+      .hasMessage(
+        "Host 11111111-1111-1111-1111-111111111111 is running Cassandra 3.11.2, but minimum version is 3.11.3");
   }
 
   @Test public void getKeyspaceMetadata_failsWhenOneVersionLessThan3_11_3() {
@@ -59,20 +56,21 @@ public class SchemaTest {
     Metadata metadata = mock(Metadata.class);
     Host host1 = mock(Host.class);
     Host host2 = mock(Host.class);
+    Set<Host> hosts = new LinkedHashSet<>();
+    hosts.add(host1);
+    hosts.add(host2);
 
     when(session.getCluster()).thenReturn(cluster);
     when(cluster.getMetadata()).thenReturn(metadata);
-    when(metadata.getAllHosts()).thenReturn(ImmutableSet.of(host1, host2));
+    when(metadata.getAllHosts()).thenReturn(hosts);
     when(host1.getHostId()).thenReturn(UUID.fromString("11111111-1111-1111-1111-111111111111"));
     when(host2.getHostId()).thenReturn(UUID.fromString("22222222-2222-2222-2222-222222222222"));
     when(host1.getCassandraVersion()).thenReturn(VersionNumber.parse("3.11.3"));
     when(host2.getCassandraVersion()).thenReturn(VersionNumber.parse("3.11.2"));
 
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage(
-      "Host 22222222-2222-2222-2222-222222222222 is running Cassandra 3.11.2, but minimum version is 3.11.3");
-
-    Schema.getKeyspaceMetadata(session, "zipkin2");
+    assertThatThrownBy(() -> Schema.getKeyspaceMetadata(session, "zipkin2"))
+      .isInstanceOf(RuntimeException.class)
+      .hasMessage("Host 22222222-2222-2222-2222-222222222222 is running Cassandra 3.11.2, but minimum version is 3.11.3");
   }
 
   @Test public void getKeyspaceMetadata_passesWhenVersion3_11_3AndKeyspaceMetadataIsNotNull() {
@@ -120,9 +118,8 @@ public class SchemaTest {
     when(metadata.getAllHosts()).thenReturn(Collections.singleton(host));
     when(host.getCassandraVersion()).thenReturn(VersionNumber.parse("3.11.3"));
 
-    thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("Cannot read keyspace metadata for keyspace");
-
-    Schema.ensureKeyspaceMetadata(session, "zipkin2");
+    assertThatThrownBy(() -> Schema.ensureKeyspaceMetadata(session, "zipkin2"))
+      .isInstanceOf(RuntimeException.class)
+      .hasMessageStartingWith("Cannot read keyspace metadata for keyspace");
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -23,8 +23,6 @@ import com.google.auto.value.AutoValue;
 import java.util.Set;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 final class SelectTraceIdTimestampFromServiceRemoteServiceName
   extends ResultSetFutureCall<ResultSet> {
@@ -58,9 +56,9 @@ final class SelectTraceIdTimestampFromServiceRemoteServiceName
 
     Call<Set<Pair>> newCall(
       String serviceName, String remoteServiceName, long endTs, long lookback, int limit) {
-      checkArgument(serviceName != null, "serviceName required on remote_serviceName query");
-      checkArgument(remoteServiceName != null,
-        "remoteServiceName required on remoteServiceName query");
+      // These are checked before calling, but verify pre-conditions as otherwise bugs are subtle
+      if (serviceName == null) throw new NullPointerException("serviceName == null");
+      if (remoteServiceName == null) throw new NullPointerException("remoteServiceName == null");
       String serviceSpanName = serviceName + "." + remoteServiceName;
       long startTs = Math.max(endTs - lookback, 0); // >= 1970
       Input input = new AutoValue_SelectTraceIdTimestampFromServiceRemoteServiceName_Input(
