@@ -19,10 +19,17 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Box, ClickAwayListener } from '@material-ui/core';
 import React from 'react';
 import { useMount } from 'react-use';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 
 import Criterion from '../Criterion';
 import SuggestionList from './SuggestionList';
+
+const fadeIn = keyframes`
+  0% { opacity: 0 }
+  30% { opacity: 0.1 }
+  70% { opacity: 0.9 }
+  100% { opacity: 1 }
+`;
 
 const Root = styled(Box)`
   display: flex;
@@ -37,6 +44,13 @@ const Root = styled(Box)`
   & > *:hover {
     opacity: 0.9;
   }
+  animation: 0.25s 0s both ${fadeIn};
+`;
+
+const FocusedRoot = styled(Box)`
+  margin-right: ${({ theme }) => theme.spacing(2)}px;
+  position: relative;
+  animation: 0.25s 0s both ${fadeIn};
 `;
 
 const DeleteButton = styled.button`
@@ -381,7 +395,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
 
   return (
     <ClickAwayListener onClickAway={onBlur}>
-      <Box mr={2} position="relative">
+      <FocusedRoot>
         <Input
           ref={inputEl}
           value={text}
@@ -397,7 +411,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
             onItemClick={handleSuggestionItemClick}
           />
         )}
-      </Box>
+      </FocusedRoot>
     </ClickAwayListener>
   );
 };
