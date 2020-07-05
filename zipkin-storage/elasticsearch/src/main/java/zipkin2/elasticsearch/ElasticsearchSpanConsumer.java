@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.elasticsearch.internal.BulkCallBuilder;
@@ -31,7 +32,6 @@ import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_SPAN;
 import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
 
 class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testing
-
   final ElasticsearchStorage es;
   final Set<String> autocompleteKeys;
   final IndexNameFormatter indexNameFormatter;
@@ -46,13 +46,13 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
     this.indexTypeDelimiter = es.indexTypeDelimiter();
     this.searchEnabled = es.searchEnabled();
     this.delayLimiter = DelayLimiter.newBuilder()
-      .ttl(es.autocompleteTtl())
+      .ttl(es.autocompleteTtl(), TimeUnit.MILLISECONDS)
       .cardinality(es.autocompleteCardinality()).build();
   }
 
   String formatTypeAndTimestampForInsert(String type, long timestampMillis) {
-    return indexNameFormatter.formatTypeAndTimestampForInsert(type, indexTypeDelimiter,
-      timestampMillis);
+    return indexNameFormatter
+      .formatTypeAndTimestampForInsert(type, indexTypeDelimiter, timestampMillis);
   }
 
   @Override public Call<Void> accept(List<Span> spans) {

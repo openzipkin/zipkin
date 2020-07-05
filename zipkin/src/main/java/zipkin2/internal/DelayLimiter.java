@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,27 +21,23 @@ import java.util.concurrent.TimeUnit;
 /** Limits invocations of a given context to at most once per period. */
 // this is a dependency-free variant formerly served by an expiring guava cache
 public final class DelayLimiter<C> {
-
-  public static <C> DelayLimiter<C> create() {
-    return new Builder().build();
-  }
-
   public static Builder newBuilder() {
     return new Builder();
   }
 
   public static final class Builder {
-    Ticker ticker = new Ticker();
-    long ttlNanos = TimeUnit.HOURS.toNanos(1); // legacy default from cassandra
-    int cardinality = 5 * 4000; // Ex. 5 site tags with cardinality 4000 each
+    long ttl = 0L;
+    TimeUnit ttlUnit = TimeUnit.MILLISECONDS;
+    int cardinality = 0;
 
     /**
      * When {@link #shouldInvoke(Object)} returns true, it will return false until this duration
      * expires.
      */
-    public Builder ttl(int ttl) {
-      if (ttl <= 0) throw new IllegalArgumentException("ttl <= 0");
-      this.ttlNanos = TimeUnit.MILLISECONDS.toNanos(ttl);
+    public Builder ttl(long ttl, TimeUnit ttlUnit) {
+      if (ttlUnit == null) throw new NullPointerException("ttlUnit == null");
+      this.ttl = ttl;
+      this.ttlUnit = ttlUnit;
       return this;
     }
 
@@ -49,39 +45,28 @@ public final class DelayLimiter<C> {
      * This bounds suppressions, useful because contexts can be accidentally unlimited cardinality.
      */
     public Builder cardinality(int cardinality) {
-      if (cardinality <= 0) throw new IllegalArgumentException("cardinality <= 0");
       this.cardinality = cardinality;
       return this;
     }
 
-    Builder ticker(Ticker ticker) { // do not expose public: only for tests
-      this.ticker = ticker;
-      return this;
-    }
-
     public <C> DelayLimiter<C> build() {
-      return new DelayLimiter<>(this);
+      if (ttl <= 0L) throw new IllegalArgumentException("ttl <= 0");
+      if (cardinality <= 0) throw new IllegalArgumentException("cardinality <= 0");
+      return new DelayLimiter<>(new SuppressionFactory(ttlUnit.toNanos(ttl)), cardinality);
     }
 
     Builder() {
     }
   }
 
-  static class Ticker { // not final for tests
-    long read() {
-      return System.nanoTime();
-    }
-  }
-
-  final Ticker ticker;
+  final SuppressionFactory suppressionFactory;
   final ConcurrentHashMap<C, Suppression<C>> cache = new ConcurrentHashMap<>();
   final DelayQueue<Suppression<C>> suppressions = new DelayQueue<>();
-  final long ttlNanos, cardinality;
+  final int cardinality;
 
-  DelayLimiter(Builder builder) {
-    ticker = builder.ticker;
-    ttlNanos = builder.ttlNanos;
-    cardinality = builder.cardinality;
+  DelayLimiter(SuppressionFactory suppressionFactory, int cardinality) {
+    this.suppressionFactory = suppressionFactory;
+    this.cardinality = cardinality;
   }
 
   /** Returns true if a given context should be invoked. */
@@ -90,7 +75,7 @@ public final class DelayLimiter<C> {
 
     if (cache.containsKey(context)) return false;
 
-    Suppression<C> suppression = new Suppression<>(ticker, context, ticker.read() + ttlNanos);
+    Suppression<C> suppression = suppressionFactory.create(context);
 
     if (cache.putIfAbsent(context, suppression) != null) return false; // lost race
 
@@ -129,19 +114,35 @@ public final class DelayLimiter<C> {
     }
   }
 
+  static class SuppressionFactory { // not final for tests
+    final long ttlNanos;
+
+    SuppressionFactory(long ttlNanos) {
+      this.ttlNanos = ttlNanos;
+    }
+
+    long nanoTime() {
+      return System.nanoTime();
+    }
+
+    <C> Suppression<C> create(C context) {
+      return new Suppression<>(this, context, nanoTime() + ttlNanos);
+    }
+  }
+
   static final class Suppression<C> implements Delayed {
-    final Ticker ticker;
+    final SuppressionFactory factory;
     final C context;
     final long expiration;
 
-    Suppression(Ticker ticker, C context, long expiration) {
-      this.ticker = ticker;
+    Suppression(SuppressionFactory factory, C context, long expiration) {
+      this.factory = factory;
       this.context = context;
       this.expiration = expiration;
     }
 
     @Override public long getDelay(TimeUnit unit) {
-      return unit.convert(expiration - ticker.read(), TimeUnit.NANOSECONDS);
+      return unit.convert(expiration - factory.nanoTime(), TimeUnit.NANOSECONDS);
     }
 
     @Override public int compareTo(Delayed o) {
