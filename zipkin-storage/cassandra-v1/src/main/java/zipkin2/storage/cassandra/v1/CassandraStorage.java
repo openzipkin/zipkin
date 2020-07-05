@@ -15,7 +15,6 @@ package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.google.common.cache.CacheBuilderSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -271,8 +270,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
   }
 
   final int maxTraceCols;
-  @Deprecated final int indexTtl;
-  @Deprecated final int spanTtl;
+  @Deprecated final int indexTtl, spanTtl;
   final int bucketCount;
   final String contactPoints;
   final int maxConnections;
@@ -282,7 +280,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
   final boolean ensureSchema;
   final boolean useSsl;
   final String keyspace;
-  final CacheBuilderSpec indexCacheSpec;
+  final int indexCacheMax, indexCacheTtl;
   final int indexFetchMultiplier;
   final boolean strictTraceId, searchEnabled;
   final LazySession session;
@@ -313,13 +311,8 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
     this.spanTtl = b.spanTtl;
     this.bucketCount = b.bucketCount;
     this.session = new LazySession(b.sessionFactory, this);
-    if (b.indexCacheMax != 0) {
-      this.indexCacheSpec =
-          CacheBuilderSpec.parse(
-              "maximumSize=" + b.indexCacheMax + ",expireAfterWrite=" + b.indexCacheTtl + "s");
-    } else {
-      this.indexCacheSpec = null;
-    }
+    this.indexCacheMax = b.indexCacheMax;
+    this.indexCacheTtl = b.indexCacheTtl;
     this.indexFetchMultiplier = b.indexFetchMultiplier;
     this.autocompleteKeys = b.autocompleteKeys;
     this.autocompleteTtl = b.autocompleteTtl;
@@ -372,7 +365,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
     if (spanConsumer == null) {
       synchronized (this) {
         if (spanConsumer == null) {
-          spanConsumer = new CassandraSpanConsumer(this, indexCacheSpec);
+          spanConsumer = new CassandraSpanConsumer(this);
         }
       }
     }
