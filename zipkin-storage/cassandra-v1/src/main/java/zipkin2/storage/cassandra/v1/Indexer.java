@@ -28,7 +28,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Call;
@@ -56,12 +55,12 @@ final class Indexer {
    * Shared across all threads, as updates to indexes can come from any thread. Null disables
    * optimization.
    */
-  @Nullable final ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState;
+  @Nullable final Map<PartitionKeyToTraceId, Pair> sharedState;
 
   Indexer(
       Session session,
       int indexTtl,
-      @Nullable ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState,
+      @Nullable Map<PartitionKeyToTraceId, Pair> sharedState,
       IndexSupport index) {
     this.index = index;
     Insert insert =
@@ -162,7 +161,7 @@ final class Indexer {
   }
 
   static SetMultimap<PartitionKeyToTraceId, Long> entriesThatIncreaseGap(
-      ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState,
+      Map<PartitionKeyToTraceId, Pair> sharedState,
       SetMultimap<PartitionKeyToTraceId, Long> updates) {
     Set<PartitionKeyToTraceId> toUpdate = new LinkedHashSet<>();
 
@@ -225,12 +224,12 @@ final class Indexer {
   static class Factory {
     final Session session;
     final int indexTtl;
-    final ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState;
+    final Map<PartitionKeyToTraceId, Pair> sharedState;
 
     public Factory(
         Session session,
         int indexTtl,
-        @Nullable ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState) {
+        @Nullable Map<PartitionKeyToTraceId, Pair> sharedState) {
       this.session = session;
       this.indexTtl = indexTtl;
       this.sharedState = sharedState;

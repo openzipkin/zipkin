@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package zipkin2.storage.cassandra.internal.call;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.internal.DelayLimiter;
@@ -23,7 +24,8 @@ public abstract class DeduplicatingVoidCallFactory<I> {
   final DelayLimiter<I> delayLimiter;
 
   protected DeduplicatingVoidCallFactory(int ttl, int cardinality) {
-    delayLimiter = DelayLimiter.newBuilder().ttl(ttl).cardinality(cardinality).build();
+    delayLimiter =
+      DelayLimiter.newBuilder().ttl(ttl, TimeUnit.MILLISECONDS).cardinality(cardinality).build();
   }
 
   protected abstract Call<Void> newCall(I input);
