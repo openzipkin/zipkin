@@ -21,8 +21,9 @@ import React from 'react';
 import { useMount } from 'react-use';
 import styled, { keyframes } from 'styled-components';
 
-import Criterion from '../Criterion';
+import HowToUse from './HowToUse';
 import SuggestionList from './SuggestionList';
+import Criterion from '../Criterion';
 
 const fadeIn = keyframes`
   0% { opacity: 0 }
@@ -422,6 +423,10 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
             onItemClick={handleSuggestionItemClick}
           />
         )}
+        {!isEnteringKey &&
+          (keyText === 'minDuration' ||
+            keyText === 'maxDuration' ||
+            keyText === 'tags') && <HowToUse target={keyText} />}
       </FocusedRoot>
     </ClickAwayListener>
   );
