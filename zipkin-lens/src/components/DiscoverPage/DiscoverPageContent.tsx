@@ -13,7 +13,6 @@
  */
 
 /* eslint-disable no-shadow */
-/* eslint-disable react/jsx-no-duplicate-props */
 
 import { faHistory, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -23,15 +22,13 @@ import {
   CircularProgress,
   Paper,
   TextField,
-  Theme,
-  createStyles,
-  makeStyles,
 } from '@material-ui/core';
 import { History, Location } from 'history';
 import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
+import styled from 'styled-components';
 
 import Criterion from './Criterion';
 import ExplainBox from './ExplainBox';
@@ -44,23 +41,21 @@ import { RootState } from '../../store';
 
 const TracesTab = require('./TracesTab').default;
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    limitInput: {
-      fontSize: '1rem',
-      height: 31,
-      padding: `${theme.spacing(0.1)}px ${theme.spacing(1)}px`,
-    },
-    searchButton: {
-      height: 60,
-      minWidth: 60,
-      color: theme.palette.common.white,
-    },
-    paper: {
-      height: '100%',
-    },
-  }),
-);
+const LookbackButton = styled(Button)`
+  /* Align LookbackButton height with the TextField height. */
+  padding-top: 7.5px;
+  padding-bottom: 7.5px;
+`;
+
+const SearchButton = styled(Button)`
+  height: 60px;
+  min-width: 60px;
+  color: ${({ theme }) => theme.palette.common.white};
+`;
+
+const TracesPaper = styled(Paper)`
+  height: 100%;
+`;
 
 interface DiscoverPageContentProps extends RouteComponentProps {
   autocompleteKeys: string[];
@@ -316,8 +311,6 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   location,
   autocompleteKeys,
 }) => {
-  const classes = useStyles();
-
   const { setQueryParams, criteria, lookback, limit } = useQueryParams(
     history,
     location,
@@ -414,9 +407,9 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   } else {
     content = (
       <Box height="100%" pt={3} pb={3}>
-        <Paper className={classes.paper} elevation={3}>
+        <TracesPaper elevation={3}>
           <TracesTab />
-        </Paper>
+        </TracesPaper>
       </Box>
     );
   }
@@ -425,13 +418,13 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     <Box pr={3} pl={3} flexGrow={1} display="flex" flexDirection="column">
       <Box display="flex" mb={1.25}>
         <Box mr={1} position="relative">
-          <Button
+          <LookbackButton
             variant="outlined"
             onClick={toggleLookbackMenu}
             startIcon={<FontAwesomeIcon icon={faHistory} />}
           >
             {lookbackDisplay}
-          </Button>
+          </LookbackButton>
           {isShowingLookbackMenu && (
             <LookbackMenu
               close={closeLookbackMenu}
@@ -446,14 +439,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
           variant="outlined"
           value={tempLimit}
           onChange={handleLimitChange}
-          InputLabelProps={{
-            shrink: true,
-          }}
-          InputProps={{
-            classes: {
-              input: classes.limitInput,
-            },
-          }}
+          size="small"
           inputProps={{
             'data-testid': 'query-limit',
           }}
@@ -463,14 +449,13 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
         <Box flexGrow={1} mr={1}>
           <SearchBar criteria={tempCriteria} onChange={setTempCriteria} />
         </Box>
-        <Button
+        <SearchButton
           variant="contained"
           color="primary"
-          className={classes.searchButton}
           onClick={handleSearchButtonClick}
         >
           <FontAwesomeIcon icon={faSearch} size="lg" />
-        </Button>
+        </SearchButton>
       </Box>
       <Box flexGrow={1}>{content}</Box>
     </Box>
