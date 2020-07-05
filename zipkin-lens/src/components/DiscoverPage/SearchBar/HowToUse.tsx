@@ -85,10 +85,14 @@ const HowToUse: React.FC<HowToUseProps> = ({ target }) => {
     case 'tags':
       content = (
         <>
-          <Typography variant="h6">Examples</Typography>
+          Limit results to traces that include one or more tags. Tags are only
+          searchable by their exact value. Use <Code> and </Code> to combine
+          terms.
+          <Code> or </Code> is not supported.
+          <Typography variant="h6">Example</Typography>
           <ExampleList>
             <ExampleListItem>
-              <Code>error and http.method=POST</Code>
+              <Code>tagQuery=error and http.method=POST</Code>
             </ExampleListItem>
           </ExampleList>
         </>
