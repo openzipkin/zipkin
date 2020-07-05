@@ -90,7 +90,9 @@ export const useQueryParams = (
           params.set(criterion.key, criterion.value);
         }
       });
-      params.set('annotationQuery', annotationQuery.join(' and '));
+      if (annotationQuery.length > 0) {
+        params.set('annotationQuery', annotationQuery.join(' and '));
+      }
       switch (lookback.type) {
         case 'fixed':
           params.set('lookback', lookback.value);
