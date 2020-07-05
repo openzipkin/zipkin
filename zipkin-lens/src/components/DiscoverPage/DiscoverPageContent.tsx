@@ -13,6 +13,7 @@
  */
 
 /* eslint-disable no-shadow */
+/* eslint-disable react/jsx-no-duplicate-props */
 
 import { faHistory, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -325,7 +326,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
 
   const [tempCriteria, setTempCriteria] = useState(criteria);
 
-  const { defaultLookback } = useUiConfig();
+  const { defaultLookback, queryLimit } = useUiConfig();
   const [tempLookback, setTempLookback] = useState<Lookback>(
     lookback || {
       type: 'fixed',
@@ -334,7 +335,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
       endTime: moment(),
     },
   );
-  const [tempLimit, setTempLimit] = useState(limit || 10);
+  const [tempLimit, setTempLimit] = useState(limit || queryLimit);
 
   const lookbackDisplay = useMemo<string>(() => {
     switch (tempLookback.type) {
@@ -452,6 +453,9 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
             classes: {
               input: classes.limitInput,
             },
+          }}
+          inputProps={{
+            'data-testid': 'query-limit',
           }}
         />
       </Box>

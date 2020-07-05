@@ -188,4 +188,15 @@ describe('<DiscoverPageContent />', () => {
     });
     expect(getAllByText('Last 5 minutes').length).toBe(1);
   });
+
+  it('should initialize the query limit using config.json', () => {
+    const { getAllByTestId } = render(<DiscoverPageContent />, {
+      uiConfig: {
+        queryLimit: 30,
+      },
+    });
+    const items = getAllByTestId('query-limit');
+    expect(items.length).toBe(1);
+    expect(items[0].value).toBe('30');
+  });
 });
