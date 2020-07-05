@@ -51,6 +51,7 @@ const FocusedRoot = styled(Box)`
   margin-right: ${({ theme }) => theme.spacing(2)}px;
   position: relative;
   animation: 0.25s 0s both ${fadeIn};
+  z-index: ${({ theme }) => theme.zIndex.modal};
 `;
 
 const DeleteButton = styled.button`
