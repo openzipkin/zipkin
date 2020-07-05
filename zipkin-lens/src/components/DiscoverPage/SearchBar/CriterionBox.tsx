@@ -203,7 +203,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
         'remoteServiceName',
         'maxDuration',
         'minDuration',
-        'tags',
+        'tagQuery',
         ...autocompleteKeys,
       ]
         .filter((key) => !criteria.find((criterion) => criterion.key === key))
@@ -426,7 +426,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
         {!isEnteringKey &&
           (keyText === 'minDuration' ||
             keyText === 'maxDuration' ||
-            keyText === 'tags') && <HowToUse target={keyText} />}
+            keyText === 'tagQuery') && <HowToUse target={keyText} />}
       </FocusedRoot>
     </ClickAwayListener>
   );

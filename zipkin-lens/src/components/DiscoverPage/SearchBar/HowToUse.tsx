@@ -51,7 +51,7 @@ const ExampleListItem = styled.li`
 `;
 
 interface HowToUseProps {
-  target: 'minDuration' | 'maxDuration' | 'tags';
+  target: 'minDuration' | 'maxDuration' | 'tagQuery';
 }
 
 const HowToUse: React.FC<HowToUseProps> = ({ target }) => {
@@ -82,7 +82,7 @@ const HowToUse: React.FC<HowToUseProps> = ({ target }) => {
         </>
       );
       break;
-    case 'tags':
+    case 'tagQuery':
       content = (
         <>
           Limit results to traces that include one or more tags. Tags are only

@@ -54,7 +54,7 @@ describe('useQueryParams', () => {
       { key: 'maxDuration', value: '100ms' },
       // AnnotationQuery
       { key: 'key3', value: 'value3' },
-      { key: 'tags', value: 'key1=value1 and key2' },
+      { key: 'tagQuery', value: 'key1=value1 and key2' },
     ]);
   });
 
@@ -117,7 +117,7 @@ describe('useQueryParams', () => {
           { key: 'minDuration', value: '10us' },
           { key: 'maxDuration', value: '100ms' },
           // AnnotationQuery
-          { key: 'tags', value: 'key1=value1 and key2' },
+          { key: 'tagQuery', value: 'key1=value1 and key2' },
           { key: 'key3', value: 'value3' },
         ],
         {
@@ -156,7 +156,7 @@ describe('buildApiQuery', () => {
         { key: 'minDuration', value: '10us' },
         { key: 'maxDuration', value: '100ms' },
         // AnnotationQuery
-        { key: 'tags', value: 'key1=value1 and key2' },
+        { key: 'tagQuery', value: 'key1=value1 and key2' },
         { key: 'key3', value: 'value3' },
       ],
       {

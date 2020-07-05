@@ -74,7 +74,7 @@ export const useQueryParams = (
       criteria.forEach((criterion) => {
         // If the key is 'tag' or a string included in autocompleteKeys,
         // the criterion will be included in annotationQuery.
-        if (criterion.key === 'tags') {
+        if (criterion.key === 'tagQuery') {
           annotationQuery.push(criterion.value);
         } else if (autocompleteKeys.includes(criterion.key)) {
           if (criterion.value) {
@@ -127,11 +127,11 @@ export const useQueryParams = (
           // 'projectID=projectA and phase=BETA and http.path=/api/v1/users and http.method=GET',
           // criterion will be like the following.
           // [
-          //   { key: 'tags', value: 'http.path=/api/v1/users and http.method=GET' },
+          //   { key: 'tagQuery', value: 'http.path=/api/v1/users and http.method=GET' },
           //   { key: 'projectID', value: 'projectA' },
           //   { key: 'phase', value: 'BETA' },
           // ]
-          const tags: string[] = [];
+          const tagQuery: string[] = [];
           const exps = value.split(' and ');
           exps.forEach((exp) => {
             const strs = exp.split('=');
@@ -142,10 +142,10 @@ export const useQueryParams = (
             if (autocompleteKeys.includes(key)) {
               ret.push({ key, value: value || '' });
             } else {
-              tags.push(exp);
+              tagQuery.push(exp);
             }
           });
-          ret.push({ key: 'tags', value: tags.join(' and ') });
+          ret.push({ key: 'tagQuery', value: tagQuery.join(' and ') });
           break;
         }
         default:
@@ -241,7 +241,7 @@ export const buildApiQuery = (
   const params: { [key: string]: string } = {};
   const annotationQuery: string[] = [];
   criteria.forEach((criterion) => {
-    if (criterion.key === 'tags') {
+    if (criterion.key === 'tagQuery') {
       annotationQuery.push(criterion.value);
     } else if (autocompleteKeys.includes(criterion.key)) {
       if (criterion.value) {
