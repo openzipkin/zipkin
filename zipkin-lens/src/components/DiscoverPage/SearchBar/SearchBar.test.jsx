@@ -44,19 +44,16 @@ describe('<SearchBar />', () => {
     remoteServiceNames: [],
     isLoadingRemoteServiceNames: false,
     autocompleteKeys: [],
-    isLoadingAutocompleteKeys: false,
     autocompleteValues: [],
     isLoadingAutocompleteValues: false,
     loadServices: jest.fn(),
-    loadAutocompleteKeys: jest.fn(),
     loadRemoteServices: jest.fn(),
     loadSpans: jest.fn(),
   };
 
-  it('should load services and autocomplete keys when mounted', () => {
+  it('should load services when mounted', () => {
     render(<SearchBarImpl {...commonProps} />);
     expect(commonProps.loadServices.mock.calls.length).toBe(1);
-    expect(commonProps.loadAutocompleteKeys.mock.calls.length).toBe(1);
   });
 
   it('should add an empty criterion when add button is clicked', () => {
