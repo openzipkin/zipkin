@@ -160,9 +160,9 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     prevIsFocused.current = isFocused;
   }, [isFocused, fixedText, onChange, onDelete]);
 
-  const keyText = React.useMemo(() => {
+  const [keyText, valueText] = React.useMemo(() => {
     const ss = fixedText.split('=');
-    return ss[0];
+    return [ss[0], ss[1] || ''];
   }, [fixedText]);
 
   const isEnteringKey = !text.includes('=');
@@ -203,21 +203,30 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
         'minDuration',
         'tags',
         ...autocompleteKeys,
-      ].filter((key) => !criteria.find((criterion) => criterion.key === key));
+      ]
+        .filter((key) => !criteria.find((criterion) => criterion.key === key))
+        .filter((key) => key.includes(keyText));
     }
+
+    let ss: string[];
     switch (keyText) {
       case 'serviceName':
-        return serviceNames;
+        ss = serviceNames;
+        break;
       case 'spanName':
-        return spanNames;
+        ss = spanNames;
+        break;
       case 'remoteServiceName':
-        return remoteServiceNames;
+        ss = remoteServiceNames;
+        break;
       default:
         if (autocompleteKeys.includes(keyText)) {
-          return autocompleteValues;
+          ss = autocompleteValues;
+          break;
         }
         return null;
     }
+    return ss.filter((s) => s.includes(valueText));
   }, [
     autocompleteKeys,
     autocompleteValues,
@@ -226,6 +235,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     remoteServiceNames,
     isEnteringKey,
     keyText,
+    valueText,
     criteria,
   ]);
 
