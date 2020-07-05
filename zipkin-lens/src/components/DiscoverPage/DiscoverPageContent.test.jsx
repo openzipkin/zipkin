@@ -19,6 +19,7 @@ import React from 'react';
 
 import DiscoverPageContent, {
   buildApiQuery,
+  parseDuration,
   useQueryParams,
 } from './DiscoverPageContent';
 import render from '../../test/util/render-with-default-settings';
@@ -33,14 +34,14 @@ describe('useQueryParams', () => {
           // serviceName: serviceA
           // spanName: spanB
           // remoteServiceName: remoteServiceNameC
-          // minDuration: 10
-          // maxDuration: 100
+          // minDuration: 10us
+          // maxDuration: 100ms
           // annotationQuery:
           //   key1: value1
           //   key2
           //   key3: value3
           search:
-            '?serviceName=serviceA&spanName=spanB&remoteServiceName=remoteServiceNameC&minDuration=10&maxDuration=100&annotationQuery=key1%3Dvalue1+and+key2+and+key3%3Dvalue3&limit=10',
+            '?serviceName=serviceA&spanName=spanB&remoteServiceName=remoteServiceNameC&minDuration=10us&maxDuration=100ms&annotationQuery=key1%3Dvalue1+and+key2+and+key3%3Dvalue3&limit=10',
         },
         ['key3'],
       ),
@@ -49,8 +50,8 @@ describe('useQueryParams', () => {
       { key: 'serviceName', value: 'serviceA' },
       { key: 'spanName', value: 'spanB' },
       { key: 'remoteServiceName', value: 'remoteServiceNameC' },
-      { key: 'minDuration', value: '10' },
-      { key: 'maxDuration', value: '100' },
+      { key: 'minDuration', value: '10us' },
+      { key: 'maxDuration', value: '100ms' },
       // AnnotationQuery
       { key: 'key3', value: 'value3' },
       { key: 'tags', value: 'key1=value1 and key2' },
@@ -112,8 +113,9 @@ describe('useQueryParams', () => {
           { key: 'serviceName', value: 'serviceA' },
           { key: 'spanName', value: 'spanB' },
           { key: 'remoteServiceName', value: 'remoteServiceNameC' },
-          { key: 'minDuration', value: '10' },
-          { key: 'maxDuration', value: '100' },
+          // Durations will NOT converted to microsecond values.
+          { key: 'minDuration', value: '10us' },
+          { key: 'maxDuration', value: '100ms' },
           // AnnotationQuery
           { key: 'tags', value: 'key1=value1 and key2' },
           { key: 'key3', value: 'value3' },
@@ -127,8 +129,19 @@ describe('useQueryParams', () => {
       );
     });
     expect(history.location.search).toBe(
-      '?serviceName=serviceA&spanName=spanB&remoteServiceName=remoteServiceNameC&minDuration=10&maxDuration=100&annotationQuery=key1%3Dvalue1+and+key2+and+key3%3Dvalue3&lookback=2h&endTs=1588558961791&limit=10',
+      '?serviceName=serviceA&spanName=spanB&remoteServiceName=remoteServiceNameC&minDuration=10us&maxDuration=100ms&annotationQuery=key1%3Dvalue1+and+key2+and+key3%3Dvalue3&lookback=2h&endTs=1588558961791&limit=10',
     );
+  });
+});
+
+it('parseDuration', () => {
+  [
+    { in: '35', out: 35 },
+    { in: '35us', out: 35 },
+    { in: '35ms', out: 35 * 1000 },
+    { in: '35s', out: 35 * 1000 * 1000 },
+  ].forEach((e) => {
+    expect(parseDuration(e.in)).toBe(e.out);
   });
 });
 
@@ -139,8 +152,9 @@ describe('buildApiQuery', () => {
         { key: 'serviceName', value: 'serviceA' },
         { key: 'spanName', value: 'spanB' },
         { key: 'remoteServiceName', value: 'remoteServiceNameC' },
-        { key: 'minDuration', value: '10' },
-        { key: 'maxDuration', value: '100' },
+        // Durations will converted to microsecond values.
+        { key: 'minDuration', value: '10us' },
+        { key: 'maxDuration', value: '100ms' },
         // AnnotationQuery
         { key: 'tags', value: 'key1=value1 and key2' },
         { key: 'key3', value: 'value3' },
@@ -157,7 +171,7 @@ describe('buildApiQuery', () => {
     expect(params.spanName).toBe('spanB');
     expect(params.remoteServiceName).toBe('remoteServiceNameC');
     expect(params.minDuration).toBe('10');
-    expect(params.maxDuration).toBe('100');
+    expect(params.maxDuration).toBe('100000');
     expect(params.annotationQuery).toBe('key1=value1 and key2 and key3=value3');
     expect(params.lookback).toBe('7200000');
     expect(params.endTs).toBe('1588558961791');

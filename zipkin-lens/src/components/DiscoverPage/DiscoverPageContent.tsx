@@ -213,6 +213,29 @@ export const useQueryParams = (
 };
 
 // Export for testing
+export const parseDuration = (duration: string) => {
+  const regex = /^(\d+)(s|ms|us)?$/;
+  const match = duration.match(regex);
+
+  if (!match || match.length < 2) {
+    return null;
+  }
+  if (match.length === 2 || typeof match[2] === 'undefined') {
+    return parseInt(match[1], 10);
+  }
+  switch (match[2]) {
+    case 's':
+      return parseInt(match[1], 10) * 1000 * 1000;
+    case 'ms':
+      return parseInt(match[1], 10) * 1000;
+    case 'us':
+      return parseInt(match[1], 10);
+    default:
+      return null;
+  }
+};
+
+// Export for testing
 export const buildApiQuery = (
   criteria: Criterion[],
   lookback: Lookback,
@@ -229,6 +252,14 @@ export const buildApiQuery = (
         annotationQuery.push(`${criterion.key}=${criterion.value}`);
       } else {
         annotationQuery.push(criterion.key);
+      }
+    } else if (
+      criterion.key === 'minDuration' ||
+      criterion.key === 'maxDuration'
+    ) {
+      const duration = parseDuration(criterion.value);
+      if (duration) {
+        params[criterion.key] = duration.toString();
       }
     } else {
       params[criterion.key] = criterion.value;
