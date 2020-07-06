@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -41,14 +41,14 @@ public class DateUtilTest {
 
   @Test
   public void getDays() {
-    assertThat(DateUtil.getDays(DAYS.toMillis(2), DAYS.toMillis(1)))
-        .containsExactly(new Date(DAYS.toMillis(1)), new Date(DAYS.toMillis(2)));
+    assertThat(DateUtil.epochDays(DAYS.toMillis(2), DAYS.toMillis(1)))
+        .containsExactly(DAYS.toMillis(1), DAYS.toMillis(2));
   }
 
   /** Looking back earlier than 1970 is likely a bug */
   @Test
   public void getDays_doesntLookEarlierThan1970() {
-    assertThat(DateUtil.getDays(DAYS.toMillis(2), DAYS.toMillis(3)))
-        .containsExactly(new Date(0), new Date(DAYS.toMillis(1)), new Date(DAYS.toMillis(2)));
+    assertThat(DateUtil.epochDays(DAYS.toMillis(2), DAYS.toMillis(3)))
+        .containsExactly(0L, DAYS.toMillis(1), DAYS.toMillis(2));
   }
 }

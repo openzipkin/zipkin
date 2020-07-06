@@ -14,7 +14,7 @@
 
 FROM alpine
 
-ENV ELASTICSEARCH_VERSION 7.6.2
+ENV ELASTICSEARCH_VERSION 7.8.0
 
 RUN apk add --update curl
 
@@ -23,18 +23,15 @@ WORKDIR /elasticsearch
 RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-$ELASTICSEARCH_VERSION-linux-x86_64.tar.gz| tar xz && \
     mv elasticsearch-$ELASTICSEARCH_VERSION/* /elasticsearch/ && \
     # disable ML as not supported on alpine per https://discuss.elastic.co/t/elasticsearch-failing-to-start-due-to-x-pack/85125/6
-    rm -rf /elasticsearch/modules/x-pack-ml/platform/linux-x86_64
+    rm -rf /elasticsearch/modules/x-pack-ml
 
 COPY docker/storage/elasticsearch7/config /elasticsearch/config
 
-# Overwrite environment script to fix parse failures when run with busybox.
-COPY docker/storage/elasticsearch7/elasticsearch-env /elasticsearch/bin/elasticsearch-env
+# Overwrite start script to fix parse failures when run with busybox.
+COPY docker/storage/elasticsearch7/elasticsearch /elasticsearch/bin/
 
-FROM openzipkin/jre-full:11.0.6-11.37
+FROM openzipkin/jre-full:14.0.1-14.28.21
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
-
-# https://github.com/elastic/elasticsearch/pull/31003 was closed won't fix
-ENV ES_TMPDIR /tmp
 
 RUN ["/busybox/sh", "-c", "adduser -g '' -h /elasticsearch -D elasticsearch"]
 

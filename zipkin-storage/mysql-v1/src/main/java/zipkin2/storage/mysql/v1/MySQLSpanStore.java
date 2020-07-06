@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -26,7 +26,7 @@ import zipkin2.storage.SpanStore;
 import zipkin2.storage.StrictTraceId;
 import zipkin2.storage.Traces;
 
-import static zipkin2.internal.DateUtil.getDays;
+import static zipkin2.internal.DateUtil.epochDays;
 import static zipkin2.internal.HexCodec.lowerHexToUnsignedLong;
 
 final class MySQLSpanStore implements SpanStore, Traces, ServiceAndSpanNames {
@@ -116,7 +116,7 @@ final class MySQLSpanStore implements SpanStore, Traces, ServiceAndSpanNames {
     if (lookback <= 0) throw new IllegalArgumentException("lookback <= 0");
 
     if (schema.hasPreAggregatedDependencies) {
-      return dataSourceCallFactory.create(new SelectDependencies(schema, getDays(endTs, lookback)));
+      return dataSourceCallFactory.create(new SelectDependencies(schema, epochDays(endTs, lookback)));
     }
     return dataSourceCallFactory.create(
       new AggregateDependencies(schema, endTs * 1000 - lookback * 1000, endTs * 1000));

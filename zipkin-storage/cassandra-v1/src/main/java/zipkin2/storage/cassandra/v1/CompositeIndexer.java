@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,11 +14,11 @@
 package zipkin2.storage.cassandra.v1;
 
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheBuilderSpec;
-import com.google.common.collect.ImmutableSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import zipkin2.Call;
 import zipkin2.Span;
 
@@ -27,19 +27,21 @@ final class CompositeIndexer {
   private final Set<Indexer> indexers;
   // Shared across all threads as updates can come from any thread.
   // Shared for all indexes to make data management easier (ex. maximumSize)
-  private final ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState;
+  private final Map<PartitionKeyToTraceId, Pair> sharedState;
 
-  CompositeIndexer(CassandraStorage storage, CacheBuilderSpec spec, int indexTtl) {
-    this.sharedState = CacheBuilder.from(spec).<PartitionKeyToTraceId, Pair>build().asMap();
+  CompositeIndexer(CassandraStorage storage, int indexTtl) {
+    sharedState = CacheBuilder.newBuilder()
+      .maximumSize(storage.indexCacheMax)
+      .expireAfterWrite(storage.indexCacheTtl, TimeUnit.SECONDS)
+      .<PartitionKeyToTraceId, Pair>build().asMap();
     Indexer.Factory factory = new Indexer.Factory(storage.session(), indexTtl, sharedState);
-    ImmutableSet.Builder<Indexer> indexers = ImmutableSet.builder();
+    indexers = new LinkedHashSet<>();
     indexers.add(factory.create(new InsertTraceIdByServiceName(storage.bucketCount)));
     if (storage.metadata().hasRemoteService) {
       indexers.add(factory.create(new InsertTraceIdByRemoteServiceName()));
     }
     indexers.add(factory.create(new InsertTraceIdBySpanName()));
     indexers.add(factory.create(new InsertTraceIdByAnnotation(storage.bucketCount)));
-    this.indexers = indexers.build();
   }
 
   void index(Span span, List<Call<Void>> calls) {

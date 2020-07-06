@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.zipkin2</groupId>
     <artifactId>zipkin-storage-parent</artifactId>
-    <version>2.21.2-SNAPSHOT</version>
+    <version>2.21.6-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-storage-cassandra</artifactId>
@@ -30,7 +30,7 @@
     <main.basedir>${project.basedir}/../..</main.basedir>
 
     <!-- error-prone doesn't like generated code and it wants you to depend on guava! -->
-    <errorprone.args>-XepDisableWarningsInGeneratedCode -Xep:AutoValueImmutableFields:OFF -Xep:ExtendsAutoValue:OFF</errorprone.args>
+    <errorprone.args>-XepDisableWarningsInGeneratedCode -Xep:AutoValueImmutableFields:OFF -Xep:ExtendsAutoValue:OFF -Xep:AutoValueSubclassLeaked:OFF</errorprone.args>
   </properties>
 
   <dependencies>

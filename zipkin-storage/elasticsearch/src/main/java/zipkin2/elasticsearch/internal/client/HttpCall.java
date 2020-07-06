@@ -17,18 +17,19 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.linecorp.armeria.client.Clients;
 import com.linecorp.armeria.client.UnprocessedRequestException;
-import com.linecorp.armeria.client.WebClient;
+import com.linecorp.armeria.client.unsafe.PooledWebClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpRequestWriter;
-import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.HttpStatusClass;
 import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.RequestHeaders;
+import com.linecorp.armeria.common.unsafe.PooledAggregatedHttpResponse;
+import com.linecorp.armeria.common.unsafe.PooledHttpResponse;
 import com.linecorp.armeria.common.util.Exceptions;
 import com.linecorp.armeria.common.util.SafeCloseable;
 import io.netty.buffer.ByteBuf;
@@ -118,9 +119,9 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   public static class Factory {
-    final WebClient httpClient;
+    final PooledWebClient httpClient;
 
-    public Factory(WebClient httpClient) {
+    public Factory(PooledWebClient httpClient) {
       this.httpClient = httpClient;
     }
 
@@ -141,16 +142,15 @@ public final class HttpCall<V> extends Call.Base<V> {
   final BodyConverter<V> bodyConverter;
   final String name;
 
-  final WebClient httpClient;
+  final PooledWebClient httpClient;
 
-  volatile CompletableFuture<AggregatedHttpResponse> responseFuture;
+  volatile CompletableFuture<PooledAggregatedHttpResponse> responseFuture;
 
-  HttpCall(WebClient httpClient, RequestSupplier request, BodyConverter<V> bodyConverter,
+  HttpCall(PooledWebClient httpClient, RequestSupplier request, BodyConverter<V> bodyConverter,
     String name) {
     this.httpClient = httpClient;
     this.name = name;
     this.request = request;
-
     this.bodyConverter = bodyConverter;
   }
 
@@ -194,7 +194,7 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   @Override protected void doCancel() {
-    CompletableFuture<AggregatedHttpResponse> responseFuture = this.responseFuture;
+    CompletableFuture<PooledAggregatedHttpResponse> responseFuture = this.responseFuture;
     if (responseFuture != null) {
       responseFuture.cancel(false);
     }
@@ -208,8 +208,8 @@ public final class HttpCall<V> extends Call.Base<V> {
     return "HttpCall(" + request + ")";
   }
 
-  CompletableFuture<AggregatedHttpResponse> sendRequest() {
-    final HttpResponse response;
+  CompletableFuture<PooledAggregatedHttpResponse> sendRequest() {
+    final PooledHttpResponse response;
     try (SafeCloseable ignored =
            Clients.withContextCustomizer(ctx -> ctx.logBuilder().name(name))) {
       HttpRequestWriter httpRequest = HttpRequest.streaming(request.headers());
@@ -217,12 +217,14 @@ public final class HttpCall<V> extends Call.Base<V> {
       request.writeBody(httpRequest::tryWrite);
       httpRequest.close();
     }
-    CompletableFuture<AggregatedHttpResponse> responseFuture =
+    CompletableFuture<PooledAggregatedHttpResponse> responseFuture =
       RequestContext.mapCurrent(
         ctx -> response.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()),
         // This should never be used in practice since the module runs in an Armeria server.
-        response::aggregate);
+        response::aggregateWithPooledObjects);
     responseFuture = responseFuture.exceptionally(t -> {
+      // unwrap is needed when PooledHttpResponse.of is used
+      if (t instanceof CompletionException) t = t.getCause();
       if (t instanceof UnprocessedRequestException) {
         Throwable cause = t.getCause();
         // Go ahead and reduce the output in logs since this is usually a configuration or
@@ -266,6 +268,7 @@ public final class HttpCall<V> extends Call.Base<V> {
           message = root.findPath("reason").textValue();
           if (message == null) message = root.at("/Message").textValue();
         } catch (RuntimeException | IOException possiblyParseException) {
+          // EmptyCatch ignored
         }
         throw new RuntimeException(message != null ? message
           : "response for " + request.headers().path() + " failed: " + contentString.get());

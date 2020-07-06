@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -65,21 +65,21 @@ public class Collector { // not final for mock
       this.logger = logger;
     }
 
-    /** @see {@link CollectorComponent.Builder#storage(StorageComponent)} */
+    /** Sets {@link {@link CollectorComponent.Builder#storage(StorageComponent)}} */
     public Builder storage(StorageComponent storage) {
       if (storage == null) throw new NullPointerException("storage == null");
       this.storage = storage;
       return this;
     }
 
-    /** @see {@link CollectorComponent.Builder#metrics(CollectorMetrics)} */
+    /** Sets {@link {@link CollectorComponent.Builder#metrics(CollectorMetrics)}} */
     public Builder metrics(CollectorMetrics metrics) {
       if (metrics == null) throw new NullPointerException("metrics == null");
       this.metrics = metrics;
       return this;
     }
 
-    /** @see {@link CollectorComponent.Builder#sampler(CollectorSampler)} */
+    /** Sets {@link {@link CollectorComponent.Builder#sampler(CollectorSampler)}} */
     public Builder sampler(CollectorSampler sampler) {
       if (sampler == null) throw new NullPointerException("sampler == null");
       this.sampler = sampler;
@@ -110,10 +110,10 @@ public class Collector { // not final for mock
   }
 
   /**
-   * @param executor the executor used to enqueue the storage request.
-   *
-   * <p>Calls to get the storage component could be blocking. This ensures requests that block
+   * Calls to get the storage component could be blocking. This ensures requests that block
    * callers (such as http or gRPC) do not add additional load during such events.
+   *
+   * @param executor the executor used to enqueue the storage request.
    */
   public void accept(List<Span> spans, Callback<Void> callback, Executor executor) {
     if (spans.isEmpty()) {

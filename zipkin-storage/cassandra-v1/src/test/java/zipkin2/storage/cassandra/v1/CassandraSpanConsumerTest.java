@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,6 @@
 package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.ProtocolVersion;
-import com.google.common.cache.CacheBuilderSpec;
 import java.util.Collections;
 import java.util.List;
 import org.assertj.core.api.AbstractListAssert;
@@ -135,6 +134,6 @@ public class CassandraSpanConsumerTest {
       spy(builder.sessionFactory(mock(SessionFactory.class, Mockito.RETURNS_MOCKS)).build());
     doReturn(new Schema.Metadata(ProtocolVersion.V4, "", true, true, true))
       .when(storage).metadata();
-    return new CassandraSpanConsumer(storage, CacheBuilderSpec.parse(""));
+    return new CassandraSpanConsumer(storage);
   }
 }

@@ -1,6 +1,7 @@
 {
   "Address": "",
   "Annotations": "",
+  "Archive Trace": "",
   "Change Language": "",
   "Dependencies": "",
   "Dependencies Page": "",
@@ -14,6 +15,7 @@
   "Filter": "",
   "Limit": "",
   "None": "",
+  "One Result": "",
   "Only V2 format is supported": "",
   "Parent ID": "",
   "Please select criteria in the search bar. Then, click the search button.": "",
@@ -24,7 +26,7 @@
   "Root": "",
   "Search Dependencies": "",
   "Search Traces": "",
-  "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"trace id...\" textbox on the top-right.": "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"trace id...\" textbox on the top-right.",
+  "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"trace id...\" textbox on the top-right.": "",
   "Service Name": "",
   "Services": "",
   "Span ID": "",
@@ -36,10 +38,10 @@
   "Trace ID": "",
   "Upload JSON": "",
   "View Logs": "",
-  "Archive Trace": "",
+  "Zipkin": "",
   "Zipkin Home": "",
   "hide annotations": "",
   "show all annotations": "",
   "trace id...": "",
-  "{0, plural, one {# Result} other {# Results}}": ""
+  "{0} Results": ""
 }

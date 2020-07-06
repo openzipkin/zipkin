@@ -94,8 +94,63 @@ const httpTrace = [
   },
 ];
 
+const missingLocalEndpointTrace = [
+  {
+    traceId: '0b3ba16a811130ed',
+    parentId: '0b3ba16a811130ed',
+    id: '37c9d5cfc985592b',
+    kind: 'SERVER',
+    name: 'get',
+    timestamp: 1587434790009238,
+    duration: 10803,
+    remoteEndpoint: {
+      ipv4: '127.0.0.1',
+      port: 64529,
+    },
+    tags: {
+      'http.method': 'GET',
+      'http.path': '/api',
+      'mvc.controller.class': 'Backend',
+    },
+    shared: true,
+  },
+  {
+    traceId: '0b3ba16a811130ed',
+    parentId: '0b3ba16a811130ed',
+    id: '37c9d5cfc985592b',
+    kind: 'CLIENT',
+    name: 'get',
+    timestamp: 1587434789956001,
+    duration: 74362,
+    tags: {
+      'http.method': 'GET',
+      'http.path': '/api',
+    },
+  },
+  {
+    traceId: '0b3ba16a811130ed',
+    id: '0b3ba16a811130ed',
+    kind: 'SERVER',
+    name: 'get',
+    timestamp: 1587434789934510,
+    duration: 103410,
+    remoteEndpoint: {
+      ipv6: '::1',
+      port: 64528,
+    },
+    tags: {
+      'http.method': 'GET',
+      'http.path': '/',
+      'mvc.controller.class': 'Frontend',
+    },
+  },
+];
+
 // renders data into a tree for traceMustache
 const cleanedHttpTrace = treeCorrectedForClockSkew(httpTrace);
+const cleanedMissingLocalEndpointTrace = treeCorrectedForClockSkew(
+  missingLocalEndpointTrace,
+);
 
 describe('traceSummary', () => {
   it('should classify durations local to the endpoint', () => {
@@ -180,6 +235,13 @@ describe('traceSummariesToMustache', () => {
   it('should convert duration from micros to millis', () => {
     const model = traceSummaries(null, [summary]);
     expect(model[0].duration).toBe(168.731);
+  });
+
+  it('should render empty serviceSummaries when spans lack localEndpoint', () => {
+    const model = traceSummaries(null, [
+      traceSummary(cleanedMissingLocalEndpointTrace),
+    ]);
+    expect(model[0].serviceSummaries).toEqual([]);
   });
 
   it('should get service summaries, ordered descending by max span duration', () => {

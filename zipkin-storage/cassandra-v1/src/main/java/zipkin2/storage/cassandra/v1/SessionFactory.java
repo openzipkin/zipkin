@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,11 +22,9 @@ import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LatencyAwarePolicy;
 import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
-import com.google.common.collect.Sets;
-import com.google.common.io.Closer;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import zipkin2.storage.cassandra.internal.HostAndPort;
@@ -47,23 +45,22 @@ public interface SessionFactory {
      */
     @Override
     public Session create(CassandraStorage cassandra) {
-      Closer closer = Closer.create();
+      Cluster cluster = null;
+      Session session = null;
       try {
-        Cluster cluster = closer.register(buildCluster(cassandra));
+        cluster = buildCluster(cassandra);
         cluster.register(new QueryLogger.Builder().build());
         if (cassandra.ensureSchema) {
-          Session session = closer.register(cluster.connect());
+          session = cluster.connect();
           Schema.ensureExists(cassandra.keyspace, session);
           session.execute("USE " + cassandra.keyspace);
           return session;
         } else {
           return cluster.connect(cassandra.keyspace);
         }
-      } catch (RuntimeException e) {
-        try {
-          closer.close();
-        } catch (IOException ignored) {
-        }
+      } catch (RuntimeException e) { // don't leak on unexpected exception!
+        if (session != null) session.close();
+        if (cluster != null) cluster.close();
         throw e;
       }
     }
@@ -108,7 +105,7 @@ public interface SessionFactory {
 
     /** Returns the consistent port across all contact points or 9042 */
     static int findConnectPort(List<InetSocketAddress> contactPoints) {
-      Set<Integer> ports = Sets.newLinkedHashSet();
+      Set<Integer> ports = new LinkedHashSet<>();
       for (InetSocketAddress contactPoint : contactPoints) {
         ports.add(contactPoint.getPort());
       }

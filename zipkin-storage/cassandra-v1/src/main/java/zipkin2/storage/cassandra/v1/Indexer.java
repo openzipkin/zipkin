@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,13 +21,13 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSetMultimap;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Call;
@@ -55,12 +55,12 @@ final class Indexer {
    * Shared across all threads, as updates to indexes can come from any thread. Null disables
    * optimization.
    */
-  @Nullable private final ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState;
+  @Nullable final Map<PartitionKeyToTraceId, Pair> sharedState;
 
   Indexer(
       Session session,
       int indexTtl,
-      @Nullable ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState,
+      @Nullable Map<PartitionKeyToTraceId, Pair> sharedState,
       IndexSupport index) {
     this.index = index;
     Insert insert =
@@ -126,8 +126,7 @@ final class Indexer {
 
   void index(Span span, List<Call<Void>> calls) {
     // First parse each span into partition keys used to support query requests
-    ImmutableSetMultimap.Builder<PartitionKeyToTraceId, Long> parsed =
-      ImmutableSetMultimap.builder();
+    SetMultimap<PartitionKeyToTraceId, Long> parsed = new SetMultimap();
     long timestamp = span.timestampAsLong();
     if (timestamp == 0L) return;
     for (String partitionKey : index.partitionKeys(span)) {
@@ -138,20 +137,19 @@ final class Indexer {
     // The parsed results may include inserts that already occur, or are redundant as they don't
     // impact QueryRequest.endTs or QueryRequest.loopback. For example, a parsed timestamp could
     // be between timestamps of rows that already exist for a particular trace.
-    ImmutableSetMultimap<PartitionKeyToTraceId, Long> maybeInsert = parsed.build();
-    if (maybeInsert.isEmpty()) return;
+    if (parsed.size() == 0) return;
 
-    ImmutableSetMultimap<PartitionKeyToTraceId, Long> toInsert;
+    SetMultimap<PartitionKeyToTraceId, Long> toInsert;
     if (sharedState == null) { // special-case when caching is disabled.
-      toInsert = maybeInsert;
+      toInsert = parsed;
     } else {
       // Optimized results will be smaller when the input includes traces with local spans, or when
       // other threads indexed the same trace.
-      toInsert = entriesThatIncreaseGap(sharedState, maybeInsert);
+      toInsert = entriesThatIncreaseGap(sharedState, parsed);
 
-      if (maybeInsert.size() > toInsert.size() && LOG.isDebugEnabled()) {
-        int delta = maybeInsert.size() - toInsert.size();
-        LOG.debug("optimized out {}/{} inserts into {}", delta, maybeInsert.size(), index.table());
+      if (parsed.size() > toInsert.size() && LOG.isDebugEnabled()) {
+        int delta = parsed.size() - toInsert.size();
+        LOG.debug("optimized out {}/{} inserts into {}", delta, parsed.size(), index.table());
       }
     }
 
@@ -162,11 +160,10 @@ final class Indexer {
     }
   }
 
-  @VisibleForTesting
-  static ImmutableSetMultimap<PartitionKeyToTraceId, Long> entriesThatIncreaseGap(
-      ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState,
-      ImmutableSetMultimap<PartitionKeyToTraceId, Long> updates) {
-    ImmutableSet.Builder<PartitionKeyToTraceId> toUpdate = ImmutableSet.builder();
+  static SetMultimap<PartitionKeyToTraceId, Long> entriesThatIncreaseGap(
+      Map<PartitionKeyToTraceId, Pair> sharedState,
+      SetMultimap<PartitionKeyToTraceId, Long> updates) {
+    Set<PartitionKeyToTraceId> toUpdate = new LinkedHashSet<>();
 
     // Enter a loop that affects shared state when an update widens the time interval for a key.
     for (Map.Entry<PartitionKeyToTraceId, Long> input : updates.entries()) {
@@ -185,8 +182,8 @@ final class Indexer {
           }
         }
 
-        long first = timestamp < oldRange.left ? timestamp : oldRange.left;
-        long last = timestamp > oldRange.right ? timestamp : oldRange.right;
+        long first = Math.min(timestamp, oldRange.left);
+        long last = Math.max(timestamp, oldRange.right);
 
         Pair newRange = new Pair(first, last);
         if (oldRange.equals(newRange)) {
@@ -201,9 +198,8 @@ final class Indexer {
     // When the loop completes, we'll know one of our updates widened the interval of a trace, if
     // it is the first or last timestamp. By ignoring those between an existing interval, we can
     // end up with less Cassandra writes.
-    ImmutableSetMultimap.Builder<PartitionKeyToTraceId, Long> result =
-      ImmutableSetMultimap.builder();
-    for (PartitionKeyToTraceId needsUpdate : toUpdate.build()) {
+    SetMultimap<PartitionKeyToTraceId, Long> result = new SetMultimap<>();
+    for (PartitionKeyToTraceId needsUpdate : toUpdate) {
       Pair firstLast = sharedState.get(needsUpdate);
       if (updates.containsEntry(needsUpdate, firstLast.left)) {
         result.put(needsUpdate, firstLast.left);
@@ -212,11 +208,10 @@ final class Indexer {
         result.put(needsUpdate, firstLast.right);
       }
     }
-    return result.build();
+    return result;
   }
 
   interface IndexSupport {
-
     String table();
 
     Insert declarePartitionKey(Insert insert);
@@ -227,15 +222,14 @@ final class Indexer {
   }
 
   static class Factory {
-
-    private final Session session;
-    private final int indexTtl;
-    private final ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState;
+    final Session session;
+    final int indexTtl;
+    final Map<PartitionKeyToTraceId, Pair> sharedState;
 
     public Factory(
         Session session,
         int indexTtl,
-        @Nullable ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState) {
+        @Nullable Map<PartitionKeyToTraceId, Pair> sharedState) {
       this.session = session;
       this.indexTtl = indexTtl;
       this.sharedState = sharedState;
@@ -243,6 +237,38 @@ final class Indexer {
 
     Indexer create(IndexSupport index) {
       return new Indexer(session, indexTtl, sharedState, index);
+    }
+  }
+
+  static final class SetMultimap<K, V> {
+    final Map<K, Set<V>> delegate = new LinkedHashMap<>();
+    int size = 0;
+
+    int size() {
+      return size;
+    }
+
+    void put(K key, V value) {
+      Set<V> valueContainer = delegate.get(key);
+      if (valueContainer == null) {
+        delegate.put(key, valueContainer = new LinkedHashSet<>());
+      }
+      if (valueContainer.add(value)) size++;
+    }
+
+    boolean containsEntry(K key, V value) {
+      Set<V> result = delegate.get(key);
+      return result != null && result.contains(value);
+    }
+
+    Iterable<? extends Map.Entry<K, V>> entries() {
+      if (delegate.isEmpty()) return Collections.emptySet();
+      Set<Map.Entry<K, V>> result = new LinkedHashSet<>();
+      for (Map.Entry<K, Set<V>> entries : delegate.entrySet()) {
+        entries.getValue()
+          .forEach(v -> result.add(new SimpleImmutableEntry<>(entries.getKey(), v)));
+      }
+      return result;
     }
   }
 }

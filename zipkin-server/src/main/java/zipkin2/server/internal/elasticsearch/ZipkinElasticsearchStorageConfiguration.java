@@ -16,7 +16,6 @@ package zipkin2.server.internal.elasticsearch;
 import brave.CurrentSpanCustomizer;
 import brave.SpanCustomizer;
 import brave.http.HttpTracing;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.linecorp.armeria.client.ClientFactory;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
@@ -26,11 +25,13 @@ import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.logging.RequestLog;
 import com.linecorp.armeria.common.logging.RequestLogProperty;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.util.NamedThreadFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -88,12 +89,13 @@ public class ZipkinElasticsearchStorageConfiguration {
     MeterRegistry meterRegistry) throws Exception {
     ClientFactoryBuilder builder = ClientFactory.builder();
 
-    // Allow use of a custom KeyStore or TrustStore when connecting to Elasticsearch
     Ssl ssl = es.getSsl();
+    if (ssl.isNoVerify()) builder.tlsNoVerify();
+    // Allow use of a custom KeyStore or TrustStore when connecting to Elasticsearch
     if (ssl.getKeyStore() != null || ssl.getTrustStore() != null) configureSsl(builder, ssl);
 
     // Elasticsearch 7 never returns a response when receiving an HTTP/2 preface instead of the more
-    // valid behavior of returning a bad request response, so we can't use the preface.\
+    // valid behavior of returning a bad request response, so we can't use the preface.
     // TODO: find or raise a bug with Elastic
     return builder.useHttp2Preface(false)
       .connectTimeoutMillis(es.getTimeout())
@@ -163,14 +165,13 @@ public class ZipkinElasticsearchStorageConfiguration {
     @Value("${" + CREDENTIALS_REFRESH_INTERVAL + "}") Integer credentialsRefreshInterval,
     @Qualifier(QUALIFIER) BasicCredentials basicCredentials) throws IOException {
     ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor(
-      new ThreadFactoryBuilder()
-        .setNameFormat("LoadElasticSearchCredentials-%d")
-        .build());
+      new NamedThreadFactory("zipkin-load-es-credentials"));
     DynamicCredentialsFileLoader credentialsFileLoader =
       new DynamicCredentialsFileLoader(basicCredentials, credentialsFile);
     credentialsFileLoader.updateCredentialsFromProperties();
-    ses.scheduleAtFixedRate(credentialsFileLoader,
-      0, credentialsRefreshInterval, TimeUnit.SECONDS);
+    ScheduledFuture<?> future = ses.scheduleAtFixedRate(credentialsFileLoader,
+        0, credentialsRefreshInterval, TimeUnit.SECONDS);
+    if (future.isDone()) throw new RuntimeException("credential refresh thread didn't start");
     return ses;
   }
 
@@ -212,7 +213,7 @@ public class ZipkinElasticsearchStorageConfiguration {
         condition.getEnvironment().getProperty(PASSWORD);
       String credentialsFile =
         condition.getEnvironment().getProperty(CREDENTIALS_FILE);
-      return !isEmpty(userName) && !isEmpty(password) || !isEmpty(credentialsFile);
+      return (!isEmpty(userName) && !isEmpty(password)) || !isEmpty(credentialsFile);
     }
   }
 
@@ -225,7 +226,6 @@ public class ZipkinElasticsearchStorageConfiguration {
   static ClientFactoryBuilder configureSsl(ClientFactoryBuilder builder, Ssl ssl) throws Exception {
     final KeyManagerFactory keyManagerFactory = SslUtil.getKeyManagerFactory(ssl);
     final TrustManagerFactory trustManagerFactory = SslUtil.getTrustManagerFactory(ssl);
-
     return builder.tlsCustomizer(sslContextBuilder -> {
       sslContextBuilder.keyManager(keyManagerFactory);
       sslContextBuilder.trustManager(trustManagerFactory);

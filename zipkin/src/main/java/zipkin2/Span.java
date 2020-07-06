@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -396,8 +396,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     }
 
     /**
-     * @throws IllegalArgumentException if not lower-hex format
-     * @see Span#id()
+     * Sets {@link Span#id()} or throws {@link IllegalArgumentException} if not lower-hex format.
      */
     public Builder traceId(String traceId) {
       this.traceId = normalizeTraceId(traceId);
@@ -424,20 +423,15 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       return this;
     }
 
-    /**
-     * Encodes 64 bits from the input into a hex parent ID. Unsets the {@link Span#parentId()} if
-     * the input is 0.
-     *
-     * @see Span#parentId()
-     */
+    /** Hex encodes the input as the {@link Span#parentId()} or unsets if the input is zero. */
     public Builder parentId(long parentId) {
       this.parentId = parentId != 0L ? toLowerHex(parentId) : null;
       return this;
     }
 
     /**
-     * @throws IllegalArgumentException if not lower-hex format
-     * @see Span#parentId()
+     * Sets {@link Span#parentId()} or throws {@link IllegalArgumentException} if not lower-hex
+     * format.
      */
     public Builder parentId(@Nullable String parentId) {
       if (parentId == null) {
@@ -456,10 +450,8 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     }
 
     /**
-     * Encodes 64 bits from the input into a hex span ID.
-     *
-     * @throws IllegalArgumentException if the input is zero
-     * @see Span#id()
+     * Hex encodes the input as the {@link Span#id()} or throws IllegalArgumentException if the
+     * input is zero.
      */
     public Builder id(long id) {
       if (id == 0L) throw new IllegalArgumentException("empty id");
@@ -467,10 +459,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       return this;
     }
 
-    /**
-     * @throws IllegalArgumentException if not lower-hex format
-     * @see Span#id()
-     */
+    /** Sets {@link Span#id()} or throws {@link IllegalArgumentException} if not lower-hex format. */
     public Builder id(String id) {
       if (id == null) throw new NullPointerException("id == null");
       int length = id.length();
@@ -483,75 +472,75 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       return this;
     }
 
-    /** @see Span#kind */
+    /** Sets {@link Span#kind} */
     public Builder kind(@Nullable Kind kind) {
       this.kind = kind;
       return this;
     }
 
-    /** @see Span#name */
+    /** Sets {@link Span#name} */
     public Builder name(@Nullable String name) {
       this.name = name == null || name.isEmpty() ? null : name.toLowerCase(Locale.ROOT);
       return this;
     }
 
-    /** @see Span#timestampAsLong() */
+    /** Sets {@link Span#timestampAsLong()} */
     public Builder timestamp(long timestamp) {
       if (timestamp < 0L) timestamp = 0L;
       this.timestamp = timestamp;
       return this;
     }
 
-    /** @see Span#timestamp() */
+    /** Sets {@link Span#timestamp()} */
     public Builder timestamp(@Nullable Long timestamp) {
       if (timestamp == null || timestamp < 0L) timestamp = 0L;
       this.timestamp = timestamp;
       return this;
     }
 
-    /** @see Span#durationAsLong() */
+    /** Sets {@link Span#durationAsLong()} */
     public Builder duration(long duration) {
       if (duration < 0L) duration = 0L;
       this.duration = duration;
       return this;
     }
 
-    /** @see Span#duration() */
+    /** Sets {@link Span#duration()} */
     public Builder duration(@Nullable Long duration) {
       if (duration == null || duration < 0L) duration = 0L;
       this.duration = duration;
       return this;
     }
 
-    /** @see Span#localEndpoint */
+    /** Sets {@link Span#localEndpoint} */
     public Builder localEndpoint(@Nullable Endpoint localEndpoint) {
       if (EMPTY_ENDPOINT.equals(localEndpoint)) localEndpoint = null;
       this.localEndpoint = localEndpoint;
       return this;
     }
 
-    /** @see Span#remoteEndpoint */
+    /** Sets {@link Span#remoteEndpoint} */
     public Builder remoteEndpoint(@Nullable Endpoint remoteEndpoint) {
       if (EMPTY_ENDPOINT.equals(remoteEndpoint)) remoteEndpoint = null;
       this.remoteEndpoint = remoteEndpoint;
       return this;
     }
 
-    /** @see Span#annotations */
+    /** Sets {@link Span#annotations} */
     public Builder addAnnotation(long timestamp, String value) {
       if (annotations == null) annotations = new ArrayList<>(2);
       annotations.add(Annotation.create(timestamp, value));
       return this;
     }
 
-    /** @see Span#annotations */
+    /** Sets {@link Span#annotations} */
     public Builder clearAnnotations() {
       if (annotations == null) return this;
       annotations.clear();
       return this;
     }
 
-    /** @see Span#tags */
+    /** Sets {@link Span#tags} */
     public Builder putTag(String key, String value) {
       if (tags == null) tags = new TreeMap<>();
       if (key == null) throw new NullPointerException("key == null");
@@ -560,14 +549,14 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       return this;
     }
 
-    /** @see Span#tags */
+    /** Sets {@link Span#tags} */
     public Builder clearTags() {
       if (tags == null) return this;
       tags.clear();
       return this;
     }
 
-    /** @see Span#debug */
+    /** Sets {@link Span#debug} */
     public Builder debug(boolean debug) {
       flags |= FLAG_DEBUG_SET;
       if (debug) {
@@ -578,14 +567,14 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       return this;
     }
 
-    /** @see Span#debug */
+    /** Sets {@link Span#debug} */
     public Builder debug(@Nullable Boolean debug) {
       if (debug != null) return debug((boolean) debug);
       flags &= ~(FLAG_DEBUG_SET | FLAG_DEBUG);
       return this;
     }
 
-    /** @see Span#shared */
+    /** Sets {@link Span#shared} */
     public Builder shared(boolean shared) {
       flags |= FLAG_SHARED_SET;
       if (shared) {
@@ -596,7 +585,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       return this;
     }
 
-    /** @see Span#shared */
+    /** Sets {@link Span#shared} */
     public Builder shared(@Nullable Boolean shared) {
       if (shared != null) return shared((boolean) shared);
       flags &= ~(FLAG_SHARED_SET | FLAG_SHARED);

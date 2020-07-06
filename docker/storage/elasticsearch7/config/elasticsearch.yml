@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2019 The OpenZipkin Authors
+# Copyright 2015-2020 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -15,6 +15,9 @@
 network.host: 0.0.0.0
 node.name: zipkin-elasticsearch
 cluster.name: "docker-cluster"
-cluster.initial_master_nodes: 
+cluster.initial_master_nodes:
   - zipkin-elasticsearch
 xpack.ml.enabled: false
+xpack.monitoring.enabled: false
+xpack.security.enabled: false
+xpack.watcher.enabled: false

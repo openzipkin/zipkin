@@ -1,6 +1,6 @@
 #!/busybox/sh
 #
-# Copyright 2015-2019 The OpenZipkin Authors
+# Copyright 2015-2020 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,7 @@
 
 
 echo Starting Zookeeper
-/busybox/sh /kafka/bin/kafka-run-class.sh -Dlog4j.configuration=file:/kafka/config/log4j.properties org.apache.zookeeper.server.quorum.QuorumPeerMain /kafka/zookeeper/conf/zoo_sample.cfg &
+/busybox/sh /kafka/bin/kafka-run-class.sh -Dlog4j.configuration=file:/kafka/config/log4j.properties org.apache.zookeeper.server.quorum.QuorumPeerMain /kafka/config/zookeeper.properties &
 /busybox/sh /kafka/bin/wait-for-zookeeper.sh
 
 if [[ -z "$KAFKA_ADVERTISED_HOST_NAME" ]]; then

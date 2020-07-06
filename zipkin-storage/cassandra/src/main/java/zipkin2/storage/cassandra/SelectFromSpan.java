@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -38,7 +38,6 @@ import zipkin2.storage.StrictTraceId;
 import zipkin2.storage.cassandra.internal.call.AccumulateAllResults;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
 final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
@@ -81,7 +80,6 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
     }
 
     Call<List<Span>> newCall(String hexTraceId) {
-      checkNotNull(hexTraceId, "hexTraceId");
       // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
       Set<String> traceIds;
       if (!strictTraceId && hexTraceId.length() == 32) {
@@ -217,13 +215,14 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
           try {
             builder.kind(Span.Kind.valueOf(row.getString("kind")));
           } catch (IllegalArgumentException ignored) {
+            // EmptyCatch ignored
           }
         }
         if (!row.isNull("l_ep")) {
-          builder.localEndpoint(row.get("l_ep", Schema.EndpointUDT.class).toEndpoint());
+          builder.localEndpoint(row.get("l_ep", EndpointUDT.class).toEndpoint());
         }
         if (!row.isNull("r_ep")) {
-          builder.remoteEndpoint(row.get("r_ep", Schema.EndpointUDT.class).toEndpoint());
+          builder.remoteEndpoint(row.get("r_ep", EndpointUDT.class).toEndpoint());
         }
         if (!row.isNull("shared")) {
           builder.shared(row.getBool("shared"));
@@ -231,10 +230,10 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
         if (!row.isNull("debug")) {
           builder.shared(row.getBool("debug"));
         }
-        for (Schema.AnnotationUDT udt : row.getList("annotations", Schema.AnnotationUDT.class)) {
+        for (AnnotationUDT udt : row.getList("annotations", AnnotationUDT.class)) {
           builder.addAnnotation(udt.toAnnotation().timestamp(), udt.toAnnotation().value());
         }
-        for (Entry<String, String> tag :
+        for (Map.Entry<String, String> tag :
             row.getMap("tags", String.class, String.class).entrySet()) {
           builder.putTag(tag.getKey(), tag.getValue());
         }

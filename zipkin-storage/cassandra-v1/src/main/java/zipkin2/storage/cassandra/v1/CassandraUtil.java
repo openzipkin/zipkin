@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,36 +13,36 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.google.common.collect.ImmutableList;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import zipkin2.Annotation;
 import zipkin2.Call;
 import zipkin2.Span;
+import zipkin2.internal.DateUtil;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
 import zipkin2.storage.QueryRequest;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
 
 final class CassandraUtil {
-  static final ImmutableList<String> CORE_ANNOTATIONS =
-    ImmutableList.of("cs", "cr", "ss", "sr", "ms", "mr", "ws", "wr");
+  static final List<String> CORE_ANNOTATIONS =
+    Arrays.asList("cs", "cr", "ss", "sr", "ms", "mr", "ws", "wr");
 
   private static final ThreadLocal<CharsetEncoder> UTF8_ENCODER =
     ThreadLocal.withInitial(StandardCharsets.UTF_8::newEncoder);
@@ -87,7 +87,9 @@ final class CassandraUtil {
 
   static List<String> annotationKeys(QueryRequest request) {
     if (request.annotationQuery().isEmpty()) return Collections.emptyList();
-    checkArgument(request.serviceName() != null, "serviceName needed with annotation query");
+    if (request.serviceName() == null) {
+      throw new IllegalArgumentException("serviceName needed with annotation query");
+    }
     Set<String> annotationKeys = new LinkedHashSet<>();
     for (Map.Entry<String, String> e : request.annotationQuery().entrySet()) {
       if (e.getValue().isEmpty()) {
@@ -114,7 +116,7 @@ final class CassandraUtil {
   static Set<Long> sortTraceIdsByDescTimestamp(Set<Pair> set) {
     // timestamps can collide, so we need to add some random digits on end before using them as
     // serviceSpanKeys
-    SortedMap<BigInteger, Long> sorted = new TreeMap<>(Collections.reverseOrder());
+    TreeMap<BigInteger, Long> sorted = new TreeMap<>(Collections.reverseOrder());
     for (Pair pair : set) {
       BigInteger uncollided =
           BigInteger.valueOf(pair.right)
@@ -141,5 +143,14 @@ final class CassandraUtil {
     public String toString() {
       return "SortTraceIdsByDescTimestamp";
     }
+  }
+
+  @SuppressWarnings("JdkObsolete")
+  static List<Date> getDays(long endTs, @Nullable Long lookback) {
+    List<Date> result = new ArrayList<>();
+    for (long epochMillis : DateUtil.epochDays(endTs, lookback)) {
+      result.add(new Date(epochMillis));
+    }
+    return result;
   }
 }

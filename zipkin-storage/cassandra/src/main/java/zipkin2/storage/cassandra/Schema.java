@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,26 +19,15 @@ import com.datastax.driver.core.Host;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.VersionNumber;
-import com.datastax.driver.mapping.annotations.UDT;
-import com.google.common.io.CharStreams;
-import com.google.common.net.InetAddresses;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.Serializable;
-import java.net.InetAddress;
-import java.nio.charset.Charset;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import zipkin2.Annotation;
-import zipkin2.Endpoint;
+import zipkin2.internal.Nullable;
 
-import static com.google.common.base.Preconditions.checkState;
+import static zipkin2.storage.cassandra.internal.Resources.resourceToString;
 
 final class Schema {
   static final Logger LOG = LoggerFactory.getLogger(Schema.class);
-  static final Charset UTF_8 = Charset.forName("UTF-8");
 
   static final String TABLE_SPAN = "span";
   static final String TABLE_TRACE_BY_SERVICE_SPAN = "trace_by_service_span";
@@ -70,8 +59,9 @@ final class Schema {
       ConsistencyLevel cl =
         session.getCluster().getConfiguration().getQueryOptions().getConsistencyLevel();
 
-      checkState(
-        ConsistencyLevel.ONE == cl, "Do not define `local_dc` and use SimpleStrategy");
+      if (cl != ConsistencyLevel.ONE) {
+        throw new IllegalArgumentException("Do not define `local_dc` and use SimpleStrategy");
+      }
     }
     String compactionClass =
       keyspaceMetadata.getTable("span").getOptions().getCompaction().get("class");
@@ -116,14 +106,17 @@ final class Schema {
     return keyspaceMetadata;
   }
 
-  static KeyspaceMetadata getKeyspaceMetadata(Session session, String keyspace) {
+  @Nullable static KeyspaceMetadata getKeyspaceMetadata(Session session, String keyspace) {
     Cluster cluster = session.getCluster();
     com.datastax.driver.core.Metadata metadata = cluster.getMetadata();
-    for (Host host : metadata.getAllHosts()) {
-      checkState(
-        0 >= VersionNumber.parse("3.11.3").compareTo(host.getCassandraVersion()),
-        "Host %s is running Cassandra %s, but minimum version is 3.11.3",
-        host.getHostId(), host.getCassandraVersion());
+    for (Host node : metadata.getAllHosts()) {
+      VersionNumber version = node.getCassandraVersion();
+      if (version == null) throw new RuntimeException("node had no version: " + node);
+      if (VersionNumber.parse("3.11.3").compareTo(version) > 0) {
+        throw new RuntimeException(String.format(
+          "Host %s is running Cassandra %s, but minimum version is 3.11.3",
+          node.getHostId(), node.getCassandraVersion()));
+      }
     }
     return metadata.getKeyspace(keyspace);
   }
@@ -160,129 +153,11 @@ final class Schema {
   }
 
   static void applyCqlFile(String keyspace, Session session, String resource) {
-    try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(resource), UTF_8)) {
-      for (String cmd : CharStreams.toString(reader).split(";", 100)) {
-        cmd = cmd.trim().replace(" " + DEFAULT_KEYSPACE, " " + keyspace);
-        if (!cmd.isEmpty()) {
-          session.execute(cmd);
-        }
+    for (String cmd : resourceToString(resource).split(";", 100)) {
+      cmd = cmd.trim().replace(" " + DEFAULT_KEYSPACE, " " + keyspace);
+      if (!cmd.isEmpty()) {
+        session.execute(cmd);
       }
-    } catch (IOException ex) {
-      LOG.error(ex.getMessage(), ex);
-    }
-  }
-
-  @UDT(name = "endpoint")
-  static final class EndpointUDT implements Serializable { // for Spark jobs
-    static final long serialVersionUID = 0L;
-
-    String service;
-    InetAddress ipv4;
-    InetAddress ipv6;
-    int port;
-
-    EndpointUDT() {
-      this.service = null;
-      this.ipv4 = null;
-      this.ipv6 = null;
-      this.port = 0;
-    }
-
-    EndpointUDT(Endpoint endpoint) {
-      this.service = endpoint.serviceName();
-      this.ipv4 = endpoint.ipv4() == null ? null : InetAddresses.forString(endpoint.ipv4());
-      this.ipv6 = endpoint.ipv6() == null ? null : InetAddresses.forString(endpoint.ipv6());
-      this.port = endpoint.portAsInt();
-    }
-
-    public String getService() {
-      return service;
-    }
-
-    public InetAddress getIpv4() {
-      return ipv4;
-    }
-
-    public InetAddress getIpv6() {
-      return ipv6;
-    }
-
-    public int getPort() {
-      return port;
-    }
-
-    public void setService(String service) {
-      this.service = service;
-    }
-
-    public void setIpv4(InetAddress ipv4) {
-      this.ipv4 = ipv4;
-    }
-
-    public void setIpv6(InetAddress ipv6) {
-      this.ipv6 = ipv6;
-    }
-
-    public void setPort(int port) {
-      this.port = port;
-    }
-
-    Endpoint toEndpoint() {
-      Endpoint.Builder builder = Endpoint.newBuilder().serviceName(service).port(port);
-      builder.parseIp(ipv4);
-      builder.parseIp(ipv6);
-      return builder.build();
-    }
-
-    @Override public String toString() {
-      return "EndpointUDT{"
-        + "service=" + service + ", "
-        + "ipv4=" + ipv4 + ", "
-        + "ipv6=" + ipv6 + ", "
-        + "port=" + port
-        + "}";
-    }
-  }
-
-  @UDT(name = "annotation")
-  static final class AnnotationUDT implements Serializable { // for Spark jobs
-    static final long serialVersionUID = 0L;
-
-    long ts;
-    String v;
-
-    AnnotationUDT() {
-      this.ts = 0;
-      this.v = null;
-    }
-
-    AnnotationUDT(Annotation annotation) {
-      this.ts = annotation.timestamp();
-      this.v = annotation.value();
-    }
-
-    public long getTs() {
-      return ts;
-    }
-
-    public String getV() {
-      return v;
-    }
-
-    public void setTs(long ts) {
-      this.ts = ts;
-    }
-
-    public void setV(String v) {
-      this.v = v;
-    }
-
-    Annotation toAnnotation() {
-      return Annotation.create(ts, v);
-    }
-
-    @Override public String toString() {
-      return "AnnotationUDT{SpanBytesDecoderts=" + ts + ", v=" + v + "}";
     }
   }
 }

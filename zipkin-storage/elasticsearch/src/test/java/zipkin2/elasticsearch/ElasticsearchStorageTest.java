@@ -22,7 +22,8 @@ import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
-import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
+import com.linecorp.armeria.testing.junit5.server.mock.MockWebServerExtension;
+import java.time.Instant;
 import java.util.concurrent.RejectedExecutionException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +58,7 @@ class ElasticsearchStorageTest {
 
     server.enqueue(SUCCESS_RESPONSE); // dependencies request
 
-    long endTs = storage.indexNameFormatter().parseDate("2016-10-02");
+    long endTs = Instant.parse("2016-10-02T00:00:00Z").toEpochMilli();
     storage.spanStore().getDependencies(endTs, DAY).execute();
 
     assertThat(server.takeRequest().request().path())
@@ -73,7 +74,7 @@ class ElasticsearchStorageTest {
     server.enqueue(SUCCESS_RESPONSE); // dependencies request
     server.enqueue(SUCCESS_RESPONSE); // dependencies request
 
-    long endTs = storage.indexNameFormatter().parseDate("2016-10-02");
+    long endTs = Instant.parse("2016-10-02T00:00:00Z").toEpochMilli();
     storage.spanStore().getDependencies(endTs, DAY).execute();
     storage.spanStore().getDependencies(endTs, DAY).execute();
 

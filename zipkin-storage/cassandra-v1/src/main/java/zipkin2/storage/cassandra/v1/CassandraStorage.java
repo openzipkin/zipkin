@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,6 @@ package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.google.common.cache.CacheBuilderSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -31,8 +30,6 @@ import zipkin2.storage.StorageComponent;
 import zipkin2.storage.Traces;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * CQL3 implementation of zipkin storage.
@@ -117,13 +114,15 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
 
     /** Override to control how sessions are created. */
     public Builder sessionFactory(SessionFactory sessionFactory) {
-      this.sessionFactory = checkNotNull(sessionFactory, "sessionFactory");
+      if (sessionFactory == null) throw new NullPointerException("sessionFactory == null");
+      this.sessionFactory = sessionFactory;
       return this;
     }
 
     /** Keyspace to store span and index data. Defaults to "zipkin" */
     public Builder keyspace(String keyspace) {
-      this.keyspace = checkNotNull(keyspace, "keyspace");
+      if (keyspace == null) throw new NullPointerException("keyspace == null");
+      this.keyspace = keyspace;
       return this;
     }
 
@@ -132,7 +131,8 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
      * custom port with 'host:port'. Defaults to localhost on port 9042 *
      */
     public Builder contactPoints(String contactPoints) {
-      this.contactPoints = checkNotNull(contactPoints, "contactPoints");
+      if (contactPoints == null) throw new NullPointerException("contactPoints == null");
+      this.contactPoints = contactPoints;
       return this;
     }
 
@@ -270,8 +270,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
   }
 
   final int maxTraceCols;
-  @Deprecated final int indexTtl;
-  @Deprecated final int spanTtl;
+  @Deprecated final int indexTtl, spanTtl;
   final int bucketCount;
   final String contactPoints;
   final int maxConnections;
@@ -281,7 +280,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
   final boolean ensureSchema;
   final boolean useSsl;
   final String keyspace;
-  final CacheBuilderSpec indexCacheSpec;
+  final int indexCacheMax, indexCacheTtl;
   final int indexFetchMultiplier;
   final boolean strictTraceId, searchEnabled;
   final LazySession session;
@@ -312,13 +311,8 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
     this.spanTtl = b.spanTtl;
     this.bucketCount = b.bucketCount;
     this.session = new LazySession(b.sessionFactory, this);
-    if (b.indexCacheMax != 0) {
-      this.indexCacheSpec =
-          CacheBuilderSpec.parse(
-              "maximumSize=" + b.indexCacheMax + ",expireAfterWrite=" + b.indexCacheTtl + "s");
-    } else {
-      this.indexCacheSpec = null;
-    }
+    this.indexCacheMax = b.indexCacheMax;
+    this.indexCacheTtl = b.indexCacheTtl;
     this.indexFetchMultiplier = b.indexFetchMultiplier;
     this.autocompleteKeys = b.autocompleteKeys;
     this.autocompleteTtl = b.autocompleteTtl;
@@ -371,7 +365,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
     if (spanConsumer == null) {
       synchronized (this) {
         if (spanConsumer == null) {
-          spanConsumer = new CassandraSpanConsumer(this, indexCacheSpec);
+          spanConsumer = new CassandraSpanConsumer(this);
         }
       }
     }

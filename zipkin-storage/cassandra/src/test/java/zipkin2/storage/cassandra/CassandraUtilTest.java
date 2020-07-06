@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,13 +13,12 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.google.common.collect.ImmutableMap;
-import java.util.Date;
+import com.datastax.driver.core.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 import zipkin2.internal.DateUtil;
@@ -30,9 +29,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.TODAY;
 
 public class CassandraUtilTest {
-
-  @Rule public ExpectedException thrown = ExpectedException.none();
-
   @Test
   public void annotationKeys_emptyRequest() {
     assertThat(
@@ -134,13 +130,12 @@ public class CassandraUtilTest {
 
   @Test
   public void traceIdsSortedByDescTimestamp_doesntCollideOnSameTimestamp() {
-    Set<String> sortedTraceIds =
-        CassandraUtil.traceIdsSortedByDescTimestamp()
-            .map(
-                ImmutableMap.of(
-                    "a", 1L,
-                    "b", 1L,
-                    "c", 2L));
+    Map<String, Long> input = new LinkedHashMap<>();
+    input.put("a", 1L);
+    input.put("b", 1L);
+    input.put("c", 2L);
+
+    Set<String> sortedTraceIds = CassandraUtil.traceIdsSortedByDescTimestamp().map(input);
 
     try {
       assertThat(sortedTraceIds).containsExactly("c", "b", "a");
@@ -152,7 +147,7 @@ public class CassandraUtilTest {
   @Test
   public void getDays_consistentWithDateUtil() {
     assertThat(CassandraUtil.getDays(DAYS.toMillis(2), DAYS.toMillis(1)))
-      .extracting(d -> new Date(d.getMillisSinceEpoch()))
-      .containsExactlyElementsOf(DateUtil.getDays(DAYS.toMillis(2), DAYS.toMillis(1)));
+      .extracting(LocalDate::getMillisSinceEpoch)
+      .containsExactlyElementsOf(DateUtil.epochDays(DAYS.toMillis(2), DAYS.toMillis(1)));
   }
 }

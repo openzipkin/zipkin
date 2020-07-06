@@ -287,6 +287,9 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                                          credentials. Any errors reading the credentials file occur in logs at this rate.
     * `ES_HTTP_LOGGING`: When set, controls the volume of HTTP logging of the Elasticsearch API.
                          Options are BASIC, HEADERS, BODY
+    * `ES_SSL_NO_VERIFY`: When true, disables the verification of server's key certificate chain.
+                          This is not appropriate for production. Defaults to false.
+
 Example usage:
 
 To connect normally:
@@ -579,6 +582,16 @@ of known open source libraries on 128-bit trace identifiers.
 
 See `zipkin2.storage.StorageComponent.Builder` for even more details!
 
+## TLS/SSL
+Zipkin-server can be made to run with TLS if needed:
+
+```bash
+# assuming you generate the key like this
+keytool -genkeypair -alias mysite -keyalg RSA -keysize 2048 -storetype PKCS12 -keystore zipkin.p12 -validity 3650
+
+java -jar zipkin.jar --armeria.ssl.key-store=zipkin.p12 --armeria.ssl.key-store-type=PKCS12 --armeria.ssl.key-store-password=123123 --armeria.ssl.key-alias=mysite  --armeria.ssl.enabled=true --armeria.ports[0].port=9411 --armeria.ports[0].protocols[0]=https
+```
+
 ## Running with Docker
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin`.
 See [docker-zipkin](https://github.com/openzipkin/docker-zipkin) for details.
@@ -588,7 +601,7 @@ See [docker-zipkin](https://github.com/openzipkin/docker-zipkin) for details.
 To build and run the server from the currently checked out source, enter the following.
 ```bash
 # Build the server and also make its dependencies
-$ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
+$ ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server clean install
 # Run the server
 $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 # or Run the slim server

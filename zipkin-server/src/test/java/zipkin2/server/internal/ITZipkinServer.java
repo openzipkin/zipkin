@@ -247,7 +247,18 @@ public class ITZipkinServer {
     assertThat(info.body().string())
       .isEqualToIgnoringWhitespace(stringFromClasspath(getClass(), "info.json"));
   }
+  
+  @Test public void getTrace_spaceAfterTraceId() throws Exception {
+    storage.accept(TRACE).execute();
 
+    Response response = get("/api/v2/trace/" + TRACE.get(0).traceId() + " ");
+    assertThat(response.isSuccessful()).isTrue();
+
+    assertThat(response.body().bytes())
+      .containsExactly(SpanBytesEncoder.JSON_V2.encodeList(TRACE));
+  }
+
+  
   private Response get(String path) throws IOException {
     return client.newCall(new Request.Builder()
       .url(url(server, path))

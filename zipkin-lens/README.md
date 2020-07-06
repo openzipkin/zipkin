@@ -55,6 +55,22 @@ Finally, edit [App.jsx](./src/components/App/App.jsx) and
 [LanguageSelector.tsx](./src/components/App/LanguageSelector.tsx) to import the new translation and
 add an entry to the language selector respectively.
 
+## Dev Tools
+
+As the app is a SPA using React, it can be difficult to debug issues using native browser tools because
+the HTML does not map directly to any source code. It is recommended to install these extensions if you
+need to debug the page (they will only work with the local dev server, not a production build).
+
+### React Developer Tools
+
+Chrome: https://chrome.google.com/webstore/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi
+Firefox: https://addons.mozilla.org/en-US/firefox/addon/react-devtools/
+
+### Redux DevTools
+
+Chrome: https://chrome.google.com/webstore/detail/redux-devtools/lmhkpmbekcpmknklioeibfkpmmfibljd
+Firefox: https://addons.mozilla.org/en-US/firefox/addon/reduxdevtools/
+
 ## Running behind a reverse proxy
 Since version `2.20`, Zipkin Lens supports running under an arbitrary context root. As a result,
 it can be proxied under a different path than `/zipkin/` such as `/proxy/foo/myzipkin/`.

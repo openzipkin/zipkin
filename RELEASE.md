@@ -15,11 +15,17 @@ in mind when choosing version numbers.
 
 1. **Wait for Travis CI**
 
-   This part is controlled by [`travis/publish.sh`](travis/publish.sh). It creates a bunch of new
-   commits, bumps the version, publishes artifacts, syncs to Maven Central, invokes [docker] builds,
-   and publishes Javadocs to http://zipkin.io/zipkin into a versioned subdirectory.
-   (Note: Javadocs are also published on all builds of master; due to versioning, it doesn't
-   overwrite docs built for releases.)
+   Release automation invokes [`travis/publish.sh`](travis/publish.sh), which does the following:
+     * Creates commits, N.N.N tag, and increments the version (maven-release-plugin)
+     * Publishes jars to https://bintray.com/openzipkin/maven/zipkin (maven-deploy-plugin)
+     * Synchronizes jars to Maven Central
+     * Invokes [DockerHub](docker/RELEASE.md] build
+     * Publishes Javadoc to https://zipkin.io/zipkin into a versioned subdirectory
+
+   Notes:
+     * https://search.maven.org/ index will take longer than direct links like https://repo1.maven.org/maven2/io/zipkin/zipkin-server
+     * Javadocs are also published on all builds of master; due to versioning, it doesn't
+   overwrite docs built for releases.
 
 ## Credentials
 
@@ -189,3 +195,22 @@ $ git commit -am"prepare next version"
 $ git push origin 2.4.x
 ```
 
+## Generating jdiff and javadoc
+
+Once the release is done and the artifacts are in maven central, you can generate
+the jdiff report in the `gh-pages` branch. It's not needed to do this for a
+patch release.
+
+```bash
+$ wget -L -c https://search.maven.org/remotecontent?filepath=org/spf4j/spf4j-jdiff-maven-plugin/8.8.1/spf4j-jdiff-maven-plugin-8.8.1-uber.jar -O jdiff.jar
+$ java -jar jdiff.jar -gId io.zipkin.zipkin2 -aId zipkin -fromVersion 2.20.2 -toVersion 2.21.3 -o jdiff/2.20_to_2.21 -p 'zipkin2 zipkin2.storage zipkin2.codec zipkin2.v1'
+$ git add jdiff/2.20_to_2.21
+$ git commit -m"jdiff report"
+$ git push upstream gh-pages
+```
+
+Note that
+* The `fromVersion` and `toVersion` reflect the latest patch version of each release.
+* The output directory does not include the patch version number.
+* The `-p` parameter specifies the packages to include in the jdiff report,
+you can look at [bnd.bnd](zipkin/bnd.bnd) to see which packages we export. This rarely changes.

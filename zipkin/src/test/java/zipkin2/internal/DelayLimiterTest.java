@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,133 +15,125 @@ package zipkin2.internal;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.LongStream;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import zipkin2.internal.DelayLimiter.SuppressionFactory;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class DelayLimiterTest {
-  static final long NANOS_PER_SECOND = TimeUnit.SECONDS.toNanos(1);
+  static final long NANOS_PER_SECOND = SECONDS.toNanos(1L);
   long nanoTime;
-  DelayLimiter.Ticker ticker = new DelayLimiter.Ticker() {
-    long read() {
+  SuppressionFactory suppressionFactory = new SuppressionFactory(NANOS_PER_SECOND) {
+    @Override long nanoTime() {
       return nanoTime;
     }
   };
+  DelayLimiter<Long> delayLimiter = new DelayLimiter<>(suppressionFactory, 1000);
 
-  @Test public void mutesDuringDelayPeriod() {
-    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ticker(ticker).ttl(3000).build();
-
+  @Test void mutesDuringDelayPeriod() {
     nanoTime = NANOS_PER_SECOND;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
 
-    nanoTime = NANOS_PER_SECOND * 2;
+    nanoTime += NANOS_PER_SECOND / 2L;
     assertThat(delayLimiter.shouldInvoke(0L)).isFalse();
 
-    nanoTime = NANOS_PER_SECOND * 4;
+    nanoTime += NANOS_PER_SECOND / 2L;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
   }
 
-  @Test public void contextsAreIndependent() {
-    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ticker(ticker).ttl(3000).build();
-
+  @Test void contextsAreIndependent() {
     nanoTime = NANOS_PER_SECOND;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
 
-    nanoTime = NANOS_PER_SECOND * 2;
+    nanoTime += NANOS_PER_SECOND / 2L;
     assertThat(delayLimiter.shouldInvoke(0L)).isFalse();
     assertThat(delayLimiter.shouldInvoke(1L)).isTrue();
 
-    nanoTime = NANOS_PER_SECOND * 4;
+    nanoTime += NANOS_PER_SECOND / 2L;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
     assertThat(delayLimiter.shouldInvoke(1L)).isFalse();
   }
 
-  @Test public void worksOnRollover() {
-    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ticker(ticker).ttl(3000).build();
-
-    nanoTime = -NANOS_PER_SECOND;
+  @Test void worksOnRollover() {
+    nanoTime = -NANOS_PER_SECOND / 2L;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
 
     nanoTime = 0L;
     assertThat(delayLimiter.shouldInvoke(0L)).isFalse();
 
-    nanoTime = NANOS_PER_SECOND * 2;
+    nanoTime = NANOS_PER_SECOND / 2L;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
   }
 
-  @Test public void worksOnSameNanos() {
-    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ticker(ticker).ttl(3000).build();
-
+  @Test void worksOnSameNanos() {
     nanoTime = NANOS_PER_SECOND;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
 
-    nanoTime = NANOS_PER_SECOND * 4;
+    nanoTime = NANOS_PER_SECOND * 2L;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
     assertThat(delayLimiter.shouldInvoke(0L)).isFalse();
   }
 
-  @Test(timeout = 1000L)
-  public void cardinality() {
-    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(1000).cardinality(1000).build();
-
-    for (long i = 0; i < 10_000L; i++) {
+  @Test @Timeout(1000L) void cardinality() {
+    long count = delayLimiter.cardinality * 10L;
+    for (long i = 0L; i < count; i++, nanoTime++) {
       assertThat(delayLimiter.shouldInvoke(i)).isTrue();
     }
-    assertThat(delayLimiter.shouldInvoke(0L)).isTrue(); // evicted
-    assertThat(delayLimiter.shouldInvoke(9_999L)).isFalse(); // not evicted
+    assertThat(delayLimiter.shouldInvoke(0L)).isTrue(); // eldest evicted
+    assertThat(delayLimiter.shouldInvoke(count - 1L)).isFalse(); // youngest not evicted
 
     // verify internal state
     assertThat(delayLimiter.cache)
       .hasSameSizeAs(delayLimiter.suppressions)
-      .hasSize(1000);
+      .hasSize(delayLimiter.cardinality);
   }
 
-  @Test(timeout = 2000L)
-  public void cardinality_parallel() throws InterruptedException {
-    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder()
-      .ttl(1000)
-      .cardinality(1000)
-      .build();
-
-    AtomicInteger trueCount = new AtomicInteger();
+  @Test @Timeout(2000L) void cardinality_parallel() throws InterruptedException {
+    AtomicLong trueCount = new AtomicLong();
     ExecutorService exec = Executors.newFixedThreadPool(4);
 
-    int count = 10_000;
-    LongStream.range(0, count).forEach(i -> exec.execute(() -> {
+    long count = delayLimiter.cardinality * 10L;
+    LongStream.range(0L, count).forEach(i -> exec.execute(() -> {
       if (delayLimiter.shouldInvoke(i)) trueCount.incrementAndGet();
     }));
 
     exec.shutdown();
-    assertThat(exec.awaitTermination(1, TimeUnit.SECONDS)).isTrue();
+    assertThat(exec.awaitTermination(1L, SECONDS)).isTrue();
 
     assertThat(trueCount).hasValue(count);
 
     // verify internal state
     assertThat(delayLimiter.cache)
       .hasSameSizeAs(delayLimiter.suppressions)
-      .hasSize(1000);
+      .hasSize(delayLimiter.cardinality);
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void ttl_cantBeNegative() {
-    DelayLimiter.newBuilder().ttl(-1);
+  @Test void ttl_cantBeNegative() {
+    DelayLimiter.Builder builder = DelayLimiter.newBuilder().ttl(-1, SECONDS);
+
+    assertThatThrownBy(builder::build).isInstanceOf(IllegalArgumentException.class);
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void ttl_cantBeZero() {
-    DelayLimiter.newBuilder().ttl(0);
+  @Test void ttl_cantBeZero() {
+    DelayLimiter.Builder builder = DelayLimiter.newBuilder().ttl(0, SECONDS);
+
+    assertThatThrownBy(builder::build).isInstanceOf(IllegalArgumentException.class);
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void cardinality_cantBeNegative() {
-    DelayLimiter.newBuilder().cardinality(-1);
+  @Test void cardinality_cantBeNegative() {
+    DelayLimiter.Builder builder = DelayLimiter.newBuilder().ttl(1L, SECONDS).cardinality(-1);
+
+    assertThatThrownBy(builder::build).isInstanceOf(IllegalArgumentException.class);
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void cardinality_cantBeZero() {
-    DelayLimiter.newBuilder().cardinality(0);
+  @Test void cardinality_cantBeZero() {
+    DelayLimiter.Builder builder = DelayLimiter.newBuilder().ttl(1L, SECONDS).cardinality(0);
+
+    assertThatThrownBy(builder::build).isInstanceOf(IllegalArgumentException.class);
   }
 }

@@ -13,15 +13,19 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
+import com.linecorp.armeria.client.endpoint.EmptyEndpointGroupException;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.healthcheck.HealthCheckService;
 import com.linecorp.armeria.server.healthcheck.SettableHealthChecker;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLHandshakeException;
+import org.awaitility.core.ConditionFactory;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.CheckResult;
@@ -36,6 +40,10 @@ import static zipkin2.server.internal.elasticsearch.TestResponses.VERSION_RESPON
  * These tests focus on http client health checks not currently in zipkin-storage-elasticsearch.
  */
 public class ITElasticsearchHealthCheck {
+  static final Logger logger = LoggerFactory.getLogger(ITElasticsearchHealthCheck.class.getName());
+  // Health check interval is 100ms, but in-flight requests in CI might take a few hundred ms
+  static final ConditionFactory awaitTimeout = await().timeout(1, TimeUnit.SECONDS);
+
   static final SettableHealthChecker server1Health = new SettableHealthChecker(true);
 
   @ClassRule public static ServerRule server1 = new ServerRule() {
@@ -62,6 +70,8 @@ public class ITElasticsearchHealthCheck {
     server1Health.setHealthy(true);
     server2Health.setHealthy(true);
 
+    logger.info("server 1: {}, server 2: {}", server1.httpUri(), server2.httpUri());
+
     initWithHosts("127.0.0.1:" + server1.httpPort() + ",127.0.0.1:" + server2.httpPort());
   }
 
@@ -72,6 +82,8 @@ public class ITElasticsearchHealthCheck {
       "zipkin.storage.elasticsearch.ensure-templates=false",
       "zipkin.storage.elasticsearch.timeout=200",
       "zipkin.storage.elasticsearch.health-check.enabled=true",
+      // uncomment (and also change log4j2.properties) to see health-checks requests in the console
+      //"zipkin.storage.elasticsearch.health-check.http-logging=headers",
       "zipkin.storage.elasticsearch.health-check.interval=100ms",
       "zipkin.storage.elasticsearch.hosts=" + hosts)
       .applyTo(context);
@@ -115,32 +127,27 @@ public class ITElasticsearchHealthCheck {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
       CheckResult result = storage.check();
       assertThat(result.ok()).isFalse();
-      assertThat(result.error()).hasMessage(String.format(
-        "couldn't connect any of [Endpoint{127.0.0.1:%s, weight=1000}, Endpoint{127.0.0.1:%s, weight=1000}]",
-        server1.httpPort(), server2.httpPort()
-      ));
       assertThat(result.error())
-        .hasCause(null); // client health check failures are only visible via count of endpoints
+        .isInstanceOf(EmptyEndpointGroupException.class);
     }
   }
 
+  // If this flakes, uncomment in initWithHosts and log4j2.properties
   @Test public void healthyThenNotHealthyThenHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
       CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
 
+      logger.info("setting server 1 and 2 unhealthy");
       server1Health.setHealthy(false);
       server2Health.setHealthy(false);
 
-      // Health check interval is 100ms
-      await().timeout(300, TimeUnit.MILLISECONDS).untilAsserted(() ->
-        assertThat(storage.check().ok()).isFalse());
+      awaitTimeout.untilAsserted(() -> assertThat(storage.check().ok()).isFalse());
 
+      logger.info("setting server 1 healthy");
       server1Health.setHealthy(true);
 
-      // Health check interval is 100ms
-      await().timeout(300, TimeUnit.MILLISECONDS).untilAsserted(() ->
-        assertThat(storage.check().ok()).isTrue());
+      awaitTimeout.untilAsserted(() -> assertThat(storage.check().ok()).isTrue());
     }
   }
 
@@ -154,15 +161,11 @@ public class ITElasticsearchHealthCheck {
 
       server2Health.setHealthy(true);
 
-      // Health check interval is 100ms
-      await().timeout(300, TimeUnit.MILLISECONDS).untilAsserted(() ->
-        assertThat(storage.check().ok()).isTrue());
+      awaitTimeout.untilAsserted(() -> assertThat(storage.check().ok()).isTrue());
 
       server2Health.setHealthy(false);
 
-      // Health check interval is 100ms
-      await().timeout(300, TimeUnit.MILLISECONDS).untilAsserted(() ->
-        assertThat(storage.check().ok()).isFalse());
+      awaitTimeout.untilAsserted(() -> assertThat(storage.check().ok()).isFalse());
     }
   }
 

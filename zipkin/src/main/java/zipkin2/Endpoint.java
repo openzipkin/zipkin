@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -131,7 +131,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
       return this;
     }
 
-    /** @see Endpoint#serviceName */
+    /** Sets {@link Endpoint#serviceName} */
     public Builder serviceName(@Nullable String serviceName) {
       this.serviceName = serviceName == null || serviceName.isEmpty()
         ? null : serviceName.toLowerCase(Locale.ROOT);
@@ -276,7 +276,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
       return this;
     }
 
-    /** @see Endpoint#portAsInt() */
+    /** Sets {@link Endpoint#portAsInt()} */
     public Builder port(int port) {
       if (port > 0xffff) throw new IllegalArgumentException("invalid port " + port);
       if (port < 0) port = 0;

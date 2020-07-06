@@ -215,6 +215,8 @@ export function traceSummaries(serviceName, summaries, utc = false) {
             10,
           );
         }
+      } else {
+        res.serviceSummaries = [];
       }
 
       if (t.errorType !== 'none') res.infoClass = `trace-error-${t.errorType}`;

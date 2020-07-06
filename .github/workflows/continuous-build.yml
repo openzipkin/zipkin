@@ -1,0 +1,38 @@
+name: Continuous Build Server
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build Server
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v1
+        with:
+          fetch-depth: 10
+      - name: Cache NPM Packages
+        uses: actions/cache@v1
+        with:
+          path: ~/.npm
+          key: npm-packages-${{ runner.os }}-${{ hashFiles('zipkin-lens/package-lock.json') }}
+      - name: Cache Maven Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository
+          key: m2-repository-${{ hashFiles('**/pom.xml') }}
+      - name: Cache Maven Wrapper
+        uses: actions/cache@v1
+        with:
+         path: .mvn/wrapper
+         key: mvn-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+      - name: Execute Server Build
+        run: ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server clean install
+        shell: bash
+        env:
+          CI: true

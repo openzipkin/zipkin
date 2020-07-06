@@ -15,8 +15,7 @@
 FROM alpine
 
 ENV SCALA_VERSION 2.12
-ENV KAFKA_VERSION 2.4.1
-ENV ZOOKEEPER_VERSION 3.5.7
+ENV KAFKA_VERSION 2.5.0
 
 WORKDIR /kafka
 ADD docker/collector/kafka/install.sh /kafka/install
@@ -26,7 +25,7 @@ ADD docker/collector/kafka/wait-for-zookeeper.sh /kafka/bin
 ADD docker/collector/kafka/start.sh /kafka/bin
 
 # Share the same base image to reduce layers used in testing
-FROM openzipkin/jre-full:11.0.6-11.37
+FROM openzipkin/jre-full:14.0.1-14.28.21
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 WORKDIR /kafka

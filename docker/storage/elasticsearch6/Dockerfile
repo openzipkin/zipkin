@@ -14,7 +14,7 @@
 
 FROM alpine
 
-ENV ELASTICSEARCH_VERSION 6.8.8
+ENV ELASTICSEARCH_VERSION 6.8.10
 
 RUN apk add --update curl
 
@@ -25,7 +25,7 @@ RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch
 
 COPY docker/storage/elasticsearch6/config /elasticsearch/config
 
-FROM openzipkin/jre-full:11.0.6-11.37
+FROM openzipkin/jre-full:14.0.1-14.28.21
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # https://github.com/elastic/elasticsearch/pull/31003 was closed won't fix

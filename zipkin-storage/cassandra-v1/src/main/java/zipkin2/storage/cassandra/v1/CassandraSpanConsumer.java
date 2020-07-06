@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,8 +14,6 @@
 package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.Session;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilderSpec;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -44,7 +42,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
   @Nullable final CompositeIndexer indexer;
   @Nullable final InsertAutocompleteValue.Factory insertAutocompleteValue;
 
-  CassandraSpanConsumer(CassandraStorage storage, CacheBuilderSpec indexCacheSpec) {
+  CassandraSpanConsumer(CassandraStorage storage) {
     Session session = storage.session();
     Schema.Metadata metadata = storage.metadata();
     searchEnabled = storage.searchEnabled;
@@ -70,7 +68,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
       insertRemoteServiceName = null;
     }
     insertSpanName = new InsertSpanName.Factory(storage, indexTtl);
-    indexer = new CompositeIndexer(storage, indexCacheSpec, indexTtl);
+    indexer = new CompositeIndexer(storage, indexTtl);
     if (metadata.hasAutocompleteTags && !storage.autocompleteKeys.isEmpty()) {
       insertAutocompleteValue = new InsertAutocompleteValue.Factory(storage, indexTtl);
     } else {
@@ -143,8 +141,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
     return calls.isEmpty() ? Call.create(null) : AggregateCall.newVoidCall(calls);
   }
 
-  /** Clears any caches */
-  @VisibleForTesting
+  /** For testing only: Clears any caches */
   void clear() {
     if (insertServiceName != null) insertServiceName.clear();
     if (insertRemoteServiceName != null) insertRemoteServiceName.clear();
