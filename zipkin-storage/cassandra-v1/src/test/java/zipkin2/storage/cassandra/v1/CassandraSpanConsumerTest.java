@@ -146,13 +146,17 @@ public class CassandraSpanConsumerTest {
     Call<Void> call = consumer.accept(asList(span1, span2));
 
     assertEnclosedIndexCalls(call)
-      .extracting("factory.table", "input.partitionKey")
+      .extracting("factory.indexerFactory.table", "input.partitionKey")
       .containsExactly(
         tuple(Tables.SERVICE_NAME_INDEX, "app"),
         tuple(Tables.SERVICE_NAME_INDEX, "app.foo"),
         tuple(Tables.SERVICE_REMOTE_SERVICE_NAME_INDEX, "app.foo"),
         tuple(Tables.SERVICE_SPAN_NAME_INDEX, "app.foo")
       );
+
+    // intentionally redundantly accept span2 which double-checks deduplication of index calls
+    assertThat(consumer.accept(singletonList(span2)))
+      .isInstanceOf(InsertTrace.class);
   }
 
   static AbstractListAssert<?, List<?>, Object, ObjectAssert<Object>> assertEnclosedIndexCalls(

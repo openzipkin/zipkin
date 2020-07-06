@@ -29,7 +29,6 @@ import zipkin2.internal.HexCodec;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.V1ThriftSpanWriter;
 import zipkin2.storage.SpanConsumer;
-import zipkin2.storage.cassandra.v1.IndexTraceId.Indexer;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V2SpanConverter;
 
@@ -130,12 +129,12 @@ final class CassandraSpanConsumer implements SpanConsumer {
     Set<Entry<String, String>> insertRemoteServiceNames = new LinkedHashSet<>();
     Set<Entry<String, String>> insertSpanNames = new LinkedHashSet<>();
     Set<Entry<String, String>> insertAutocompleteTags = new LinkedHashSet<>();
-    Indexer indexTraceIdByServiceNames = indexTraceIdByServiceName.newIndexer();
-    Indexer indexTraceIdByRemoteServiceNames = indexTraceIdByRemoteServiceName != null
+    TraceIdIndexer indexTraceIdByServiceNames = indexTraceIdByServiceName.newIndexer();
+    TraceIdIndexer indexTraceIdByRemoteServiceNames = indexTraceIdByRemoteServiceName != null
       ? indexTraceIdByRemoteServiceName.newIndexer()
-      : Indexer.NOOP;
-    Indexer indexTraceIdBySpanNames = indexTraceIdBySpanName.newIndexer();
-    Indexer indexTraceIdByAnnotations = indexTraceIdByAnnotation.newIndexer();
+      : TraceIdIndexer.NOOP;
+    TraceIdIndexer indexTraceIdBySpanNames = indexTraceIdBySpanName.newIndexer();
+    TraceIdIndexer indexTraceIdByAnnotations = indexTraceIdByAnnotation.newIndexer();
 
     for (int i = 0; i < spanCount; i++) {
       Span span = spans.get(i);
