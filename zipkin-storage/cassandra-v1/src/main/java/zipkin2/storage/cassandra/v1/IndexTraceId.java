@@ -74,8 +74,11 @@ final class IndexTraceId extends ResultSetFutureCall<Void> {
 
   static abstract class Factory extends DeduplicatingVoidCallFactory<Input> {
     final Session session;
-    // Shared across all threads as updates can come from any thread.
-    final Map<Entry<String, Long>, Pair> sharedState;
+    /**
+     * This ensures we only attempt to write rows that would extend the timestamp range of a trace
+     * index query. This is shared singleton as inserts can come from any thread.
+     */
+    final Map<Entry<String, Long>, Pair> partitionKeyAndTraceIdToTimestampRange;
     final String table;
     final int bucketCount;
     final PreparedStatement preparedStatement;
@@ -84,8 +87,8 @@ final class IndexTraceId extends ResultSetFutureCall<Void> {
     Factory(CassandraStorage storage, String table, int indexTtl) {
       super(TimeUnit.SECONDS.toMillis(storage.indexCacheTtl), storage.indexCacheTtl);
       session = storage.session();
-      // TODO: this state should be merged with the DelayLimiter setup in the super class
-      sharedState = CacheBuilder.newBuilder()
+      // This state looks similar to DelayLimiter, but serves a different purpose.
+      partitionKeyAndTraceIdToTimestampRange = CacheBuilder.newBuilder()
         .maximumSize(storage.indexCacheMax)
         .expireAfterWrite(storage.indexCacheTtl, TimeUnit.SECONDS)
         .<Entry<String, Long>, Pair>build().asMap();
@@ -100,7 +103,7 @@ final class IndexTraceId extends ResultSetFutureCall<Void> {
     }
 
     Indexer newIndexer() {
-      return new RealIndexer(sharedState, table);
+      return new RealIndexer(partitionKeyAndTraceIdToTimestampRange, table);
     }
 
     abstract Insert declarePartitionKey(Insert insert);
@@ -113,7 +116,7 @@ final class IndexTraceId extends ResultSetFutureCall<Void> {
 
     @Override public void clear() {
       super.clear();
-      sharedState.clear();
+      partitionKeyAndTraceIdToTimestampRange.clear();
     }
   }
 
@@ -145,12 +148,12 @@ final class IndexTraceId extends ResultSetFutureCall<Void> {
   }
 
   static final class RealIndexer implements Indexer {
-    final Map<Entry<String, Long>, Pair> sharedState;
+    final Map<Entry<String, Long>, Pair> partitionKeyAndTraceIdToRange;
     final String table;
     final Set<Input> inputs = new LinkedHashSet<>();
 
-    RealIndexer(Map<Entry<String, Long>, Pair> sharedState, String table) {
-      this.sharedState = sharedState;
+    RealIndexer(Map<Entry<String, Long>, Pair> partitionKeyAndTraceIdToRange, String table) {
+      this.partitionKeyAndTraceIdToRange = partitionKeyAndTraceIdToRange;
       this.table = table;
     }
 
@@ -186,10 +189,11 @@ final class IndexTraceId extends ResultSetFutureCall<Void> {
         long timestamp = input.ts();
         add(mappedInputs, key, timestamp);
         for (; ; ) {
-          Pair oldRange = sharedState.get(key);
+          Pair oldRange = partitionKeyAndTraceIdToRange.get(key);
           if (oldRange == null) {
             // Initial state is where this key has a single timestamp.
-            oldRange = sharedState.putIfAbsent(key, new Pair(timestamp, timestamp));
+            oldRange =
+              partitionKeyAndTraceIdToRange.putIfAbsent(key, new Pair(timestamp, timestamp));
 
             // If there was no previous value, we need to update the index
             if (oldRange == null) {
@@ -204,7 +208,7 @@ final class IndexTraceId extends ResultSetFutureCall<Void> {
           Pair newRange = new Pair(first, last);
           if (oldRange.equals(newRange)) {
             break; // the current timestamp is contained
-          } else if (sharedState.replace(key, oldRange, newRange)) {
+          } else if (partitionKeyAndTraceIdToRange.replace(key, oldRange, newRange)) {
             toUpdate.add(key); // The range was extended
             break;
           }
@@ -216,12 +220,12 @@ final class IndexTraceId extends ResultSetFutureCall<Void> {
       // end up with less Cassandra writes.
       Set<IndexTraceId.Input> result = new LinkedHashSet<>();
       for (Entry<String, Long> needsUpdate : toUpdate) {
-        Pair firstLast = sharedState.get(needsUpdate);
-        if (containsEntry(mappedInputs, needsUpdate, firstLast.left)) {
-          result.add(Input.create(needsUpdate.getKey(), firstLast.left, needsUpdate.getValue()));
+        Pair range = partitionKeyAndTraceIdToRange.get(needsUpdate);
+        if (containsEntry(mappedInputs, needsUpdate, range.left)) {
+          result.add(Input.create(needsUpdate.getKey(), range.left, needsUpdate.getValue()));
         }
-        if (containsEntry(mappedInputs, needsUpdate, firstLast.right)) {
-          result.add(Input.create(needsUpdate.getKey(), firstLast.right, needsUpdate.getValue()));
+        if (containsEntry(mappedInputs, needsUpdate, range.right)) {
+          result.add(Input.create(needsUpdate.getKey(), range.right, needsUpdate.getValue()));
         }
       }
       return result;

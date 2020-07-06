@@ -36,7 +36,7 @@ public abstract class DeduplicatingVoidCallFactory<I> {
     calls.add(new InvalidatingVoidCall<>(newCall(input), delayLimiter, input));
   }
 
-  public void clear() { // TODO: add final once state in IndexTraceId is handled by delayLimiter
+  public void clear() {
     delayLimiter.clear();
   }
 
