@@ -20,6 +20,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 // QueryRequest.serviceName
 final class IndexTraceIdByServiceName extends IndexTraceId.Factory {
+  // Legacy behaviour was to use a static singleton of ThreadLocalRandom for bucket selection
+  private static final ThreadLocalRandom RAND = ThreadLocalRandom.current();
 
   IndexTraceIdByServiceName(CassandraStorage storage, int indexTtl) {
     super(storage, Tables.SERVICE_NAME_INDEX, indexTtl);
@@ -33,7 +35,7 @@ final class IndexTraceIdByServiceName extends IndexTraceId.Factory {
 
   @Override public BoundStatement bindPartitionKey(BoundStatement bound, String partitionKey) {
     return bound
-      .setInt("bucket", ThreadLocalRandom.current().nextInt(bucketCount))
+      .setInt("bucket", RAND.nextInt(bucketCount))
       .setString("service_name", partitionKey);
   }
 }
