@@ -224,8 +224,8 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
      * {@link #indexCacheTtl} passes.
      *
      * <p>Note: It is hard to estimate precisely how many is the right number, particularly as
-     * binary annotation values are included in partition keys (meaning each cache entry can vary in
-     * size considerably). A good guess might be 5 x spans per indexCacheTtl, memory permitting.
+     * annotations and tag values are included in partition keys (meaning each cache entry can vary
+     * in size considerably). A good guess might be 5 x spans per indexCacheTtl, memory permitting.
      */
     public Builder indexCacheMax(int indexCacheMax) {
       this.indexCacheMax = indexCacheMax;

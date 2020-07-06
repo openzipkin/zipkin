@@ -21,11 +21,15 @@ import org.assertj.core.api.ObjectAssert;
 import org.junit.Test;
 import org.mockito.Mockito;
 import zipkin2.Call;
+import zipkin2.Endpoint;
 import zipkin2.Span;
+import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.util.introspection.PropertyOrFieldSupport.EXTRACTION;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -71,8 +75,7 @@ public class CassandraSpanConsumerTest {
 
     Call<Void> call = consumer.accept(singletonList(span));
 
-    assertEnclosedCalls(call)
-      .filteredOn(c -> c instanceof Indexer.IndexCall)
+    assertEnclosedIndexCalls(call)
       .extracting("input.partitionKey")
       .containsExactly("frontend", "frontend.get");
   }
@@ -93,12 +96,8 @@ public class CassandraSpanConsumerTest {
   @Test public void doesntIndexWhenMissingTimestamp() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().timestamp(null).build();
 
-    Call<Void> call = consumer.accept(singletonList(span));
-
-    assertEnclosedCalls(call)
-      .filteredOn(c -> c instanceof Indexer.IndexCall)
-      .extracting("input.partitionKey")
-      .isEmpty();
+    assertThat(consumer.accept(singletonList(span)))
+      .isInstanceOf(InsertTrace.class);
   }
 
   @Test public void indexKeysBasedOnLocalServiceNotRemote() {
@@ -106,8 +105,7 @@ public class CassandraSpanConsumerTest {
 
     Call<Void> call = consumer.accept(singletonList(span));
 
-    assertEnclosedCalls(call)
-      .filteredOn(c -> c instanceof Indexer.IndexCall)
+    assertEnclosedIndexCalls(call)
       .extracting("input.partitionKey")
       .containsExactly("frontend", "frontend.backend", "frontend.get");
   }
@@ -117,10 +115,52 @@ public class CassandraSpanConsumerTest {
 
     Call<Void> call = consumer.accept(singletonList(span));
 
-    assertEnclosedCalls(call)
-      .filteredOn(c -> c instanceof Indexer.IndexCall)
+    assertEnclosedIndexCalls(call)
       .extracting("input.partitionKey")
       .containsExactly(FRONTEND.serviceName());
+  }
+
+  /**
+   * Most partition keys will not clash, as they are delimited differently. For example, spans index
+   * partition keys are delimited with dots, and annotations with colons.
+   *
+   * <p>This tests an edge case, where a delimiter exists in a service name.
+   */
+  @Test public void treatsIndexesSeparately() {
+    Span span1 = Span.newBuilder()
+      .traceId("1")
+      .id("2")
+      .name("foo")
+      .timestamp(TODAY * 1000L)
+      .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
+      .remoteEndpoint(Endpoint.newBuilder().serviceName("foo").build())
+      .build();
+
+    Span span2 = Span.newBuilder()
+      .traceId("1")
+      .id("3")
+      .timestamp(TODAY * 1000L)
+      .localEndpoint(Endpoint.newBuilder().serviceName("app.foo").build())
+      .build();
+
+    Call<Void> call = consumer.accept(asList(span1, span2));
+
+    assertEnclosedIndexCalls(call)
+      .extracting("factory.table", "input.partitionKey")
+      .containsExactly(
+        tuple(Tables.SERVICE_NAME_INDEX, "app"),
+        tuple(Tables.SERVICE_NAME_INDEX, "app.foo"),
+        tuple(Tables.SERVICE_REMOTE_SERVICE_NAME_INDEX, "app.foo"),
+        tuple(Tables.SERVICE_SPAN_NAME_INDEX, "app.foo")
+      );
+  }
+
+  static AbstractListAssert<?, List<?>, Object, ObjectAssert<Object>> assertEnclosedIndexCalls(
+    Call<Void> call) {
+    return assertEnclosedCalls(call)
+      .filteredOn(c -> c instanceof DeduplicatingVoidCallFactory.InvalidatingVoidCall)
+      .extracting("delegate")
+      .filteredOn(c -> c instanceof IndexTraceId);
   }
 
   static AbstractListAssert<?, List<? extends Call<Void>>, Call<Void>, ObjectAssert<Call<Void>>>

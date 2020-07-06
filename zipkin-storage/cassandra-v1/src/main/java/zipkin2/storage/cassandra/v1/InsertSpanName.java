@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,27 +19,12 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.google.auto.value.AutoValue;
+import java.util.Map.Entry;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 final class InsertSpanName extends ResultSetFutureCall<Void> {
-
-  @AutoValue
-  abstract static class Input {
-    static Input create(String service_name, String span_name) {
-      return new AutoValue_InsertSpanName_Input(service_name, span_name);
-    }
-
-    abstract String service_name();
-
-    abstract String span_name();
-
-    Input() {
-    }
-  }
-
-  static class Factory extends DeduplicatingVoidCallFactory<Input> {
+  static class Factory extends DeduplicatingVoidCallFactory<Entry<String, String>> {
     final Session session;
     final PreparedStatement preparedStatement;
 
@@ -54,27 +39,23 @@ final class InsertSpanName extends ResultSetFutureCall<Void> {
       preparedStatement = session.prepare(insertQuery);
     }
 
-    Input newInput(String service_name, String span_name) {
-      return Input.create(service_name, span_name);
-    }
-
-    @Override protected InsertSpanName newCall(Input input) {
+    @Override protected InsertSpanName newCall(Entry<String, String> input) {
       return new InsertSpanName(this, input);
     }
   }
 
   final Factory factory;
-  final Input input;
+  final Entry<String, String> input;
 
-  InsertSpanName(Factory factory, Input input) {
+  InsertSpanName(Factory factory, Entry<String, String> input) {
     this.factory = factory;
     this.input = input;
   }
 
   @Override protected ResultSetFuture newFuture() {
     return factory.session.executeAsync(factory.preparedStatement.bind()
-      .setString("service_name", input.service_name())
-      .setString("span_name", input.span_name()));
+      .setString("service_name", input.getKey())
+      .setString("span_name", input.getValue()));
   }
 
   @Override public Void map(ResultSet input) {
