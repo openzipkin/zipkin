@@ -67,7 +67,9 @@ const DeleteButton = styled.button`
   }
 `;
 
-const Input = styled.input`
+const Input = styled.input.attrs(() => ({
+  'data-testid': 'criterion-input',
+}))`
   width: 350px;
   height: 40px;
   padding: 10px;
