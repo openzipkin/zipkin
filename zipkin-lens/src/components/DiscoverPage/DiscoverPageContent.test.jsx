@@ -12,10 +12,13 @@
  * the License.
  */
 
+/* eslint-disable react/prop-types */
+
 import { act, renderHook } from '@testing-library/react-hooks';
 import { createMemoryHistory } from 'history';
 import moment from 'moment';
 import React from 'react';
+import { Router } from 'react-router-dom';
 
 import DiscoverPageContent, {
   buildApiQuery,
@@ -26,26 +29,27 @@ import render from '../../test/util/render-with-default-settings';
 
 describe('useQueryParams', () => {
   it('should extract criteria from query string', () => {
-    const { result } = renderHook(() =>
-      useQueryParams(
-        {},
-        {
-          pathname: '/zipkin/',
-          // serviceName: serviceA
-          // spanName: spanB
-          // remoteServiceName: remoteServiceNameC
-          // minDuration: 10us
-          // maxDuration: 100ms
-          // annotationQuery:
-          //   key1: value1
-          //   key2
-          //   key3: value3
-          search:
-            '?serviceName=serviceA&spanName=spanB&remoteServiceName=remoteServiceNameC&minDuration=10us&maxDuration=100ms&annotationQuery=key1%3Dvalue1+and+key2+and+key3%3Dvalue3&limit=10',
-        },
-        ['key3'],
-      ),
-    );
+    const history = createMemoryHistory();
+    const wrapper = ({ children }) => {
+      return <Router history={history}>{children}</Router>;
+    };
+
+    history.push({
+      pathname: '/zipkin/',
+      // serviceName: serviceA
+      // spanName: spanB
+      // remoteServiceName: remoteServiceNameC
+      // minDuration: 10us
+      // maxDuration: 100ms
+      // annotationQuery:
+      //   key1: value1
+      //   key2
+      //   key3: value3
+      search:
+        '?serviceName=serviceA&spanName=spanB&remoteServiceName=remoteServiceNameC&minDuration=10us&maxDuration=100ms&annotationQuery=key1%3Dvalue1+and+key2+and+key3%3Dvalue3&limit=10',
+    });
+
+    const { result } = renderHook(() => useQueryParams(['key3']), { wrapper });
     expect(result.current.criteria).toEqual([
       { key: 'serviceName', value: 'serviceA' },
       { key: 'spanName', value: 'spanB' },
@@ -59,53 +63,62 @@ describe('useQueryParams', () => {
   });
 
   it('should extract custom lookback from query string', () => {
-    const { result } = renderHook(() =>
-      useQueryParams(
-        {},
-        {
-          pathname: '/zipkin/',
-          search: '?lookback=custom&startTs=1588558961791&endTs=1588558961791',
-        },
-      ),
-    );
+    const history = createMemoryHistory();
+    const wrapper = ({ children }) => {
+      return <Router history={history}>{children}</Router>;
+    };
+    history.push({
+      pathname: '/zipkin/',
+      search: '?lookback=custom&startTs=1588558961791&endTs=1588558961791',
+    });
+
+    const { result } = renderHook(() => useQueryParams([]), { wrapper });
     expect(result.current.lookback.type).toBe('custom');
     expect(result.current.lookback.startTime.valueOf()).toBe(1588558961791);
     expect(result.current.lookback.endTime.valueOf()).toBe(1588558961791);
   });
 
   it('should extract fixed lookback from query string', () => {
-    const { result } = renderHook(() =>
-      useQueryParams(
-        {},
-        {
-          pathname: '/zipkin/',
-          search: '?lookback=2h&endTs=1588558961791',
-        },
-      ),
-    );
+    const history = createMemoryHistory();
+    const wrapper = ({ children }) => {
+      return <Router history={history}>{children}</Router>;
+    };
+    history.push({
+      pathname: '/zipkin/',
+      search: '?lookback=2h&endTs=1588558961791',
+    });
+
+    const { result } = renderHook(() => useQueryParams([]), { wrapper });
     expect(result.current.lookback.type).toBe('fixed');
     expect(result.current.lookback.value).toBe('2h');
     expect(result.current.lookback.endTime.valueOf()).toBe(1588558961791);
   });
 
   it('should extract limit from query string', () => {
-    const { result } = renderHook(() =>
-      useQueryParams(
-        {},
-        {
-          pathname: '/zipkin/',
-          search: '?limit=300',
-        },
-      ),
-    );
+    const history = createMemoryHistory();
+    const wrapper = ({ children }) => {
+      return <Router history={history}>{children}</Router>;
+    };
+    history.push({
+      pathname: '/zipkin/',
+      search: '?limit=300',
+    });
+
+    const { result } = renderHook(() => useQueryParams([]), { wrapper });
     expect(result.current.limit).toBe(300);
   });
 
   it('should set query string using setQueryParams', () => {
     const history = createMemoryHistory();
-    const { result } = renderHook(() =>
-      useQueryParams(history, history.location, ['key3']),
-    );
+    const wrapper = ({ children }) => {
+      return <Router history={history}>{children}</Router>;
+    };
+    history.push({
+      pathname: '/zipkin/',
+      search: '?limit=300',
+    });
+
+    const { result } = renderHook(() => useQueryParams(['key3']), { wrapper });
 
     act(() => {
       result.current.setQueryParams(

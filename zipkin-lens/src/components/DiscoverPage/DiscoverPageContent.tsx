@@ -23,11 +23,10 @@ import {
   Paper,
   TextField,
 } from '@material-ui/core';
-import { History, Location } from 'history';
 import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RouteComponentProps, withRouter } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
 import Criterion from './Criterion';
@@ -57,16 +56,15 @@ const TracesPaper = styled(Paper)`
   height: 100%;
 `;
 
-interface DiscoverPageContentProps extends RouteComponentProps {
+interface DiscoverPageContentProps {
   autocompleteKeys: string[];
 }
 
 // Export for testing
-export const useQueryParams = (
-  history: History,
-  location: Location,
-  autocompleteKeys: string[],
-) => {
+export const useQueryParams = (autocompleteKeys: string[]) => {
+  const history = useHistory();
+  const location = useLocation();
+
   const setQueryParams = useCallback(
     (criteria: Criterion[], lookback: Lookback, limit: number) => {
       const params = new URLSearchParams();
@@ -156,17 +154,17 @@ export const useQueryParams = (
     return ret;
   }, [autocompleteKeys, location.search]);
 
-  const lookback = useMemo<Lookback | null>(() => {
+  const lookback = useMemo<Lookback | undefined>(() => {
     const ps = new URLSearchParams(location.search);
     const lookback = ps.get('lookback');
     if (!lookback) {
-      return null;
+      return undefined;
     }
     if (lookback === 'custom') {
       const startTs = ps.get('startTs');
       const endTs = ps.get('endTs');
       if (!endTs || !startTs) {
-        return null;
+        return undefined;
       }
       const startTime = moment(parseInt(startTs, 10));
       const endTime = moment(parseInt(endTs, 10));
@@ -178,11 +176,11 @@ export const useQueryParams = (
     }
     const endTs = ps.get('endTs');
     if (!endTs) {
-      return null;
+      return undefined;
     }
     const data = fixedLookbackMap[lookback];
     if (!data) {
-      return null;
+      return undefined;
     }
     return {
       type: 'fixed',
@@ -195,7 +193,7 @@ export const useQueryParams = (
     const ps = new URLSearchParams(location.search);
     const limit = ps.get('limit');
     if (!limit) {
-      return null;
+      return undefined;
     }
     return parseInt(limit, 10);
   }, [location.search]);
@@ -214,7 +212,7 @@ export const parseDuration = (duration: string) => {
   const match = duration.match(regex);
 
   if (!match || match.length < 2) {
-    return null;
+    return undefined;
   }
   if (match.length === 2 || typeof match[2] === 'undefined') {
     return parseInt(match[1], 10);
@@ -227,7 +225,7 @@ export const parseDuration = (duration: string) => {
     case 'us':
       return parseInt(match[1], 10);
     default:
-      return null;
+      return undefined;
   }
 };
 
@@ -286,10 +284,10 @@ export const buildApiQuery = (
 };
 
 const useFetchTraces = (
-  criteria: Criterion[],
-  lookback: Lookback | null,
-  limit: number | null,
   autocompleteKeys: string[],
+  criteria: Criterion[],
+  lookback?: Lookback,
+  limit?: number,
 ) => {
   const dispatch = useDispatch();
 
@@ -307,13 +305,9 @@ const useFetchTraces = (
 };
 
 const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
-  history,
-  location,
   autocompleteKeys,
 }) => {
   const { setQueryParams, criteria, lookback, limit } = useQueryParams(
-    history,
-    location,
     autocompleteKeys,
   );
 
@@ -343,7 +337,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     }
   }, [tempLookback]);
 
-  useFetchTraces(criteria, lookback, limit, autocompleteKeys);
+  useFetchTraces(autocompleteKeys, criteria, lookback, limit);
 
   const handleLimitChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -462,4 +456,4 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   );
 };
 
-export default withRouter(DiscoverPageContent);
+export default DiscoverPageContent;

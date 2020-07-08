@@ -228,7 +228,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
           ss = autocompleteValues;
           break;
         }
-        return null;
+        return undefined;
     }
     return ss.filter((s) => s.includes(valueText));
   }, [

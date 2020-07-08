@@ -55,7 +55,7 @@ interface HowToUseProps {
 }
 
 const HowToUse: React.FC<HowToUseProps> = ({ target }) => {
-  let content = null;
+  let content;
 
   switch (target) {
     case 'minDuration':
