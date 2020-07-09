@@ -199,15 +199,31 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
 
   const suggestions = React.useMemo(() => {
     if (isEnteringKey) {
-      return [
-        'serviceName',
-        'spanName',
-        'remoteServiceName',
-        'maxDuration',
-        'minDuration',
-        'tagQuery',
-        ...autocompleteKeys,
-      ]
+      let keys;
+
+      // spanName and remoteServiceName are fetched after serviceName is
+      // selected, so so they will not be displayed until serviceName is selected.
+      if (criteria.find(({ key }) => key === 'serviceName')) {
+        keys = [
+          'spanName',
+          'remoteServiceName',
+          'maxDuration',
+          'minDuration',
+          'tagQuery',
+          ...autocompleteKeys,
+        ];
+      } else {
+        keys = [
+          'serviceName',
+          'maxDuration',
+          'minDuration',
+          'tagQuery',
+          ...autocompleteKeys,
+        ];
+      }
+      console.log(keys);
+
+      return keys
         .filter((key) => !criteria.find((criterion) => criterion.key === key))
         .filter((key) => key.includes(keyText));
     }

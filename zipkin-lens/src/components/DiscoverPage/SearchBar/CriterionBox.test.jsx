@@ -51,8 +51,9 @@ describe('<CriterionBox />', () => {
     );
 
     expect(queryAllByText('serviceName').length).toBe(1);
-    expect(queryAllByText('spanName').length).toBe(1);
-    expect(queryAllByText('remoteServiceName').length).toBe(1);
+    // spanName and remoteServiceName are not displayed until serviceName is selected.
+    expect(queryAllByText('spanName').length).toBe(0);
+    expect(queryAllByText('remoteServiceName').length).toBe(0);
     expect(queryAllByText('maxDuration').length).toBe(1);
     expect(queryAllByText('minDuration').length).toBe(1);
     expect(queryAllByText('tagQuery').length).toBe(1);
@@ -64,18 +65,7 @@ describe('<CriterionBox />', () => {
     fireEvent.change(items[0], { target: { value: 's' } });
 
     expect(queryAllByText('serviceName').length).toBe(1);
-    expect(queryAllByText('spanName').length).toBe(1);
-    expect(queryAllByText('remoteServiceName').length).toBe(0);
-    expect(queryAllByText('maxDuration').length).toBe(0);
-    expect(queryAllByText('minDuration').length).toBe(0);
-    expect(queryAllByText('tagQuery').length).toBe(0);
-    expect(queryAllByText('keyA').length).toBe(0);
-    expect(queryAllByText('keyB').length).toBe(0);
-    expect(queryAllByText('keyC').length).toBe(0);
-
-    fireEvent.change(items[0], { target: { value: 'se' } });
-
-    expect(queryAllByText('serviceName').length).toBe(1);
+    // spanName and remoteServiceName are not displayed until serviceName is selected.
     expect(queryAllByText('spanName').length).toBe(0);
     expect(queryAllByText('remoteServiceName').length).toBe(0);
     expect(queryAllByText('maxDuration').length).toBe(0);
@@ -84,6 +74,28 @@ describe('<CriterionBox />', () => {
     expect(queryAllByText('keyA').length).toBe(0);
     expect(queryAllByText('keyB').length).toBe(0);
     expect(queryAllByText('keyC').length).toBe(0);
+  });
+
+  it('should show spanName and remoteServiceName after serviceName is selected', () => {
+    const { queryAllByText } = render(
+      <CriterionBox
+        {...commonProps}
+        criteria={[
+          /* serviceName was selected */
+          { key: 'serviceName', value: 'serviceA' },
+        ]}
+      />,
+    );
+    expect(queryAllByText('serviceName').length).toBe(0);
+    // Show spanName and remoteServiceName.
+    expect(queryAllByText('spanName').length).toBe(1);
+    expect(queryAllByText('remoteServiceName').length).toBe(1);
+    expect(queryAllByText('maxDuration').length).toBe(1);
+    expect(queryAllByText('minDuration').length).toBe(1);
+    expect(queryAllByText('tagQuery').length).toBe(1);
+    expect(queryAllByText('keyA').length).toBe(1);
+    expect(queryAllByText('keyB').length).toBe(1);
+    expect(queryAllByText('keyC').length).toBe(1);
   });
 
   it('should filter value suggestions', () => {
