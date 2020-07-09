@@ -294,6 +294,8 @@ const TraceTree = React.memo(
                 className={classes.serviceBadgeText}
               >
                 {serviceName}
+                // This adds a tooltip to service name. This is useful for viewing large service names.
+                // @see - https://developer.mozilla.org/en-US/docs/Web/SVG/Element/title
                 <title>{serviceName}</title>
               </text>
             </svg>
