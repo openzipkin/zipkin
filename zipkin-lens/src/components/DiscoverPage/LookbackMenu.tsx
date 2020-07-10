@@ -104,12 +104,11 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
 
   const handleOutsideClick = useCallback(
     (event: any) => {
-      if (!isOpeningDialog) {
-        if (!el.current) {
-          close();
-        } else if (!el.current.contains(event.target)) {
-          close();
-        }
+      if (
+        !isOpeningDialog &&
+        (!el.current || !el.current.contains(event.target))
+      ) {
+        close();
       }
     },
     [close, isOpeningDialog],
