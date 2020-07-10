@@ -50,7 +50,8 @@ describe('useQueryParams', () => {
     });
 
     const { result } = renderHook(() => useQueryParams(['key3']), { wrapper });
-    expect(result.current.criteria).toEqual([
+
+    const expected = [
       { key: 'serviceName', value: 'serviceA' },
       { key: 'spanName', value: 'spanB' },
       { key: 'remoteServiceName', value: 'remoteServiceNameC' },
@@ -59,7 +60,12 @@ describe('useQueryParams', () => {
       // AnnotationQuery
       { key: 'key3', value: 'value3' },
       { key: 'tagQuery', value: 'key1=value1 and key2' },
-    ]);
+    ];
+
+    for (let i = 0; i < expected.length; i += 1) {
+      expect(result.current.criteria[i].key).toBe(expected[i].key);
+      expect(result.current.criteria[i].value).toBe(expected[i].value);
+    }
   });
 
   it('should extract custom lookback from query string', () => {

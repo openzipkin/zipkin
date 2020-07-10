@@ -14,17 +14,21 @@
 
 import { fireEvent } from '@testing-library/react';
 import React from 'react';
+import shortid from 'shortid';
 
 import { SearchBarImpl } from './SearchBar';
 import render from '../../../test/util/render-with-default-settings';
 
 jest.mock('./CriterionBox', () => {
+  // eslint-disable-next-line global-require,no-shadow
+  const shortid = require('shortid');
+
   // eslint-disable-next-line react/prop-types
   return ({ onChange }) => (
     <input
       onChange={(event) => {
         const ss = event.target.value.split('=', 2);
-        onChange({ key: ss[0], value: ss[1] });
+        onChange({ key: ss[0], value: ss[1], id: shortid.generate() });
       }}
       data-testid="criterion-box"
     />
@@ -60,13 +64,14 @@ describe('<SearchBar />', () => {
     const { getByTestId } = render(<SearchBarImpl {...commonProps} />);
     fireEvent.click(getByTestId('add-button'));
     expect(commonProps.onChange.mock.calls.length).toBe(1);
-    expect(commonProps.onChange.mock.calls[0][0]).toEqual([
-      { key: '', value: '' },
-    ]);
+    expect(commonProps.onChange.mock.calls[0][0][0].key).toEqual('');
+    expect(commonProps.onChange.mock.calls[0][0][0].value).toEqual('');
   });
 
   it('should load spans and remote services when service name is changed', () => {
-    let criteria = [{ key: 'serviceName', value: 'serviceA' }];
+    let criteria = [
+      { key: 'serviceName', value: 'serviceA', id: shortid.generate() },
+    ];
     const onChange = (newCriteria) => {
       criteria = newCriteria;
     };
