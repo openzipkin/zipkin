@@ -12,9 +12,20 @@
  * the License.
  */
 
+import shortid from 'shortid';
+
 type Criterion = {
   key: string;
   value: string;
+  id: string; // for React key props.
+};
+
+export const newCriterion = (key: string = '', value: string = '') => {
+  return {
+    key,
+    value,
+    id: shortid.generate(),
+  };
 };
 
 export default Criterion;

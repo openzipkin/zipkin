@@ -29,7 +29,7 @@ import styled, { keyframes } from 'styled-components';
 
 import HowToUse from './HowToUse';
 import SuggestionList from './SuggestionList';
-import Criterion from '../Criterion';
+import Criterion, { newCriterion } from '../Criterion';
 
 const fadeIn = keyframes`
   0% { opacity: 0 }
@@ -161,7 +161,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
       if (ss.length > 2) {
         ss = fixedText.split(/=(.+)/);
       }
-      onChange({ key: ss[0], value: ss[1] || '' });
+      onChange(newCriterion(ss[0], ss[1] || ''));
     } else if (!prevIsFocused.current && isFocused) {
       if (inputEl.current) {
         inputEl.current.focus();
@@ -227,7 +227,6 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
           ...autocompleteKeys,
         ];
       }
-      console.log(keys);
 
       return keys
         .filter((key) => !criteria.find((criterion) => criterion.key === key))

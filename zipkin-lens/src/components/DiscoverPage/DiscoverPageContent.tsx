@@ -29,7 +29,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
-import Criterion from './Criterion';
+import Criterion, { newCriterion } from './Criterion';
 import ExplainBox from './ExplainBox';
 import LookbackMenu from './LookbackMenu';
 import SearchBar from './SearchBar';
@@ -138,16 +138,16 @@ export const useQueryParams = (autocompleteKeys: string[]) => {
             }
             const [key, value] = strs;
             if (autocompleteKeys.includes(key)) {
-              ret.push({ key, value: value || '' });
+              ret.push(newCriterion(key, value || ''));
             } else {
               tagQuery.push(exp);
             }
           });
-          ret.push({ key: 'tagQuery', value: tagQuery.join(' and ') });
+          ret.push(newCriterion('tagQuery', tagQuery.join(' and ')));
           break;
         }
         default:
-          ret.push({ key, value });
+          ret.push(newCriterion(key, value));
           break;
       }
     });

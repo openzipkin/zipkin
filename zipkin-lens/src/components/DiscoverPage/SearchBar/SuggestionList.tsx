@@ -97,6 +97,7 @@ const SuggestionList: React.FC<SuggestionListProps> = ({
       <List>
         {suggestions.map((suggestion, index) => (
           <ListItem
+            key={suggestion}
             ref={setListEl(index)}
             isFocused={suggestionIndex === index}
             onClick={onItemClick(index)}

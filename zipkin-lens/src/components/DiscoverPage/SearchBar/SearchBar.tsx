@@ -25,7 +25,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk';
 
-import Criterion from '../Criterion';
+import Criterion, { newCriterion } from '../Criterion';
 import CriterionBox from './CriterionBox';
 import { fetchAutocompleteValues } from '../../../actions/autocomplete-values-action';
 import { fetchRemoteServices } from '../../../actions/remote-services-action';
@@ -104,12 +104,13 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
   const handleCriterionDelete = (index: number) => () => {
     const newCriteria = criteria.filter((_, i) => i !== index);
     onChange(newCriteria);
+    setCriterionIndex(-1);
   };
 
   const handleCriterionDecide = (index: number) => () => {
     if (index === criteria.length - 1) {
       const newCriteria = [...criteria];
-      newCriteria.push({ key: '', value: '' });
+      newCriteria.push(newCriterion('', ''));
       onChange(newCriteria);
       const nextCriterionIndex = criteria.length;
       setCriterionIndex(nextCriterionIndex);
@@ -120,7 +121,7 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
 
   const handleAddButtonClick = useCallback(() => {
     const newCriteria = [...criteria];
-    newCriteria.push({ key: '', value: '' });
+    newCriteria.push(newCriterion('', ''));
     onChange(newCriteria);
     const nextCriterionIndex = criteria.length;
     setCriterionIndex(nextCriterionIndex);
@@ -192,7 +193,7 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
     >
       {criteria.map((criterion, index) => (
         <CriterionBox
-          key={index}
+          key={criterion.id}
           criteria={criteria}
           criterion={criterion}
           serviceNames={serviceNames}
