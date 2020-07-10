@@ -330,8 +330,8 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
         return fixedLookbackMap[tempLookback.value].display;
       case 'custom':
         return `${tempLookback.startTime.format(
-          'MM/DD/YYYY HH:mm:ss:SSS',
-        )} - ${tempLookback.endTime.format('MM/DD/YYYY HH:mm:ss:SSS')}`;
+          'MM/DD/YYYY HH:mm:ss',
+        )} - ${tempLookback.endTime.format('MM/DD/YYYY HH:mm:ss')}`;
       default:
         return '';
     }

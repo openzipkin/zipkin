@@ -188,7 +188,7 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
               <KeyboardDateTimePicker
                 label="Start Time"
                 inputVariant="outlined"
-                format="MM/DD/YYYY HH:mm:ss:SSS"
+                format="MM/DD/YYYY HH:mm:ss"
                 value={startTime}
                 onChange={handleStartTimeChange}
                 onOpen={handleDialogOpen}
@@ -202,7 +202,7 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
               <KeyboardDateTimePicker
                 label="End Time"
                 inputVariant="outlined"
-                format="MM/DD/YYYY HH:mm:ss:SSS"
+                format="MM/DD/YYYY HH:mm:ss"
                 value={endTime}
                 onChange={handleEndTimeChange}
                 onOpen={handleDialogOpen}
