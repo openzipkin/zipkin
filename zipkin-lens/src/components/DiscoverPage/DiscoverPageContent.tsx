@@ -346,7 +346,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     [],
   );
 
-  const handleSearchButtonClick = useCallback(() => {
+  const searchTraces = useCallback(() => {
     // If the lookback is fixed, need to set the click time to endTime.
     if (tempLookback.type === 'fixed') {
       setQueryParams(
@@ -441,12 +441,16 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
       </Box>
       <Box display="flex">
         <Box flexGrow={1} mr={1}>
-          <SearchBar criteria={tempCriteria} onChange={setTempCriteria} />
+          <SearchBar
+            criteria={tempCriteria}
+            onChange={setTempCriteria}
+            searchTraces={searchTraces}
+          />
         </Box>
         <SearchButton
           variant="contained"
           color="primary"
-          onClick={handleSearchButtonClick}
+          onClick={searchTraces}
         >
           <FontAwesomeIcon icon={faSearch} size="lg" />
         </SearchButton>

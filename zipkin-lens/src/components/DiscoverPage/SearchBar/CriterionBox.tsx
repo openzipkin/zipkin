@@ -17,7 +17,13 @@
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Box, ClickAwayListener } from '@material-ui/core';
-import React from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useMount } from 'react-use';
 import styled, { keyframes } from 'styled-components';
 
@@ -128,10 +134,10 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
   onDelete,
   loadAutocompleteValues,
 }) => {
-  const inputEl = React.useRef<HTMLInputElement>(null);
+  const inputEl = useRef<HTMLInputElement>(null);
 
-  const [text, setText] = React.useState(initialText(criterion));
-  const [fixedText, setFixedText] = React.useState(initialText(criterion));
+  const [text, setText] = useState(initialText(criterion));
+  const [fixedText, setFixedText] = useState(initialText(criterion));
 
   useMount(() => {
     if (inputEl.current) {
@@ -139,8 +145,8 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     }
   });
 
-  const prevIsFocused = React.useRef(isFocused);
-  React.useEffect(() => {
+  const prevIsFocused = useRef(isFocused);
+  useEffect(() => {
     if (prevIsFocused.current && !isFocused) {
       if (!fixedText) {
         onDelete();
@@ -164,13 +170,13 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     prevIsFocused.current = isFocused;
   }, [isFocused, fixedText, onChange, onDelete]);
 
-  const [keyText, valueText] = React.useMemo(() => {
+  const [keyText, valueText] = useMemo(() => {
     const ss = fixedText.split('=');
     return [ss[0], ss[1] || ''];
   }, [fixedText]);
 
   const isEnteringKey = !text.includes('=');
-  const isLoadingSuggestions = React.useMemo(() => {
+  const isLoadingSuggestions = useMemo(() => {
     if (isEnteringKey) {
       return false;
     }
@@ -197,7 +203,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     autocompleteKeys,
   ]);
 
-  const suggestions = React.useMemo(() => {
+  const suggestions = useMemo(() => {
     if (isEnteringKey) {
       let keys;
 
@@ -259,15 +265,15 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     criteria,
   ]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (autocompleteKeys.includes(keyText)) {
       loadAutocompleteValues(keyText);
     }
   }, [keyText, autocompleteKeys, loadAutocompleteValues]);
 
-  const [suggestionIndex, setSuggestionIndex] = React.useState(-1);
+  const [suggestionIndex, setSuggestionIndex] = useState(-1);
 
-  const handleChange = React.useCallback(
+  const handleChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setText(event.target.value);
       setFixedText(event.target.value);
@@ -276,7 +282,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     [],
   );
 
-  const handleKeyDown = React.useCallback(
+  const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       switch (event.key) {
         case 'Enter':
@@ -358,7 +364,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     ],
   );
 
-  const handleDeleteButtonClick = React.useCallback(
+  const handleDeleteButtonClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       event.stopPropagation();
       onDelete();

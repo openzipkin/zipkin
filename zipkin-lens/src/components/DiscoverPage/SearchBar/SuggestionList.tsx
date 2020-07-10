@@ -13,7 +13,7 @@
  */
 
 import { CircularProgress } from '@material-ui/core';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 
 const Root = styled.div<{ isLoading: boolean }>`
@@ -72,12 +72,12 @@ const SuggestionList: React.FC<SuggestionListProps> = ({
   suggestionIndex,
   onItemClick,
 }) => {
-  const listEls = React.useRef<HTMLLIElement[]>([]);
+  const listEls = useRef<HTMLLIElement[]>([]);
   const setListEl = (index: number) => (el: HTMLLIElement) => {
     listEls.current[index] = el;
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (suggestionIndex === -1) {
       return;
     }

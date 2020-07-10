@@ -21,7 +21,7 @@ import {
   createStyles,
   makeStyles,
 } from '@material-ui/core';
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk';
 
@@ -45,6 +45,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 type SearchBarProps = {
+  searchTraces: () => void;
   criteria: Criterion[];
   onChange: (criteria: Criterion[]) => void;
   serviceNames: string[];
@@ -63,6 +64,7 @@ type SearchBarProps = {
 };
 
 export const SearchBarImpl: React.FC<SearchBarProps> = ({
+  searchTraces,
   criteria,
   onChange,
   serviceNames,
@@ -83,7 +85,7 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
 
   // criterionIndex is the index of the criterion currently being edited.
   // If the value is -1, there is no criterion being edited.
-  const [criterionIndex, setCriterionIndex] = React.useState(-1);
+  const [criterionIndex, setCriterionIndex] = useState(-1);
 
   const handleCriterionFocus = (index: number) => () => {
     setCriterionIndex(index);
@@ -116,7 +118,7 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
     }
   };
 
-  const handleAddButtonClick = React.useCallback(() => {
+  const handleAddButtonClick = useCallback(() => {
     const newCriteria = [...criteria];
     newCriteria.push({ key: '', value: '' });
     onChange(newCriteria);
@@ -124,13 +126,13 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
     setCriterionIndex(nextCriterionIndex);
   }, [criteria, onChange]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadServices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const prevServiceName = React.useRef('');
-  React.useEffect(() => {
+  const prevServiceName = useRef('');
+  useEffect(() => {
     const criterion = criteria.find(
       // eslint-disable-next-line no-shadow
       (criterion) => criterion.key === 'serviceName',
@@ -142,6 +144,37 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
       loadRemoteServices(serviceName);
     }
   }, [criteria, loadSpans, loadRemoteServices]);
+
+  // Search for traces if not all criterions are in focus
+  // and the Enter key is pressed.
+  // Use ref to use the latest criterionIndex state in the callback.
+  const isFocusedRef = useRef(false);
+  isFocusedRef.current = criterionIndex !== -1;
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      // Use setTimeout to ensure that the callback is called
+      // after the criterionIndex has been updated.
+      setTimeout(() => {
+        if (!document.activeElement) {
+          return;
+        }
+        if (
+          !isFocusedRef.current &&
+          document.activeElement.tagName === 'BODY' &&
+          event.key === 'Enter'
+        ) {
+          searchTraces();
+        }
+      }, 0); // Maybe 0 is enough.
+    },
+    [searchTraces],
+  );
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
 
   return (
     <Box
