@@ -32,7 +32,7 @@ const AlertSnackbar: React.FC = () => {
   return (
     <Snackbar
       open={alertOpen}
-      autoHideDuration={10000}
+      autoHideDuration={3000}
       onClose={onSnackbarClose}
       anchorOrigin={{
         vertical: 'top',

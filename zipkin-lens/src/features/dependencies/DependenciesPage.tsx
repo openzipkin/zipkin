@@ -37,6 +37,7 @@ import DependenciesGraph from './DependenciesGraph';
 import ExplainBox from './ExplainBox';
 import { clearDependencies } from './dependenciesSlice';
 import { loadDependencies } from './loadDependencies';
+import { clearAlert, setAlert } from '../../components/App/slice';
 import TraceJsonUploader from '../../components/Common/TraceJsonUploader';
 import TraceIdSearchInput from '../../components/Common/TraceIdSearchInput';
 import { RootState } from '../../store';
@@ -138,9 +139,22 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
   });
   useFetchDependencies(timeRange);
 
-  const { isLoading, dependencies } = useSelector(
+  const { isLoading, dependencies, error } = useSelector(
     (state: RootState) => state.dependencies,
   );
+
+  useEffect(() => {
+    if (error) {
+      dispatch(
+        setAlert({
+          message: 'Failed to load dependencies...',
+          severity: 'error',
+        }),
+      );
+    } else {
+      dispatch(clearAlert());
+    }
+  }, [error, dispatch]);
 
   const handleStartTimeChange = useCallback(
     (startTime: MaterialUiPickersDate) => {
