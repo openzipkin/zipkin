@@ -11,11 +11,14 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-type Dependencies = {
-  parent: string;
-  child: string;
-  callCount: number;
-  errorCount?: number;
-}[];
 
-export default Dependencies;
+type Edge = {
+  source: string;
+  target: string;
+  metrics: {
+    normal: number;
+    danger: number;
+  };
+};
+
+export default Edge;

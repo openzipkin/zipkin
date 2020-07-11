@@ -11,15 +11,17 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 /* eslint-disable no-shadow */
-import React from 'react';
-import { createMemoryHistory } from 'history';
-import moment from 'moment';
+
 import { fireEvent, waitForElement } from '@testing-library/react';
 import fetchMock from 'fetch-mock';
+import { createMemoryHistory } from 'history';
+import moment from 'moment';
+import React from 'react';
 
-import render from '../../test/util/render-with-default-settings';
 import DependenciesPage from './DependenciesPage';
+import render from '../../test/util/render-with-default-settings';
 
 jest.mock('@material-ui/pickers', () => {
   // eslint-disable-next-line global-require

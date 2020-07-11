@@ -11,28 +11,14 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { ActionTypes } from '../types/action-types';
-import Dependencies from '../types/Dependencies';
-import AppThunk from '../types/AppThunk';
-import * as api from '../constants/api';
 
-export const loadDependenciesRequest = () => ({
-  type: ActionTypes.LOAD_DEPENDENCIES_REQUEST,
-});
-
-export const loadDependenciesSuccess = (dependencies: Dependencies) => ({
-  type: ActionTypes.LOAD_DEPENDENCIES_SUCCESS,
-  payload: {
-    dependencies,
-  },
-});
-
-export const loadDependenciesFailure = (error: any) => ({
-  type: ActionTypes.LOAD_DEPENDENCIES_FAILURE,
-  payload: {
-    error,
-  },
-});
+import {
+  loadDependenciesRequest,
+  loadDependenciesSuccess,
+  loadDependenciesFailure,
+} from './dependenciesSlice';
+import * as api from '../../constants/api';
+import { AppThunk } from '../../store';
 
 export const loadDependencies = (params: {
   lookback?: number;
@@ -61,7 +47,3 @@ export const loadDependencies = (params: {
     dispatch(loadDependenciesFailure(err));
   }
 };
-
-export const clearDependencies = () => ({
-  type: ActionTypes.CLEAR_DEPENDENCIES,
-});

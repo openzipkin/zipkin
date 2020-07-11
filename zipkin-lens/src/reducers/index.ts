@@ -11,16 +11,17 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 import { combineReducers } from 'redux';
 
 import appSlice from '../components/App/slice';
+import dependenciesSlice from '../features/dependencies/dependenciesSlice';
 
 import remoteServices from './remote-services';
 import spans from './spans';
 import trace from './trace';
 import traces from './traces';
 import services from './services';
-import dependencies from './dependencies';
 import createGlobalSearch from './global-search';
 import autocompleteKeys from './autocomplete-keys';
 import autocompleteValues from './autocomplete-values';
@@ -29,12 +30,12 @@ import traceViewer from './trace-viewer';
 const createReducer = (config: any) =>
   combineReducers({
     [appSlice.name]: appSlice.reducer,
+    [dependenciesSlice.name]: dependenciesSlice.reducer,
     remoteServices,
     spans,
     trace,
     traces,
     services,
-    dependencies,
     globalSearch: createGlobalSearch(config),
     autocompleteKeys,
     autocompleteValues,

@@ -11,16 +11,12 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { Action } from 'redux';
-import { ThunkAction } from 'redux-thunk';
 
-import RootState from './RootState';
+type Dependencies = {
+  parent: string;
+  child: string;
+  callCount: number;
+  errorCount?: number;
+}[];
 
-type AppThunk<ReturnType = void> = ThunkAction<
-  ReturnType,
-  RootState,
-  unknown,
-  Action<string>
->;
-
-export default AppThunk;
+export default Dependencies;
