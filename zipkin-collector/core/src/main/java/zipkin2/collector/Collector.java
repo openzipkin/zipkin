@@ -214,7 +214,7 @@ public class Collector { // not final for mock
       }
     }
     int dropped = input.size() - sampled.size();
-    if (dropped > 0) metrics.incrementSpansDropped(dropped);
+    if (dropped > 0) metrics.incrementSpansSampledOut(dropped);
     return sampled;
   }
 

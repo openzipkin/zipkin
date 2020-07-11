@@ -149,6 +149,7 @@ public class ITActiveMQCollector {
       .isEqualTo(THRIFT.encodeList(spans).length * 2 + malformed1.length + malformed2.length);
     assertThat(activemqMetrics.spans()).isEqualTo(spans.size() * 2);
     assertThat(activemqMetrics.spansDropped()).isZero();
+    assertThat(activemqMetrics.spansSampledOut()).isZero();
   }
 
   /** Guards against errors that leak from storage, such as InvalidQueryException */

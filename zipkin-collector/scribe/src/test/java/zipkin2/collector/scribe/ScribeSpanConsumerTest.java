@@ -115,6 +115,7 @@ class ScribeSpanConsumerTest {
     assertThat(scribeMetrics.bytes()).isEqualTo(bytes.length);
     assertThat(scribeMetrics.spans()).isEqualTo(1);
     assertThat(scribeMetrics.spansDropped()).isZero();
+    assertThat(scribeMetrics.spansSampledOut()).isZero();
   }
 
   @Test void entriesWithoutSpansAreSkipped() throws Exception {

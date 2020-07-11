@@ -24,6 +24,7 @@ public final class InMemoryCollectorMetrics implements CollectorMetrics {
   private final String bytes;
   private final String spans;
   private final String spansDropped;
+  private final String spansSampledOut;
 
   public InMemoryCollectorMetrics() {
     this(new ConcurrentHashMap<>(), null);
@@ -36,11 +37,12 @@ public final class InMemoryCollectorMetrics implements CollectorMetrics {
     this.bytes = scope("bytes", transport);
     this.spans = scope("spans", transport);
     this.spansDropped = scope("spansDropped", transport);
+    this.spansSampledOut = scope("spanSampledOut", transport);
   }
 
   @Override
   public InMemoryCollectorMetrics forTransport(String transportType) {
-    if (transportType == null) throw new NullPointerException("transportType == null");
+    if (transportType == null) { throw new NullPointerException("transportType == null"); }
     return new InMemoryCollectorMetrics(metrics, transportType);
   }
 
@@ -85,8 +87,17 @@ public final class InMemoryCollectorMetrics implements CollectorMetrics {
     increment(spansDropped, quantity);
   }
 
+  @Override
+  public void incrementSpansSampledOut(int quantity) {
+    increment(spansSampledOut, quantity);
+  }
+
   public int spansDropped() {
     return get(spansDropped);
+  }
+
+  public int spansSampledOut() {
+    return get(spansSampledOut);
   }
 
   public void clear() {
@@ -99,18 +110,22 @@ public final class InMemoryCollectorMetrics implements CollectorMetrics {
   }
 
   private void increment(String key, int quantity) {
-    if (quantity == 0) return;
+    if (quantity == 0) { return; }
     while (true) {
       AtomicInteger metric = metrics.get(key);
       if (metric == null) {
         metric = metrics.putIfAbsent(key, new AtomicInteger(quantity));
-        if (metric == null) return; // won race creating the entry
+        if (metric == null) {
+          return; // won race creating the entry
+        }
       }
 
       while (true) {
         int oldValue = metric.get();
         int update = oldValue + quantity;
-        if (metric.compareAndSet(oldValue, update)) return; // won race updating
+        if (metric.compareAndSet(oldValue, update)) {
+          return; // won race updating
+        }
       }
     }
   }

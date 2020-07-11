@@ -48,7 +48,7 @@ import zipkin2.storage.SpanConsumer;
  * messages sent from instrumentation.</li>
  * <li>Stored spans &lt;= {@link #incrementSpans(int) Accepted spans} - {@link
  * #incrementSpansDropped(int) Dropped spans}. Alert when this drops below the
- * {@link CollectorSampler#isSampled(long, boolean) collection-tier sample rate}.
+ * {@link CollectorSampler#isSampled(String, boolean) collection-tier sample rate}.
  * </li>
  * </ul>
  * </pre>
@@ -93,8 +93,13 @@ public interface CollectorMetrics {
   void incrementBytes(int quantity);
 
   /**
-   * Increments the count of spans dropped for any reason. For example, failure queueing to storage
+   * Increments the count of spans dropped by collector sampler.
    * or sampling decisions.
+   */
+  void incrementSpansSampledOut(int quantity);
+
+  /**
+   * Increments the count of spans dropped by storage error. For example, failure queueing to storage.
    */
   void incrementSpansDropped(int quantity);
 
@@ -120,6 +125,9 @@ public interface CollectorMetrics {
 
         @Override
         public void incrementSpansDropped(int quantity) {}
+
+        @Override
+        public void incrementSpansSampledOut(int quantity) {}
 
         @Override
         public String toString() {
