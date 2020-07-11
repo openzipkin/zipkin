@@ -32,16 +32,8 @@ import React, { useCallback } from 'react';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
+import Edge from './Edge';
 import { selectServiceColor } from '../../colors';
-
-export interface Edge {
-  source: string;
-  target: string;
-  metrics: {
-    normal: number;
-    danger: number;
-  };
-}
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
