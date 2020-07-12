@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -30,6 +31,7 @@ import java.util.function.BiFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.internal.Nullable;
+import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.cassandra.v1.IndexTraceId.Input;
 
 /**
@@ -37,6 +39,13 @@ import zipkin2.storage.cassandra.v1.IndexTraceId.Input;
  * query, by de-duplicating redundant entries upon {@link #iterator()}
  *
  * <p>This is shared singleton as inserts can come from any thread.
+ *
+ *
+ * <h3>Cache cardinality is a soft limit</h3>
+ * Deduplication is implemented with a soft bounded cache. The indexer returned by {@link
+ * Factory#newIndexer()} doesn't guard size on each call to {@link TraceIdIndexer#add(Input)}, so
+ * the cache can grow larger than the cardinality limit while processing a large span. However, this
+ * is trimmed back on each message (e.g. POST or incoming Kafka message).
  */
 interface TraceIdIndexer extends Iterable<Input> {
   TraceIdIndexer NOOP = new TraceIdIndexer() {
@@ -73,8 +82,13 @@ interface TraceIdIndexer extends Iterable<Input> {
       return new Expiration<>(this, key, value, nanoTime() + ttlNanos);
     }
 
+    /**
+     * This is called per once per index type in {@link SpanConsumer#accept(List)}. In other words,
+     * once per POST or other collected message, regardless of if that message has one or more spans
+     * in it.
+     */
     TraceIdIndexer newIndexer() {
-      trimCache(); // We let the cache overfill per call to SpanConsumer.accept. This trims it back
+      trimCache();
       return new RealTraceIdIndexer(this);
     }
 
@@ -179,7 +193,11 @@ interface TraceIdIndexer extends Iterable<Input> {
       for (Entry<String, Long> needsUpdate : toUpdate.keySet()) {
         Expiration<Entry<String, Long>, Pair> existing = factory.cache.get(needsUpdate);
 
-        // unexpected, but possible. Something could have purged all our cached entries
+        // The bounds of the factory cache are used to prevent out-of-memory issues, but may be
+        // accidentally set to a value too low in practice. If we can't find an existing cache
+        // entry for the index rows we just say, we still write anyway. If the cache was purged
+        // by another indexer, we don't know if our data was written, and it is a better choice
+        // to write it vs assume it was already written.
         Pair range = existing != null ? existing.getValue() : toUpdate.get(needsUpdate);
 
         // check to see if the boundaries of the range corresponded to an input
