@@ -85,7 +85,7 @@ interface TraceIdIndexer extends Iterable<Input> {
     /**
      * This is called per once per index type in {@link SpanConsumer#accept(List)}. In other words,
      * once per POST or other collected message, regardless of if that message has one or more spans
-     * in it.
+     * in it. We only enforce cache cardinality here.
      */
     TraceIdIndexer newIndexer() {
       trimCache();
