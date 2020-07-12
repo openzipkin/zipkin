@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import zipkin2.storage.StorageComponent;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.TestObjects.FRONTEND;
 
 abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
 
@@ -74,6 +75,7 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
   @Test public void skipsRedundantIndexingInATrace() throws IOException {
     Span[] trace = new Span[101];
     trace[0] = TestObjects.CLIENT_SPAN;
+    long rootTimestamp = trace[0].timestampAsLong();
 
     for (int i = 0; i < 100; i++) {
       trace[i + 1] =
@@ -82,7 +84,7 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
           .parentId(trace[0].id())
           .id(i + 1)
           .name(String.valueOf(i + 1))
-          .timestamp(trace[0].timestampAsLong() + i * 1000) // child span timestamps happen 1 ms later
+          .timestamp(rootTimestamp + i * 1000L) // child span timestamps happen 1 ms later
           .addAnnotation(trace[0].annotations().get(0).timestamp() + i * 1000, "bar")
           .build();
     }
@@ -123,7 +125,7 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
   }
 
   @Test
-  public void insertTags_SelectTags_CalculateCount() throws IOException {
+  public void addsAutocompleteTag() throws IOException {
     Span[] trace = new Span[2];
     trace[0] = TestObjects.CLIENT_SPAN;
 
@@ -135,8 +137,9 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
         .name("1")
         .putTag("environment", "dev")
         .putTag("a", "b")
-        .timestamp(trace[0].timestampAsLong()  * 1000) // child span timestamps happen 1 ms later
-        .addAnnotation(trace[0].annotations().get(0).timestamp() + 1000, "bar")
+        .localEndpoint(FRONTEND)
+        .timestamp(trace[0].timestampAsLong() + 1000L) // child span timestamps happen 1 ms later
+        .addAnnotation(trace[0].annotations().get(0).timestamp() + 1000L, "bar")
         .build();
     accept(storage.spanConsumer(), trace);
 

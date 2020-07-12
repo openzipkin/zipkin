@@ -23,7 +23,7 @@ import zipkin2.internal.DelayLimiter;
 public abstract class DeduplicatingVoidCallFactory<I> {
   final DelayLimiter<I> delayLimiter;
 
-  protected DeduplicatingVoidCallFactory(int ttl, int cardinality) {
+  protected DeduplicatingVoidCallFactory(long ttl, int cardinality) {
     delayLimiter =
       DelayLimiter.newBuilder().ttl(ttl, TimeUnit.MILLISECONDS).cardinality(cardinality).build();
   }
@@ -36,7 +36,7 @@ public abstract class DeduplicatingVoidCallFactory<I> {
     calls.add(new InvalidatingVoidCall<>(newCall(input), delayLimiter, input));
   }
 
-  public final void clear() {
+  public void clear() {
     delayLimiter.clear();
   }
 
