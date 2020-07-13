@@ -106,7 +106,7 @@ EXPOSE 9411
 # report to https://gitter.im/openzipkin/zipkin including the values of the
 # /health and /info endpoints as this would be unexpected.
 #
-HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget --quiet http://localhost:9411/health || exit 1
+HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget -qO- http://localhost:9411/health &> /dev/null || exit 1
 
 ENTRYPOINT ["/busybox/sh", "run.sh"]
 
@@ -159,6 +159,6 @@ EXPOSE 9410 9411
 # report to https://gitter.im/openzipkin/zipkin including the values of the
 # /health and /info endpoints as this would be unexpected.
 #
-HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget --quiet http://localhost:9411/health || exit 1
+HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget -qO- http://localhost:9411/health &> /dev/null || exit 1
 
 ENTRYPOINT ["/busybox/sh", "run.sh"]
