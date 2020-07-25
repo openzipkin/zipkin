@@ -8,7 +8,7 @@ features, but is tested against Elasticsearch 6-7.x.
 ## Multiple hosts
 Most users will supply a DNS name that's mapped to multiple A or AAAA
 records. For example, `http://elasticsearch:9200` will use normal host
-lookups to get the list of IP addresses, though you can alternatively supply 
+lookups to get the list of IP addresses, though you can alternatively supply
 a list of http base urls. In either case, all of the resolved IP addresses
 from all provided hosts will be iterated over round-robin, with requests made
 only to healthy addresses.
@@ -149,3 +149,9 @@ PUT _ingest/pipeline/zipkin
 Redundant requests to store autocomplete values are ignored for an hour
 to reduce load. This is implemented by
 [DelayLimiter](../../zipkin/src/main/java/zipkin2/internal/DelayLimiter.java)
+
+## Data retention
+Zipkin-server does not handle retention management of the trace data. Use the tools recommended by ElasticSearch to manage data retention, or your cluster
+will grow indefinitely!
+ * [Curator](https://www.elastic.co/guide/en/elasticsearch/client/curator/current/index.html)
+ * [Index Lifecycle Management](https://www.elastic.co/guide/en/elasticsearch/reference/7.3/index-lifecycle-management.html)
