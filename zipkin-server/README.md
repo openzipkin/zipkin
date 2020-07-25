@@ -452,7 +452,7 @@ For example, to override `auto.offset.reset`, you can set a system property name
 
 ```bash
 $ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
-    java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
+    java -Dzipkin.collector.kafka.overrides.auto.offset.reset=latest -jar zipkin.jar
 ```
 
 #### Detailed examples

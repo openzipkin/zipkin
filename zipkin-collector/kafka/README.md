@@ -7,7 +7,7 @@ a list of spans in json or TBinaryProtocol big-endian encoding. These
 spans are pushed to a span consumer.
 
 For information about running this collector as a module in Zipkin server, see
-the [Zipkin Server README](../../zipkin-server/README.md).
+the [Zipkin Server README](../../zipkin-server/README.md#kafka-collector).
 
 When using this collector as a library outside of Zipkin server,
 [zipkin2.collector.kafka.KafkaCollector.Builder](src/main/java/zipkin2/collector/kafka/KafkaCollector.java)
@@ -44,3 +44,17 @@ for (int i = 0; i < count; i++) {
 ### Legacy encoding
 Older versions of zipkin accepted a single span per message, as opposed
 to a list per message. This practice is deprecated, but still supported.
+
+## Kafka topic settings
+By default, this collector creates one instance of KafkaConsumer to poll for messages. Given that,
+our suggestion is to create the `zipkin` topic with one partition initially. Observe the KafkaConsumer
+instance for considerable consumer lag and scale up the number of instances
+using the [KAFKA_STREAMS](../../zipkin-server/README.md#kafka-collector) parameter as needed. For each
+KafkaConsumer instance added you should also add a partition to the `zipkin` topic. The number of partitions
+should always be equal or larger than the number of KafkaConsumer instances to benefit from the
+parallelism an additional KafkaConsumer brings.
+
+Note that tuning this collector should happen in coordination with your storage backend. There is no
+point in scaling up the collector if your storage backend is the bottleneck. There are various KafkaConsumer
+parameters (`max.poll.records`, `fetch.max.bytes` etc) that allow you to tweak behaviour and prevent
+the collector from swamping the storage backend.
