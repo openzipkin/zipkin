@@ -2,7 +2,7 @@
 
 ## KafkaCollector
 This collector is implemented as a Kafka consumer supporting Kafka brokers running
-version 0.10.0.0 or later. It polls a Kafka topic for messages that contain
+version 0.10.0.0 or later. It polls a Kafka [topic](#kafka-configuration) for messages that contain
 a list of spans in json or TBinaryProtocol big-endian encoding. These
 spans are pushed to a span consumer.
 
@@ -45,16 +45,13 @@ for (int i = 0; i < count; i++) {
 Older versions of zipkin accepted a single span per message, as opposed
 to a list per message. This practice is deprecated, but still supported.
 
-## Kafka topic settings
-By default, this collector creates one instance of KafkaConsumer to poll for messages. Given that,
-our suggestion is to create the `zipkin` topic with one partition initially. Observe the KafkaConsumer
-instance for considerable consumer lag and scale up the number of instances
-using the [KAFKA_STREAMS](../../zipkin-server/README.md#kafka-collector) parameter as needed. For each
-KafkaConsumer instance added you should also add a partition to the `zipkin` topic. The number of partitions
-should always be equal or larger than the number of KafkaConsumer instances to benefit from the
-parallelism an additional KafkaConsumer brings.
+## Kafka configuration
 
-Note that tuning this collector should happen in coordination with your storage backend. There is no
-point in scaling up the collector if your storage backend is the bottleneck. There are various KafkaConsumer
-parameters (`max.poll.records`, `fetch.max.bytes` etc) that allow you to tweak behaviour and prevent
-the collector from swamping the storage backend.
+Below are a few guidelines for the Kafka infrastructure used by this collector:
+* The collector does not explicitly create the `zipkin` topic itself. If your cluster has auto topic creation enabled then it will be created by Kafka automatically using the broker configured defaults. We recommend therefor creating the topic manually before starting the collector, using configuration parameters adapted for your Zipkin setup.
+* The collector will not fail if the `zipkin` topic does not exist, it will instead just wait for the topic to become available.
+* A size based retention makes more sense than the default time based (1 week), to safeguard against large bursts of span data.
+* The collector starts 1 instance of `KafkaConsumer` by default. We do recommend creating the `zipkin` topic with 6 partitions however, as it allows you to easily scale out the collector later by increasing the [KAFKA_STREAMS](../../zipkin-server/README.md#kafka-collector) parameter.
+* As Zipkin reporter sends batches of spans which do not rely on any kind of ordering guarantee (key=null), you can increase the number of partitions without affecting ordering. It does not make sense however to have more `KafkaConsumer` instances than partitions as the instances will just be idle and not consume anything.
+* Monitoring the consumer lag of the collector as well as the size of the topic will help you   to decide if scaling up or down is needed.
+* Tuning this collector should happen in coordination with the storage backend. Parameters like `max.poll.records`, `fetch.max.bytes` can prevent the collector from overloading the storage backend. On the other hand a large consumer lag may indicate that the storage needs to be scaled up.
