@@ -13,6 +13,9 @@
  */
 package zipkin2.server.internal.kafka;
 
+import brave.Tracing;
+import brave.kafka.clients.KafkaTracing;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -23,7 +26,10 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.collector.kafka.KafkaCollector;
+import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
+
+import java.util.Optional;
 
 /**
  * This collector consumes a topic, decodes spans from thrift messages and stores them subject to
@@ -33,15 +39,22 @@ import zipkin2.storage.StorageComponent;
 @Conditional(ZipkinKafkaCollectorConfiguration.KafkaBootstrapServersSet.class)
 @EnableConfigurationProperties(ZipkinKafkaCollectorProperties.class)
 public class ZipkinKafkaCollectorConfiguration { // makes simple type name unique for /actuator/conditions
+  static final String QUALIFIER = "zipkinKafka";
 
-  @Bean(initMethod = "start")
-  KafkaCollector kafka(
+  @Bean(initMethod = "start") @ConditionalOnSelfTracing KafkaCollector kafka(
       ZipkinKafkaCollectorProperties properties,
       CollectorSampler sampler,
       CollectorMetrics metrics,
-      StorageComponent storage) {
-    return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
+      StorageComponent storage,
+      Optional<Tracing> maybeTracing) {
+    KafkaCollector.Builder builder = properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage);
+    if (maybeTracing.isPresent()) {
+      KafkaTracing kafkaTracing = KafkaTracing.newBuilder(maybeTracing.get()).build();
+      builder.consumerSupplier(props -> kafkaTracing.consumer(new KafkaConsumer<>(props)));
+    }
+    return builder.build();
   }
+
   /**
    * This condition passes when {@link ZipkinKafkaCollectorProperties#getBootstrapServers()} is set
    * to non-empty.
