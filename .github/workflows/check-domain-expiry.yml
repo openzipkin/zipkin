@@ -15,5 +15,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           title: zipkin.io domain about to expire
-          content-filepath: .github/workflows/domain-expired-issue.md
+          content-filepath: ./.github/workflows/domain-expired-issue.md
           labels: bug
