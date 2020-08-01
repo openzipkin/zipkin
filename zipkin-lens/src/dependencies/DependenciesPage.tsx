@@ -35,12 +35,14 @@ import { withRouter, RouteComponentProps } from 'react-router-dom';
 
 import DependenciesGraph from './DependenciesGraph';
 import ExplainBox from './ExplainBox';
-import { clearDependencies } from './dependenciesSlice';
-import { loadDependencies } from './loadDependencies';
-import { clearAlert, setAlert } from '../../components/App/slice';
-import TraceJsonUploader from '../../components/Common/TraceJsonUploader';
-import TraceIdSearchInput from '../../components/Common/TraceIdSearchInput';
-import { RootState } from '../../store';
+import { clearAlert, setAlert } from '../components/App/slice';
+import TraceJsonUploader from '../components/Common/TraceJsonUploader';
+import TraceIdSearchInput from '../components/Common/TraceIdSearchInput';
+import {
+  clearDependencies,
+  loadDependencies,
+} from '../slices/dependenciesSlice';
+import { RootState } from '../store';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

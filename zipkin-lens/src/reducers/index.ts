@@ -15,7 +15,7 @@
 import { combineReducers } from 'redux';
 
 import appSlice from '../components/App/slice';
-import dependenciesSlice from '../features/dependencies/dependenciesSlice';
+import dependenciesSlice from '../slices/dependenciesSlice';
 
 import remoteServices from './remote-services';
 import spans from './spans';

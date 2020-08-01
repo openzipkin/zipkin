@@ -27,10 +27,10 @@ import React, { CSSProperties, useState, useCallback, useMemo } from 'react';
 import ReactSelect, { ValueType, ActionMeta } from 'react-select';
 import { AutoSizer } from 'react-virtualized';
 
-import Dependencies from './Dependencies';
 import Edge from './Edge';
 import NodeDetailData from './NodeDetailData';
 import VizceralWrapper from './VizceralWrapper';
+import Dependencies from '../models/Dependencies';
 
 // These filter functions use any type because they are passed directly to untyped JS code.
 const filterConnections = (object: any, value: any) => {
