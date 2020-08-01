@@ -7,8 +7,8 @@ jobs:
     # MacOS comes with whois installed by default
     runs-on: macos-latest
     steps:
-      # Exit code 0 is more than 30 days until expiration, 1 otherwise
-      - run:  exit $((($(date -j -f %Y-%m-%dT%H:%M:%SZ "$(whois zipkin.io | awk '/Registry Expiry Date:/ { print $4 }')" +%s) - $(date +%s)) / 3600 / 24 > 30 != 0))
+      # Exit code 0 if more than 30 days until expiration, 1 otherwise
+      - run:  exit $((($(date -j -f %Y-%m-%dT%H:%M:%SZ "$(whois zipkin.io | awk '/Registry Expiry Date:/ { print $4 }')" +%s) - $(date +%s)) / 3600 / 24 > 30 == 0))
       - uses: maxkomarychev/oction-create-issue@v0.7.1
         if: failure()
         with:
