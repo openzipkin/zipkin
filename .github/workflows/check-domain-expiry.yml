@@ -1,5 +1,7 @@
 name: Check domain expiry
-on: [push]
+on:
+  schedule:
+    - cron: '12 22 * * *'
 
 jobs:
   build:
