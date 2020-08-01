@@ -1,0 +1,10 @@
+name: Check domain expiry
+on: [push]
+
+jobs:
+  build:
+    name: Check zipkin.io
+    runs-on: ubuntu-latest
+    steps:
+      - name: whois
+        run:  exit $((($(date --date="$(whois zipkin.io | awk '/Registry Expiry Date:/ { print $4 }')" +%s) - $(date +%s)) / 3600 / 24 > 30 != 1))
