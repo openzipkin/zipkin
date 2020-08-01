@@ -13,12 +13,9 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.HostDistance;
-import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.Session;
-import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -35,18 +32,13 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
   static final int CASSANDRA_PORT = 9042;
   final String image;
   CassandraContainer container;
-  Cluster cluster;
-  Session session;
+  Session globalSession;
 
   CassandraStorageExtension(String image) {
     this.image = image;
   }
 
-  Session session() {
-    return session;
-  }
-
-  @Override public void beforeAll(ExtensionContext context) throws Exception {
+  @Override public void beforeAll(ExtensionContext context) {
     if (context.getRequiredTestClass().getEnclosingClass() != null) {
       // Only run once in outermost scope.
       return;
@@ -65,42 +57,49 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
     }
 
     try {
-      tryToInitializeSession();
+      globalSession = tryToInitializeSession(contactPoint());
     } catch (RuntimeException | Error e) {
       if (container == null) throw e;
       LOGGER.warn("Couldn't connect to docker image " + image + ": " + e.getMessage(), e);
       container.stop();
       container = null; // try with local connection instead
-      tryToInitializeSession();
+      globalSession = tryToInitializeSession(contactPoint());
     }
   }
 
-  void tryToInitializeSession() {
+  // Builds a session without trying to use a namespace or init UDTs
+  static Session tryToInitializeSession(String contactPoint) {
+    CassandraStorage storage = newStorageBuilder(contactPoint).build();
+    Session session = null;
     try {
-      cluster = getCluster(contactPoint());
-      session = cluster.newSession();
+      session = DefaultSessionFactory.buildSession(storage);
       session.execute("SELECT now() FROM system.local");
-    } catch (RuntimeException e) { // don't leak on unexpected exception!
-      if (session != null) session.close();
-      if (cluster != null) cluster.close();
+    } catch (Throwable e) {
+      if (session != null) session.getCluster().close();
       assumeTrue(false, e.getMessage());
     }
+    return session;
   }
 
-  CassandraStorage.Builder computeStorageBuilder() {
-    InetSocketAddress contactPoint = contactPoint();
+  CassandraStorage.Builder newStorageBuilder(TestInfo testInfo) {
     return CassandraStorage.newBuilder()
-        .contactPoints(contactPoint.getHostString() + ":" + contactPoint.getPort())
-        .ensureSchema(true)
-        .keyspace("test_cassandra3");
+      .contactPoints(contactPoint())
+      .maxConnections(1)
+      .keyspace(InternalForTests.keyspace(testInfo));
   }
 
-  InetSocketAddress contactPoint() {
+  static CassandraStorage.Builder newStorageBuilder(String contactPoint) {
+    return CassandraStorage.newBuilder()
+      .contactPoints(contactPoint)
+      .maxConnections(1)
+      .keyspace("test_cassandra");
+  }
+
+  String contactPoint() {
     if (container != null && container.isRunning()) {
-      return new InetSocketAddress(
-          container.getContainerIpAddress(), container.getMappedPort(CASSANDRA_PORT));
+      return container.getContainerIpAddress() + ":" + container.getMappedPort(CASSANDRA_PORT);
     } else {
-      return new InetSocketAddress("127.0.0.1", CASSANDRA_PORT);
+      return "127.0.0.1:" + CASSANDRA_PORT;
     }
   }
 
@@ -109,18 +108,7 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
       // Only run once in outermost scope.
       return;
     }
-
-    try {
-      if (session != null) session.close();
-      if (cluster != null) cluster.close();
-    } catch (Exception | Error e) {
-      LOGGER.warn("error closing session " + e.getMessage(), e);
-    } finally {
-      if (container != null) {
-        LOGGER.info("Stopping docker image " + image);
-        container.stop();
-      }
-    }
+    if (globalSession != null) globalSession.getCluster().close();
   }
 
   static final class CassandraContainer extends GenericContainer<CassandraContainer> {
@@ -128,35 +116,19 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
       super(image);
     }
 
-    @Override
-    protected void waitUntilContainerStarted() {
-      Unreliables.retryUntilSuccess(
-          120,
-          TimeUnit.SECONDS,
-          () -> {
-            if (!isRunning()) {
-              throw new ContainerLaunchException("Container failed to start");
-            }
+    @Override protected void waitUntilContainerStarted() {
+      Unreliables.retryUntilSuccess(120, TimeUnit.SECONDS, () -> {
+        if (!isRunning()) {
+          throw new ContainerLaunchException("Container failed to start");
+        }
 
-            InetSocketAddress address =
-              new InetSocketAddress(getContainerIpAddress(), getMappedPort(9042));
-
-            try (Cluster cluster = getCluster(address);
-                Session session = cluster.newSession()) {
-              session.execute("SELECT now() FROM system.local");
-              logger().info("Obtained a connection to container ({})", cluster.getClusterName());
-              return null; // unused value
-            }
-          });
+        String contactPoint = getContainerIpAddress() + ":" + getMappedPort(9042);
+        try (Session session = tryToInitializeSession(contactPoint)) {
+          session.execute("SELECT now() FROM system.local");
+          logger().info("Obtained a connection to container ({})", contactPoint);
+          return null; // unused value
+        }
+      });
     }
-  }
-
-  static Cluster getCluster(InetSocketAddress contactPoint) {
-    return Cluster.builder()
-        .withoutJMXReporting()
-        .addContactPointsWithPorts(contactPoint)
-        .withRetryPolicy(ZipkinRetryPolicy.INSTANCE)
-        .withPoolingOptions(new PoolingOptions().setMaxConnectionsPerHost(HostDistance.LOCAL, 1))
-        .build();
   }
 }

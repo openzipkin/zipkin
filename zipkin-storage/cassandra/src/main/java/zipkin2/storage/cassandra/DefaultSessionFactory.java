@@ -32,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.storage.cassandra.internal.HostAndPort;
 
+import static zipkin2.Call.propagateIfFatal;
+
 /**
  * Creates a session and ensures schema if configured. Closes the cluster and session if any
  * exception occurred.
@@ -45,27 +47,23 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
    */
   @Override
   public Session create(CassandraStorage cassandra) {
-    Cluster cluster = null;
     Session session = null;
     try {
-      cluster = buildCluster(cassandra);
-      cluster.register(new QueryLogger.Builder().build());
+      session = buildSession(cassandra);
+
       String keyspace = cassandra.keyspace();
       if (cassandra.ensureSchema()) {
-        session = cluster.connect();
         Schema.ensureExists(keyspace, cassandra.searchEnabled(), session);
-        session.execute("USE " + keyspace);
       } else {
         LOG.debug("Skipping schema check on keyspace {} as ensureSchema was false", keyspace);
-        session = cluster.connect(keyspace);
       }
 
+      session.execute("USE " + keyspace);
       initializeUDTs(session);
 
       return session;
     } catch (RuntimeException e) { // don't leak on unexpected exception!
-      if (session != null) session.close();
-      if (cluster != null) cluster.close();
+      if (session != null) session.getCluster().close();
       throw e;
     }
   }
@@ -76,6 +74,18 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
     LOG.debug("Registering endpoint and annotation UDTs to keyspace {}", keyspace);
     mapping.udtCodec(EndpointUDT.class, keyspace);
     mapping.udtCodec(AnnotationUDT.class, keyspace);
+  }
+
+  static Session buildSession(CassandraStorage cassandra) {
+    // temporary: in Datastax Java Driver v4, there is only Session
+    Cluster cluster = buildCluster(cassandra);
+    try {
+      return cluster.connect();
+    } catch (Throwable e) {
+      propagateIfFatal(e);
+      cluster.close();
+      throw e;
+    }
   }
 
   // Visible for testing
@@ -113,7 +123,9 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
       builder = builder.withSSL();
     }
 
-    return builder.build();
+    return builder.build()
+      // Ensures log categories can enable query logging
+      .register(new QueryLogger.Builder().build());
   }
 
   static List<InetSocketAddress> parseContactPoints(CassandraStorage cassandra) {
