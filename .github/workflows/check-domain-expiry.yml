@@ -7,4 +7,4 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: whois
-        run:  whois zipkin.io
+        run:  exit $((($(date -j -f %Y-%m-%dT%H:%M:%SZ "$(whois zipkin.io | awk '/Registry Expiry Date:/ { print $4 }')" +%s) - $(date +%s)) / 3600 / 24 > 30 != 1))
