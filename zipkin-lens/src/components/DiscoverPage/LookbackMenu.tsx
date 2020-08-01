@@ -23,6 +23,7 @@ import {
   Theme,
   createStyles,
   makeStyles,
+  TextField,
 } from '@material-ui/core';
 import { KeyboardDateTimePicker } from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
@@ -38,7 +39,7 @@ const useStyles = makeStyles((theme: Theme) =>
       position: 'absolute',
       top: 35,
       left: 0,
-      height: 300,
+      height: 360,
       width: 500,
       zIndex: theme.zIndex.modal,
     },
@@ -62,15 +63,22 @@ interface LookbackMenuProps {
   lookback: Lookback;
 }
 
+const initialMillis = (lookback: Lookback): number => {
+  if (lookback.type === 'millis') {
+    return lookback.value;
+  }
+  return 0;
+};
+
 const initialStartTime = (lookback: Lookback): Moment => {
-  if (lookback.type === 'custom') {
+  if (lookback.type === 'range') {
     return lookback.startTime;
   }
   return moment().subtract(1, 'h');
 };
 
 const initialEndTime = (lookback: Lookback): Moment => {
-  if (lookback.type === 'custom') {
+  if (lookback.type === 'range') {
     return lookback.endTime;
   }
   return moment();
@@ -116,8 +124,18 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
 
   useEvent('click', handleOutsideClick, window, false);
 
+  // For Millis Lookback
+  const [millis, setMillis] = useState(initialMillis(lookback));
+  // Range Lookback
   const [startTime, setStartTime] = useState(initialStartTime(lookback));
   const [endTime, setEndTime] = useState(initialEndTime(lookback));
+
+  const handleMillisChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      setMillis(parseInt(event.target.value, 10));
+    },
+    [],
+  );
 
   const handleStartTimeChange = useCallback((date: MaterialUiPickersDate) => {
     if (date) {
@@ -140,9 +158,18 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
     close();
   };
 
-  const handleApplyButtonClick = useCallback(() => {
+  const handleMillisApplyButtonClick = useCallback(() => {
     onChange({
-      type: 'custom',
+      type: 'millis',
+      endTime: moment(),
+      value: millis,
+    });
+    close();
+  }, [close, millis, onChange]);
+
+  const handleRangeApplyButtonClick = useCallback(() => {
+    onChange({
+      type: 'range',
       startTime,
       endTime,
     });
@@ -182,7 +209,31 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
         <Grid item xs={7}>
           <Box p={2}>
             <Box fontSize="1.1rem" color="text.secondary" mb={2}>
-              Custom Lookback
+              Millis Lookback
+            </Box>
+            <TextField
+              label="Milliseconds"
+              onChange={handleMillisChange}
+              value={millis.toString()}
+              variant="outlined"
+              size="small"
+              type="number"
+              inputProps={{ min: '0' }}
+            />
+            <Box display="flex" justifyContent="flex-end">
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={handleMillisApplyButtonClick}
+                data-testid="apply-button"
+              >
+                Apply
+              </Button>
+            </Box>
+          </Box>
+          <Box p={2} borderTop={1} borderColor="divider">
+            <Box fontSize="1.1rem" color="text.secondary" mb={2}>
+              Range Lookback
             </Box>
             <Box mb={2}>
               <KeyboardDateTimePicker
@@ -216,7 +267,7 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
               <Button
                 variant="contained"
                 color="secondary"
-                onClick={handleApplyButtonClick}
+                onClick={handleRangeApplyButtonClick}
                 data-testid="apply-button"
               >
                 Apply

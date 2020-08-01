@@ -14,7 +14,7 @@
 
 import moment from 'moment';
 
-export type LookbackType = 'fixed' | 'custom';
+export type LookbackType = 'fixed' | 'range' | 'millis';
 
 export type FixedLookbackValue =
   | '1m'
@@ -51,13 +51,19 @@ export interface FixedLookback {
   endTime: moment.Moment;
 }
 
-export interface CustomLookback {
-  type: 'custom';
+export interface RangeLookback {
+  type: 'range';
   startTime: moment.Moment;
   endTime: moment.Moment;
 }
 
-export type Lookback = FixedLookback | CustomLookback;
+export interface MillisLookback {
+  type: 'millis';
+  value: number;
+  endTime: moment.Moment;
+}
+
+export type Lookback = FixedLookback | RangeLookback | MillisLookback;
 
 interface FixedLookbackEntry {
   duration: moment.Duration;

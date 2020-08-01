@@ -92,10 +92,15 @@ export const useQueryParams = (autocompleteKeys: string[]) => {
           params.set('lookback', lookback.value);
           params.set('endTs', lookback.endTime.valueOf().toString());
           break;
-        case 'custom':
-          params.set('lookback', 'custom');
+        case 'range':
+          params.set('lookback', 'range');
           params.set('endTs', lookback.endTime.valueOf().toString());
           params.set('startTs', lookback.startTime.valueOf().toString());
+          break;
+        case 'millis':
+          params.set('lookback', 'millis');
+          params.set('endTs', lookback.endTime.valueOf().toString());
+          params.set('millis', lookback.value.toString());
           break;
         default:
       }
@@ -117,6 +122,7 @@ export const useQueryParams = (autocompleteKeys: string[]) => {
         case 'lookback':
         case 'startTs':
         case 'endTs':
+        case 'millis':
         case 'limit':
           break;
         case 'annotationQuery': {
@@ -160,33 +166,54 @@ export const useQueryParams = (autocompleteKeys: string[]) => {
     if (!lookback) {
       return undefined;
     }
-    if (lookback === 'custom') {
-      const startTs = ps.get('startTs');
-      const endTs = ps.get('endTs');
-      if (!endTs || !startTs) {
-        return undefined;
+
+    switch (lookback) {
+      case 'range': {
+        const startTs = ps.get('startTs');
+        const endTs = ps.get('endTs');
+        if (!endTs || !startTs) {
+          return undefined;
+        }
+        const startTime = moment(parseInt(startTs, 10));
+        const endTime = moment(parseInt(endTs, 10));
+        return {
+          type: 'range',
+          startTime,
+          endTime,
+        };
       }
-      const startTime = moment(parseInt(startTs, 10));
-      const endTime = moment(parseInt(endTs, 10));
-      return {
-        type: 'custom',
-        startTime,
-        endTime,
-      };
+      case 'millis': {
+        const endTs = ps.get('endTs');
+        const valueStr = ps.get('millis');
+        if (!endTs || !valueStr) {
+          return undefined;
+        }
+        const endTime = moment(parseInt(endTs, 10));
+        const value = parseInt(valueStr, 10);
+        return {
+          type: 'millis',
+          endTime,
+          value,
+        };
+      }
+      case 'fixed': {
+        const endTs = ps.get('endTs');
+        if (!endTs) {
+          return undefined;
+        }
+        const data = fixedLookbackMap[lookback];
+        if (!data) {
+          return undefined;
+        }
+        return {
+          type: 'fixed',
+          value: data.value,
+          endTime: moment(parseInt(endTs, 10)),
+        };
+      }
+      default:
+        return undefined;
     }
-    const endTs = ps.get('endTs');
-    if (!endTs) {
-      return undefined;
-    }
-    const data = fixedLookbackMap[lookback];
-    if (!data) {
-      return undefined;
-    }
-    return {
-      type: 'fixed',
-      value: data.value,
-      endTime: moment(parseInt(endTs, 10)),
-    };
   }, [location.search]);
 
   const limit = useMemo(() => {
@@ -265,9 +292,13 @@ export const buildApiQuery = (
 
   params.endTs = lookback.endTime.valueOf().toString();
   switch (lookback.type) {
-    case 'custom': {
+    case 'range': {
       const lb = lookback.endTime.valueOf() - lookback.startTime.valueOf();
       params.lookback = lb.toString();
+      break;
+    }
+    case 'millis': {
+      params.lookback = lookback.value.toString();
       break;
     }
     case 'fixed': {
@@ -304,6 +335,28 @@ const useFetchTraces = (
   }, [autocompleteKeys, criteria, dispatch, limit, lookback]);
 };
 
+const initialLookback = (
+  lookback: Lookback | undefined,
+  defaultLookback: number,
+): Lookback => {
+  if (lookback) {
+    return lookback;
+  }
+  const fixed = millisecondsToValue[defaultLookback];
+  if (fixed) {
+    return {
+      type: 'fixed',
+      value: fixed,
+      endTime: moment(),
+    };
+  }
+  return {
+    type: 'millis',
+    value: defaultLookback,
+    endTime: moment(),
+  };
+};
+
 const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   autocompleteKeys,
 }) => {
@@ -315,12 +368,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
 
   const { defaultLookback, queryLimit } = useUiConfig();
   const [tempLookback, setTempLookback] = useState<Lookback>(
-    lookback || {
-      type: 'fixed',
-      // If defaultLookback in config.json is incorrect, use 15m as an initial value.
-      value: millisecondsToValue[defaultLookback] || '15m',
-      endTime: moment(),
-    },
+    initialLookback(lookback, defaultLookback),
   );
   const [tempLimit, setTempLimit] = useState(limit || queryLimit);
 
@@ -328,10 +376,12 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     switch (tempLookback.type) {
       case 'fixed':
         return fixedLookbackMap[tempLookback.value].display;
-      case 'custom':
+      case 'range':
         return `${tempLookback.startTime.format(
           'MM/DD/YYYY HH:mm:ss',
         )} - ${tempLookback.endTime.format('MM/DD/YYYY HH:mm:ss')}`;
+      case 'millis':
+        return `${tempLookback.value}ms`;
       default:
         return '';
     }
@@ -347,8 +397,8 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   );
 
   const searchTraces = useCallback(() => {
-    // If the lookback is fixed, need to set the click time to endTime.
-    if (tempLookback.type === 'fixed') {
+    // If the lookback is fixed or millis, need to set the click time to endTime.
+    if (tempLookback.type === 'fixed' || tempLookback.type === 'millis') {
       setQueryParams(
         tempCriteria,
         { ...tempLookback, endTime: moment() },
