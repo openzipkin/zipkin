@@ -242,7 +242,7 @@ The following are tuning parameters which may not concern all users:
 Example usage with logging:
 
 ```bash
-$ STORAGE_TYPE=cassandra3 java -jar zipkin.jar --logging.level.zipkin=trace --logging.level.zipkin2=trace --logging.level.com.datastax.driver.core=debug
+$ STORAGE_TYPE=cassandra3 java -jar zipkin.jar --logging.level.zipkin=trace --logging.level.zipkin2=trace --logging.level.com.datastax.driver.core.Connection=debug
 ```
 
 ### Elasticsearch Storage

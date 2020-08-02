@@ -261,7 +261,9 @@ logging:
 #     # investigate /api/v2/dependencies
 #     zipkin2.internal.DependencyLinker: 'DEBUG'
 #     # log cassandra queries (DEBUG is without values)
-#     com.datastax.driver.core.QueryLogger: 'TRACE'
+#     com.datastax.driver.core.QueryLogger.NORMAL: 'TRACE'
+#     # log cassandra connections
+#     com.datastax.driver.core.Connection: 'DEBUG'
 #     # log cassandra trace propagation
 #     com.datastax.driver.core.Message: 'TRACE'
 #     # log reason behind http collector dropped messages

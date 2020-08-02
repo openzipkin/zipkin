@@ -14,7 +14,6 @@
 package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -384,7 +383,11 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
   public CheckResult check() {
     if (closeCalled) throw new IllegalStateException("closed");
     try {
-      session.get().execute(QueryBuilder.select("trace_id").from("traces").limit(1));
+      // Use direct CQL instead of query builder for simple statements.
+      // BuiltStatement has a NPE bug when there are no input parameters.
+      //
+      // https://github.com/datastax/java-driver/pull/1138
+      session().execute("select trace_id from traces limit 1");
     } catch (Throwable e) {
       Call.propagateIfFatal(e);
       return CheckResult.failed(e);
