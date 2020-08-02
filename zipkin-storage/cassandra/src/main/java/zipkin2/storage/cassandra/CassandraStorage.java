@@ -16,7 +16,6 @@ package zipkin2.storage.cassandra;
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import java.util.Collections;
@@ -250,7 +249,11 @@ public abstract class CassandraStorage extends StorageComponent {
   @Override public CheckResult check() {
     try {
       if (closeCalled) throw new IllegalStateException("closed");
-      session().execute(QueryBuilder.select("trace_id").from("span").limit(1));
+      // Use direct CQL instead of query builder for simple statements.
+      // BuiltStatement has a NPE bug when there are no input parameters.
+      //
+      // https://github.com/datastax/java-driver/pull/1138
+      session().execute("select trace_id from span limit 1");
     } catch (Throwable e) {
       Call.propagateIfFatal(e);
       return CheckResult.failed(e);
