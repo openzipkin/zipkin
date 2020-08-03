@@ -16,8 +16,8 @@
 
 set -eu
 
-echo "*** Installing Python"
-apk add --update --no-cache python2
+echo "*** Temporarily installing Python and curl"
+apk add --update --no-cache python2 curl
 
 echo "*** Installing Cassandra"
 # DataStax only hosts 3.0 series at the moment
