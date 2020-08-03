@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -92,7 +92,7 @@ public class KryoTest {
       output.write(json);
     }
 
-    @Override public Span read(Kryo kryo, Input input, Class<Span> type) {
+    @Override public Span read(Kryo kryo, Input input, Class<? extends Span> type) {
       int length = input.readInt();
       byte[] json = input.readBytes(length);
       return SpanBytesDecoder.JSON_V2.decodeOne(json);

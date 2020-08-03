@@ -22,7 +22,7 @@ version: '2'
 
 services:
   zipkin-ui:
-    image: openzipkin/zipkin-ui
+    image: openzipkin/zipkin-ui:test
     container_name: zipkin-ui
     environment:
       # Change this if connecting to a different zipkin server
