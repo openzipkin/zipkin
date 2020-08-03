@@ -11,34 +11,29 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React, { useCallback } from 'react';
-import { withRouter, RouteComponentProps } from 'react-router-dom';
+
+import { faSquare, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   Box,
-  Typography,
   Button,
   Paper,
   Table,
   TableBody,
-  TableRow,
   TableCell,
   TableHead,
+  TableRow,
+  Theme,
+  Typography,
+  createStyles,
+  makeStyles,
 } from '@material-ui/core';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSquare, faSearch } from '@fortawesome/free-solid-svg-icons';
+import React, { useCallback } from 'react';
+import { withRouter, RouteComponentProps } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
-import { selectServiceColor } from '../../colors';
-
-export interface Edge {
-  source: string;
-  target: string;
-  metrics: {
-    normal: number;
-    danger: number;
-  };
-}
+import Edge from './Edge';
+import { selectServiceColor } from '../colors';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -80,7 +75,7 @@ interface NodeDetailDataProps extends RouteComponentProps {
   sourceEdges: Edge[];
 }
 
-const NodeDetailData: React.FC<NodeDetailDataProps> = ({
+const NodeDetailDataImpl: React.FC<NodeDetailDataProps> = ({
   serviceName,
   targetEdges,
   sourceEdges,
@@ -256,4 +251,4 @@ const NodeDetailData: React.FC<NodeDetailDataProps> = ({
   );
 };
 
-export default withRouter(NodeDetailData);
+export default withRouter(NodeDetailDataImpl);

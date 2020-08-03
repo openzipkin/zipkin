@@ -11,17 +11,26 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 /* eslint-disable no-shadow */
+
+import {
+  Box,
+  Grid,
+  Theme,
+  createStyles,
+  makeStyles,
+  useTheme,
+} from '@material-ui/core';
+import moment from 'moment';
 import React, { CSSProperties, useState, useCallback, useMemo } from 'react';
 import ReactSelect, { ValueType, ActionMeta } from 'react-select';
 import { AutoSizer } from 'react-virtualized';
-import { Box, Grid, useTheme } from '@material-ui/core';
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import moment from 'moment';
 
-import Dependencies from '../../types/Dependencies';
+import Edge from './Edge';
+import NodeDetailData from './NodeDetailData';
 import VizceralWrapper from './VizceralWrapper';
-import NodeDetailData, { Edge } from './NodeDetailData';
+import Dependencies from '../models/Dependencies';
 
 // These filter functions use any type because they are passed directly to untyped JS code.
 const filterConnections = (object: any, value: any) => {

@@ -11,29 +11,38 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { t, Trans } from '@lingui/macro';
+import { useLingui } from '@lingui/react';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Theme,
+  Typography,
+  createStyles,
+  makeStyles,
+} from '@material-ui/core';
+import { KeyboardDateTimePicker } from '@material-ui/pickers';
+import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
+import { History, Location } from 'history';
+import moment from 'moment';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
-import { t, Trans } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
-import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
-import { Box, Typography, Button, CircularProgress } from '@material-ui/core';
-import { KeyboardDateTimePicker } from '@material-ui/pickers';
-import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
-import moment from 'moment';
-import { History, Location } from 'history';
 
-import ExplainBox from './ExplainBox';
-import TraceJsonUploader from '../Common/TraceJsonUploader';
-import TraceIdSearchInput from '../Common/TraceIdSearchInput';
-import {
-  loadDependencies,
-  clearDependencies,
-} from '../../actions/dependencies-action';
-import RootState from '../../types/RootState';
 import DependenciesGraph from './DependenciesGraph';
+import ExplainBox from './ExplainBox';
+import { clearAlert, setAlert } from '../components/App/slice';
+import TraceJsonUploader from '../components/Common/TraceJsonUploader';
+import TraceIdSearchInput from '../components/Common/TraceIdSearchInput';
+import {
+  clearDependencies,
+  loadDependencies,
+} from '../slices/dependenciesSlice';
+import { RootState } from '../store';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -113,7 +122,7 @@ const useFetchDependencies = (timeRange: {
   }, [dispatch, timeRange.endTime, timeRange.startTime]);
 };
 
-const DependenciesPage: React.FC<DependenciesPageProps> = ({
+const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
   history,
   location,
 }) => {
@@ -132,9 +141,22 @@ const DependenciesPage: React.FC<DependenciesPageProps> = ({
   });
   useFetchDependencies(timeRange);
 
-  const { isLoading, dependencies } = useSelector(
+  const { isLoading, dependencies, error } = useSelector(
     (state: RootState) => state.dependencies,
   );
+
+  useEffect(() => {
+    if (error) {
+      dispatch(
+        setAlert({
+          message: 'Failed to load dependencies...',
+          severity: 'error',
+        }),
+      );
+    } else {
+      dispatch(clearAlert());
+    }
+  }, [error, dispatch]);
 
   const handleStartTimeChange = useCallback(
     (startTime: MaterialUiPickersDate) => {
@@ -257,4 +279,4 @@ const DependenciesPage: React.FC<DependenciesPageProps> = ({
   );
 };
 
-export default withRouter(DependenciesPage);
+export default withRouter(DependenciesPageImpl);
