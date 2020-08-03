@@ -49,7 +49,7 @@ public class ZipkinServer {
     new SpringApplicationBuilder(ZipkinServer.class)
       .banner(new ZipkinBanner())
       .initializers(new ZipkinModuleImporter(), new ZipkinActuatorImporter())
-      // Avoids potentially expensive ns lookup and inaccurate startup timing
+      // Avoids potentially expensive DNS lookup and inaccurate startup timing
       .logStartupInfo(false)
       .properties(
         EnableAutoConfiguration.ENABLED_OVERRIDE_PROPERTY + "=false",
