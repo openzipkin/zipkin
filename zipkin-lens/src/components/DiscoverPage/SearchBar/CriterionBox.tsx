@@ -152,16 +152,33 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
         onDelete();
         return;
       }
-      let ss = fixedText.split('=');
+      let strs = fixedText.split('=');
+
+      if (strs.length === 1 || strs[1] === '') {
+        switch (strs[0]) {
+          // If the value does not exist in these conditions, delete this criterion.
+          case 'serviceName':
+          case 'spanName':
+          case 'remoteServiceName':
+          case 'maxDuration':
+          case 'minDuration':
+          case 'tagQuery':
+            setFixedText('');
+            onDelete();
+            return;
+          default:
+            break;
+        }
+      }
 
       // If the length is greater than 2, there is more than one "=" in the text.
       // Service names, span names, and tag's keys and values can contain '=',
       // so this is also valid.
       // In this case, treat the first "=" as a separator between key and value.
-      if (ss.length > 2) {
-        ss = fixedText.split(/=(.+)/);
+      if (strs.length > 2) {
+        strs = fixedText.split(/=(.+)/);
       }
-      onChange(newCriterion(ss[0], ss[1] || ''));
+      onChange(newCriterion(strs[0], strs[1] || ''));
     } else if (!prevIsFocused.current && isFocused) {
       if (inputEl.current) {
         inputEl.current.focus();
@@ -211,6 +228,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
       // selected, so so they will not be displayed until serviceName is selected.
       if (criteria.find(({ key }) => key === 'serviceName')) {
         keys = [
+          'serviceName',
           'spanName',
           'remoteServiceName',
           'maxDuration',
@@ -229,7 +247,11 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
       }
 
       return keys
-        .filter((key) => !criteria.find((criterion) => criterion.key === key))
+        .filter(
+          (key) =>
+            !criteria.find((criterion) => criterion.key === key) ||
+            criterion.key === key,
+        )
         .filter((key) => key.includes(keyText));
     }
 
@@ -262,6 +284,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     keyText,
     valueText,
     criteria,
+    criterion,
   ]);
 
   useEffect(() => {
