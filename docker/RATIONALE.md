@@ -8,7 +8,7 @@ dependency: having HEALTHCHECK present makes triage and scripting a bit easier.
 
 HEALTHCHECK on our test image serves primarily two purposes:
  * ad-hoc or scripted status of health using docker ps instead of knowing Kafka commands
- * to allow manual allows usage of the docker-compose v2 service_healthy condition
+ * to allow manual usage of the docker-compose v2 service_healthy condition
 
 Ex. The following command can be used ad-hoc or in scripts without the user knowing Kafka:
 ```bash
