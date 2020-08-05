@@ -196,13 +196,14 @@ export const useQueryParams = (autocompleteKeys: string[]) => {
           value,
         };
       }
-      case 'fixed': {
-        const endTs = ps.get('endTs');
-        if (!endTs) {
-          return undefined;
-        }
+      default: {
+        // Otherwise lookback should be 1m, 5m 15m, ...
         const data = fixedLookbackMap[lookback];
         if (!data) {
+          return undefined;
+        }
+        const endTs = ps.get('endTs');
+        if (!endTs) {
           return undefined;
         }
         return {
@@ -211,8 +212,6 @@ export const useQueryParams = (autocompleteKeys: string[]) => {
           endTime: moment(parseInt(endTs, 10)),
         };
       }
-      default:
-        return undefined;
     }
   }, [location.search]);
 
@@ -360,12 +359,14 @@ const initialLookback = (
 const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   autocompleteKeys,
 }) => {
+  // Retrieve search criteria from the URL query string and use them to search for traces.
   const { setQueryParams, criteria, lookback, limit } = useQueryParams(
     autocompleteKeys,
   );
+  useFetchTraces(autocompleteKeys, criteria, lookback, limit);
 
+  // Temporary search criteria.
   const [tempCriteria, setTempCriteria] = useState(criteria);
-
   const { defaultLookback, queryLimit } = useUiConfig();
   const [tempLookback, setTempLookback] = useState<Lookback>(
     initialLookback(lookback, defaultLookback),
@@ -386,8 +387,6 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
         return '';
     }
   }, [tempLookback]);
-
-  useFetchTraces(autocompleteKeys, criteria, lookback, limit);
 
   const handleLimitChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
