@@ -215,13 +215,22 @@ describe('buildApiQuery', () => {
 });
 
 describe('<DiscoverPageContent />', () => {
-  it('should initialize the lookback using config.json', () => {
+  it('should initialize fixed lookback using config.json', () => {
     const { getAllByText } = render(<DiscoverPageContent />, {
       uiConfig: {
         defaultLookback: 60 * 1000 * 5, // 5m
       },
     });
     expect(getAllByText('Last 5 minutes').length).toBe(1);
+  });
+
+  it('should initialze millis lookback using config.json', () => {
+    const { getAllByText } = render(<DiscoverPageContent />, {
+      uiConfig: {
+        defaultLookback: 12345,
+      },
+    });
+    expect(getAllByText('12345ms').length).toBe(1);
   });
 
   it('should initialize the query limit using config.json', () => {
