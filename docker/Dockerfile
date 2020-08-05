@@ -108,7 +108,7 @@ EXPOSE 9411
 #
 HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget -qO- http://127.0.0.1:9411/health &> /dev/null || exit 1
 
-ENTRYPOINT run.sh
+ENTRYPOINT /zipkin/run.sh
 
 #####
 # zipkin-server - An image containing the full distribution of Zipkin server.
@@ -161,4 +161,4 @@ EXPOSE 9410 9411
 #
 HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget -qO- http://127.0.0.1:9411/health &> /dev/null || exit 1
 
-ENTRYPOINT run.sh
+ENTRYPOINT /zipkin/run.sh
