@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,7 +32,7 @@ import zipkin.server.ZipkinServer;
 import zipkin2.Component;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
-import zipkin2.reporter.Reporter;
+import zipkin2.reporter.brave.AsyncZipkinSpanHandler;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.QueryRequest;
 
@@ -60,7 +60,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
 @RunWith(SpringRunner.class)
 public class ITZipkinSelfTracing {
   @Autowired TracingStorageComponent storage;
-  @Autowired Reporter<Span> reporter;
+  @Autowired AsyncZipkinSpanHandler zipkinSpanHandler;
   @Autowired Server server;
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
@@ -116,7 +116,7 @@ public class ITZipkinSelfTracing {
    */
   @Test public void toStringContainsOnlySummaryInformation() {
     assertThat(storage).hasToString("Traced{InMemoryStorage{}}");
-    assertThat(reporter).hasToString("AsyncReporter{StorageComponent}");
+    assertThat(zipkinSpanHandler).hasToString("AsyncReporter{StorageComponent}");
   }
 
   List<List<Span>> awaitSpans(int count) {
