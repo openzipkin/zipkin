@@ -12,7 +12,7 @@
 # the License.
 #
 
-FROM alpine
+FROM alpine:3.12
 
 ENV ELASTICSEARCH_VERSION 7.8.1
 
@@ -23,7 +23,12 @@ WORKDIR /elasticsearch
 RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-$ELASTICSEARCH_VERSION-linux-x86_64.tar.gz| tar xz && \
     mv elasticsearch-$ELASTICSEARCH_VERSION/* /elasticsearch/ && \
     # disable ML as not supported on alpine per https://discuss.elastic.co/t/elasticsearch-failing-to-start-due-to-x-pack/85125/6
-    rm -rf /elasticsearch/modules/x-pack-ml
+    rm -rf /elasticsearch/modules/x-pack-ml && \
+    # remove binaries and non shell scripts
+    rm -f /elasticsearch/bin/elasticsearch-sql* /elasticsearch/bin/*cmd /elasticsearch/bin/*exe && \
+    # Remove bash as our images doesn't have it, and it isn't required
+    ls -d /elasticsearch/bin/* | xargs sed -i 's~#!/bin/bash~#!/bin/sh~g' && \
+    chmod +x /elasticsearch/bin/*
 
 COPY docker/storage/elasticsearch7/config /elasticsearch/config
 
@@ -33,7 +38,7 @@ COPY docker/storage/elasticsearch7/elasticsearch /elasticsearch/bin/
 FROM openzipkin/jre-full:14.0.2-14.29.23
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
-RUN ["/busybox/sh", "-c", "adduser -g '' -h /elasticsearch -D elasticsearch"]
+RUN adduser -g '' -h /elasticsearch -D elasticsearch
 
 COPY --from=0 --chown=elasticsearch /elasticsearch /elasticsearch
 
@@ -46,4 +51,4 @@ EXPOSE 9200 9300
 
 ENV ES_JAVA_OPTS " "
 
-ENTRYPOINT ["/busybox/sh", "/elasticsearch/bin/elasticsearch"]
+ENTRYPOINT /elasticsearch/bin/elasticsearch

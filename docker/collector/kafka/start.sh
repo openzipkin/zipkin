@@ -1,4 +1,4 @@
-#!/busybox/sh
+#!/bin/sh
 #
 # Copyright 2015-2020 The OpenZipkin Authors
 #
@@ -15,8 +15,8 @@
 
 
 echo Starting Zookeeper
-/busybox/sh /kafka/bin/kafka-run-class.sh -Dlog4j.configuration=file:/kafka/config/log4j.properties org.apache.zookeeper.server.quorum.QuorumPeerMain /kafka/config/zookeeper.properties &
-/busybox/sh /kafka/bin/wait-for-zookeeper.sh
+/kafka/bin/kafka-run-class.sh -Dlog4j.configuration=file:/kafka/config/log4j.properties org.apache.zookeeper.server.quorum.QuorumPeerMain /kafka/config/zookeeper.properties &
+/kafka/bin/wait-for-zookeeper.sh
 
 if [[ -z "$KAFKA_ADVERTISED_HOST_NAME" ]]; then
 listeners=PLAINTEXT://:9092
@@ -28,4 +28,4 @@ else
 fi
 
 echo Starting Kafka
-/busybox/sh /kafka/bin/kafka-run-class.sh -name kafkaServer -Dlog4j.configuration=file:/kafka/config/log4j.properties kafka.Kafka /kafka/config/server.properties
+/kafka/bin/kafka-run-class.sh -name kafkaServer -Dlog4j.configuration=file:/kafka/config/log4j.properties kafka.Kafka /kafka/config/server.properties

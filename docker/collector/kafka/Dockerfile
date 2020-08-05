@@ -12,7 +12,7 @@
 # the License.
 #
 
-FROM alpine
+FROM alpine:3.12
 
 ENV SCALA_VERSION 2.12
 ENV KAFKA_VERSION 2.5.0
@@ -30,7 +30,7 @@ LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 WORKDIR /kafka
 
-RUN ["/busybox/sh", "-c", "adduser -g '' -h /kafka -D kafka"]
+RUN adduser -g '' -h /kafka -D kafka
 
 COPY --from=0 --chown=kafka /kafka /kafka
 
@@ -39,4 +39,9 @@ USER kafka
 # Port 19092 is for connections from the Docker host
 EXPOSE 2181 9092 19092
 
-ENTRYPOINT ["/busybox/sh", "/kafka/bin/start.sh"]
+# We use start period of 10s to avoid marking Kafka unhealthy on slow or contended CI hosts
+HEALTHCHECK --interval=1s --start-period=10s --timeout=2s \
+  # We use bootstrap-server, not zookeeper, as KIP-500 will eventually remove the dependency
+  CMD /kafka/bin/kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --list > /dev/null || exit 1
+
+ENTRYPOINT /kafka/bin/start.sh

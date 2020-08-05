@@ -69,7 +69,7 @@ LABEL MAINTAINER Zipkin "https://zipkin.io/"
 # Use to set heap, trust store or other system properties.
 ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
 
-RUN adduser -g '' -h /zipkin -D zipkin && ln -s /busybox/* /bin
+RUN adduser -g '' -h /zipkin -D zipkin
 
 COPY --from=built --chown=zipkin /zipkin-slim/ /zipkin/
 # Add environment settings for supported storage types
@@ -106,9 +106,9 @@ EXPOSE 9411
 # report to https://gitter.im/openzipkin/zipkin including the values of the
 # /health and /info endpoints as this would be unexpected.
 #
-HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget -qO- http://localhost:9411/health &> /dev/null || exit 1
+HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget -qO- http://127.0.0.1:9411/health &> /dev/null || exit 1
 
-ENTRYPOINT ["/busybox/sh", "run.sh"]
+ENTRYPOINT /zipkin/run.sh
 
 #####
 # zipkin-server - An image containing the full distribution of Zipkin server.
@@ -122,7 +122,7 @@ ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
 # 3rd party modules like zipkin-aws will apply profile settings with this
 ENV MODULE_OPTS=
 
-RUN adduser -g '' -h /zipkin -D zipkin && ln -s /busybox/* /bin
+RUN adduser -g '' -h /zipkin -D zipkin
 
 COPY --from=built --chown=zipkin /zipkin/ /zipkin/
 # Add environment settings for supported storage types
@@ -159,6 +159,6 @@ EXPOSE 9410 9411
 # report to https://gitter.im/openzipkin/zipkin including the values of the
 # /health and /info endpoints as this would be unexpected.
 #
-HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget -qO- http://localhost:9411/health &> /dev/null || exit 1
+HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget -qO- http://127.0.0.1:9411/health &> /dev/null || exit 1
 
-ENTRYPOINT ["/busybox/sh", "run.sh"]
+ENTRYPOINT /zipkin/run.sh

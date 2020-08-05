@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2019 The OpenZipkin Authors
+# Copyright 2015-2020 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@ FROM scratch as scratch
 COPY docker/storage/mysql/*.sh /mysql/
 COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /mysql/zipkin.sql
 
-FROM alpine
+FROM alpine:3.12
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 WORKDIR /mysql
