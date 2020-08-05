@@ -68,18 +68,18 @@ describe('useQueryParams', () => {
     }
   });
 
-  it('should extract custom lookback from query string', () => {
+  it('should extract range lookback from query string', () => {
     const history = createMemoryHistory();
     const wrapper = ({ children }) => {
       return <Router history={history}>{children}</Router>;
     };
     history.push({
       pathname: '/zipkin/',
-      search: '?lookback=custom&startTs=1588558961791&endTs=1588558961791',
+      search: '?lookback=range&startTs=1588558961791&endTs=1588558961791',
     });
 
     const { result } = renderHook(() => useQueryParams([]), { wrapper });
-    expect(result.current.lookback.type).toBe('custom');
+    expect(result.current.lookback.type).toBe('range');
     expect(result.current.lookback.startTime.valueOf()).toBe(1588558961791);
     expect(result.current.lookback.endTime.valueOf()).toBe(1588558961791);
   });
@@ -97,6 +97,22 @@ describe('useQueryParams', () => {
     const { result } = renderHook(() => useQueryParams([]), { wrapper });
     expect(result.current.lookback.type).toBe('fixed');
     expect(result.current.lookback.value).toBe('2h');
+    expect(result.current.lookback.endTime.valueOf()).toBe(1588558961791);
+  });
+
+  it('should extract millis lookback from query string', () => {
+    const history = createMemoryHistory();
+    const wrapper = ({ children }) => {
+      return <Router history={history}>{children}</Router>;
+    };
+    history.push({
+      pathname: '/zipkin/',
+      search: '?lookback=millis&endTs=1588558961791&millis=1234',
+    });
+
+    const { result } = renderHook(() => useQueryParams([]), { wrapper });
+    expect(result.current.lookback.type).toBe('millis');
+    expect(result.current.lookback.value).toBe(1234);
     expect(result.current.lookback.endTime.valueOf()).toBe(1588558961791);
   });
 
