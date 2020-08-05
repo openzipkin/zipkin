@@ -16,7 +16,7 @@
 #
 # Note that this file is meant for learning Zipkin, not production deployments.
 
-version: '2'
+version: '2.4'
 
 services:
   zipkin:

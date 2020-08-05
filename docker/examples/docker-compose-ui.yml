@@ -18,7 +18,7 @@
 # It extends the default configuration from docker-compose.yml, hosting the
 # ui on port 80 using NGINX
 
-version: '2'
+version: '2.4'
 
 services:
   zipkin-ui:

@@ -18,7 +18,7 @@
 # It extends the default configuration from docker-compose.yml to add a test
 # kafka server, which is used as a span transport.
 
-version: '2'
+version: '2.4'
 
 services:
   kafka-zookeeper:
@@ -29,10 +29,7 @@ services:
     # environment:
       # - KAFKA_ADVERTISED_HOST_NAME=192.168.99.100
     ports:
-      - 2181:2181
-      - 9092:9092
-      # port 19092 is listening on localhost by default. In normal Docker,
-      # you can set your bootstrap server list to localhost:19092
+      # Processes on the Docker host can set bootstrap server list to localhost:19092
       - 19092:19092
 
   zipkin:

@@ -42,6 +42,9 @@ sed -i '/-XX:GCLogFileSize=10M/c\#-XX:GCLogFileSize=10M' /cassandra/conf/jvm.opt
 
 # TODO: Add native snappy lib. Native loader stacktraces in the cassandra log as a results, which is distracting.
 
+# Remove bash as Cassandra scripts we use don't have it, and it isn't required
+sed -i 's~#!/bin/bash~#!/bin/sh~g' /cassandra/bin/*sh
+
 echo "*** Starting Cassandra"
 /cassandra/bin/cassandra -R
 

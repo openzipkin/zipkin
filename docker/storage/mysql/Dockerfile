@@ -20,7 +20,7 @@ FROM scratch as scratch
 COPY docker/storage/mysql/*.sh /mysql/
 COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /mysql/zipkin.sql
 
-FROM alpine
+FROM alpine:3.12
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 WORKDIR /mysql
