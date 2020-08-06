@@ -14,7 +14,7 @@
 
 /* eslint-disable no-shadow */
 
-import { faHistory, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faHistory, faSync } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   Box,
@@ -500,8 +500,9 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
           variant="contained"
           color="primary"
           onClick={searchTraces}
+          startIcon={<FontAwesomeIcon icon={faSync} />}
         >
-          <FontAwesomeIcon icon={faSearch} size="lg" />
+          Run Query
         </SearchButton>
       </Box>
       <Box flexGrow={1}>{content}</Box>
