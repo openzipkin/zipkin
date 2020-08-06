@@ -13,6 +13,14 @@
  */
 package zipkin2.collector.scribe;
 
+import static zipkin2.Call.propagateIfFatal;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
@@ -24,7 +32,6 @@ import com.linecorp.armeria.common.util.SafeCloseable;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.ServiceRequestContextBuilder;
 import com.linecorp.armeria.server.thrift.THttpService;
-import com.linecorp.armeria.unsafe.PooledObjects;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -33,12 +40,6 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.EventLoop;
-import java.util.HashMap;
-import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static zipkin2.Call.propagateIfFatal;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 // TODO: errorprone wants us to check futures before returning, but what would be a sensible check?
@@ -95,19 +96,18 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
         return null;
       }
 
-      HttpData content = msg.content();
-      ByteBuf returned = ctx.alloc().buffer(content.length() + 4);
-      returned.writeInt(content.length());
-      returned.writeBytes(content.byteBuf());
-      PooledObjects.close(content);
+      try (HttpData content = msg.content()) {
+        ByteBuf returned = ctx.alloc().buffer(content.length() + 4);
+        returned.writeInt(content.length());
+        returned.writeBytes(content.byteBuf());
+        if (responseIndex == previouslySentResponseIndex + 1) {
+          ctx.writeAndFlush(returned);
+          previouslySentResponseIndex++;
 
-      if (responseIndex == previouslySentResponseIndex + 1) {
-        ctx.writeAndFlush(returned);
-        previouslySentResponseIndex++;
-
-        flushResponses(ctx);
-      } else {
-        pendingResponses.put(responseIndex, returned);
+          flushResponses(ctx);
+        } else {
+          pendingResponses.put(responseIndex, returned);
+        }
       }
 
       return null;

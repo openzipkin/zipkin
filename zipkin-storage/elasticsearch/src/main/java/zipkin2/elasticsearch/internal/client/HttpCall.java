@@ -31,7 +31,6 @@ import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.RequestHeaders;
 import com.linecorp.armeria.common.util.Exceptions;
 import com.linecorp.armeria.common.util.SafeCloseable;
-import com.linecorp.armeria.unsafe.PooledObjects;
 
 import io.netty.util.concurrent.EventExecutor;
 import java.io.FileNotFoundException;
@@ -92,17 +91,14 @@ public final class HttpCall<V> extends Call.Base<V> {
     final AggregatedHttpRequest request;
 
     AggregatedRequestSupplier(AggregatedHttpRequest request) {
-      final HttpData content = request.content();
-      if (!content.isPooled()) {
-        this.request = request;
-      } else {
-        // Unfortunately it's not possible to use pooled objects in requests and support clone()
-        // after sending the request.
-        try {
+      try (HttpData content = request.content()) {
+        if (!content.isPooled()) {
+          this.request = request;
+        } else {
+          // Unfortunately it's not possible to use pooled objects in requests and support clone()
+          // after sending the request.
           this.request = AggregatedHttpRequest.of(
             request.headers(), HttpData.wrap(content.array()), request.trailers());
-        } finally {
-          PooledObjects.close(content);
         }
       }
     }
@@ -271,15 +267,13 @@ public final class HttpCall<V> extends Call.Base<V> {
       };
     }
 
-    HttpData content = response.content();
-    try (InputStream stream = content.toInputStream();
+    try (HttpData content = response.content();
+         InputStream stream = content.toInputStream();
          JsonParser parser = JSON_FACTORY.createParser(stream)) {
 
       if (status.code() == 404) throw new FileNotFoundException(request.headers().path());
 
       return bodyConverter.convert(parser, content::toStringUtf8);
-    } finally {
-      PooledObjects.close(content);
     }
   }
 }
