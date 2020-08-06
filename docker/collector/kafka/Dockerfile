@@ -40,7 +40,11 @@ USER kafka
 EXPOSE 2181 9092 19092
 
 # We use start period of 10s to avoid marking Kafka unhealthy on slow or contended CI hosts
-HEALTHCHECK --interval=1s --start-period=10s --timeout=2s \
+#
+# We use a timeout of 5s as kafka-topics.sh invokes a Java command which can be slow when
+# multiple processes are starting up (ex docker-compose with >10 containers). A smaller timeout
+# flips the service unhealthy and can interfere with docker-compose v2 condition: service_healthy
+HEALTHCHECK --interval=2s --start-period=10s --timeout=5s \
   # We use bootstrap-server, not zookeeper, as KIP-500 will eventually remove the dependency
   CMD /kafka/bin/kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --list > /dev/null || exit 1
 
