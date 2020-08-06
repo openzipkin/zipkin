@@ -27,5 +27,5 @@ on network connections themselves for the same reason.
 
 `kafka-topics.sh` uses Java and a relatively large classpath. It can be slow when many other
 processes are starting at the same time. For example, when launching many containers in Docker
-Compose, `kafka-topics.sh` was failed on 2s timeout after succeeding, causing a condition to break
+Compose, `kafka-topics.sh` timed out after 2s even though the prior run succeeded. This broke a condition
 which broke the rest of the automation. A 5s timeout is excessive usually, but avoided this problem.
