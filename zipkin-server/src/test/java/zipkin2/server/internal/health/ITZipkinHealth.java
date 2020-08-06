@@ -73,7 +73,7 @@ public class ITZipkinHealth {
 
     // ensure we don't track health in prometheus
     assertThat(scrape())
-      .doesNotContain("health");
+      .doesNotContain("health_check");
   }
 
   String scrape() throws InterruptedException {

@@ -77,7 +77,7 @@ public class ITZipkinMetrics {
 
     // ensure we don't track prometheus, UI requests in prometheus
     assertThat(scrape())
-      .doesNotContain("prometheus")
+      .doesNotContain("prometheus_notifications")
       .doesNotContain("uri=\"/zipkin")
       .doesNotContain("uri=\"/\"");
   }
