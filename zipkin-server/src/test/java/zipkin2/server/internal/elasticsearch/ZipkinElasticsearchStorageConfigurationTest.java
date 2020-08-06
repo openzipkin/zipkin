@@ -13,7 +13,7 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import com.linecorp.armeria.client.ClientOption;
+import com.linecorp.armeria.client.ClientOptions;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.common.SessionProtocol;
@@ -287,7 +287,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
     HttpClientFactory factory = context.getBean(HttpClientFactory.class);
     WebClient client = WebClient.builder("http://127.0.0.1:1234")
-      .option(ClientOption.DECORATION, factory.options.decoration())
+      .option(ClientOptions.DECORATION, factory.options.decoration())
       .build();
     assertThat(client.as(BasicAuthInterceptor.class)).isNull();
   }
@@ -305,7 +305,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     HttpClientFactory factory = context.getBean(HttpClientFactory.class);
 
     WebClient client = WebClient.builder("http://127.0.0.1:1234")
-      .option(ClientOption.DECORATION, factory.options.decoration())
+      .option(ClientOptions.DECORATION, factory.options.decoration())
       .build();
     assertThat(client.as(BasicAuthInterceptor.class)).isNotNull();
   }
@@ -325,7 +325,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     HttpClientFactory factory = context.getBean(HttpClientFactory.class);
 
     WebClient client = WebClient.builder("http://127.0.0.1:1234")
-      .option(ClientOption.DECORATION, factory.options.decoration())
+      .option(ClientOptions.DECORATION, factory.options.decoration())
       .build();
     assertThat(client.as(BasicAuthInterceptor.class)).isNotNull();
     BasicCredentials basicCredentials =

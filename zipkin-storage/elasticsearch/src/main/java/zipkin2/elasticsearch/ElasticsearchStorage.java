@@ -19,7 +19,6 @@ import com.google.auto.value.extension.memoized.Memoized;
 import com.linecorp.armeria.client.ResponseTimeoutException;
 import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
-import com.linecorp.armeria.client.unsafe.PooledWebClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpMethod;
 import java.io.Closeable;
@@ -361,7 +360,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   @Memoized HttpCall.Factory http() {
-    return new HttpCall.Factory(PooledWebClient.of(lazyHttpClient().get()));
+    return new HttpCall.Factory(lazyHttpClient().get());
   }
 
   @Override public void close() {

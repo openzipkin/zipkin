@@ -64,7 +64,7 @@ public class HttpClientFactory implements Function<EndpointGroup, WebClient>, Cl
     LoggingClientBuilder loggingBuilder = LoggingClient.builder()
       .requestLogLevel(LogLevel.INFO)
       .successfulResponseLogLevel(LogLevel.INFO)
-      .requestHeadersSanitizer(headers -> {
+      .requestHeadersSanitizer((ctx, headers) -> {
         if (!headers.contains(HttpHeaderNames.AUTHORIZATION)) {
           return headers;
         }
@@ -73,11 +73,11 @@ public class HttpClientFactory implements Function<EndpointGroup, WebClient>, Cl
       });
     switch (httpLogging) {
       case HEADERS:
-        loggingBuilder.contentSanitizer(unused -> "");
+        loggingBuilder.contentSanitizer((ctx, unused) -> "");
         break;
       case BASIC:
-        loggingBuilder.contentSanitizer(unused -> "");
-        loggingBuilder.headersSanitizer(unused -> HttpHeaders.of());
+        loggingBuilder.contentSanitizer((ctx, unused) -> "");
+        loggingBuilder.headersSanitizer((ctx, unused) -> HttpHeaders.of());
         break;
       case BODY:
       default:
