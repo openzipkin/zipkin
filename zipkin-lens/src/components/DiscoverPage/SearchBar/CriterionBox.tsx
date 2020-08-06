@@ -86,6 +86,7 @@ const Input = styled.input.attrs(() => ({
 interface CriterionBoxProps {
   criteria: Criterion[];
   criterion: Criterion;
+  criterionIndex: number;
   serviceNames: string[];
   remoteServiceNames: string[];
   spanNames: string[];
@@ -96,11 +97,11 @@ interface CriterionBoxProps {
   isLoadingSpanNames: boolean;
   isLoadingAutocompleteValues: boolean;
   isFocused: boolean;
-  onFocus: () => void;
+  onFocus: (index: number) => void;
   onBlur: () => void;
-  onDecide: () => void;
-  onChange: (criterion: Criterion) => void;
-  onDelete: () => void;
+  onDecide: (index: number) => void;
+  onChange: (index: number, criterion: Criterion) => void;
+  onDelete: (index: number) => void;
   loadAutocompleteValues: (autocompleteKey: string) => void;
 }
 
@@ -117,6 +118,7 @@ const initialText = (criterion: Criterion) => {
 const CriterionBox: React.FC<CriterionBoxProps> = ({
   criteria,
   criterion,
+  criterionIndex,
   serviceNames,
   remoteServiceNames,
   spanNames,
@@ -149,7 +151,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
   useEffect(() => {
     if (prevIsFocused.current && !isFocused) {
       if (!fixedText) {
-        onDelete();
+        onDelete(criterionIndex);
         return;
       }
       let strs = fixedText.split('=');
@@ -164,7 +166,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
           case 'minDuration':
           case 'tagQuery':
             setFixedText('');
-            onDelete();
+            onDelete(criterionIndex);
             return;
           default:
             break;
@@ -178,14 +180,14 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
       if (strs.length > 2) {
         strs = fixedText.split(/=(.+)/);
       }
-      onChange(newCriterion(strs[0], strs[1] || ''));
+      onChange(criterionIndex, newCriterion(strs[0], strs[1] || ''));
     } else if (!prevIsFocused.current && isFocused) {
       if (inputEl.current) {
         inputEl.current.focus();
       }
     }
     prevIsFocused.current = isFocused;
-  }, [isFocused, fixedText, onChange, onDelete]);
+  }, [isFocused, fixedText, onChange, onDelete, criterionIndex]);
 
   const [keyText, valueText] = useMemo(() => {
     const ss = fixedText.split('=');
@@ -311,7 +313,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
           event.preventDefault();
           if (isEnteringKey) {
             if (!text) {
-              onDecide();
+              onDecide(criterionIndex);
               return;
             }
             const newText = `${text}=`;
@@ -321,7 +323,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
           } else {
             setFixedText(text);
             setSuggestionIndex(-1);
-            onDecide();
+            onDecide(criterionIndex);
           }
           break;
         case 'ArrowUp': {
@@ -368,7 +370,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
           break;
         }
         case 'Escape': {
-          onDecide();
+          onDecide(criterionIndex);
           break;
         }
         default:
@@ -377,21 +379,22 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
     },
     [
       isEnteringKey,
-      isLoadingSuggestions,
       text,
-      keyText,
-      suggestionIndex,
-      suggestions,
       onDecide,
+      criterionIndex,
+      isLoadingSuggestions,
+      suggestions,
+      suggestionIndex,
+      keyText,
     ],
   );
 
   const handleDeleteButtonClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       event.stopPropagation();
-      onDelete();
+      onDelete(criterionIndex);
     },
-    [onDelete],
+    [onDelete, criterionIndex],
   );
 
   const handleSuggestionItemClick = (index: number) => () => {
@@ -413,13 +416,17 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
       setText(newText);
       setFixedText(newText);
       setSuggestionIndex(-1);
-      onDecide();
+      onDecide(criterionIndex);
     }
   };
 
+  const handleClick = useCallback(() => {
+    onFocus(criterionIndex);
+  }, [criterionIndex, onFocus]);
+
   if (!isFocused) {
     return (
-      <Root onClick={onFocus}>
+      <Root onClick={handleClick}>
         <Box
           maxWidth={150}
           height="100%"

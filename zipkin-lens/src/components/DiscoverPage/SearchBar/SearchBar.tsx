@@ -87,27 +87,27 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
   // If the value is -1, there is no criterion being edited.
   const [criterionIndex, setCriterionIndex] = useState(-1);
 
-  const handleCriterionFocus = (index: number) => () => {
+  const handleCriterionFocus = (index: number) => {
     setCriterionIndex(index);
   };
 
-  const handleCriterionChange = (index: number) => (criterion: Criterion) => {
+  const handleCriterionChange = (index: number, criterion: Criterion) => {
     const newCriteria = [...criteria];
     newCriteria[index] = criterion;
     onChange(newCriteria);
   };
 
-  const handleCriterionBlur = () => () => {
+  const handleCriterionBlur = () => {
     setCriterionIndex(-1);
   };
 
-  const handleCriterionDelete = (index: number) => () => {
+  const handleCriterionDelete = (index: number) => {
     const newCriteria = criteria.filter((_, i) => i !== index);
     onChange(newCriteria);
     setCriterionIndex(-1);
   };
 
-  const handleCriterionDecide = (index: number) => () => {
+  const handleCriterionDecide = (index: number) => {
     if (index === criteria.length - 1) {
       const newCriteria = [...criteria];
       newCriteria.push(newCriterion('', ''));
@@ -196,6 +196,7 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
           key={criterion.id}
           criteria={criteria}
           criterion={criterion}
+          criterionIndex={index}
           serviceNames={serviceNames}
           remoteServiceNames={remoteServiceNames}
           spanNames={spanNames}
@@ -206,11 +207,11 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
           isLoadingSpanNames={isLoadingSpanNames}
           isLoadingAutocompleteValues={isLoadingAutocompleteValues}
           isFocused={index === criterionIndex}
-          onFocus={handleCriterionFocus(index)}
-          onBlur={handleCriterionBlur()}
-          onDecide={handleCriterionDecide(index)}
-          onChange={handleCriterionChange(index)}
-          onDelete={handleCriterionDelete(index)}
+          onFocus={handleCriterionFocus}
+          onBlur={handleCriterionBlur}
+          onDecide={handleCriterionDecide}
+          onChange={handleCriterionChange}
+          onDelete={handleCriterionDelete}
           loadAutocompleteValues={loadAutocompleteValues}
         />
       ))}
