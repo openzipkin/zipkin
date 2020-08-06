@@ -239,10 +239,12 @@ The following are tuning parameters which may not concern all users:
     * `CASSANDRA_INDEX_CACHE_TTL`: How many seconds to cache index metadata about a trace. Defaults to 60.
     * `CASSANDRA_INDEX_FETCH_MULTIPLIER`: How many more index rows to fetch than the user-supplied query limit. Defaults to 3.
 
-Example usage with logging:
+Example usage with Cassandra connection and query logging:
 
 ```bash
-$ STORAGE_TYPE=cassandra3 java -jar zipkin.jar --logging.level.zipkin=trace --logging.level.zipkin2=trace --logging.level.com.datastax.driver.core=debug
+$ STORAGE_TYPE=cassandra3 java -jar zipkin.jar \
+ --logging.level.com.datastax.driver.core.Connection=debug \
+ --logging.level.com.datastax.driver.core.QueryLogger.NORMAL=trace
 ```
 
 ### Elasticsearch Storage
@@ -452,7 +454,7 @@ For example, to override `auto.offset.reset`, you can set a system property name
 
 ```bash
 $ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
-    java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
+    java -Dzipkin.collector.kafka.overrides.auto.offset.reset=latest -jar zipkin.jar
 ```
 
 #### Detailed examples

@@ -66,7 +66,7 @@ final class KafkaCollectorWorker implements Runnable {
 
   @Override
   public void run() {
-    try (KafkaConsumer kafkaConsumer = new KafkaConsumer<>(properties)) {
+    try (KafkaConsumer<byte[], byte[]> kafkaConsumer = new KafkaConsumer<>(properties)) {
       kafkaConsumer.subscribe(
         topics,
         // added for integration tests only, see ITKafkaCollector

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,34 +16,19 @@ package zipkin2.storage.cassandra.v1;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import java.util.Collections;
-import java.util.Set;
-import zipkin2.Span;
 
 // QueryRequest.remoteServiceName
-final class InsertTraceIdByRemoteServiceName implements Indexer.IndexSupport {
-
-  @Override
-  public String table() {
-    return Tables.SERVICE_REMOTE_SERVICE_NAME_INDEX;
+final class IndexTraceIdByRemoteServiceName extends IndexTraceId.Factory {
+  IndexTraceIdByRemoteServiceName(CassandraStorage storage, int indexTtl) {
+    super(storage, Tables.SERVICE_REMOTE_SERVICE_NAME_INDEX, indexTtl);
   }
 
-  @Override
-  public Insert declarePartitionKey(Insert insert) {
+  @Override public Insert declarePartitionKey(Insert insert) {
     return insert.value("service_remote_service_name",
       QueryBuilder.bindMarker("service_remote_service_name"));
   }
 
-  @Override
-  public BoundStatement bindPartitionKey(BoundStatement bound, String partitionKey) {
+  @Override public BoundStatement bindPartitionKey(BoundStatement bound, String partitionKey) {
     return bound.setString("service_remote_service_name", partitionKey);
-  }
-
-  @Override
-  public Set<String> partitionKeys(Span span) {
-    if (span.localServiceName() == null || span.remoteServiceName() == null) {
-      return Collections.emptySet();
-    }
-    return Collections.singleton(span.localServiceName() + "." + span.remoteServiceName());
   }
 }

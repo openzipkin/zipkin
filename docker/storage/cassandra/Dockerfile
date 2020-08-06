@@ -23,10 +23,10 @@ COPY zipkin-storage/cassandra-v1/src/main/resources/cassandra-schema.cql /zipkin
 COPY docker/storage/cassandra/install.sh /usr/local/bin/install
 
 # Share the same base image to reduce layers used in testing
-FROM openzipkin/jre-full:1.8.0_212
-MAINTAINER OpenZipkin "http://zipkin.io/"
+FROM openzipkin/jre-full:1.8.0_252
+MAINTAINER OpenZipkin "https://zipkin.io/"
 
-ENV CASSANDRA_VERSION=3.11.6 \
+ENV CASSANDRA_VERSION=3.11.7 \
     JAVA=/usr/local/java/jre/bin/java \
     JVM_OPTS="-Dcassandra -Djava.net.preferIPv4Stack=true"
 

@@ -12,26 +12,31 @@
 # the License.
 #
 
-FROM alpine
+FROM alpine:3.12
 
-ENV ELASTICSEARCH_VERSION 6.8.10
+ENV ELASTICSEARCH_VERSION 6.8.11
 
 RUN apk add --update curl
 
 WORKDIR /elasticsearch
 
 RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-$ELASTICSEARCH_VERSION.tar.gz| tar xz && \
-    mv elasticsearch-$ELASTICSEARCH_VERSION/* /elasticsearch/
+    mv elasticsearch-$ELASTICSEARCH_VERSION/* /elasticsearch/ && \
+    # remove binaries and non shell scripts
+    rm -f /elasticsearch/bin/elasticsearch-sql* /elasticsearch/bin/*cmd /elasticsearch/bin/*exe && \
+    # Remove bash as our images doesn't have it, and it isn't required
+    ls -d /elasticsearch/bin/* | grep -v x-pack | xargs sed -i 's~#!/bin/bash~#!/bin/sh~g' && \
+    chmod +x /elasticsearch/bin/*
 
 COPY docker/storage/elasticsearch6/config /elasticsearch/config
 
-FROM openzipkin/jre-full:14.0.1-14.28.21
+FROM openzipkin/jre-full:14.0.2-14.29.23
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # https://github.com/elastic/elasticsearch/pull/31003 was closed won't fix
 ENV ES_TMPDIR /tmp
 
-RUN ["/busybox/sh", "-c", "adduser -g '' -h /elasticsearch -D elasticsearch"]
+RUN adduser -g '' -h /elasticsearch -D elasticsearch
 
 COPY --from=0 --chown=elasticsearch /elasticsearch /elasticsearch
 
@@ -44,4 +49,4 @@ EXPOSE 9200 9300
 
 ENV ES_JAVA_OPTS " "
 
-ENTRYPOINT ["/busybox/sh", "/elasticsearch/bin/elasticsearch"]
+ENTRYPOINT /elasticsearch/bin/elasticsearch

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,7 +16,6 @@ package zipkin2.storage.cassandra;
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import java.util.Collections;
@@ -199,14 +198,19 @@ public abstract class CassandraStorage extends StorageComponent {
   abstract SessionFactory sessionFactory();
 
   /** session and close are typically called from different threads */
-  volatile boolean provisioned, closeCalled;
+  volatile Session session;
+  volatile boolean closeCalled;
 
   /** Lazy initializes or returns the session in use by this storage component. */
-  @Memoized
   Session session() {
-    Session result = sessionFactory().create(this);
-    provisioned = true;
-    return result;
+    if (session == null) {
+      synchronized (this) {
+        if (session == null) {
+          session = sessionFactory().create(this);
+        }
+      }
+    }
+    return session;
   }
 
   /** {@inheritDoc} Memoized in order to avoid re-preparing statements */
@@ -242,11 +246,14 @@ public abstract class CassandraStorage extends StorageComponent {
     return Schema.readMetadata(session());
   }
 
-  @Override
-  public CheckResult check() {
+  @Override public CheckResult check() {
     try {
       if (closeCalled) throw new IllegalStateException("closed");
-      session().execute(QueryBuilder.select("trace_id").from("span").limit(1));
+      // Use direct CQL instead of query builder for simple statements.
+      // BuiltStatement has a NPE bug when there are no input parameters.
+      //
+      // https://github.com/datastax/java-driver/pull/1138
+      session().execute("select trace_id from span limit 1");
     } catch (Throwable e) {
       Call.propagateIfFatal(e);
       return CheckResult.failed(e);
@@ -262,10 +269,11 @@ public abstract class CassandraStorage extends StorageComponent {
     return "CassandraStorage{contactPoints=" + contactPoints() + ", keyspace=" + keyspace() + "}";
   }
 
-  @Override
-  public synchronized void close() {
+  @Override public synchronized void close() {
     if (closeCalled) return;
-    if (provisioned) session().close();
+    Session session = this.session;
+    // The resource to close in Datastax Java Driver v3 is the cluster. In v4, it only session
+    if (session != null) session.getCluster().close();
     closeCalled = true;
   }
 

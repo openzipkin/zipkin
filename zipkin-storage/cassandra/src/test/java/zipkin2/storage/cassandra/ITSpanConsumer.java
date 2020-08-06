@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,7 +16,6 @@ package zipkin2.storage.cassandra;
 import java.io.IOException;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 import zipkin2.storage.ITStorage;
@@ -33,10 +32,6 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
     return true;
   }
 
-  @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-    return storageBuilder().keyspace(InternalForTests.keyspace(testInfo));
-  }
-
   @Override protected void configureStorageForTest(StorageComponent.Builder storage) {
     storage.autocompleteKeys(asList("environment"));
   }
@@ -45,11 +40,9 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
     // Just let the data pile up to prevent warnings and slowness.
   }
 
-  abstract CassandraStorage.Builder storageBuilder();
-
   /**
-   * {@link Span#duration} == 0 is likely to be a mistake, and coerces to null. It is not helpful to
-   * index rows who have no duration.
+   * {@link Span#duration()} == 0 is likely to be a mistake, and coerces to null. It is not helpful
+   * to index rows who have no duration.
    */
   @Test public void doesntIndexSpansMissingDuration() throws IOException {
     Span span = Span.newBuilder().traceId("1").id("1").name("get").duration(0L).build();

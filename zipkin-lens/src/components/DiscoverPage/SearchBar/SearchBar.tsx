@@ -31,7 +31,7 @@ import { fetchAutocompleteValues } from '../../../actions/autocomplete-values-ac
 import { fetchRemoteServices } from '../../../actions/remote-services-action';
 import { fetchServices } from '../../../actions/services-action';
 import { fetchSpans } from '../../../actions/spans-action';
-import RootState from '../../../types/RootState';
+import { RootState } from '../../../store';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

@@ -34,7 +34,7 @@ RUN mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-server -am
 RUN mkdir -p /zipkin && cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin && cd /zipkin && jar xf *.jar && rm *.jar
 RUN mkdir -p /zipkin-slim && cp zipkin-server/target/zipkin-server-*-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar
 
-FROM maven:3-jdk-11-slim as zipkin-builder
+FROM maven:3-openjdk-14-slim as zipkin-builder
 
 COPY --from=built /root/.m2 /root/.m2
 COPY --from=built /root/.npm /root/.npm
@@ -43,7 +43,7 @@ COPY --from=built /root/.npm /root/.npm
 # zipkin-ui - An image containing the Zipkin web frontend only, served by NGINX
 #####
 
-FROM nginx:1.17-alpine as zipkin-ui
+FROM nginx:1.18-alpine as zipkin-ui
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 ENV ZIPKIN_BASE_URL=http://zipkin:9411
@@ -63,13 +63,13 @@ CMD ["/usr/local/bin/nginx.sh"]
 # zipkin-slim - An image containing the slim distribution of Zipkin server.
 #####
 
-FROM openzipkin/jre-full:14.0.1-14.28.21 as zipkin-slim
+FROM openzipkin/jre-full:14.0.2-14.29.23 as zipkin-slim
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.
 ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
 
-RUN adduser -g '' -h /zipkin -D zipkin && ln -s /busybox/* /bin
+RUN adduser -g '' -h /zipkin -D zipkin
 
 COPY --from=built --chown=zipkin /zipkin-slim/ /zipkin/
 # Add environment settings for supported storage types
@@ -106,15 +106,15 @@ EXPOSE 9411
 # report to https://gitter.im/openzipkin/zipkin including the values of the
 # /health and /info endpoints as this would be unexpected.
 #
-HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget --quiet http://localhost:9411/health || exit 1
+HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget -qO- http://127.0.0.1:9411/health &> /dev/null || exit 1
 
-ENTRYPOINT ["/busybox/sh", "run.sh"]
+ENTRYPOINT /zipkin/run.sh
 
 #####
 # zipkin-server - An image containing the full distribution of Zipkin server.
 #####
 
-FROM openzipkin/jre-full:14.0.1-14.28.21 as zipkin-server
+FROM openzipkin/jre-full:14.0.2-14.29.23 as zipkin-server
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.
@@ -122,7 +122,7 @@ ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
 # 3rd party modules like zipkin-aws will apply profile settings with this
 ENV MODULE_OPTS=
 
-RUN adduser -g '' -h /zipkin -D zipkin && ln -s /busybox/* /bin
+RUN adduser -g '' -h /zipkin -D zipkin
 
 COPY --from=built --chown=zipkin /zipkin/ /zipkin/
 # Add environment settings for supported storage types
@@ -159,6 +159,6 @@ EXPOSE 9410 9411
 # report to https://gitter.im/openzipkin/zipkin including the values of the
 # /health and /info endpoints as this would be unexpected.
 #
-HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget --quiet http://localhost:9411/health || exit 1
+HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget -qO- http://127.0.0.1:9411/health &> /dev/null || exit 1
 
-ENTRYPOINT ["/busybox/sh", "run.sh"]
+ENTRYPOINT /zipkin/run.sh

@@ -20,7 +20,7 @@ Depending on details desired, the underlying driver's category
 "com.datastax.driver.core" at debug level may help.
 
 If you just want to see queries and latency, set the category
-"com.datastax.driver.core.QueryLogger" to debug or trace. Trace level
+"com.datastax.driver.core.QueryLogger.NORMAL" to debug or trace. Trace level
 includes bound values.
 
 See [Logging Query Latencies](http://docs.datastax.com/en/developer/java-driver/3.0/supplemental/manual/logging/#logging-query-latencies) for more details.

@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2019 The OpenZipkin Authors
+# Copyright 2015-2020 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,7 @@
 # Refreshing the builder image to remove stale dependencies just involves building zipkin-server on
 # an empty image.
 
-FROM maven:3-jdk-11-slim
+FROM maven:3-openjdk-14-slim
 
 COPY . /code/
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -23,7 +23,6 @@ import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 final class InsertServiceName extends ResultSetFutureCall<Void> {
-
   static class Factory extends DeduplicatingVoidCallFactory<String> {
     final Session session;
     final PreparedStatement preparedStatement;

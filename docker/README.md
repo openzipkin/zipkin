@@ -66,7 +66,7 @@ image, you won't find many utilities installed, but you can browse contents
 with a shell like below:
 
 ```bash
-$ docker run -it --rm --entrypoint /busybox/sh openzipkin/zipkin
+$ docker run -it --rm --entrypoint /bin/sh openzipkin/zipkin
 /zipkin $ ls
 BOOT-INF  META-INF  org       run.sh
 ```

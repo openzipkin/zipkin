@@ -50,7 +50,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Override @Test @Disabled("No consumer-side span deduplication")
@@ -73,7 +73,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Override @Test @Disabled("All services query unsupported when combined with other qualifiers")
@@ -178,7 +178,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Override protected void blockWhileInFlight() {
@@ -197,7 +197,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Override protected void blockWhileInFlight() {
@@ -216,7 +216,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Override protected void blockWhileInFlight() {
@@ -235,7 +235,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Override protected void blockWhileInFlight() {
@@ -254,7 +254,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Override protected void blockWhileInFlight() {
@@ -269,7 +269,7 @@ class ITCassandraStorage {
      * The current implementation does not include dependency aggregation. It includes retrieval of
      * pre-aggregated links, usually made via zipkin-dependencies
      */
-    @Override protected void processDependencies(List<Span> spans) throws Exception {
+    @Override protected void processDependencies(List<Span> spans) {
       aggregateLinks(spans).forEach(
         (midnight, links) -> writeDependencyLinks(storage, links, midnight));
     }
@@ -288,18 +288,18 @@ class ITCassandraStorage {
     }
 
     @Override protected Session session() {
-      return backend.session;
+      return backend.globalSession;
     }
 
-    @Override protected InetSocketAddress contactPoint() {
+    @Override protected String contactPoint() {
       return backend.contactPoint();
     }
   }
 
   @Nested
   class ITSpanConsumer extends zipkin2.storage.cassandra.v1.ITSpanConsumer {
-    @Override CassandraStorage.Builder storageBuilder() {
-      return backend.computeStorageBuilder();
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.newStorageBuilder(testInfo);
     }
   }
 

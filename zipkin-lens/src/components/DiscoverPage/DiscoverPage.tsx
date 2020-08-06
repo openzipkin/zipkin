@@ -25,7 +25,7 @@ import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import { useUiConfig } from '../UiConfig';
 import { fetchAutocompleteKeys } from '../../actions/autocomplete-keys-action';
-import RootState from '../../types/RootState';
+import { RootState } from '../../store';
 
 interface DiscoverPageImplProps {
   autocompleteKeys: string[];

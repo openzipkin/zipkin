@@ -23,7 +23,7 @@ import { ThemeProvider } from 'styled-components';
 
 import Layout from './Layout';
 import DiscoverPage from '../DiscoverPage';
-import DependenciesPage from '../DependenciesPage';
+import DependenciesPage from '../../dependencies/DependenciesPage';
 import TracePage from '../TracePage';
 import { UiConfig, UiConfigConsumer } from '../UiConfig';
 import configureStore from '../../store/configure-store';
