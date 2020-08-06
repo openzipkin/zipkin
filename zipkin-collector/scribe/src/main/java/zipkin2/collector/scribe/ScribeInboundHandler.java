@@ -13,14 +13,6 @@
  */
 package zipkin2.collector.scribe;
 
-import static zipkin2.Call.propagateIfFatal;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
@@ -40,6 +32,12 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.EventLoop;
+import java.util.HashMap;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static zipkin2.Call.propagateIfFatal;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 // TODO: errorprone wants us to check futures before returning, but what would be a sensible check?
