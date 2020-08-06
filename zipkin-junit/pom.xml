@@ -45,9 +45,9 @@
     </dependency>
 
     <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>mockwebserver</artifactId>
-      <version>${okhttp.version}</version>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-junit4</artifactId>
+      <version>${armeria.version}</version>
     </dependency>
 
     <dependency>

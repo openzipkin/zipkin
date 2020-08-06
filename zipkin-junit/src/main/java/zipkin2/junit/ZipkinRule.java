@@ -13,26 +13,37 @@
  */
 package zipkin2.junit;
 
+import com.linecorp.armeria.client.encoding.StreamDecoderFactory;
+import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpHeaderNames;
+import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.server.Server;
+import com.linecorp.armeria.server.ServerBuilder;
+import com.linecorp.armeria.server.annotation.Path;
+import com.linecorp.armeria.server.annotation.Post;
+import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import okhttp3.mockwebserver.Dispatcher;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import org.junit.rules.ExternalResource;
+import zipkin2.Callback;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
+import zipkin2.codec.SpanBytesDecoder;
+import zipkin2.collector.Collector;
 import zipkin2.collector.InMemoryCollectorMetrics;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
 import zipkin2.storage.InMemoryStorage;
-
-import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
 
 /**
  * Starts up a local Zipkin server, listening for http requests on {@link #httpUrl}.
@@ -42,47 +53,34 @@ import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
  *
  * <p>See http://openzipkin.github.io/zipkin-api/#/
  */
-public final class ZipkinRule implements TestRule {
+public final class ZipkinRule extends ExternalResource {
   private final InMemoryStorage storage = InMemoryStorage.newBuilder().build();
   private final InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
-  private final MockWebServer server = new MockWebServer();
-  private final BlockingQueue<MockResponse> failureQueue = new LinkedBlockingQueue<>();
+  private final Collector consumer =
+    Collector.newBuilder(getClass()).storage(storage).metrics(metrics).build();
+  private final BlockingQueue<AggregatedHttpResponse> failureQueue = new LinkedBlockingQueue<>();
   private final AtomicInteger receivedSpanBytes = new AtomicInteger();
+  private final AtomicInteger requestCount = new AtomicInteger();
 
-  public ZipkinRule() {
-    Dispatcher dispatcher =
-        new Dispatcher() {
-          final ZipkinDispatcher successDispatch = new ZipkinDispatcher(storage, metrics, server);
+  private final ServerRule server = new ServerRule() {
+    @Override protected void configure(ServerBuilder sb) throws Exception {
+      configureServer(sb);
+    }
+  };
 
-          @Override
-          public MockResponse dispatch(RecordedRequest request) {
-            MockResponse maybeFailure = failureQueue.poll();
-            if (maybeFailure != null) return maybeFailure;
-            MockResponse result = successDispatch.dispatch(request);
-            if (request.getMethod().equals("POST")) {
-              receivedSpanBytes.addAndGet((int) request.getBodySize());
-            }
-            return result;
-          }
-
-          @Override
-          public MockResponse peek() {
-            MockResponse maybeFailure = failureQueue.peek();
-            if (maybeFailure != null) return maybeFailure.clone();
-            return new MockResponse().setSocketPolicy(KEEP_OPEN);
-          }
-        };
-    server.setDispatcher(dispatcher);
-  }
+  private Server manuallyStartedServer;
 
   /** Use this to connect. The zipkin v1 interface will be under "/api/v1" */
   public String httpUrl() {
-    return String.format("http://%s:%s", server.getHostName(), server.getPort());
+    if (manuallyStartedServer != null) {
+      return "http://localhost:" + manuallyStartedServer.activeLocalPort();
+    }
+    return server.httpUri().toString();
   }
 
   /** Use this to see how many requests you've sent to any zipkin http endpoint. */
   public int httpRequestCount() {
-    return server.getRequestCount();
+    return requestCount.get();
   }
 
   /** Use this to see how many spans or serialized bytes were collected on the http endpoint. */
@@ -150,16 +148,106 @@ public final class ZipkinRule implements TestRule {
    * @param httpPort choose 0 to select an available port
    */
   public void start(int httpPort) throws IOException {
-    server.start(httpPort);
+    ServerBuilder sb = Server.builder()
+      .http(httpPort);
+    configureServer(sb);
+    manuallyStartedServer = sb.build();
+    manuallyStartedServer.start().join();
   }
 
   /** Used to manually stop the server. */
   public void shutdown() throws IOException {
-    server.shutdown();
+    if (manuallyStartedServer != null) {
+      manuallyStartedServer.stop();
+    }
   }
 
-  @Override
-  public Statement apply(Statement base, Description description) {
-    return server.apply(base, description);
+  private void configureServer(ServerBuilder sb) {
+    sb.annotatedService(new Object() {
+      @Post
+      @Path("/api/v1/spans")
+      public HttpResponse v1(AggregatedHttpRequest req) {
+        String type = req.headers().get(HttpHeaderNames.CONTENT_TYPE);
+        SpanBytesDecoder decoder =
+          type != null && type.contains("/x-thrift")
+            ? SpanBytesDecoder.THRIFT
+            : SpanBytesDecoder.JSON_V1;
+        return acceptSpans(req, decoder);
+      }
+
+      @Post
+      @Path("/api/v2/spans")
+      public HttpResponse v2(AggregatedHttpRequest req) {
+        String type = req.headers().get(HttpHeaderNames.CONTENT_TYPE);
+        SpanBytesDecoder decoder =
+          type != null && type.contains("/x-protobuf")
+            ? SpanBytesDecoder.PROTO3
+            : SpanBytesDecoder.JSON_V2;
+        return acceptSpans(req, decoder);
+      }
+    });
+    sb.decorator(((delegate, ctx, req) -> {
+      requestCount.incrementAndGet();
+
+      AggregatedHttpResponse maybeFailure = failureQueue.poll();
+      if (maybeFailure != null) {
+        if (maybeFailure == HttpFailure.DISCONNECT_DURING_REQUEST_BODY) {
+          return HttpResponse.ofFailure(new IllegalStateException("Closed"));
+        } else {
+          return maybeFailure.toHttpResponse();
+        }
+      }
+      HttpResponse response = delegate.serve(ctx, req);
+      if (req.method() == HttpMethod.POST) {
+        ctx.log()
+          .whenComplete()
+          .thenAccept(log -> receivedSpanBytes.addAndGet((int) log.requestLength()));
+      }
+      return response;
+    }));
+  }
+
+  private HttpResponse acceptSpans(AggregatedHttpRequest request, SpanBytesDecoder decoder) {
+    metrics.incrementMessages();
+    String encoding = request.headers().get(HttpHeaderNames.CONTENT_ENCODING);
+    HttpData content = request.content();
+
+    if (content.isEmpty()) return HttpResponse.of(HttpStatus.ACCEPTED); // lenient on empty
+
+    if (encoding != null && encoding.contains("gzip")) {
+      content =
+        StreamDecoderFactory.gzip().newDecoder(UnpooledByteBufAllocator.DEFAULT).decode(content);
+      // The implementation of the armeria decoder is to return an empty body on failure
+      if (content.isEmpty()) {
+        metrics.incrementMessagesDropped();
+        return HttpResponse.of(HttpStatus.BAD_REQUEST, MediaType.PLAIN_TEXT_UTF_8,
+          "Cannot gunzip spans");
+      }
+    }
+
+    metrics.incrementBytes(content.length());
+
+    CompletableFuture<HttpResponse> responseFuture = new CompletableFuture<>();
+    consumer.acceptSpans(content.array(), decoder, new Callback<Void>() {
+      @Override public void onSuccess(Void value) {
+        responseFuture.complete(HttpResponse.of(HttpStatus.ACCEPTED));
+      }
+
+      @Override public void onError(Throwable t) {
+        String message = t.getMessage();
+        HttpStatus status = message.startsWith("Cannot store") ? HttpStatus.INTERNAL_SERVER_ERROR
+          : HttpStatus.BAD_REQUEST;
+        responseFuture.complete(HttpResponse.of(status, MediaType.PLAIN_TEXT_UTF_8, message));
+      }
+    });
+    return HttpResponse.from(responseFuture);
+  }
+
+  @Override protected void before() {
+    server.start();
+  }
+
+  @Override protected void after() {
+    server.stop();
   }
 }
