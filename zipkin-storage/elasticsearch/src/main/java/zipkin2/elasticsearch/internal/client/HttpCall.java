@@ -31,7 +31,6 @@ import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.RequestHeaders;
 import com.linecorp.armeria.common.util.Exceptions;
 import com.linecorp.armeria.common.util.SafeCloseable;
-
 import io.netty.util.concurrent.EventExecutor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
