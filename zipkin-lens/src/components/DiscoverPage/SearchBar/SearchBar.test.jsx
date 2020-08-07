@@ -24,11 +24,15 @@ jest.mock('./CriterionBox', () => {
   const shortid = require('shortid');
 
   // eslint-disable-next-line react/prop-types
-  return ({ onChange }) => (
+  return ({ criterionIndex, onChange }) => (
     <input
       onChange={(event) => {
         const ss = event.target.value.split('=', 2);
-        onChange({ key: ss[0], value: ss[1], id: shortid.generate() });
+        onChange(criterionIndex, {
+          key: ss[0],
+          value: ss[1],
+          id: shortid.generate(),
+        });
       }}
       data-testid="criterion-box"
     />

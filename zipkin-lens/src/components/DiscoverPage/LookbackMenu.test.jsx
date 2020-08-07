@@ -90,11 +90,37 @@ describe('<LookbackMenu />', () => {
 
     fireEvent.click(getByTestId('apply-button'));
     expect(onChange.mock.calls.length).toBe(1);
-    expect(onChange.mock.calls[0][0].type).toBe('custom');
+    expect(onChange.mock.calls[0][0].type).toBe('range');
     expect(onChange.mock.calls[0][0].endTime.valueOf()).toBe(endTime.valueOf());
     expect(onChange.mock.calls[0][0].startTime.valueOf()).toBe(
       startTime.valueOf(),
     );
+    expect(close.mock.calls.length).toBe(1);
+  });
+
+  it('should change lookback and close when Millis Apply button is clicked', () => {
+    const lookback = {
+      type: 'fixed',
+      value: '15m',
+      endTime: moment(),
+    };
+
+    const close = jest.fn();
+    const onChange = jest.fn();
+
+    const { getByTestId } = render(
+      <LookbackMenu close={close} onChange={onChange} lookback={lookback} />,
+    );
+    const millisInput = getByTestId('millis-input');
+
+    fireEvent.change(millisInput, {
+      target: { value: '12345' },
+    });
+
+    fireEvent.click(getByTestId('millis-apply-button'));
+    expect(onChange.mock.calls.length).toBe(1);
+    expect(onChange.mock.calls[0][0].type).toBe('millis');
+    expect(onChange.mock.calls[0][0].value).toBe(12345);
     expect(close.mock.calls.length).toBe(1);
   });
 

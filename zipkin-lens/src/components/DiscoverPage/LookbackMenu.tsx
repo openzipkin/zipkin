@@ -218,14 +218,17 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
               variant="outlined"
               size="small"
               type="number"
-              inputProps={{ min: '0' }}
+              inputProps={{
+                min: '0',
+                'data-testid': 'millis-input',
+              }}
             />
             <Box display="flex" justifyContent="flex-end">
               <Button
                 variant="contained"
                 color="secondary"
                 onClick={handleMillisApplyButtonClick}
-                data-testid="apply-button"
+                data-testid="millis-apply-button"
               >
                 Apply
               </Button>
