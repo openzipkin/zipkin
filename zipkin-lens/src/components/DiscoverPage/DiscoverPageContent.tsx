@@ -396,15 +396,17 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   );
 
   const searchTraces = useCallback(() => {
+    const criteria = tempCriteria.filter((c) => !!c.key);
+
     // If the lookback is fixed or millis, need to set the click time to endTime.
     if (tempLookback.type === 'fixed' || tempLookback.type === 'millis') {
       setQueryParams(
-        tempCriteria,
+        criteria,
         { ...tempLookback, endTime: moment() },
         tempLimit,
       );
     } else {
-      setQueryParams(tempCriteria, tempLookback, tempLimit);
+      setQueryParams(criteria, tempLookback, tempLimit);
     }
   }, [setQueryParams, tempCriteria, tempLookback, tempLimit]);
 
