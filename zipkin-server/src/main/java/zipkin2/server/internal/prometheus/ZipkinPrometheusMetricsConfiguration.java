@@ -119,7 +119,7 @@ public class ZipkinPrometheusMetricsConfiguration {
     @Override
     public HttpResponse serve(ServiceRequestContext ctx, HttpRequest req) throws Exception {
       setup(ctx, registry, metricName);
-      return delegate().serve(ctx, req);
+      return unwrap().serve(ctx, req);
     }
   }
 

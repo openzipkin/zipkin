@@ -13,7 +13,7 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import com.linecorp.armeria.client.unsafe.PooledWebClient;
+import com.linecorp.armeria.client.WebClient;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 public class SearchCallFactoryTest {
-  PooledWebClient httpClient = mock(PooledWebClient.class);
+  WebClient httpClient = mock(WebClient.class);
 
   SearchCallFactory client = new SearchCallFactory(new HttpCall.Factory(httpClient));
 

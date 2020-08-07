@@ -17,15 +17,14 @@ import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.RequestHeaders;
-import com.linecorp.armeria.common.unsafe.PooledHttpResponse;
 import com.linecorp.armeria.common.util.Exceptions;
 import com.linecorp.armeria.common.util.SafeCloseable;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.ServiceRequestContextBuilder;
 import com.linecorp.armeria.server.thrift.THttpService;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -77,9 +76,9 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
 
     ServiceRequestContext requestContext = requestContextBuilder.build();
 
-    final PooledHttpResponse response;
+    final HttpResponse response;
     try (SafeCloseable unused = requestContext.push()) {
-      response = PooledHttpResponse.of(scribeService.serve(requestContext, request));
+      response = HttpResponse.of(scribeService.serve(requestContext, request));
     } catch (Throwable t) {
       propagateIfFatal(t);
       exceptionCaught(ctx, t);
@@ -94,28 +93,18 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
         return null;
       }
 
-      HttpData content = msg.content();
-      ByteBuf returned = ctx.alloc().buffer(content.length() + 4);
-      returned.writeInt(content.length());
+      try (HttpData content = msg.content()) {
+        ByteBuf returned = ctx.alloc().buffer(content.length() + 4);
+        returned.writeInt(content.length());
+        returned.writeBytes(content.byteBuf());
+        if (responseIndex == previouslySentResponseIndex + 1) {
+          ctx.writeAndFlush(returned);
+          previouslySentResponseIndex++;
 
-      if (content instanceof ByteBufHolder) {
-        ByteBuf buf = ((ByteBufHolder) content).content();
-        try {
-          returned.writeBytes(buf);
-        } finally {
-          buf.release();
+          flushResponses(ctx);
+        } else {
+          pendingResponses.put(responseIndex, returned);
         }
-      } else {
-        returned.writeBytes(content.array());
-      }
-
-      if (responseIndex == previouslySentResponseIndex + 1) {
-        ctx.writeAndFlush(returned);
-        previouslySentResponseIndex++;
-
-        flushResponses(ctx);
-      } else {
-        pendingResponses.put(responseIndex, returned);
       }
 
       return null;
