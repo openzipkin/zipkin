@@ -253,15 +253,30 @@ logging:
   pattern:
     level: "%clr(%5p) %clr([%X{traceId}/%X{spanId}]){yellow}"
   level:
+    # 'modern compatibility layer' of Guava, and this will be gone in v4
+    com.datastax.driver.core.GuavaCompatibility: 'WARN'
+    # use of native clocks in Cassandra is not insightful
+    com.datastax.driver.core.ClockFactory: 'WARN'
+    # shading will not change now and be gone in v4
+    com.datastax.driver.core.NettyUtil: 'WARN'
+    # "request at Consistency Level LOCAL_ONE but the non-DC aware RoundRobinPolicy is in use"
+    # This will go away in v4 and there's no intention to change prior to that
+    com.datastax.driver.core.policies.RoundRobinPolicy: 'OFF'
     # Silence ResponseTimeoutException in the Armeria framework since we log it anyways in HTTP
     # logging when enabled. https://github.com/line/armeria/issues/2000
     com.linecorp.armeria.client.HttpResponseDecoder: 'OFF'
     com.linecorp.armeria.common.Flags: 'OFF'
     com.linecorp.armeria.server.docs.DocStringExtractor: 'OFF'
+    # Redundant to logging already done in c.l.a.s.Server
+    com.linecorp.armeria.spring.ArmeriaAutoConfiguration: 'WARN'
+    # Hostname logging is not Zipkin's duty
+    com.linecorp.armeria.common.util.SystemInfo: 'WARN'
 #     # investigate /api/v2/dependencies
 #     zipkin2.internal.DependencyLinker: 'DEBUG'
 #     # log cassandra queries (DEBUG is without values)
-#     com.datastax.driver.core.QueryLogger: 'TRACE'
+#     com.datastax.driver.core.QueryLogger.NORMAL: 'TRACE'
+#     # log cassandra connections
+#     com.datastax.driver.core.Connection: 'DEBUG'
 #     # log cassandra trace propagation
 #     com.datastax.driver.core.Message: 'TRACE'
 #     # log reason behind http collector dropped messages

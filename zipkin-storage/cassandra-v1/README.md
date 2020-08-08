@@ -11,8 +11,8 @@ The implementation uses the [Datastax Java Driver 3.x](https://github.com/datast
 operate against a local Cassandra installation.
 
 ## Logging
-Queries are logged to the category "com.datastax.driver.core.QueryLogger" when debug or trace is
-enabled via SLF4J. Trace level includes bound values.
+Queries are logged to the category "com.datastax.driver.core.QueryLogger.NORMAL" when debug or trace
+is enabled via SLF4J. Trace level includes bound values.
 
 See [Logging Query Latencies](http://docs.datastax.com/en/developer/java-driver/3.0/supplemental/manual/logging/#logging-query-latencies) for more details.
 

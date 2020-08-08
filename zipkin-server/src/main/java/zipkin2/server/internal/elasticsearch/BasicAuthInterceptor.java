@@ -42,6 +42,6 @@ final class BasicAuthInterceptor extends SimpleDecoratingHttpClient {
     if (credentials != null) {
       ctx.addAdditionalRequestHeader(HttpHeaderNames.AUTHORIZATION, credentials);
     }
-    return delegate().execute(ctx, req);
+    return unwrap().execute(ctx, req);
   }
 }

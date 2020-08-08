@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,6 @@ package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
-import java.net.InetSocketAddress;
 import org.junit.jupiter.api.Test;
 import zipkin2.TestObjects;
 import zipkin2.storage.QueryRequest;
@@ -33,7 +32,7 @@ abstract class ITEnsureSchema {
 
   abstract protected Session session();
 
-  abstract InetSocketAddress contactPoint();
+  abstract String contactPoint();
 
   @Test void installsKeyspaceWhenMissing() {
     Schema.ensureExists(keyspace(), false, session());
@@ -91,9 +90,7 @@ abstract class ITEnsureSchema {
     Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema.cql");
     Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema-indexes-original.cql");
 
-    InetSocketAddress contactPoint = contactPoint();
-    try (CassandraStorage storage = CassandraStorage.newBuilder()
-      .contactPoints(contactPoint.getHostString() + ":" + contactPoint.getPort())
+    try (CassandraStorage storage = CassandraStorageExtension.newStorageBuilder(contactPoint())
       .ensureSchema(false)
       .autocompleteKeys(asList("environment"))
       .keyspace(keyspace()).build()) {

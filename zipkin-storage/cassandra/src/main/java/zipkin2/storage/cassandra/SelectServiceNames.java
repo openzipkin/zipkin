@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,11 +13,9 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.List;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.DistinctSortedStrings;
@@ -28,28 +26,24 @@ import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_SPANS;
 final class SelectServiceNames extends ResultSetFutureCall<ResultSet> {
   static class Factory {
     final Session session;
-    final PreparedStatement preparedStatement;
-    final DistinctSortedStrings services = new DistinctSortedStrings("service");
 
     Factory(Session session) {
       this.session = session;
-      this.preparedStatement =
-          session.prepare(QueryBuilder.select("service").distinct().from(TABLE_SERVICE_SPANS));
     }
 
     Call<List<String>> create() {
-      return new SelectServiceNames(this).flatMap(services);
+      return new SelectServiceNames(session).flatMap(new DistinctSortedStrings("service"));
     }
   }
 
-  final Factory factory;
+  final Session session;
 
-  SelectServiceNames(Factory factory) {
-    this.factory = factory;
+  SelectServiceNames(Session session) {
+    this.session = session;
   }
 
   @Override protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement.bind());
+    return session.executeAsync("SELECT DISTINCT service FROM " + TABLE_SERVICE_SPANS);
   }
 
   @Override public ResultSet map(ResultSet input) {
@@ -61,6 +55,6 @@ final class SelectServiceNames extends ResultSetFutureCall<ResultSet> {
   }
 
   @Override public SelectServiceNames clone() {
-    return new SelectServiceNames(factory);
+    return new SelectServiceNames(session);
   }
 }

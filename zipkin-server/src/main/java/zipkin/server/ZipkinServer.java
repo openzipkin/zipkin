@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -49,6 +49,8 @@ public class ZipkinServer {
     new SpringApplicationBuilder(ZipkinServer.class)
       .banner(new ZipkinBanner())
       .initializers(new ZipkinModuleImporter(), new ZipkinActuatorImporter())
+      // Avoids potentially expensive DNS lookup and inaccurate startup timing
+      .logStartupInfo(false)
       .properties(
         EnableAutoConfiguration.ENABLED_OVERRIDE_PROPERTY + "=false",
         "spring.config.name=zipkin-server").run(args);

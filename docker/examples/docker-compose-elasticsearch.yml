@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2019 The OpenZipkin Authors
+# Copyright 2015-2020 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -18,7 +18,7 @@
 # It extends the default configuration from docker-compose.yml to run the
 # zipkin-elasticsearch container instead of the zipkin-mysql container.
 
-version: '2'
+version: '2.4'
 
 services:
   # Run Elasticsearch instead of MySQL

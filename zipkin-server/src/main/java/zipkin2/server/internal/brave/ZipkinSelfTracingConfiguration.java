@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,7 +16,7 @@ package zipkin2.server.internal.brave;
 import brave.Tracing;
 import brave.context.slf4j.MDCScopeDecorator;
 import brave.http.HttpTracing;
-import brave.propagation.B3SinglePropagation;
+import brave.propagation.B3Propagation;
 import brave.propagation.CurrentTraceContext;
 import brave.propagation.ThreadLocalSpan;
 import brave.sampler.BoundarySampler;
@@ -37,10 +37,9 @@ import zipkin2.Span;
 import zipkin2.codec.Encoding;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.CollectorMetrics;
-import zipkin2.reporter.AsyncReporter;
-import zipkin2.reporter.Reporter;
 import zipkin2.reporter.ReporterMetrics;
 import zipkin2.reporter.Sender;
+import zipkin2.reporter.brave.AsyncZipkinSpanHandler;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
 
@@ -48,8 +47,8 @@ import zipkin2.storage.StorageComponent;
 @ConditionalOnSelfTracing
 public class ZipkinSelfTracingConfiguration {
   /** Configuration for how to buffer spans into messages for Zipkin */
-  @Bean Reporter<Span> reporter(BeanFactory factory, SelfTracingProperties config) {
-    return AsyncReporter.builder(new LocalSender(factory))
+  @Bean AsyncZipkinSpanHandler reporter(BeanFactory factory, SelfTracingProperties config) {
+    return AsyncZipkinSpanHandler.newBuilder(new LocalSender(factory))
       .threadFactory((runnable) -> new Thread(new Runnable() {
         @Override public void run() {
           RequestContextCurrentTraceContext.setCurrentThreadNotRequestThread(true);
@@ -67,7 +66,7 @@ public class ZipkinSelfTracingConfiguration {
 
   @Bean CurrentTraceContext currentTraceContext() {
     return RequestContextCurrentTraceContext.builder()
-      .addScopeDecorator(MDCScopeDecorator.create()) // puts trace IDs into logs
+      .addScopeDecorator(MDCScopeDecorator.get()) // puts trace IDs into logs
       .build();
   }
 
@@ -101,14 +100,16 @@ public class ZipkinSelfTracingConfiguration {
   }
 
   /** Controls aspects of tracing such as the name that shows up in the UI */
-  @Bean Tracing tracing(Reporter<Span> reporter, CurrentTraceContext currentTraceContext) {
+  @Bean Tracing tracing(AsyncZipkinSpanHandler zipkinSpanHandler, CurrentTraceContext currentTraceContext) {
     return Tracing.newBuilder()
       .localServiceName("zipkin-server")
       .sampler(Sampler.NEVER_SAMPLE) // don't sample traces at this abstraction
       .currentTraceContext(currentTraceContext)
       // Reduce the impact on untraced downstream http services such as Elasticsearch
-      .propagationFactory(B3SinglePropagation.FACTORY)
-      .spanReporter(reporter)
+      .propagationFactory(B3Propagation.newFactoryBuilder()
+        .injectFormat(brave.Span.Kind.CLIENT, B3Propagation.Format.SINGLE)
+        .build())
+      .addSpanHandler(zipkinSpanHandler)
       .build();
   }
 
@@ -140,7 +141,9 @@ public class ZipkinSelfTracingConfiguration {
     }
 
     @Override public Encoding encoding() {
-      return Encoding.PROTO3;
+      // TODO: less memory efficient, but not a huge problem for self-tracing which is rarely on
+      // https://github.com/openzipkin/zipkin-reporter-java/issues/178
+      return Encoding.JSON;
     }
 
     @Override public int messageMaxBytes() {
@@ -148,13 +151,13 @@ public class ZipkinSelfTracingConfiguration {
     }
 
     @Override public int messageSizeInBytes(List<byte[]> list) {
-      return Encoding.PROTO3.listSizeInBytes(list);
+      return Encoding.JSON.listSizeInBytes(list);
     }
 
     @Override public Call<Void> sendSpans(List<byte[]> encodedSpans) {
       List<Span> spans = new ArrayList<>(encodedSpans.size());
       for (byte[] encodedSpan : encodedSpans) {
-        Span v2Span = SpanBytesDecoder.PROTO3.decodeOne(encodedSpan);
+        Span v2Span = SpanBytesDecoder.JSON_V2.decodeOne(encodedSpan);
         spans.add(v2Span);
       }
       return delegate().spanConsumer().accept(spans);

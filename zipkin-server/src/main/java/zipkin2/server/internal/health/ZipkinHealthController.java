@@ -51,7 +51,7 @@ public class ZipkinHealthController {
   @SuppressWarnings("FutureReturnValueIgnored")
   CompletableFuture<HttpResponse> health(ServiceRequestContext ctx, MediaType mediaType) {
     CompletableFuture<HttpResponse> responseFuture = new CompletableFuture<>();
-    ctx.setRequestTimeoutHandler(() -> {
+    ctx.whenRequestTimingOut().handle((unused, unused2) -> {
       try {
         String healthJson = writeJsonError("Timed out computing health status. "
           + "This often means your storage backend is unreachable.");
@@ -60,6 +60,7 @@ public class ZipkinHealthController {
         // Shouldn't happen since we serialize to an array.
         responseFuture.completeExceptionally(e);
       }
+      return null;
     });
 
     List<CompletableFuture<ComponentHealth>> futures =  components.stream()

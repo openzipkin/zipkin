@@ -17,7 +17,6 @@ import com.datastax.driver.core.Host;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
@@ -52,7 +51,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Override @Test @Disabled("No consumer-side span deduplication")
@@ -75,7 +74,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Test void overFetchesToCompensateForDuplicateIndexData() throws IOException {
@@ -157,7 +156,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Test void doesntCreateIndexes() {
@@ -180,15 +179,17 @@ class ITCassandraStorage {
   @Nested
   class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse<CassandraStorage> {
 
-    CassandraStorage storageBeforeSwitch;
+    CassandraStorage strictTraceId;
 
     @BeforeEach void initializeStorageBeforeSwitch() {
-      storageBeforeSwitch = backend.computeStorageBuilder().keyspace(storage.keyspace()).build();
+      strictTraceId = CassandraStorageExtension.newStorageBuilder(storage.contactPoints())
+        .keyspace(storage.keyspace())
+        .build();
     }
 
     @AfterEach void closeStorageBeforeSwitch() {
-      storageBeforeSwitch.close();
-      storageBeforeSwitch = null;
+      strictTraceId.close();
+      strictTraceId = null;
     }
 
     @Override protected boolean initializeStoragePerTest() {
@@ -196,7 +197,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Override public void clear() {
@@ -205,15 +206,15 @@ class ITCassandraStorage {
 
     /** Ensures we can still lookup fully 128-bit traces when strict trace ID id disabled */
     @Test public void getTraces_128BitTraceId() throws IOException {
-      getTraces_128BitTraceId(accept128BitTrace(storageBeforeSwitch));
+      getTraces_128BitTraceId(accept128BitTrace(strictTraceId));
     }
 
     /** Ensures data written before strict trace ID was enabled can be read */
     @Test public void getTrace_retrievesBy128BitTraceId_afterSwitch() throws IOException {
-      List<Span> trace = accept128BitTrace(storageBeforeSwitch);
+      List<Span> trace = accept128BitTrace(strictTraceId);
 
       assertThat(traces().getTrace(trace.get(0).traceId()).execute())
-        .containsOnlyElementsOf(trace);
+        .containsAll(trace);
     }
   }
 
@@ -224,7 +225,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Override protected void blockWhileInFlight() {
@@ -243,7 +244,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Override protected void blockWhileInFlight() {
@@ -262,7 +263,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+      return backend.newStorageBuilder(testInfo);
     }
 
     @Override protected void blockWhileInFlight() {
@@ -277,7 +278,7 @@ class ITCassandraStorage {
      * The current implementation does not include dependency aggregation. It includes retrieval of
      * pre-aggregated links, usually made via zipkin-dependencies
      */
-    @Override protected void processDependencies(List<Span> spans) throws Exception {
+    @Override protected void processDependencies(List<Span> spans) {
       aggregateLinks(spans).forEach(
         (midnight, links) -> writeDependencyLinks(storage, links, midnight));
     }
@@ -296,18 +297,18 @@ class ITCassandraStorage {
     }
 
     @Override protected Session session() {
-      return backend.session;
+      return backend.globalSession;
     }
 
-    @Override protected InetSocketAddress contactPoint() {
+    @Override protected String contactPoint() {
       return backend.contactPoint();
     }
   }
 
   @Nested
   class ITSpanConsumer extends zipkin2.storage.cassandra.ITSpanConsumer {
-    @Override CassandraStorage.Builder storageBuilder() {
-      return backend.computeStorageBuilder();
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.newStorageBuilder(testInfo);
     }
   }
 

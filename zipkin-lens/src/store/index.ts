@@ -12,6 +12,16 @@
  * the License.
  */
 
+import { Action } from 'redux';
+import { ThunkAction } from 'redux-thunk';
+
 import createReducer from '../reducers';
 
 export type RootState = ReturnType<ReturnType<typeof createReducer>>;
+
+export type AppThunk<ReturnType = void> = ThunkAction<
+  ReturnType,
+  RootState,
+  unknown,
+  Action<string>
+>;

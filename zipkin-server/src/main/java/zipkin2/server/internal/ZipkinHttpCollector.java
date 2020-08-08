@@ -21,15 +21,11 @@ import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.ResponseHeaders;
-import com.linecorp.armeria.common.unsafe.PooledAggregatedHttpRequest;
-import com.linecorp.armeria.common.unsafe.PooledHttpRequest;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.annotation.Consumes;
 import com.linecorp.armeria.server.annotation.ConsumesJson;
 import com.linecorp.armeria.server.annotation.ExceptionHandler;
 import com.linecorp.armeria.server.annotation.Post;
-import io.netty.buffer.ByteBufHolder;
-import io.netty.util.ReferenceCountUtil;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -110,36 +106,29 @@ public class ZipkinHttpCollector {
     HttpRequest req) {
     CompletableCallback result = new CompletableCallback();
 
-    CompletableFuture<PooledAggregatedHttpRequest> aggregatedRequest = PooledHttpRequest.of(req)
-      .aggregateWithPooledObjects(ctx.contextAwareEventLoop(), ctx.alloc());
-    aggregatedRequest.handle((msg, t) -> {
+    req.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()).handle((msg, t) -> {
       if (t != null) {
         result.onError(t);
         return null;
       }
 
-      final HttpData content;
+      final HttpData requestContent;
       try {
-        content = UnzippingBytesRequestConverter.convertRequest(ctx, msg);
+        requestContent = UnzippingBytesRequestConverter.convertRequest(ctx, msg);
       } catch (Throwable t1) {
         propagateIfFatal(t1);
         result.onError(t1);
         return null;
       }
 
-      try {
+      try (HttpData content = requestContent) {
         // logging already handled upstream in UnzippingBytesRequestConverter where request context exists
         if (content.isEmpty()) {
           result.onSuccess(null);
           return null;
         }
 
-        final ByteBuffer nioBuffer;
-        if (content instanceof ByteBufHolder) {
-          nioBuffer = ((ByteBufHolder) content).content().nioBuffer();
-        } else {
-          nioBuffer = ByteBuffer.wrap(content.array());
-        }
+        final ByteBuffer nioBuffer = content.byteBuf().nioBuffer();
 
         try {
           SpanBytesDecoderDetector.decoderForListMessage(nioBuffer);
@@ -167,8 +156,6 @@ public class ZipkinHttpCollector {
           result.onError(t1);
           return null;
         }
-      } finally {
-        ReferenceCountUtil.release(content);
       }
 
       return null;
@@ -256,7 +243,7 @@ final class UnzippingBytesRequestConverter {
       // The implementation of the armeria decoder is to return an empty body on failure
       if (content.isEmpty()) {
         ZipkinHttpCollector.maybeLog("Malformed gzip body", ctx, request);
-        ReferenceCountUtil.release(content);
+        content.close();
         throw new IllegalArgumentException("Cannot gunzip spans");
       }
     }
@@ -264,7 +251,7 @@ final class UnzippingBytesRequestConverter {
     if (content.isEmpty()) ZipkinHttpCollector.maybeLog("Empty POST body", ctx, request);
     if (content.length() == 2 && "[]".equals(content.toStringAscii())) {
       ZipkinHttpCollector.maybeLog("Empty JSON list POST body", ctx, request);
-      ReferenceCountUtil.release(content);
+      content.close();
       content = HttpData.empty();
     }
 

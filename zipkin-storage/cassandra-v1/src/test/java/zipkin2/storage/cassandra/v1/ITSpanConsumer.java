@@ -15,7 +15,6 @@ package zipkin2.storage.cassandra.v1;
 
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 import zipkin2.storage.ITStorage;
@@ -32,10 +31,6 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
     return true;
   }
 
-  @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-    return storageBuilder().keyspace(InternalForTests.keyspace(testInfo));
-  }
-
   @Override protected void configureStorageForTest(StorageComponent.Builder storage) {
     storage.autocompleteKeys(asList("environment"));
   }
@@ -43,8 +38,6 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
   @Override public void clear() {
     // Just let the data pile up to prevent warnings and slowness.
   }
-
-  abstract CassandraStorage.Builder storageBuilder();
 
   /**
    * Core/Boundary annotations like "sr" aren't queryable, and don't add value to users. Address

@@ -24,6 +24,9 @@ APACHE_MIRROR=$(curl --stderr /dev/null https://www.apache.org/dyn/closer.cgi\?a
 curl -sSL $APACHE_MIRROR/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz | tar xz
 mv kafka_$SCALA_VERSION-$KAFKA_VERSION/* .
 
+# Remove bash as our images doesn't have it, and it isn't required
+sed -i 's~#!/bin/bash~#!/bin/sh~g' /kafka/bin/*sh
+
 # Set explicit, basic configuration
 cat > config/server.properties <<-EOF
 broker.id=0

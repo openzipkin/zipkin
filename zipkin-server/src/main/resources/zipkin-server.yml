@@ -1,1 +1,2 @@
 spring.profiles.include: shared
+armeria.enableMetrics: false
