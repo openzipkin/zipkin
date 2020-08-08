@@ -157,7 +157,7 @@ const NodeDetailDataImpl: React.FC<NodeDetailDataProps> = ({
       <Box
         height={100}
         flexGrow={1}
-        bgcolor="background.default"
+        bgcolor="background.paper"
         borderColor="divider"
         borderTop={1}
         paddingBottom={2}

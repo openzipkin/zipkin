@@ -14,14 +14,17 @@
 
 /* eslint-disable no-shadow */
 
-import { faHistory, faSync } from '@fortawesome/free-solid-svg-icons';
+import { faHistory, faSearch, faSync } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Trans } from '@lingui/macro';
 import {
   Box,
   Button,
   CircularProgress,
+  Divider,
   Paper,
   TextField,
+  Typography,
 } from '@material-ui/core';
 import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -30,7 +33,6 @@ import { useHistory, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
 import Criterion, { newCriterion } from './Criterion';
-import ExplainBox from './ExplainBox';
 import LookbackMenu from './LookbackMenu';
 import SearchBar from './SearchBar';
 import { Lookback, fixedLookbackMap, millisecondsToValue } from './lookback';
@@ -39,22 +41,6 @@ import { clearTraces, loadTraces } from '../../actions/traces-action';
 import { RootState } from '../../store';
 
 const TracesTab = require('./TracesTab').default;
-
-const LookbackButton = styled(Button)`
-  /* Align LookbackButton height with the TextField height. */
-  padding-top: 7.5px;
-  padding-bottom: 7.5px;
-`;
-
-const SearchButton = styled(Button)`
-  height: 60px;
-  min-width: 60px;
-  color: ${({ theme }) => theme.palette.common.white};
-`;
-
-const TracesPaper = styled(Paper)`
-  height: 100%;
-`;
 
 interface DiscoverPageContentProps {
   autocompleteKeys: string[];
@@ -425,12 +411,15 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     setIsShowingLookbackMenu(false);
   }, []);
 
-  let content: JSX.Element;
+  let content: JSX.Element | undefined;
 
   if (isLoadingTraces) {
     content = (
       <Box
-        height="100%"
+        width="100%"
+        height="100vh"
+        top={0}
+        position="fixed"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -439,77 +428,107 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
       </Box>
     );
   } else if (traces.length === 0) {
-    content = (
-      <Box
-        height="100%"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <ExplainBox />
-      </Box>
-    );
+    content = undefined;
   } else {
     content = (
-      <Box height="100%" pt={3} pb={3}>
-        <TracesPaper elevation={3}>
-          <TracesTab />
-        </TracesPaper>
-      </Box>
+      <TracesPaper elevation={3}>
+        <TracesTab />
+      </TracesPaper>
     );
   }
 
   return (
-    <Box pr={3} pl={3} flexGrow={1} display="flex" flexDirection="column">
-      <Box display="flex" mb={1.25}>
-        <Box mr={1} position="relative">
-          <LookbackButton
-            variant="outlined"
-            onClick={toggleLookbackMenu}
-            startIcon={<FontAwesomeIcon icon={faHistory} />}
-          >
-            {lookbackDisplay}
-          </LookbackButton>
-          {isShowingLookbackMenu && (
-            <LookbackMenu
-              close={closeLookbackMenu}
-              onChange={setTempLookback}
-              lookback={tempLookback}
-            />
-          )}
+    <Box width="100%">
+      <Box bgcolor="background.paper" boxShadow={3} p={3}>
+        <Box display="flex" alignItems="center">
+          <IconPaper>
+            <FontAwesomeIcon icon={faSearch} size="2x" />
+          </IconPaper>
+          <Typography variant="h5">
+            <Trans>Discover</Trans>
+          </Typography>
         </Box>
-        <TextField
-          label="Limit"
-          type="number"
-          variant="outlined"
-          value={tempLimit}
-          onChange={handleLimitChange}
-          size="small"
-          inputProps={{
-            'data-testid': 'query-limit',
-          }}
-        />
-      </Box>
-      <Box display="flex">
-        <Box flexGrow={1} mr={1}>
-          <SearchBar
-            criteria={tempCriteria}
-            onChange={setTempCriteria}
-            searchTraces={searchTraces}
+        <Box mt={1.5} mb={1.5}>
+          <Divider />
+        </Box>
+        <Box display="flex" mb={1.25}>
+          <Box mr={1} position="relative">
+            <LookbackButton
+              variant="outlined"
+              onClick={toggleLookbackMenu}
+              startIcon={<FontAwesomeIcon icon={faHistory} />}
+            >
+              {lookbackDisplay}
+            </LookbackButton>
+            {isShowingLookbackMenu && (
+              <LookbackMenu
+                close={closeLookbackMenu}
+                onChange={setTempLookback}
+                lookback={tempLookback}
+              />
+            )}
+          </Box>
+          <TextField
+            label="Limit"
+            type="number"
+            variant="outlined"
+            value={tempLimit}
+            onChange={handleLimitChange}
+            size="small"
+            inputProps={{
+              'data-testid': 'query-limit',
+            }}
           />
         </Box>
-        <SearchButton
-          variant="contained"
-          color="primary"
-          onClick={searchTraces}
-          startIcon={<FontAwesomeIcon icon={faSync} />}
-        >
-          Run Query
-        </SearchButton>
+        <Box display="flex">
+          <Box flexGrow={1} mr={1}>
+            <SearchBar
+              criteria={tempCriteria}
+              onChange={setTempCriteria}
+              searchTraces={searchTraces}
+            />
+          </Box>
+          <SearchButton
+            variant="contained"
+            color="primary"
+            onClick={searchTraces}
+            startIcon={<FontAwesomeIcon icon={faSync} />}
+          >
+            Run Query
+          </SearchButton>
+        </Box>
       </Box>
-      <Box flexGrow={1}>{content}</Box>
+      <Box p={4}>{content}</Box>
     </Box>
   );
 };
 
 export default DiscoverPageContent;
+
+const IconPaper = styled(Paper).attrs({
+  elevation: 2,
+})`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 52px;
+  height: 52px;
+  background-color: #f8f9ff;
+  margin-right: ${({ theme }) => theme.spacing(2)}px;
+`;
+
+const LookbackButton = styled(Button)`
+  /* Align LookbackButton height with the TextField height. */
+  padding-top: 7.5px;
+  padding-bottom: 7.5px;
+`;
+
+const SearchButton = styled(Button)`
+  height: 60px;
+  min-width: 60px;
+  color: ${({ theme }) => theme.palette.common.white};
+`;
+
+const TracesPaper = styled(Paper)`
+  height: 100%;
+`;

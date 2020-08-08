@@ -14,12 +14,12 @@
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  createStyles,
-  makeStyles,
   ListItem,
   ListItemProps,
   Theme,
   Tooltip,
+  createStyles,
+  makeStyles,
 } from '@material-ui/core';
 import classNames from 'classnames';
 import React from 'react';
@@ -28,18 +28,18 @@ import { Link, useLocation } from 'react-router-dom';
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     item: {
-      height: '3.2rem',
+      paddingTop: theme.spacing(2),
+      paddingBottom: theme.spacing(2),
+      paddingRight: theme.spacing(0.1),
+      paddingLeft: theme.spacing(0.1),
+      display: 'flex',
+      justifyContent: 'center',
       cursor: 'pointer',
-      fontSize: '1.05rem',
+      fontSize: '1.25rem',
       color: theme.palette.grey[400],
-      '&:hover': {
-        color: theme.palette.common.white,
-        backgroundColor: theme.palette.primary.dark,
-      },
     },
     'item--selected': {
-      color: theme.palette.common.white,
-      backgroundColor: theme.palette.primary.dark,
+      color: theme.palette.primary.main,
     },
   }),
 );

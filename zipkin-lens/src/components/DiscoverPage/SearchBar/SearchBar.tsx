@@ -188,8 +188,9 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
       pb={1}
       borderRadius={3}
       bgcolor="background.paper"
-      boxShadow={3}
       flexWrap="wrap"
+      borderColor="grey.400"
+      border={1}
     >
       {criteria.map((criterion, index) => (
         <CriterionBox

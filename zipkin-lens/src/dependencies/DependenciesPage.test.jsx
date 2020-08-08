@@ -113,12 +113,5 @@ describe('<DependenciesPage />', () => {
       getAllByTestId('dependencies-graph'),
     );
     expect(components.length).toBe(1);
-
-    // When query parameter is empty, dependencies are cleared and explain-box is displayed.
-    history.push('/dependencies');
-    rerender(
-      <DependenciesPage history={history} location={history.location} />,
-    );
-    expect(getAllByTestId('explain-box').length).toBe(1);
   });
 });

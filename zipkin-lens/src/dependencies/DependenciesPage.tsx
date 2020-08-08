@@ -12,7 +12,7 @@
  * the License.
  */
 
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faProjectDiagram } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { t, Trans } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
@@ -20,6 +20,8 @@ import {
   Box,
   Button,
   CircularProgress,
+  Divider,
+  Paper,
   Theme,
   Typography,
   createStyles,
@@ -32,12 +34,10 @@ import moment from 'moment';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
+import styled from 'styled-components';
 
 import DependenciesGraph from './DependenciesGraph';
-import ExplainBox from './ExplainBox';
 import { clearAlert, setAlert } from '../components/App/slice';
-import TraceJsonUploader from '../components/Common/TraceJsonUploader';
-import TraceIdSearchInput from '../components/Common/TraceIdSearchInput';
 import {
   clearDependencies,
   loadDependencies,
@@ -186,12 +186,14 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
     };
   }, [dispatch]);
 
-  let content: JSX.Element;
+  let content: JSX.Element | undefined;
   if (isLoading) {
     content = (
       <Box
         width="100%"
-        height="100%"
+        height="100vh"
+        top={0}
+        position="fixed"
         display="flex"
         justifyContent="center"
         alignItems="center"
@@ -202,48 +204,28 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
     );
   } else if (dependencies.length > 0) {
     content = <DependenciesGraph dependencies={dependencies} />;
-  } else {
-    content = (
-      <Box
-        width="100%"
-        height="100%"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        data-testid="explain-box"
-      >
-        <ExplainBox />
-      </Box>
-    );
   }
 
   return (
-    <Box width="100%" height="100vh" display="flex" flexDirection="column">
-      <Box boxShadow={3} zIndex={2}>
-        <Box
-          pl={3}
-          pr={3}
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-        >
+    <Box
+      width="100%"
+      height="calc(100vh - 64px)"
+      display="flex"
+      flexDirection="column"
+    >
+      <Box bgcolor="background.paper" boxShadow={3} p={3}>
+        <Box display="flex" alignItems="center">
+          <IconPaper>
+            <FontAwesomeIcon icon={faProjectDiagram} size="2x" />
+          </IconPaper>
           <Typography variant="h5">
             <Trans>Dependencies</Trans>
           </Typography>
-          <Box pr={3} display="flex" alignItems="center">
-            <TraceJsonUploader />
-            <TraceIdSearchInput />
-          </Box>
         </Box>
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          pt={0.75}
-          pb={0.75}
-          borderColor="divider"
-          borderTop={1}
-        >
+        <Box mt={1.5} mb={1.5}>
+          <Divider />
+        </Box>
+        <Box display="flex" justifyContent="center" alignItems="center">
           <KeyboardDateTimePicker
             label={i18n._(t`Start Time`)}
             inputVariant="outlined"
@@ -274,9 +256,23 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
           </Button>
         </Box>
       </Box>
-      <Box flexGrow={1}>{content}</Box>
+      <Box m={4} flexGrow={1}>
+        {content}
+      </Box>
     </Box>
   );
 };
 
 export default withRouter(DependenciesPageImpl);
+
+const IconPaper = styled(Paper).attrs({
+  elevation: 2,
+})`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 52px;
+  height: 52px;
+  background-color: #f8f9ff;
+  margin-right: ${({ theme }) => theme.spacing(2)}px;
+`;

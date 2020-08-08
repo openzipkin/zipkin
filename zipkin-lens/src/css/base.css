@@ -15,12 +15,12 @@
 html {
   /* Include padding and border in the element's total width and height: */
   box-sizing: border-box;
-  font-size: 14px;
+  /* font-size: 14px; */
 }
 
 body {
   font-family: 'Roboto', Helvetica, Arial, sans-serif;
-  font-size: 13px;
+  /* font-size: 13px; */
   line-height: 1.5;
   color: #686868;
   background-color: #ffffff;

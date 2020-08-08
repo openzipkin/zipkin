@@ -80,7 +80,7 @@ export const TracesTab = ({ traceSummaries }) => {
   );
 
   return (
-    <Box height="100%" display="flex" flexDirection="column">
+    <Box display="flex" flexDirection="column">
       <Box
         borderBottom={1}
         display="flex"

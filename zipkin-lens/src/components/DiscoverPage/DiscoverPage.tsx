@@ -21,8 +21,6 @@ import { connect } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk';
 
 import DiscoverPageContent from './DiscoverPageContent';
-import TraceIdSearchInput from '../Common/TraceIdSearchInput';
-import TraceJsonUploader from '../Common/TraceJsonUploader';
 import { useUiConfig } from '../UiConfig';
 import { fetchAutocompleteKeys } from '../../actions/autocomplete-keys-action';
 import { RootState } from '../../store';
@@ -40,15 +38,13 @@ const DiscoverPageImpl: React.FC<DiscoverPageImplProps> = ({
 }) => {
   const config = useUiConfig();
 
-  let content: JSX.Element;
-
   useEffect(() => {
     loadAutocompleteKeys();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!config.searchEnabled) {
-    content = (
+    return (
       <Typography variant="body1">
         <Trans>
           Searching has been disabled via the searchEnabled property. You can
@@ -57,13 +53,17 @@ const DiscoverPageImpl: React.FC<DiscoverPageImplProps> = ({
         </Trans>
       </Typography>
     );
-  } else if (isLoadingAutocompleteKeys) {
+  }
+
+  if (isLoadingAutocompleteKeys) {
     // Need to fetch autocompleteKeys before displaying a search bar,
     // because SearchBar uses autocompleteKeys inside.
-    content = (
+    return (
       <Box
-        height="100%"
+        height="100vh"
         width="100%"
+        top={0}
+        position="fixed"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -71,30 +71,9 @@ const DiscoverPageImpl: React.FC<DiscoverPageImplProps> = ({
         <CircularProgress />
       </Box>
     );
-  } else {
-    content = <DiscoverPageContent autocompleteKeys={autocompleteKeys} />;
   }
 
-  return (
-    <Box width="100%" height="100vh" display="flex" flexDirection="column">
-      <Box
-        pl={3}
-        pr={3}
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-      >
-        <Typography variant="h5">
-          <Trans>Discover</Trans>
-        </Typography>
-        <Box pr={3} display="flex" alignItems="center">
-          <TraceJsonUploader />
-          <TraceIdSearchInput />
-        </Box>
-      </Box>
-      {content}
-    </Box>
-  );
+  return <DiscoverPageContent autocompleteKeys={autocompleteKeys} />;
 };
 
 // For unit testing, `connect` is easier to use than
