@@ -83,7 +83,7 @@ final class KafkaCollectorWorker implements Runnable {
             assignedPartitions.set(Collections.unmodifiableList(new ArrayList<>(partitions)));
           }
         });
-      LOG.info("Kafka consumer starting polling loop.");
+      LOG.info("Kafka consumer starting polling loop for topic {}", topics);
       while (running.get()) {
         final ConsumerRecords<byte[], byte[]> consumerRecords = kafkaConsumer.poll(Duration.of(1000, ChronoUnit.MILLIS));
         LOG.debug("Kafka polling returned batch of {} messages.", consumerRecords.count());

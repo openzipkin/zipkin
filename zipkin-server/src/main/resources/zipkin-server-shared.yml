@@ -271,6 +271,8 @@ logging:
     com.linecorp.armeria.spring.ArmeriaAutoConfiguration: 'WARN'
     # Hostname logging is not Zipkin's duty
     com.linecorp.armeria.common.util.SystemInfo: 'WARN'
+    # kafka is quite chatty so we switch everything off by default
+    org.apache.kafka: 'OFF'
 #     # investigate /api/v2/dependencies
 #     zipkin2.internal.DependencyLinker: 'DEBUG'
 #     # log cassandra queries (DEBUG is without values)

@@ -54,5 +54,8 @@ Below are a few guidelines for the Kafka infrastructure used by this collector:
 * The collector starts 1 instance of `KafkaConsumer` by default. We do recommend creating the `zipkin` topic with 6 or more partitions however, as it allows you to easily scale out the collector later by increasing the [KAFKA_STREAMS](../../zipkin-server/README.md#kafka-collector) parameter.
 * As Zipkin reporter sends batches of spans which do not rely on any kind of ordering guarantee (key=null), you can increase the number of partitions without affecting ordering. It does not make sense however to have more `KafkaConsumer` instances than partitions as the instances will just be idle and not consume anything.
 * Monitoring the consumer lag of the collector as well as the size of the topic will help you to decide if scaling up or down is needed.
-* Tuning this collector should happen in coordination with the storage backend. Parameters like `max.poll.records`, `fetch.max.bytes` can prevent the collector from overloading the storage backend, or if it's sized properly they could instead be used to increase ingestion rate. 
+* Tuning this collector should happen in coordination with the storage backend. Parameters like `max.poll.records`, `fetch.max.bytes` can prevent the collector from overloading the storage backend, or if it's sized properly they could instead be used to increase ingestion rate.
 * A large and consistent consumer lag can indicate that the storage has difficulties with the ingestion rate and could be scaled up.
+
+## Logging
+Zipkin by default suppresses all logging output from Kafka client operations as they can get quite verbose. Start Zipkin with `--logging.level.org.apache.kafka=INFO` or similar to override this during troubleshooting for example.
