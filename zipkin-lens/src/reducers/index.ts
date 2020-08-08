@@ -15,28 +15,28 @@
 import { combineReducers } from 'redux';
 
 import appSlice from '../components/App/slice';
+import autocompleteKeysSlice from '../slices/autocompleteKeysSlice';
+import autocompleteValuesSlice from '../slices/autocompleteValuesSlice';
 import dependenciesSlice from '../slices/dependenciesSlice';
+import remoteServicesSlice from '../slices/remoteServicesSlice';
+import servicesSlice from '../slices/servicesSlice';
+import spansSlice from '../slices/spansSlice';
 
-import remoteServices from './remote-services';
-import spans from './spans';
 import trace from './trace';
 import traces from './traces';
-import services from './services';
-import autocompleteKeys from './autocomplete-keys';
-import autocompleteValues from './autocomplete-values';
 import traceViewer from './trace-viewer';
 
 const createReducer = () =>
   combineReducers({
     [appSlice.name]: appSlice.reducer,
+    [autocompleteKeysSlice.name]: autocompleteKeysSlice.reducer,
+    [autocompleteValuesSlice.name]: autocompleteValuesSlice.reducer,
     [dependenciesSlice.name]: dependenciesSlice.reducer,
-    remoteServices,
-    spans,
+    [remoteServicesSlice.name]: remoteServicesSlice.reducer,
+    [servicesSlice.name]: servicesSlice.reducer,
+    [spansSlice.name]: spansSlice.reducer,
     trace,
     traces,
-    services,
-    autocompleteKeys,
-    autocompleteValues,
     traceViewer,
   });
 
