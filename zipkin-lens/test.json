@@ -1,0 +1,40 @@
+[
+  {
+    "traceId": "77047bf9cf04ed5d",
+    "id": "77047bf9cf04ed5d",
+    "name": "get",
+    "timestamp": 1484722951945904,
+    "duration": 156470,
+    "annotations": [
+      {
+        "timestamp": 1484722951945904,
+        "value": "sr",
+        "endpoint": {
+          "serviceName": "com.alipay.sofa.tracer.demo.facade.rpccallservice.okay.we.can.go.a.bit.further.to.see.how.lens.copes.with.this"
+        }
+      },
+      {
+        "timestamp": 1484722952102374,
+        "value": "ss",
+        "endpoint": {
+          "serviceName": "com.alipay.sofa.tracer.demo.facade.rpccallservice.okay.we.can.go.a.bit.further.to.see.how.lens.copes.with.this"
+        }
+      }
+    ]
+  },
+  {
+    "traceId": "77047bf9cf04ed5d",
+    "id": "40ef4e93ab3b1507",
+    "name": "get",
+    "parentId": "77047bf9cf04ed5d",
+    "annotations": [
+      {
+        "timestamp": 1484722952100852,
+        "value": "cs",
+        "endpoint": {
+          "serviceName": "com.alipay.sofa.tracer.demo.facade.rpccallservice.okay.we.can.go.a.bit.further.to.see.how.lens.copes.with.this"
+        }
+      }
+    ]
+  }
+]

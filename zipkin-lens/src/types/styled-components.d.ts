@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,4 +11,11 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-export { default } from './GlobalSearch';
+
+import { Theme } from '@material-ui/core';
+import 'styled-components';
+
+declare module 'styled-components' {
+  // eslint-disable-next-line @typescript-eslint/no-empty-interface
+  export interface DefaultTheme extends Theme {}
+}

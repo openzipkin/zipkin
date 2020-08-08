@@ -42,7 +42,9 @@ export const defaultConfig = {
 export const UiConfig = ({ children }) => {
   const response = configResource.read();
   Object.keys(defaultConfig).forEach((key) => {
-    response[key] = response[key] || defaultConfig[key];
+    if (!response[key]) {
+      response[key] = defaultConfig[key];
+    }
   });
 
   return (

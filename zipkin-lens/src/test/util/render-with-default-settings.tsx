@@ -11,22 +11,23 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 import MomentUtils from '@date-io/moment';
 import { setupI18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
-import { ThemeProvider } from '@material-ui/styles';
+import { ThemeProvider as MuiThemeProvider } from '@material-ui/styles';
 import MuiPickersUtilsProvider from '@material-ui/pickers/MuiPickersUtilsProvider';
 import { render } from '@testing-library/react';
 import { createMemoryHistory, History } from 'history';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { Router } from 'react-router-dom';
+import { ThemeProvider } from 'styled-components';
 
 import { UiConfigContext } from '../../components/UiConfig';
-
-import { messages as enMessages } from '../../translations/en/messages';
 import { theme } from '../../colors';
 import configureStore from '../../store/configure-store';
+import { messages as enMessages } from '../../translations/en/messages';
 
 const i18n = setupI18n();
 i18n.load('en', enMessages as any);
@@ -69,9 +70,11 @@ export default (
         <Router history={history}>
           <MuiPickersUtilsProvider utils={MomentUtils}>
             <ThemeProvider theme={theme}>
-              <UiConfigContext.Provider value={filledConfig}>
-                {children}
-              </UiConfigContext.Provider>
+              <MuiThemeProvider theme={theme}>
+                <UiConfigContext.Provider value={filledConfig}>
+                  {children}
+                </UiConfigContext.Provider>
+              </MuiThemeProvider>
             </ThemeProvider>
           </MuiPickersUtilsProvider>
         </Router>

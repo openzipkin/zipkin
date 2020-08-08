@@ -11,8 +11,21 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-declare module 'vizceral-react' {
-  export default class extends React.Component<any, any> {
-    public vizceral: any;
-  }
-}
+
+import shortid from 'shortid';
+
+type Criterion = {
+  key: string;
+  value: string;
+  id: string; // for React key props.
+};
+
+export const newCriterion = (key: string = '', value: string = '') => {
+  return {
+    key,
+    value,
+    id: shortid.generate(),
+  };
+};
+
+export default Criterion;

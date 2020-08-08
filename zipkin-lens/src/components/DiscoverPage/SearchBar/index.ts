@@ -12,4 +12,4 @@
  * the License.
  */
 
-export { default } from './DiscoverPage';
+export { default } from './SearchBar';

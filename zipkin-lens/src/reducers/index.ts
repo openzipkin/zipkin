@@ -22,12 +22,11 @@ import spans from './spans';
 import trace from './trace';
 import traces from './traces';
 import services from './services';
-import createGlobalSearch from './global-search';
 import autocompleteKeys from './autocomplete-keys';
 import autocompleteValues from './autocomplete-values';
 import traceViewer from './trace-viewer';
 
-const createReducer = (config: any) =>
+const createReducer = () =>
   combineReducers({
     [appSlice.name]: appSlice.reducer,
     [dependenciesSlice.name]: dependenciesSlice.reducer,
@@ -36,7 +35,6 @@ const createReducer = (config: any) =>
     trace,
     traces,
     services,
-    globalSearch: createGlobalSearch(config),
     autocompleteKeys,
     autocompleteValues,
     traceViewer,
