@@ -14,12 +14,12 @@
 
 FROM alpine:3.12
 
-ENV SCALA_VERSION 2.12
-ENV KAFKA_VERSION 2.5.0
+ENV SCALA_VERSION 2.13
+ENV KAFKA_VERSION 2.6.0
 
 WORKDIR /kafka
 ADD docker/collector/kafka/install.sh /kafka/install
-RUN /kafka/install
+RUN /kafka/install && rm /kafka/install
 
 ADD docker/collector/kafka/wait-for-zookeeper.sh /kafka/bin
 ADD docker/collector/kafka/start.sh /kafka/bin

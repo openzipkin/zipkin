@@ -29,6 +29,7 @@
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
     <!-- when changing this, a change to the version of kafka-junit is likely needed, too -->
+    <!-- TODO: update to 2.6.0 once https://github.com/charithe/kafka-junit/issues/54 is complete -->
     <kafka.version>2.5.0</kafka.version>
     <!-- This version is tightly coupled to the version of kafka-clients being used.
      https://github.com/charithe/kafka-junit -->
