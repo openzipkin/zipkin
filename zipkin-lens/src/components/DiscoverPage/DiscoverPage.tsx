@@ -24,7 +24,7 @@ import DiscoverPageContent from './DiscoverPageContent';
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import { useUiConfig } from '../UiConfig';
-import { fetchAutocompleteKeys } from '../../actions/autocomplete-keys-action';
+import { loadAutocompleteKeys } from '../../slices/autocompleteKeysSlice';
 import { RootState } from '../../store';
 
 interface DiscoverPageImplProps {
@@ -108,7 +108,7 @@ const mapDispatchToProps = (
   dispatch: ThunkDispatch<RootState, undefined, any>,
 ) => ({
   loadAutocompleteKeys: () => {
-    dispatch(fetchAutocompleteKeys());
+    dispatch(loadAutocompleteKeys());
   },
 });
 
