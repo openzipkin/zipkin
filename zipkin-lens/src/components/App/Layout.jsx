@@ -11,59 +11,34 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import {
-  faHome,
-  faProjectDiagram,
-  faQuestionCircle,
-  faSearch,
-} from '@fortawesome/free-solid-svg-icons';
+import { faProjectDiagram, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { t } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import {
   AppBar as MuiAppBar,
   Box,
   CssBaseline,
-  Drawer,
-  List,
   ThemeProvider,
   Toolbar as MuiToolbar,
   Typography,
-  makeStyles,
 } from '@material-ui/core';
 import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'styled-components';
 
 import LanguageSelector from './LanguageSelector';
-import SidebarMenu from './SidebarMenu';
 import { useUiConfig } from '../UiConfig';
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import { darkTheme } from '../../colors';
 import logoSrc from '../../img/zipkin-logo.png';
-
-const drawerWidth = 64;
-
-const useStyles = makeStyles((theme) => ({
-  drawer: {
-    width: drawerWidth,
-    flexShring: 0,
-  },
-  drawerPaper: {
-    width: drawerWidth,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    boxShadow: theme.shadows[2],
-  },
-}));
+import HeaderMenuItem from './HeaderMenuItem';
 
 const propTypes = {
   children: PropTypes.arrayOf(PropTypes.element).isRequired,
 };
 
 const Layout = ({ children }) => {
-  const classes = useStyles();
   const { i18n } = useLingui();
   const config = useUiConfig();
 
@@ -94,55 +69,33 @@ const Layout = ({ children }) => {
               <Typography variant="body2">
                 Investigate system behavior
               </Typography>
+              <Box display="flex" ml={5}>
+                <HeaderMenuItem
+                  title={i18n._(t`Discover Page`)}
+                  path="/"
+                  icon={faSearch}
+                />
+                {config.dependency.enabled && (
+                  <HeaderMenuItem
+                    title={i18n._(t`Dependencies Page`)}
+                    path="/dependency"
+                    icon={faProjectDiagram}
+                  />
+                )}
+              </Box>
             </Box>
-            <Box pr={3} display="flex" alignItems="center">
-              <ThemeProvider theme={darkTheme}>
+            <ThemeProvider theme={darkTheme}>
+              <Box display="flex" alignItems="center">
+                <Box pr={2} color="inherit">
+                  <LanguageSelector />
+                </Box>
                 <TraceJsonUploader />
                 <TraceIdSearchInput />
-              </ThemeProvider>
-            </Box>
+              </Box>
+            </ThemeProvider>
           </Box>
         </Toolbar>
       </AppBar>
-      <Drawer
-        open
-        variant="permanent"
-        className={classes.drawer}
-        classes={{ paper: classes.drawerPaper }}
-      >
-        <div>
-          <ToolbarSpace />
-          <List>
-            <SidebarMenu
-              title={i18n._(t`Discover Page`)}
-              path="/"
-              icon={faSearch}
-            />
-            {config.dependency.enabled && (
-              <SidebarMenu
-                title={i18n._(t`Dependencies Page`)}
-                path="/dependency"
-                icon={faProjectDiagram}
-              />
-            )}
-          </List>
-        </div>
-        <List>
-          {config.supportUrl && (
-            <SidebarMenu
-              title={i18n._(t`Support`)}
-              path={config.supportUrl}
-              icon={faQuestionCircle}
-            />
-          )}
-          <SidebarMenu
-            title={i18n._(t`Zipkin Home`)}
-            path="https://zipkin.io/"
-            icon={faHome}
-          />
-          <LanguageSelector />
-        </List>
-      </Drawer>
       <Box component="main" width="100%">
         <ToolbarSpace />
         {children}
