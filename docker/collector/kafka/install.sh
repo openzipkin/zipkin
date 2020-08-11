@@ -41,4 +41,10 @@ EOF
 
 mkdir /kafka/logs
 
+echo "*** Cleaning Up"
+apk del jq curl --purge
+# TODO: eventually cleanup irrelevant binaries from RocksDB
+# https://issues.apache.org/jira/browse/KAFKA-10380
+rm -rf kafka_$SCALA_VERSION-$KAFKA_VERSION site-docs bin/windows
+
 echo "*** Image build complete"
