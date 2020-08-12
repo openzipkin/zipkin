@@ -11,7 +11,13 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { faProjectDiagram, faSearch } from '@fortawesome/free-solid-svg-icons';
+import {
+  faProjectDiagram,
+  faSearch,
+  faQuestionCircle,
+  faHome,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { t } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import {
@@ -21,6 +27,8 @@ import {
   ThemeProvider,
   Toolbar as MuiToolbar,
   Typography,
+  IconButton as MuiIconButton,
+  Tooltip,
 } from '@material-ui/core';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -66,10 +74,7 @@ const Layout = ({ children }) => {
               <Title>
                 <strong>Zipkin</strong>
               </Title>
-              <Typography variant="body2">
-                Investigate system behavior
-              </Typography>
-              <Box display="flex" ml={5}>
+              <Box display="flex" ml={3}>
                 <HeaderMenuItem
                   title={i18n._(t`Discover Page`)}
                   path="/"
@@ -91,6 +96,18 @@ const Layout = ({ children }) => {
                 </Box>
                 <TraceJsonUploader />
                 <TraceIdSearchInput />
+                {config.supportUrl && (
+                  <Tooltip title={i18n._(t`Support`)}>
+                    <IconButton href={config.supportUrl}>
+                      <FontAwesomeIcon icon={faQuestionCircle} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                <Tooltip title={i18n._(t`Zipkin Home`)}>
+                  <IconButton href="https://zipkin.io/">
+                    <FontAwesomeIcon icon={faHome} />
+                  </IconButton>
+                </Tooltip>
               </Box>
             </ThemeProvider>
           </Box>
@@ -135,4 +152,9 @@ const Title = styled(Typography).attrs({
 
 const ToolbarSpace = styled.div`
   min-height: 64px;
+`;
+
+const IconButton = styled(MuiIconButton)`
+  margin-right: ${({ theme }) => theme.spacing(2)}px;
+  margin-left: ${({ theme }) => theme.spacing(2)}px;
 `;

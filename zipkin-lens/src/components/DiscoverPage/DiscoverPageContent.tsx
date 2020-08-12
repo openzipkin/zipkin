@@ -477,6 +477,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
           <SettingsButton
             onClick={handleSettingsButtonClick}
             isOpening={isOpeningSettings}
+            data-testid="settings-button"
           >
             <SettingsIcon />
           </SettingsButton>

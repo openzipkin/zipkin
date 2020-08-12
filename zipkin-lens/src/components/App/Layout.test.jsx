@@ -49,13 +49,13 @@ describe('<Layout />', () => {
 
   it('does render Dependencies Page with default config', () => {
     // children is required so avoid warning by passing dummy children
-    const { queryByTitle } = render(
+    const { queryByText } = render(
       <Layout>
         <span>Test</span>
         <span>Test</span>
       </Layout>,
     );
-    expect(queryByTitle('Dependencies Page')).toBeInTheDocument();
+    expect(queryByText('Dependencies Page')).toBeInTheDocument();
   });
 
   it('does not render Dependencies Page when disabled', () => {

@@ -14,6 +14,7 @@
 
 /* eslint-disable react/prop-types */
 
+import { fireEvent } from '@testing-library/react';
 import { act, renderHook } from '@testing-library/react-hooks';
 import { createMemoryHistory } from 'history';
 import moment from 'moment';
@@ -216,29 +217,44 @@ describe('buildApiQuery', () => {
 
 describe('<DiscoverPageContent />', () => {
   it('should initialize fixed lookback using config.json', () => {
-    const { getAllByText } = render(<DiscoverPageContent />, {
-      uiConfig: {
-        defaultLookback: 60 * 1000 * 5, // 5m
+    const { getAllByText, getByTestId, rerender } = render(
+      <DiscoverPageContent />,
+      {
+        uiConfig: {
+          defaultLookback: 60 * 1000 * 5, // 5m
+        },
       },
-    });
+    );
+    fireEvent.click(getByTestId('settings-button')); // Open settings
+    rerender(<DiscoverPageContent />);
     expect(getAllByText('Last 5 minutes').length).toBe(1);
   });
 
   it('should initialze millis lookback using config.json', () => {
-    const { getAllByText } = render(<DiscoverPageContent />, {
-      uiConfig: {
-        defaultLookback: 12345,
+    const { getAllByText, getByTestId, rerender } = render(
+      <DiscoverPageContent />,
+      {
+        uiConfig: {
+          defaultLookback: 12345,
+        },
       },
-    });
+    );
+    fireEvent.click(getByTestId('settings-button')); // Open settings
+    rerender(<DiscoverPageContent />);
     expect(getAllByText('12345ms').length).toBe(1);
   });
 
   it('should initialize the query limit using config.json', () => {
-    const { getAllByTestId } = render(<DiscoverPageContent />, {
-      uiConfig: {
-        queryLimit: 30,
+    const { getAllByTestId, getByTestId, rerender } = render(
+      <DiscoverPageContent />,
+      {
+        uiConfig: {
+          queryLimit: 30,
+        },
       },
-    });
+    );
+    fireEvent.click(getByTestId('settings-button')); // Open settings
+    rerender(<DiscoverPageContent />);
     const items = getAllByTestId('query-limit');
     expect(items.length).toBe(1);
     expect(items[0].value).toBe('30');

@@ -79,11 +79,11 @@ const LanguageSelector = () => {
         onClick={handleButtonClick}
         startIcon={<TranslateIcon />}
         endIcon={<ExpandMoreIcon />}
+        data-testid="change-language-button"
       >
         {LANGUAGES.find((lang) => lang.locale === currentLocale)?.name}
       </Button>
       <Menu
-        id="simple-menu"
         anchorEl={anchorEl}
         keepMounted
         open={Boolean(anchorEl)}
@@ -94,6 +94,7 @@ const LanguageSelector = () => {
             key={lang.locale}
             onClick={handleMenuItemClick}
             data-locale={lang.locale}
+            data-testid={`language-list-item-${lang.locale}`}
           >
             {lang.name}
           </MenuItem>
