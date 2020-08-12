@@ -20,10 +20,7 @@ import {
   Box,
   Button,
   CircularProgress,
-  Divider,
-  Paper,
   Theme,
-  Typography,
   createStyles,
   makeStyles,
 } from '@material-ui/core';
@@ -34,7 +31,6 @@ import moment from 'moment';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
-import styled from 'styled-components';
 
 import DependenciesGraph from './DependenciesGraph';
 import { clearAlert, setAlert } from '../components/App/slice';
@@ -43,6 +39,7 @@ import {
   loadDependencies,
 } from '../slices/dependenciesSlice';
 import { RootState } from '../store';
+import ExplainBox from '../components/Common/ExplainBox';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -186,7 +183,7 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
     };
   }, [dispatch]);
 
-  let content: JSX.Element | undefined;
+  let content: JSX.Element;
   if (isLoading) {
     content = (
       <Box
@@ -204,6 +201,18 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
     );
   } else if (dependencies.length > 0) {
     content = <DependenciesGraph dependencies={dependencies} />;
+  } else {
+    content = (
+      <ExplainBox
+        icon={faProjectDiagram}
+        headerText={<Trans>Search Dependencies</Trans>}
+        text={
+          <Trans>
+            Please select the start and end time. Then, click the search button.
+          </Trans>
+        }
+      />
+    );
   }
 
   return (
@@ -214,17 +223,6 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
       flexDirection="column"
     >
       <Box bgcolor="background.paper" boxShadow={3} p={3}>
-        <Box display="flex" alignItems="center">
-          <IconPaper>
-            <FontAwesomeIcon icon={faProjectDiagram} size="2x" />
-          </IconPaper>
-          <Typography variant="h5">
-            <Trans>Dependencies</Trans>
-          </Typography>
-        </Box>
-        <Box mt={1.5} mb={1.5}>
-          <Divider />
-        </Box>
         <Box display="flex" justifyContent="center" alignItems="center">
           <KeyboardDateTimePicker
             label={i18n._(t`Start Time`)}
@@ -264,15 +262,3 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
 };
 
 export default withRouter(DependenciesPageImpl);
-
-const IconPaper = styled(Paper).attrs({
-  elevation: 2,
-})`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 52px;
-  height: 52px;
-  background-color: #f8f9ff;
-  margin-right: ${({ theme }) => theme.spacing(2)}px;
-`;

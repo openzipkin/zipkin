@@ -14,17 +14,15 @@
 
 /* eslint-disable no-shadow */
 
-import { faHistory, faSearch, faSync } from '@fortawesome/free-solid-svg-icons';
+import { faHistory, faSync, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Trans } from '@lingui/macro';
 import {
   Box,
   Button,
   CircularProgress,
-  Divider,
   Paper,
   TextField,
-  Typography,
 } from '@material-ui/core';
 import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -39,6 +37,7 @@ import { Lookback, fixedLookbackMap, millisecondsToValue } from './lookback';
 import { useUiConfig } from '../UiConfig';
 import { clearTraces, loadTraces } from '../../actions/traces-action';
 import { RootState } from '../../store';
+import ExplainBox from '../Common/ExplainBox';
 
 const TracesTab = require('./TracesTab').default;
 
@@ -428,7 +427,18 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
       </Box>
     );
   } else if (traces.length === 0) {
-    content = undefined;
+    content = (
+      <ExplainBox
+        icon={faSearch}
+        headerText={<Trans>Search Traces</Trans>}
+        text={
+          <Trans>
+            Please select criteria in the search bar. Then, click the search
+            button.
+          </Trans>
+        }
+      />
+    );
   } else {
     content = (
       <TracesPaper elevation={3}>
@@ -439,18 +449,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
 
   return (
     <Box width="100%">
-      <Box bgcolor="background.paper" boxShadow={3} p={3}>
-        <Box display="flex" alignItems="center">
-          <IconPaper>
-            <FontAwesomeIcon icon={faSearch} size="2x" />
-          </IconPaper>
-          <Typography variant="h5">
-            <Trans>Discover</Trans>
-          </Typography>
-        </Box>
-        <Box mt={1.5} mb={1.5}>
-          <Divider />
-        </Box>
+      <Box bgcolor="background.paper" boxShadow={3} pr={6} pl={6} pt={3} pb={3}>
         <Box display="flex" mb={1.25}>
           <Box mr={1} position="relative">
             <LookbackButton
@@ -504,18 +503,6 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
 };
 
 export default DiscoverPageContent;
-
-const IconPaper = styled(Paper).attrs({
-  elevation: 2,
-})`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 52px;
-  height: 52px;
-  background-color: #f8f9ff;
-  margin-right: ${({ theme }) => theme.spacing(2)}px;
-`;
 
 const LookbackButton = styled(Button)`
   /* Align LookbackButton height with the TextField height. */
