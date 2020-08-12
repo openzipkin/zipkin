@@ -38,8 +38,8 @@ const useStyles = makeStyles((theme: Theme) =>
     root: {
       position: 'absolute',
       top: 35,
-      left: 0,
-      height: 360,
+      right: 0,
+      height: 420,
       width: 500,
       zIndex: theme.zIndex.modal,
     },
@@ -223,7 +223,7 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
                 'data-testid': 'millis-input',
               }}
             />
-            <Box display="flex" justifyContent="flex-end">
+            <Box display="flex" justifyContent="flex-end" mt={1}>
               <Button
                 variant="contained"
                 color="secondary"

@@ -23,7 +23,11 @@ import {
   CircularProgress,
   Paper,
   TextField,
+  Divider,
 } from '@material-ui/core';
+import ExpandLessIcon from '@material-ui/icons/ExpandLess';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import SettingsIcon from '@material-ui/icons/Settings';
 import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -410,6 +414,12 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     setIsShowingLookbackMenu(false);
   }, []);
 
+  const [isOpeningSettings, setIsOpeningSettings] = useState(false);
+
+  const handleSettingsButtonClick = useCallback(() => {
+    setIsOpeningSettings((prev) => !prev);
+  }, []);
+
   let content: JSX.Element | undefined;
 
   if (isLoadingTraces) {
@@ -441,45 +451,21 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     );
   } else {
     content = (
-      <TracesPaper elevation={3}>
+      <Paper elevation={3}>
         <TracesTab />
-      </TracesPaper>
+      </Paper>
     );
   }
 
   return (
-    <Box width="100%">
-      <Box bgcolor="background.paper" boxShadow={3} pr={6} pl={6} pt={3} pb={3}>
-        <Box display="flex" mb={1.25}>
-          <Box mr={1} position="relative">
-            <LookbackButton
-              variant="outlined"
-              onClick={toggleLookbackMenu}
-              startIcon={<FontAwesomeIcon icon={faHistory} />}
-            >
-              {lookbackDisplay}
-            </LookbackButton>
-            {isShowingLookbackMenu && (
-              <LookbackMenu
-                close={closeLookbackMenu}
-                onChange={setTempLookback}
-                lookback={tempLookback}
-              />
-            )}
-          </Box>
-          <TextField
-            label="Limit"
-            type="number"
-            variant="outlined"
-            value={tempLimit}
-            onChange={handleLimitChange}
-            size="small"
-            inputProps={{
-              'data-testid': 'query-limit',
-            }}
-          />
-        </Box>
-        <Box display="flex">
+    <Box
+      width="100%"
+      height="calc(100vh - 64px)"
+      display="flex"
+      flexDirection="column"
+    >
+      <Box bgcolor="background.paper" boxShadow={3} pt={3} pb={3} zIndex={1000}>
+        <Box display="flex" pl={6} mr={6}>
           <Box flexGrow={1} mr={1}>
             <SearchBar
               criteria={tempCriteria}
@@ -487,35 +473,96 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
               searchTraces={searchTraces}
             />
           </Box>
-          <SearchButton
-            variant="contained"
-            color="primary"
-            onClick={searchTraces}
-            startIcon={<FontAwesomeIcon icon={faSync} />}
+          <SearchButton onClick={searchTraces}>Run Query</SearchButton>
+          <SettingsButton
+            onClick={handleSettingsButtonClick}
+            isOpening={isOpeningSettings}
           >
-            Run Query
-          </SearchButton>
+            <SettingsIcon />
+          </SettingsButton>
         </Box>
+        {isOpeningSettings ? (
+          <>
+            <Box mt={1.5} mb={1.5}>
+              <Divider />
+            </Box>
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="flex-end"
+              pl={6}
+              mr={6}
+            >
+              <Box mr={1} position="relative">
+                <LookbackButton
+                  onClick={toggleLookbackMenu}
+                  isShowingLookbackMenu={isShowingLookbackMenu}
+                >
+                  {lookbackDisplay}
+                </LookbackButton>
+                {isShowingLookbackMenu && (
+                  <LookbackMenu
+                    close={closeLookbackMenu}
+                    onChange={setTempLookback}
+                    lookback={tempLookback}
+                  />
+                )}
+              </Box>
+              <TextField
+                label="Limit"
+                type="number"
+                variant="outlined"
+                value={tempLimit}
+                onChange={handleLimitChange}
+                size="small"
+                inputProps={{
+                  'data-testid': 'query-limit',
+                }}
+              />
+            </Box>
+          </>
+        ) : null}
       </Box>
-      <Box p={4}>{content}</Box>
+      <Box p={4} flexGrow={1} overflow="auto">
+        {content}
+      </Box>
     </Box>
   );
 };
 
 export default DiscoverPageContent;
 
-const LookbackButton = styled(Button)`
+const LookbackButton = styled(Button).attrs<{ isShowingLookbackMenu: boolean }>(
+  ({ isShowingLookbackMenu }) => ({
+    variant: 'outlined',
+    startIcon: <FontAwesomeIcon icon={faHistory} />,
+    endIcon: isShowingLookbackMenu ? <ExpandLessIcon /> : <ExpandMoreIcon />,
+  }),
+)<{ isShowingLookbackMenu: boolean }>`
   /* Align LookbackButton height with the TextField height. */
   padding-top: 7.5px;
   padding-bottom: 7.5px;
 `;
 
-const SearchButton = styled(Button)`
+const SearchButton = styled(Button).attrs({
+  variant: 'contained',
+  color: 'primary',
+  startIcon: <FontAwesomeIcon icon={faSync} />,
+})`
+  flex-shrink: 0;
   height: 60px;
   min-width: 60px;
   color: ${({ theme }) => theme.palette.common.white};
 `;
 
-const TracesPaper = styled(Paper)`
-  height: 100%;
+const SettingsButton = styled(Button).attrs<{ isOpening: boolean }>(
+  ({ isOpening }) => ({
+    variant: 'outlined',
+    endIcon: isOpening ? <ExpandLessIcon /> : <ExpandMoreIcon />,
+  }),
+)<{ isOpening: boolean }>`
+  flex-shrink: 0;
+  height: 60px;
+  min-width: 0px;
+  margin-left: ${({ theme }) => theme.spacing(1)}px;
 `;
