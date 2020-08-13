@@ -22,7 +22,7 @@ import { ThunkDispatch } from 'redux-thunk';
 
 import DiscoverPageContent from './DiscoverPageContent';
 import { useUiConfig } from '../UiConfig';
-import { fetchAutocompleteKeys } from '../../actions/autocomplete-keys-action';
+import { loadAutocompleteKeys } from '../../slices/autocompleteKeysSlice';
 import { RootState } from '../../store';
 
 interface DiscoverPageImplProps {
@@ -87,7 +87,7 @@ const mapDispatchToProps = (
   dispatch: ThunkDispatch<RootState, undefined, any>,
 ) => ({
   loadAutocompleteKeys: () => {
-    dispatch(fetchAutocompleteKeys());
+    dispatch(loadAutocompleteKeys());
   },
 });
 
