@@ -55,7 +55,7 @@ describe('<Layout />', () => {
         <span>Test</span>
       </Layout>,
     );
-    expect(queryByText('Dependencies Page')).toBeInTheDocument();
+    expect(queryByText('Dependencies')).toBeInTheDocument();
   });
 
   it('does not render Dependencies Page when disabled', () => {
@@ -73,6 +73,6 @@ describe('<Layout />', () => {
         },
       },
     );
-    expect(queryByTitle('Dependencies Page')).not.toBeInTheDocument();
+    expect(queryByTitle('Dependencies')).not.toBeInTheDocument();
   });
 });
