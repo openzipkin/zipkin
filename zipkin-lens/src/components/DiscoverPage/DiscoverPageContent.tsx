@@ -23,7 +23,7 @@ import {
   CircularProgress,
   Paper,
   TextField,
-  Divider,
+  Container,
 } from '@material-ui/core';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
@@ -465,34 +465,30 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
       flexDirection="column"
     >
       <Box bgcolor="background.paper" boxShadow={3} pt={3} pb={3} zIndex={1000}>
-        <Box display="flex" pl={6} mr={6}>
-          <Box flexGrow={1} mr={1}>
-            <SearchBar
-              criteria={tempCriteria}
-              onChange={setTempCriteria}
-              searchTraces={searchTraces}
-            />
-          </Box>
-          <SearchButton onClick={searchTraces}>Run Query</SearchButton>
-          <SettingsButton
-            onClick={handleSettingsButtonClick}
-            isOpening={isOpeningSettings}
-            data-testid="settings-button"
-          >
-            <SettingsIcon />
-          </SettingsButton>
-        </Box>
-        {isOpeningSettings ? (
-          <>
-            <Box mt={1.5} mb={1.5}>
-              <Divider />
+        <Container>
+          <Box display="flex">
+            <Box flexGrow={1} mr={1}>
+              <SearchBar
+                criteria={tempCriteria}
+                onChange={setTempCriteria}
+                searchTraces={searchTraces}
+              />
             </Box>
+            <SearchButton onClick={searchTraces}>Run Query</SearchButton>
+            <SettingsButton
+              onClick={handleSettingsButtonClick}
+              isOpening={isOpeningSettings}
+              data-testid="settings-button"
+            >
+              <SettingsIcon />
+            </SettingsButton>
+          </Box>
+          {isOpeningSettings ? (
             <Box
               display="flex"
               alignItems="center"
               justifyContent="flex-end"
-              pl={6}
-              mr={6}
+              mt={1.75}
             >
               <Box mr={1} position="relative">
                 <LookbackButton
@@ -521,11 +517,11 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
                 }}
               />
             </Box>
-          </>
-        ) : null}
+          ) : null}
+        </Container>
       </Box>
-      <Box p={4} flexGrow={1} overflow="auto">
-        {content}
+      <Box flexGrow={1} overflow="auto" pt={3} pb={3}>
+        <Container>{content}</Container>
       </Box>
     </Box>
   );
