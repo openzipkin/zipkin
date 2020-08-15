@@ -15,7 +15,6 @@ import {
   faProjectDiagram,
   faSearch,
   faQuestionCircle,
-  faHome,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { t } from '@lingui/macro';
@@ -103,11 +102,6 @@ const Layout = ({ children }) => {
                     </IconButton>
                   </Tooltip>
                 )}
-                <Tooltip title={i18n._(t`Zipkin Home`)}>
-                  <IconButton href="https://zipkin.io/">
-                    <FontAwesomeIcon icon={faHome} />
-                  </IconButton>
-                </Tooltip>
               </Box>
             </ThemeProvider>
           </Box>
