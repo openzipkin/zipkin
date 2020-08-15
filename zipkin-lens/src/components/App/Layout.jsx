@@ -76,13 +76,13 @@ const Layout = ({ children }) => {
               </Title>
               <Box display="flex" ml={3}>
                 <HeaderMenuItem
-                  title={i18n._(t`Discover Page`)}
+                  title={i18n._(t`Find a trace`)}
                   path="/"
                   icon={faSearch}
                 />
                 {config.dependency.enabled && (
                   <HeaderMenuItem
-                    title={i18n._(t`Dependencies Page`)}
+                    title={i18n._(t`Dependencies`)}
                     path="/dependency"
                     icon={faProjectDiagram}
                   />
