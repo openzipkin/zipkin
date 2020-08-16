@@ -60,7 +60,7 @@
     <wire.version>3.0.2</wire.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
-    <cassandra-driver-core.version>3.10.0</cassandra-driver-core.version>
+    <cassandra-driver-core.version>3.10.1</cassandra-driver-core.version>
     <jooq.version>3.13.4</jooq.version>
     <micrometer.version>1.5.4</micrometer.version>
     <spring-boot.version>2.3.3.RELEASE</spring-boot.version>
@@ -70,7 +70,6 @@
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
     <mariadb-java-client.version>2.6.2</mariadb-java-client.version>
-    <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
     <HikariCP.version>3.4.5</HikariCP.version>
     <slf4j.version>1.7.30</slf4j.version>
 
@@ -82,7 +81,7 @@
     <awaitility.version>4.0.3</awaitility.version>
     <hamcrest.version>1.3</hamcrest.version>
     <testcontainers.version>1.14.3</testcontainers.version>
-    <okhttp.version>4.8.0</okhttp.version>
+    <okhttp.version>4.8.1</okhttp.version>
 
     <auto-value.version>1.7.4</auto-value.version>
     <animal-sniffer-maven-plugin.version>1.19</animal-sniffer-maven-plugin.version>
@@ -100,7 +99,7 @@
     <maven-bundle-plugin.version>5.1.1</maven-bundle-plugin.version>
     <!-- TODO: cleanup any redundant ignores now also in the 4.0 release (once final) -->
     <license-maven-plugin.version>4.0.rc1</license-maven-plugin.version>
-    <git-commit-id.version>4.0.1</git-commit-id.version>
+    <git-commit-id.version>4.0.2</git-commit-id.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
@@ -259,7 +258,7 @@
       <dependency>
         <groupId>com.esotericsoftware</groupId>
         <artifactId>kryo</artifactId>
-        <version>5.0.0-RC7</version>
+        <version>5.0.0-RC9</version>
       </dependency>
 
       <!-- Internal classes used in SpanBytesDecoder.JSON_V[12] -->

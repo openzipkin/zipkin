@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,29 +19,14 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.google.auto.value.AutoValue;
+import java.util.Map.Entry;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_REMOTE_SERVICES;
 
 final class InsertServiceRemoteService extends ResultSetFutureCall<Void> {
-
-  @AutoValue
-  abstract static class Input {
-    static Input create(String service, String remote_service) {
-      return new AutoValue_InsertServiceRemoteService_Input(service, remote_service);
-    }
-
-    abstract String service();
-
-    abstract String remoteService();
-
-    Input() {
-    }
-  }
-
-  static class Factory extends DeduplicatingVoidCallFactory<Input> {
+  static class Factory extends DeduplicatingVoidCallFactory<Entry<String, String>> {
     final Session session;
     final PreparedStatement preparedStatement;
 
@@ -54,27 +39,23 @@ final class InsertServiceRemoteService extends ResultSetFutureCall<Void> {
       preparedStatement = session.prepare(insertQuery);
     }
 
-    Input newInput(String service, String remote_service) {
-      return Input.create(service, remote_service);
-    }
-
-    @Override protected InsertServiceRemoteService newCall(Input input) {
+    @Override protected InsertServiceRemoteService newCall(Entry<String, String> input) {
       return new InsertServiceRemoteService(this, input);
     }
   }
 
   final Factory factory;
-  final Input input;
+  final Entry<String, String> input;
 
-  InsertServiceRemoteService(Factory factory, Input input) {
+  InsertServiceRemoteService(Factory factory, Entry<String, String> input) {
     this.factory = factory;
     this.input = input;
   }
 
   @Override protected ResultSetFuture newFuture() {
     return factory.session.executeAsync(factory.preparedStatement.bind()
-      .setString("service", input.service())
-      .setString("remote_service", input.remoteService()));
+      .setString("service", input.getKey())
+      .setString("remote_service", input.getValue()));
   }
 
   @Override public Void map(ResultSet input) {

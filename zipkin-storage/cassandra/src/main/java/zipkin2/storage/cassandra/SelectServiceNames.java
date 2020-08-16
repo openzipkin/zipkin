@@ -13,6 +13,7 @@
  */
 package zipkin2.storage.cassandra;
 
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
@@ -26,24 +27,27 @@ import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_SPANS;
 final class SelectServiceNames extends ResultSetFutureCall<ResultSet> {
   static class Factory {
     final Session session;
+    final PreparedStatement preparedStatement;
 
     Factory(Session session) {
       this.session = session;
+      this.preparedStatement =
+        session.prepare("SELECT DISTINCT service FROM " + TABLE_SERVICE_SPANS);
     }
 
     Call<List<String>> create() {
-      return new SelectServiceNames(session).flatMap(new DistinctSortedStrings("service"));
+      return new SelectServiceNames(this).flatMap(new DistinctSortedStrings("service"));
     }
   }
 
-  final Session session;
+  final Factory factory;
 
-  SelectServiceNames(Session session) {
-    this.session = session;
+  SelectServiceNames(Factory factory) {
+    this.factory = factory;
   }
 
   @Override protected ResultSetFuture newFuture() {
-    return session.executeAsync("SELECT DISTINCT service FROM " + TABLE_SERVICE_SPANS);
+    return factory.session.executeAsync(factory.preparedStatement.bind());
   }
 
   @Override public ResultSet map(ResultSet input) {
@@ -55,6 +59,6 @@ final class SelectServiceNames extends ResultSetFutureCall<ResultSet> {
   }
 
   @Override public SelectServiceNames clone() {
-    return new SelectServiceNames(session);
+    return new SelectServiceNames(factory);
   }
 }

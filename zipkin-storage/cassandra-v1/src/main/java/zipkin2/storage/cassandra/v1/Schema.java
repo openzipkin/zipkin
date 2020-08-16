@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import static zipkin2.storage.cassandra.internal.Resources.resourceToString;
 import static zipkin2.storage.cassandra.v1.Tables.AUTOCOMPLETE_TAGS;
 import static zipkin2.storage.cassandra.v1.Tables.REMOTE_SERVICE_NAMES;
+import static zipkin2.storage.cassandra.v1.Tables.TRACES;
 
 final class Schema {
   private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
@@ -45,7 +46,7 @@ final class Schema {
       LOG.warn("running with RF=1, this is not suitable for production. Optimal is 3+");
     }
     String compactionClass =
-      keyspaceMetadata.getTable("traces").getOptions().getCompaction().get("class");
+      keyspaceMetadata.getTable(TRACES).getOptions().getCompaction().get("class");
     boolean hasDefaultTtl = hasUpgrade1_defaultTtl(keyspaceMetadata);
     if (!hasDefaultTtl) {
       LOG.warn(
@@ -104,7 +105,7 @@ final class Schema {
 
   static void ensureExists(String keyspace, Session session) {
     KeyspaceMetadata keyspaceMetadata = session.getCluster().getMetadata().getKeyspace(keyspace);
-    if (keyspaceMetadata == null || keyspaceMetadata.getTable("traces") == null) {
+    if (keyspaceMetadata == null || keyspaceMetadata.getTable(TRACES) == null) {
       LOG.info("Installing schema {}", SCHEMA);
       applyCqlFile(keyspace, session, SCHEMA);
       // refresh metadata since we've installed the schema
@@ -128,7 +129,7 @@ final class Schema {
     // TODO: we need some approach to forward-check compatibility as well.
     //  backward: this code knows the current schema is too old.
     //  forward:  this code knows the current schema is too new.
-    return keyspaceMetadata.getTable("traces").getOptions().getDefaultTimeToLive() > 0;
+    return keyspaceMetadata.getTable(TRACES).getOptions().getDefaultTimeToLive() > 0;
   }
 
   static boolean hasUpgrade2_autocompleteTags(KeyspaceMetadata keyspaceMetadata) {
