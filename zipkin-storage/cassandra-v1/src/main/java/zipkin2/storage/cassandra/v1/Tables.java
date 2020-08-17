@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,11 +14,17 @@
 package zipkin2.storage.cassandra.v1;
 
 import zipkin2.Span;
+import zipkin2.internal.V1ThriftSpanWriter;
 import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.ServiceAndSpanNames;
 
 final class Tables {
+  /**
+   * This table includes {@linkplain V1ThriftSpanWriter thrift-encoded} spans, supporting
+   * {@link SelectFromTraces}.
+   */
+  static final String TRACES = "traces";
 
   /**
    * This index supports {@link ServiceAndSpanNames#getServiceNames()}}.

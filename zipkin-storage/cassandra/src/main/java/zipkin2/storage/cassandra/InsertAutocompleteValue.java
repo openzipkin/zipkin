@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,7 +19,7 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import java.util.Map;
+import java.util.Map.Entry;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
@@ -27,8 +27,7 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import static zipkin2.storage.cassandra.Schema.TABLE_AUTOCOMPLETE_TAGS;
 
 final class InsertAutocompleteValue extends ResultSetFutureCall<Void> {
-
-  static class Factory extends DeduplicatingVoidCallFactory<Map.Entry<String, String>> {
+  static class Factory extends DeduplicatingVoidCallFactory<Entry<String, String>> {
     final Session session;
     final PreparedStatement preparedStatement;
 
@@ -41,15 +40,15 @@ final class InsertAutocompleteValue extends ResultSetFutureCall<Void> {
       preparedStatement = session.prepare(insertQuery);
     }
 
-    @Override protected Call<Void> newCall(Map.Entry<String, String> input) {
+    @Override protected Call<Void> newCall(Entry<String, String> input) {
       return new InsertAutocompleteValue(this, input);
     }
   }
 
   final Factory factory;
-  final Map.Entry<String, String> input;
+  final Entry<String, String> input;
 
-  InsertAutocompleteValue(Factory factory, Map.Entry<String, String> input) {
+  InsertAutocompleteValue(Factory factory, Entry<String, String> input) {
     this.factory = factory;
     this.input = input;
   }

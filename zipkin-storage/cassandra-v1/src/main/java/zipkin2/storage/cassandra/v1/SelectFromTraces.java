@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -42,6 +42,8 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V1SpanConverter;
 
+import static zipkin2.storage.cassandra.v1.Tables.TRACES;
+
 final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
 
   static class Factory {
@@ -59,7 +61,7 @@ final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
       this.preparedStatement =
         session.prepare(
           QueryBuilder.select("trace_id", "span")
-            .from("traces")
+            .from(TRACES)
             .where(QueryBuilder.in("trace_id", QueryBuilder.bindMarker("trace_id")))
             .limit(QueryBuilder.bindMarker("limit_")));
       this.maxTraceCols = maxTraceCols;

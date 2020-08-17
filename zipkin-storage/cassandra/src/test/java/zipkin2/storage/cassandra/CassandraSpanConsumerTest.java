@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -26,6 +26,7 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.util.introspection.PropertyOrFieldSupport.EXTRACTION;
 import static org.mockito.Mockito.mock;
@@ -103,8 +104,8 @@ public class CassandraSpanConsumerTest {
 
     assertEnclosedCalls(call)
       .filteredOn(c -> c instanceof DeduplicatingVoidCallFactory.InvalidatingVoidCall)
-      .extracting("input.service", "input.span")
-      .containsExactly(tuple(FRONTEND.serviceName(), span.name()));
+      .extracting("input")
+      .containsExactly(entry(FRONTEND.serviceName(), span.name()));
   }
 
   @Test
@@ -117,8 +118,8 @@ public class CassandraSpanConsumerTest {
       .filteredOn(c -> c instanceof DeduplicatingVoidCallFactory.InvalidatingVoidCall)
       .extracting("input")
       .containsExactly(
-        InsertServiceSpan.Input.create(FRONTEND.serviceName(), span.name()),
-        InsertServiceRemoteService.Input.create(FRONTEND.serviceName(), BACKEND.serviceName())
+        entry(FRONTEND.serviceName(), span.name()),
+        entry(FRONTEND.serviceName(), BACKEND.serviceName())
       );
   }
 
