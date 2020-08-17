@@ -104,8 +104,8 @@ public class CassandraSpanConsumerTest {
 
     assertEnclosedCalls(call)
       .filteredOn(c -> c instanceof DeduplicatingVoidCallFactory.InvalidatingVoidCall)
-      .extracting("input.service", "input.span")
-      .containsExactly(tuple(FRONTEND.serviceName(), span.name()));
+      .extracting("input")
+      .containsExactly(entry(FRONTEND.serviceName(), span.name()));
   }
 
   @Test
