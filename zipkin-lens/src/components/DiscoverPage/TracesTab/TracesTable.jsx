@@ -13,7 +13,6 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { AutoSizer } from 'react-virtualized';
 import Box from '@material-ui/core/Box';
 
 import TracesTableHead from './TracesTableHead';
@@ -38,20 +37,14 @@ const TracesTable = ({
       sortingMethod={sortingMethod}
       onSortingMethodChange={onSortingMethodChange}
     />
-    <Box height="100%">
-      <AutoSizer>
-        {({ height, width }) => (
-          <Box width={width} height={height} overflow="auto">
-            {traceSummaries.map((traceSummary) => (
-              <TracesTableRow
-                key={traceSummary.traceId}
-                traceSummary={traceSummary}
-                onAddFilter={onAddFilter}
-              />
-            ))}
-          </Box>
-        )}
-      </AutoSizer>
+    <Box width="100%" overflow="auto">
+      {traceSummaries.map((traceSummary) => (
+        <TracesTableRow
+          key={traceSummary.traceId}
+          traceSummary={traceSummary}
+          onAddFilter={onAddFilter}
+        />
+      ))}
     </Box>
   </>
 );

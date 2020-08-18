@@ -11,18 +11,13 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { faGlobe } from '@fortawesome/free-solid-svg-icons';
-import { t } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
-import Popover from '@material-ui/core/Popover';
-import React, { useCallback, useRef, useState } from 'react';
+import { Button, Menu, MenuItem } from '@material-ui/core';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import TranslateIcon from '@material-ui/icons/Translate';
+import React, { useCallback } from 'react';
 
 import { setLocale } from '../../util/locale';
-
-import SidebarMenu from './SidebarMenu';
 
 // We want to display all the languages in native language, not current locale, so hard-code the
 // strings here instead of using internationalization.
@@ -44,24 +39,31 @@ export const LANGUAGES = [
 ];
 
 const LanguageSelector = () => {
-  const changeLanguageLink = useRef(null);
   const { i18n } = useLingui();
 
-  const [languageSelectorOpen, setLanguageSelectorOpen] = useState(false);
-  const closeLanguageSelector = useCallback(() => {
-    setLanguageSelectorOpen(false);
-  }, []);
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
-  const onChangeLanguageClick = useCallback((e) => {
-    e.preventDefault();
-    setLanguageSelectorOpen(true);
+  const handleButtonClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      setAnchorEl(event.currentTarget);
+    },
+    [],
+  );
+
+  const handleMenuClose = useCallback(() => {
+    setAnchorEl(null);
   }, []);
 
   const currentLocale = i18n.locale;
 
-  const onLanguageClick = useCallback(
-    (e) => {
-      const { locale } = e.currentTarget.dataset;
+  const handleMenuItemClick = useCallback(
+    (event: React.MouseEvent<HTMLLIElement>) => {
+      setAnchorEl(null);
+      const { locale } = event.currentTarget.dataset;
+      if (!locale) {
+        return;
+      }
       if (locale === currentLocale) {
         return;
       }
@@ -73,35 +75,31 @@ const LanguageSelector = () => {
 
   return (
     <>
-      <SidebarMenu
-        title={i18n._(t`Change Language`)}
-        path=""
-        icon={faGlobe}
-        ref={changeLanguageLink}
-        onClick={onChangeLanguageClick}
+      <Button
+        onClick={handleButtonClick}
+        startIcon={<TranslateIcon />}
+        endIcon={<ExpandMoreIcon />}
         data-testid="change-language-button"
-      />
-      <Popover
-        anchorEl={changeLanguageLink.current}
-        open={languageSelectorOpen}
-        onClose={closeLanguageSelector}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <List data-testid="language-list">
-          {LANGUAGES.map((language) => (
-            <ListItem
-              button
-              key={language.locale}
-              selected={currentLocale === language.locale}
-              onClick={onLanguageClick}
-              data-locale={language.locale}
-              data-testid={`language-list-item-${language.locale}`}
-            >
-              <ListItemText primary={language.name} />
-            </ListItem>
-          ))}
-        </List>
-      </Popover>
+        {LANGUAGES.find((lang) => lang.locale === currentLocale)?.name}
+      </Button>
+      <Menu
+        anchorEl={anchorEl}
+        keepMounted
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        {LANGUAGES.map((lang) => (
+          <MenuItem
+            key={lang.locale}
+            onClick={handleMenuItemClick}
+            data-locale={lang.locale}
+            data-testid={`language-list-item-${lang.locale}`}
+          >
+            {lang.name}
+          </MenuItem>
+        ))}
+      </Menu>
     </>
   );
 };

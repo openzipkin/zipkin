@@ -11,125 +11,104 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import {
+  faProjectDiagram,
+  faSearch,
+  faQuestionCircle,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { t } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
+import {
+  AppBar as MuiAppBar,
+  Box,
+  CssBaseline,
+  ThemeProvider,
+  Toolbar as MuiToolbar,
+  Typography,
+  IconButton as MuiIconButton,
+  Tooltip,
+} from '@material-ui/core';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {
-  faQuestionCircle,
-  faSearch,
-  faProjectDiagram,
-  faHome,
-} from '@fortawesome/free-solid-svg-icons';
-import Box from '@material-ui/core/Box';
-import Drawer from '@material-ui/core/Drawer';
-import CssBaseline from '@material-ui/core/CssBaseline';
-import List from '@material-ui/core/List';
-import { makeStyles } from '@material-ui/styles';
-
-import { useUiConfig } from '../UiConfig';
+import styled from 'styled-components';
 
 import LanguageSelector from './LanguageSelector';
-import SidebarMenu from './SidebarMenu';
-
+import { useUiConfig } from '../UiConfig';
+import TraceIdSearchInput from '../Common/TraceIdSearchInput';
+import TraceJsonUploader from '../Common/TraceJsonUploader';
+import { darkTheme } from '../../colors';
 import logoSrc from '../../img/zipkin-logo.png';
-
-const drawerWidth = '3.2rem';
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    display: 'flex',
-  },
-  drawer: {
-    width: drawerWidth,
-    flexShring: 0,
-  },
-  drawerPaper: {
-    width: drawerWidth,
-    backgroundColor: theme.palette.grey[900],
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-  },
-  zipkinLogoWrapper: {
-    display: 'flex',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  zipkinLogo: {
-    marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(0.5),
-    width: '2.2rem',
-    height: '2.2rem',
-    '& *': {
-      fill: theme.palette.common.white,
-    },
-  },
-  childrenWrapper: {
-    width: '100%',
-    height: '100vh',
-    overflow: 'auto',
-  },
-}));
+import HeaderMenuItem from './HeaderMenuItem';
 
 const propTypes = {
   children: PropTypes.arrayOf(PropTypes.element).isRequired,
 };
 
 const Layout = ({ children }) => {
-  const classes = useStyles();
   const { i18n } = useLingui();
   const config = useUiConfig();
 
   return (
-    <Box className={classes.root}>
+    <Box display="flex">
       <CssBaseline />
-      <Drawer
-        open
-        variant="permanent"
-        className={classes.drawer}
-        classes={{ paper: classes.drawerPaper }}
-      >
-        <Box>
-          <Box className={classes.zipkinLogoWrapper}>
-            <img
-              src={logoSrc}
-              alt={i18n._(t`Zipkin`)}
-              className={classes.zipkinLogo}
-            />
+      <AppBar>
+        <Toolbar>
+          <Box
+            width="100%"
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Box display="flex" alignItems="center">
+              <Box
+                width={64}
+                height={64}
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+              >
+                <Logo alt={i18n._(t`Zipkin`)} />
+              </Box>
+              <Title>
+                <strong>Zipkin</strong>
+              </Title>
+              <Box display="flex" ml={3}>
+                <HeaderMenuItem
+                  title={i18n._(t`Find a trace`)}
+                  path="/"
+                  icon={faSearch}
+                />
+                {config.dependency.enabled && (
+                  <HeaderMenuItem
+                    title={i18n._(t`Dependencies`)}
+                    path="/dependency"
+                    icon={faProjectDiagram}
+                  />
+                )}
+              </Box>
+            </Box>
+            <ThemeProvider theme={darkTheme}>
+              <Box display="flex" alignItems="center">
+                <Box pr={2} color="inherit">
+                  <LanguageSelector />
+                </Box>
+                <TraceJsonUploader />
+                <TraceIdSearchInput />
+                {config.supportUrl && (
+                  <Tooltip title={i18n._(t`Support`)}>
+                    <IconButton href={config.supportUrl}>
+                      <FontAwesomeIcon icon={faQuestionCircle} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
+            </ThemeProvider>
           </Box>
-          <List>
-            <SidebarMenu
-              title={i18n._(t`Discover Page`)}
-              path="/"
-              icon={faSearch}
-            />
-            {config.dependency.enabled && (
-              <SidebarMenu
-                title={i18n._(t`Dependencies Page`)}
-                path="/dependency"
-                icon={faProjectDiagram}
-              />
-            )}
-          </List>
-        </Box>
-        <List>
-          {config.supportUrl && (
-            <SidebarMenu
-              title={i18n._(t`Support`)}
-              path={config.supportUrl}
-              icon={faQuestionCircle}
-            />
-          )}
-          <SidebarMenu
-            title={i18n._(t`Zipkin Home`)}
-            path="https://zipkin.io/"
-            icon={faHome}
-          />
-          <LanguageSelector />
-        </List>
-      </Drawer>
-      <Box component="main" className={classes.childrenWrapper}>
+        </Toolbar>
+      </AppBar>
+      <Box component="main" width="100%">
+        <ToolbarSpace />
         {children}
       </Box>
     </Box>
@@ -139,3 +118,37 @@ const Layout = ({ children }) => {
 Layout.propTypes = propTypes;
 
 export default Layout;
+
+const AppBar = styled(MuiAppBar).attrs({
+  position: 'fixed',
+})`
+  background-color: ${({ theme }) => theme.palette.grey[800]};
+  z-index: 1300;
+`;
+
+const Toolbar = styled(MuiToolbar)`
+  padding-left: 0;
+`;
+
+const Logo = styled.img.attrs({
+  src: logoSrc,
+})`
+  width: 42px;
+  height: 42px;
+`;
+
+const Title = styled(Typography).attrs({
+  variant: 'h5',
+})`
+  margin-left: ${({ theme }) => theme.spacing(2)}px;
+  margin-right: ${({ theme }) => theme.spacing(2)}px;
+`;
+
+const ToolbarSpace = styled.div`
+  min-height: 64px;
+`;
+
+const IconButton = styled(MuiIconButton)`
+  margin-right: ${({ theme }) => theme.spacing(2)}px;
+  margin-left: ${({ theme }) => theme.spacing(2)}px;
+`;

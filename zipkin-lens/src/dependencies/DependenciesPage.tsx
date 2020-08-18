@@ -12,7 +12,7 @@
  * the License.
  */
 
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faProjectDiagram } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { t, Trans } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
@@ -21,7 +21,6 @@ import {
   Button,
   CircularProgress,
   Theme,
-  Typography,
   createStyles,
   makeStyles,
 } from '@material-ui/core';
@@ -34,15 +33,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
 
 import DependenciesGraph from './DependenciesGraph';
-import ExplainBox from './ExplainBox';
 import { clearAlert, setAlert } from '../components/App/slice';
-import TraceJsonUploader from '../components/Common/TraceJsonUploader';
-import TraceIdSearchInput from '../components/Common/TraceIdSearchInput';
 import {
   clearDependencies,
   loadDependencies,
 } from '../slices/dependenciesSlice';
 import { RootState } from '../store';
+import ExplainBox from '../components/Common/ExplainBox';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -191,7 +188,9 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
     content = (
       <Box
         width="100%"
-        height="100%"
+        height="100vh"
+        top={0}
+        position="fixed"
         display="flex"
         justifyContent="center"
         alignItems="center"
@@ -204,46 +203,27 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
     content = <DependenciesGraph dependencies={dependencies} />;
   } else {
     content = (
-      <Box
-        width="100%"
-        height="100%"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        data-testid="explain-box"
-      >
-        <ExplainBox />
-      </Box>
+      <ExplainBox
+        icon={faProjectDiagram}
+        headerText={<Trans>Search Dependencies</Trans>}
+        text={
+          <Trans>
+            Please select the start and end time. Then, click the search button.
+          </Trans>
+        }
+      />
     );
   }
 
   return (
-    <Box width="100%" height="100vh" display="flex" flexDirection="column">
-      <Box boxShadow={3} zIndex={2}>
-        <Box
-          pl={3}
-          pr={3}
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <Typography variant="h5">
-            <Trans>Dependencies</Trans>
-          </Typography>
-          <Box pr={3} display="flex" alignItems="center">
-            <TraceJsonUploader />
-            <TraceIdSearchInput />
-          </Box>
-        </Box>
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          pt={0.75}
-          pb={0.75}
-          borderColor="divider"
-          borderTop={1}
-        >
+    <Box
+      width="100%"
+      height="calc(100vh - 64px)"
+      display="flex"
+      flexDirection="column"
+    >
+      <Box bgcolor="background.paper" boxShadow={3} p={3}>
+        <Box display="flex" justifyContent="center" alignItems="center">
           <KeyboardDateTimePicker
             label={i18n._(t`Start Time`)}
             inputVariant="outlined"
@@ -274,7 +254,9 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
           </Button>
         </Box>
       </Box>
-      <Box flexGrow={1}>{content}</Box>
+      <Box m={4} flexGrow={1}>
+        {content}
+      </Box>
     </Box>
   );
 };

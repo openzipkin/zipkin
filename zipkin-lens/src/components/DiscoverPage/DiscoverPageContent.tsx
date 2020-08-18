@@ -14,15 +14,20 @@
 
 /* eslint-disable no-shadow */
 
-import { faHistory, faSync } from '@fortawesome/free-solid-svg-icons';
+import { faHistory, faSync, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Trans } from '@lingui/macro';
 import {
   Box,
   Button,
   CircularProgress,
   Paper,
   TextField,
+  Container,
 } from '@material-ui/core';
+import ExpandLessIcon from '@material-ui/icons/ExpandLess';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import SettingsIcon from '@material-ui/icons/Settings';
 import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -30,31 +35,15 @@ import { useHistory, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
 import Criterion, { newCriterion } from './Criterion';
-import ExplainBox from './ExplainBox';
 import LookbackMenu from './LookbackMenu';
 import SearchBar from './SearchBar';
 import { Lookback, fixedLookbackMap, millisecondsToValue } from './lookback';
 import { useUiConfig } from '../UiConfig';
 import { clearTraces, loadTraces } from '../../actions/traces-action';
 import { RootState } from '../../store';
+import ExplainBox from '../Common/ExplainBox';
 
 const TracesTab = require('./TracesTab').default;
-
-const LookbackButton = styled(Button)`
-  /* Align LookbackButton height with the TextField height. */
-  padding-top: 7.5px;
-  padding-bottom: 7.5px;
-`;
-
-const SearchButton = styled(Button)`
-  height: 60px;
-  min-width: 60px;
-  color: ${({ theme }) => theme.palette.common.white};
-`;
-
-const TracesPaper = styled(Paper)`
-  height: 100%;
-`;
 
 interface DiscoverPageContentProps {
   autocompleteKeys: string[];
@@ -425,12 +414,21 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     setIsShowingLookbackMenu(false);
   }, []);
 
-  let content: JSX.Element;
+  const [isOpeningSettings, setIsOpeningSettings] = useState(false);
+
+  const handleSettingsButtonClick = useCallback(() => {
+    setIsOpeningSettings((prev) => !prev);
+  }, []);
+
+  let content: JSX.Element | undefined;
 
   if (isLoadingTraces) {
     content = (
       <Box
-        height="100%"
+        width="100%"
+        height="100vh"
+        top={0}
+        position="fixed"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -440,76 +438,128 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     );
   } else if (traces.length === 0) {
     content = (
-      <Box
-        height="100%"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <ExplainBox />
-      </Box>
+      <ExplainBox
+        icon={faSearch}
+        headerText={<Trans>Search Traces</Trans>}
+        text={
+          <Trans>
+            Please select criteria in the search bar. Then, click the search
+            button.
+          </Trans>
+        }
+      />
     );
   } else {
     content = (
-      <Box height="100%" pt={3} pb={3}>
-        <TracesPaper elevation={3}>
-          <TracesTab />
-        </TracesPaper>
-      </Box>
+      <Paper elevation={3}>
+        <TracesTab />
+      </Paper>
     );
   }
 
   return (
-    <Box pr={3} pl={3} flexGrow={1} display="flex" flexDirection="column">
-      <Box display="flex" mb={1.25}>
-        <Box mr={1} position="relative">
-          <LookbackButton
-            variant="outlined"
-            onClick={toggleLookbackMenu}
-            startIcon={<FontAwesomeIcon icon={faHistory} />}
-          >
-            {lookbackDisplay}
-          </LookbackButton>
-          {isShowingLookbackMenu && (
-            <LookbackMenu
-              close={closeLookbackMenu}
-              onChange={setTempLookback}
-              lookback={tempLookback}
-            />
-          )}
-        </Box>
-        <TextField
-          label="Limit"
-          type="number"
-          variant="outlined"
-          value={tempLimit}
-          onChange={handleLimitChange}
-          size="small"
-          inputProps={{
-            'data-testid': 'query-limit',
-          }}
-        />
+    <Box
+      width="100%"
+      height="calc(100vh - 64px)"
+      display="flex"
+      flexDirection="column"
+    >
+      <Box bgcolor="background.paper" boxShadow={3} pt={3} pb={3} zIndex={1000}>
+        <Container>
+          <Box display="flex">
+            <Box flexGrow={1} mr={1}>
+              <SearchBar
+                criteria={tempCriteria}
+                onChange={setTempCriteria}
+                searchTraces={searchTraces}
+              />
+            </Box>
+            <SearchButton onClick={searchTraces}>Run Query</SearchButton>
+            <SettingsButton
+              onClick={handleSettingsButtonClick}
+              isOpening={isOpeningSettings}
+              data-testid="settings-button"
+            >
+              <SettingsIcon />
+            </SettingsButton>
+          </Box>
+          {isOpeningSettings ? (
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="flex-end"
+              mt={1.75}
+            >
+              <Box mr={1} position="relative">
+                <LookbackButton
+                  onClick={toggleLookbackMenu}
+                  isShowingLookbackMenu={isShowingLookbackMenu}
+                >
+                  {lookbackDisplay}
+                </LookbackButton>
+                {isShowingLookbackMenu && (
+                  <LookbackMenu
+                    close={closeLookbackMenu}
+                    onChange={setTempLookback}
+                    lookback={tempLookback}
+                  />
+                )}
+              </Box>
+              <TextField
+                label="Limit"
+                type="number"
+                variant="outlined"
+                value={tempLimit}
+                onChange={handleLimitChange}
+                size="small"
+                inputProps={{
+                  'data-testid': 'query-limit',
+                }}
+              />
+            </Box>
+          ) : null}
+        </Container>
       </Box>
-      <Box display="flex">
-        <Box flexGrow={1} mr={1}>
-          <SearchBar
-            criteria={tempCriteria}
-            onChange={setTempCriteria}
-            searchTraces={searchTraces}
-          />
-        </Box>
-        <SearchButton
-          variant="contained"
-          color="primary"
-          onClick={searchTraces}
-          startIcon={<FontAwesomeIcon icon={faSync} />}
-        >
-          Run Query
-        </SearchButton>
+      <Box flexGrow={1} overflow="auto" pt={3} pb={3}>
+        <Container>{content}</Container>
       </Box>
-      <Box flexGrow={1}>{content}</Box>
     </Box>
   );
 };
 
 export default DiscoverPageContent;
+
+const LookbackButton = styled(Button).attrs<{ isShowingLookbackMenu: boolean }>(
+  ({ isShowingLookbackMenu }) => ({
+    variant: 'outlined',
+    startIcon: <FontAwesomeIcon icon={faHistory} />,
+    endIcon: isShowingLookbackMenu ? <ExpandLessIcon /> : <ExpandMoreIcon />,
+  }),
+)<{ isShowingLookbackMenu: boolean }>`
+  /* Align LookbackButton height with the TextField height. */
+  padding-top: 7.5px;
+  padding-bottom: 7.5px;
+`;
+
+const SearchButton = styled(Button).attrs({
+  variant: 'contained',
+  color: 'primary',
+  startIcon: <FontAwesomeIcon icon={faSync} />,
+})`
+  flex-shrink: 0;
+  height: 60px;
+  min-width: 60px;
+  color: ${({ theme }) => theme.palette.common.white};
+`;
+
+const SettingsButton = styled(Button).attrs<{ isOpening: boolean }>(
+  ({ isOpening }) => ({
+    variant: 'outlined',
+    endIcon: isOpening ? <ExpandLessIcon /> : <ExpandMoreIcon />,
+  }),
+)<{ isOpening: boolean }>`
+  flex-shrink: 0;
+  height: 60px;
+  min-width: 0px;
+  margin-left: ${({ theme }) => theme.spacing(1)}px;
+`;

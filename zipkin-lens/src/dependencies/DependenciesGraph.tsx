@@ -236,12 +236,7 @@ const DependenciesGraph: React.FC<DependenciesGraphProps> = ({
   );
 
   return (
-    <Box
-      width="100%"
-      height="100%"
-      bgcolor="background.paper"
-      data-testid="dependencies-graph"
-    >
+    <Box width="100%" height="100%" data-testid="dependencies-graph">
       <Grid container className={classes.containerGrid}>
         <Grid
           item
@@ -254,7 +249,6 @@ const DependenciesGraph: React.FC<DependenciesGraphProps> = ({
                 width={width}
                 height={height}
                 position="relative"
-                bgcolor="background.paper"
                 className={classes.vizceralWrapper}
               >
                 <VizceralWrapper

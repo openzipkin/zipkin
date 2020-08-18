@@ -25,6 +25,16 @@ export const theme = createMuiTheme({
   },
 });
 
+export const darkTheme = createMuiTheme({
+  palette: {
+    type: 'dark',
+    primary: {
+      main: primaryColor,
+      contrastText: '#fff',
+    },
+  },
+});
+
 export const allColors = [
   colors.red,
   colors.pink,
