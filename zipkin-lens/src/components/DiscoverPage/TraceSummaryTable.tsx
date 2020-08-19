@@ -37,11 +37,11 @@ const TraceSummaryTable: React.FC<TraceSummaryTableProps> = ({
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell />
             <TableCell>Root Span</TableCell>
             <TableCell align="right">Start Time</TableCell>
             <TableCell align="right">Spans</TableCell>
             <TableCell align="right">Duration</TableCell>
+            <TableCell />
           </TableRow>
         </TableHead>
         <TableBody>

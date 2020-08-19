@@ -14,25 +14,61 @@
 
 import {
   Box,
+  Chip,
+  Collapse,
   IconButton,
   TableCell,
   TableRow,
   Typography,
-  Collapse,
-  Chip,
-  makeStyles,
-  createStyles,
   Theme,
+  createStyles,
+  makeStyles,
+  useTheme,
 } from '@material-ui/core';
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
 import moment from 'moment';
 import React, { useState, useCallback } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import styled from 'styled-components';
 
 import { selectColorByInfoClass, selectServiceColor } from '../../colors';
 import TraceSummary from '../../models/TraceSummary';
 import { formatDuration } from '../../util/timestamp';
+
+const renderCustomizedLabel = (props: any) => {
+  const { x, y, width, value } = props;
+  const radius = 10;
+
+  return (
+    <g>
+      <circle
+        cx={x + width / 2}
+        cy={y - radius}
+        r={radius}
+        fill={selectServiceColor(value)}
+      />
+      <text
+        x={x + width / 2}
+        y={y - radius}
+        fill="#fff"
+        textAnchor="middle"
+        dominantBaseline="middle"
+      >
+        {value[0].toUpperCase()}
+      </text>
+    </g>
+  );
+};
 
 interface TraceSummaryRowProps {
   traceSummary: TraceSummary;
@@ -48,20 +84,30 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
   const classes = useStyles();
+  const theme = useTheme();
   const [open, setOpen] = useState(false);
   const handleOpenButtonClick = useCallback(() => {
     setOpen((prev) => !prev);
   }, []);
   const startTime = moment(traceSummary.timestamp / 1000);
 
+  const labelFormatter = (serviceName: string | number) => {
+    if (typeof serviceName === 'number') {
+      return null;
+    }
+    return (
+      <ServiceNameChip
+        size="small"
+        serviceName={serviceName}
+        label={serviceName}
+        classes={{ label: classes.chipLabel }}
+      />
+    );
+  };
+
   return (
     <>
       <Root>
-        <TableCell>
-          <IconButton size="small" onClick={handleOpenButtonClick}>
-            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-          </IconButton>
-        </TableCell>
         <TableCell>
           <Box display="flex" alignItems="center">
             <ServiceNameChip
@@ -93,6 +139,11 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
             />
           </Box>
         </TableCell>
+        <TableCell>
+          <IconButton size="small" onClick={handleOpenButtonClick}>
+            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+          </IconButton>
+        </TableCell>
       </Root>
       <TableRow>
         <CollapsibleTableCell>
@@ -106,6 +157,34 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
                   {traceSummary.traceId}
                 </TraceIdTypography>
               </Box>
+            </Box>
+            <Box height={150}>
+              <ResponsiveContainer>
+                <BarChart
+                  data={traceSummary.serviceSummaries}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 20,
+                  }}
+                >
+                  <XAxis dataKey="serviceName" hide />
+                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <Tooltip labelFormatter={labelFormatter} />
+                  <Bar
+                    dataKey="spanCount"
+                    fill={theme.palette.primary.light}
+                    minPointSize={5}
+                  >
+                    <LabelList
+                      dataKey="serviceName"
+                      content={renderCustomizedLabel}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </Box>
           </Collapse>
         </CollapsibleTableCell>
