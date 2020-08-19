@@ -13,22 +13,14 @@
  */
 package zipkin2.collector.kafka;
 
-import com.github.charithe.kafka.EphemeralKafkaBroker;
-import com.github.charithe.kafka.KafkaJunitRule;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.curator.test.InstanceSpec;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -43,6 +35,15 @@ import zipkin2.storage.ForwardingStorageComponent;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
@@ -52,11 +53,8 @@ import static zipkin2.codec.SpanBytesEncoder.THRIFT;
 
 public class ITKafkaCollector {
 
-  static final int RANDOM_PORT = -1;
-  static final EphemeralKafkaBroker broker =
-      EphemeralKafkaBroker.create(RANDOM_PORT, RANDOM_PORT, buildBrokerConfig());
+  @ClassRule public static KafkaCollectorRule kafka = new KafkaCollectorRule();
 
-  @Rule public KafkaJunitRule kafka = new KafkaJunitRule(broker).waitForStartup();
   @Rule public Timeout globalTimeout = Timeout.seconds(30);
   @Rule public ExpectedException thrown = ExpectedException.none();
 
@@ -68,22 +66,18 @@ public class ITKafkaCollector {
   CopyOnWriteArraySet<Thread> threadsProvidingSpans = new CopyOnWriteArraySet<>();
   LinkedBlockingQueue<List<Span>> receivedSpans = new LinkedBlockingQueue<>();
   SpanConsumer consumer =
-      (spans) -> {
-        threadsProvidingSpans.add(Thread.currentThread());
-        receivedSpans.add(spans);
-        return Call.create(null);
-      };
+    (spans) -> {
+      threadsProvidingSpans.add(Thread.currentThread());
+      receivedSpans.add(spans);
+      return Call.create(null);
+    };
   private KafkaProducer<byte[], byte[]> producer;
-
-  private static Properties buildBrokerConfig() {
-    final Properties config = new Properties();
-    config.setProperty("num.partitions", "2");
-    return config;
-  }
 
   @Before
   public void setup() {
-    producer = kafka.helper().createByteProducer();
+    final Properties config = new Properties();
+    config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaCollectorRule.KAFKA_BOOTSTRAP_SERVERS);
+    producer = new KafkaProducer<>(config, new ByteArraySerializer(), new ByteArraySerializer());
   }
 
   @After
@@ -106,7 +100,7 @@ public class ITKafkaCollector {
   public void check_failsOnInvalidBootstrapServers() throws Exception {
 
     KafkaCollector.Builder builder =
-        builder("fail_invalid_bootstrap_servers").bootstrapServers("1.1.1.1");
+      builder("fail_invalid_bootstrap_servers").bootstrapServers("1.1.1.1");
 
     try (KafkaCollector collector = builder.build()) {
       collector.start();
@@ -114,8 +108,8 @@ public class ITKafkaCollector {
       Thread.sleep(1000L); // wait for crash
 
       assertThat(collector.check().error())
-          .isInstanceOf(KafkaException.class)
-          .hasMessage("Invalid url in bootstrap.servers: 1.1.1.1");
+        .isInstanceOf(KafkaException.class)
+        .hasMessage("Invalid url in bootstrap.servers: 1.1.1.1");
     }
   }
 
@@ -131,8 +125,7 @@ public class ITKafkaCollector {
   @Test
   public void reconnectsIndefinitelyAndReportsUnhealthyWhenKafkaUnavailable() throws Exception {
     KafkaCollector.Builder builder =
-        builder("fail_invalid_bootstrap_servers")
-            .bootstrapServers("localhost:" + InstanceSpec.getRandomPort());
+      builder("fail_invalid_bootstrap_servers").bootstrapServers("localhost:" + 9092);
 
     try (KafkaCollector collector = builder.build()) {
       collector.start();
@@ -186,7 +179,7 @@ public class ITKafkaCollector {
   }
 
   void messageWithMultipleSpans(KafkaCollector.Builder builder, SpanBytesEncoder encoder)
-      throws Exception {
+    throws Exception {
     byte[] message = encoder.encodeList(spans);
 
     produceSpans(message, builder.topic);
@@ -278,6 +271,7 @@ public class ITKafkaCollector {
   public void messagesDistributedAcrossMultipleThreadsSuccessfully() throws Exception {
     KafkaCollector.Builder builder = builder("multi_thread", 2);
 
+    kafka.prepareTopic(builder.topic, 2);
     warmUpTopic(builder.topic);
 
     final byte[] traceBytes = JSON_V2.encodeList(spans);
@@ -320,7 +314,7 @@ public class ITKafkaCollector {
 
       assertThat(collector).hasToString(
         String.format("KafkaCollector{bootstrapServers=%s, topic=%s}",
-          broker.getBrokerList().get(), "muah")
+          KafkaCollectorRule.KAFKA_BOOTSTRAP_SERVERS, "muah")
       );
     }
   }
@@ -347,12 +341,12 @@ public class ITKafkaCollector {
     while (consumersWithAssignments < collector.kafkaWorkers.streams) {
       Thread.sleep(10);
       consumersWithAssignments =
-          collector
-              .kafkaWorkers
-              .workers
-              .stream()
-              .filter(w -> !w.assignedPartitions.get().isEmpty())
-              .count();
+        collector
+          .kafkaWorkers
+          .workers
+          .stream()
+          .filter(w -> !w.assignedPartitions.get().isEmpty())
+          .count();
     }
   }
 
@@ -370,13 +364,12 @@ public class ITKafkaCollector {
   }
 
   KafkaCollector.Builder builder(String topic, int streams) {
-    return new KafkaCollector.Builder()
-        .metrics(metrics)
-        .bootstrapServers(broker.getBrokerList().get())
-        .topic(topic)
-        .groupId(topic + "_group")
-        .streams(streams)
-        .storage(buildStorage(consumer));
+    return kafka.newCollectorBuilder()
+      .metrics(metrics)
+      .topic(topic)
+      .groupId(topic + "_group")
+      .streams(streams)
+      .storage(buildStorage(consumer));
   }
 
   static StorageComponent buildStorage(final SpanConsumer spanConsumer) {
