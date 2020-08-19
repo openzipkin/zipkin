@@ -98,9 +98,14 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
         <CollapsibleTableCell>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box margin={1}>
-              <Typography variant="h6" gutterBottom>
-                Service Names
-              </Typography>
+              <Box display="flex" alignItems="center">
+                <Typography variant="caption" color="textSecondary">
+                  Trace ID:
+                </Typography>
+                <TraceIdTypography variant="caption">
+                  {traceSummary.traceId}
+                </TraceIdTypography>
+              </Box>
             </Box>
           </Collapse>
         </CollapsibleTableCell>
@@ -148,4 +153,10 @@ const CollapsibleTableCell = styled(TableCell).attrs({
 })`
   padding-bottom: 0;
   padding-top: 0;
+`;
+
+const TraceIdTypography = styled(Typography).attrs({
+  variant: 'caption',
+})`
+  margin-left: ${({ theme }) => theme.spacing(0.5)}px;
 `;
