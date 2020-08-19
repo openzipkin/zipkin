@@ -37,13 +37,12 @@ import styled from 'styled-components';
 import Criterion, { newCriterion } from './Criterion';
 import LookbackMenu from './LookbackMenu';
 import SearchBar from './SearchBar';
+import TraceSummaryTable from './TraceSummaryTable';
 import { Lookback, fixedLookbackMap, millisecondsToValue } from './lookback';
+import ExplainBox from '../Common/ExplainBox';
 import { useUiConfig } from '../UiConfig';
 import { clearTraces, loadTraces } from '../../actions/traces-action';
 import { RootState } from '../../store';
-import ExplainBox from '../Common/ExplainBox';
-
-const TracesTab = require('./TracesTab').default;
 
 interface DiscoverPageContentProps {
   autocompleteKeys: string[];
@@ -399,9 +398,14 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     }
   }, [setQueryParams, tempCriteria, tempLookback, tempLimit]);
 
-  const [traces, isLoadingTraces] = useSelector((state: RootState) => [
+  const [
+    traces,
+    isLoadingTraces,
+    traceSummaries,
+  ] = useSelector((state: RootState) => [
     state.traces.traces,
     state.traces.isLoading,
+    state.traces.traceSummaries,
   ]);
 
   const [isShowingLookbackMenu, setIsShowingLookbackMenu] = useState(false);
@@ -452,7 +456,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   } else {
     content = (
       <Paper elevation={3}>
-        <TracesTab />
+        <TraceSummaryTable traceSummaries={traceSummaries} />
       </Paper>
     );
   }
