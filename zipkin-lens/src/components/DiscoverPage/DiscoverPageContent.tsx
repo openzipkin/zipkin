@@ -25,6 +25,8 @@ import {
   Container,
   Paper,
   TextField,
+  Divider,
+  Collapse,
 } from '@material-ui/core';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
@@ -469,7 +471,13 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
       display="flex"
       flexDirection="column"
     >
-      <Box bgcolor="background.paper" boxShadow={3} pt={3} pb={3} zIndex={1000}>
+      <Box
+        bgcolor="background.paper"
+        boxShadow={3}
+        pt={2}
+        pb={1.5}
+        zIndex={1000}
+      >
         <Container>
           <Box display="flex">
             <Box flexGrow={1} mr={1}>
@@ -488,7 +496,12 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
               <SettingsIcon />
             </SettingsButton>
           </Box>
-          {isOpeningSettings ? (
+        </Container>
+        <Collapse in={isOpeningSettings}>
+          <Box mt={1.5} mb={1.5}>
+            <Divider />
+          </Box>
+          <Container>
             <Box
               display="flex"
               alignItems="center"
@@ -522,8 +535,8 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
                 }}
               />
             </Box>
-          ) : null}
-        </Container>
+          </Container>
+        </Collapse>
       </Box>
       <Box flexGrow={1} overflow="auto" pt={3} pb={3}>
         <Container>{content}</Container>
