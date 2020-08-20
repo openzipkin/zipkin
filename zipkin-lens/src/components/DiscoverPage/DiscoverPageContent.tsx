@@ -20,10 +20,11 @@ import { Trans } from '@lingui/macro';
 import {
   Box,
   Button,
+  ButtonProps,
   CircularProgress,
+  Container,
   Paper,
   TextField,
-  Container,
 } from '@material-ui/core';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
@@ -556,12 +557,15 @@ const SearchButton = styled(Button).attrs({
   color: ${({ theme }) => theme.palette.common.white};
 `;
 
-const SettingsButton = styled(Button).attrs<{ isOpening: boolean }>(
-  ({ isOpening }) => ({
-    variant: 'outlined',
-    endIcon: isOpening ? <ExpandLessIcon /> : <ExpandMoreIcon />,
-  }),
-)<{ isOpening: boolean }>`
+const SettingsButton = styled(
+  ({ isOpening, ...rest }: { isOpening: boolean } & ButtonProps) => (
+    <Button
+      variant="outlined"
+      endIcon={isOpening ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+      {...rest}
+    />
+  ),
+)`
   flex-shrink: 0;
   height: 60px;
   min-width: 0px;

@@ -15,20 +15,20 @@
 import {
   Box,
   Chip,
+  ChipProps,
   Collapse,
   IconButton,
   TableCell,
   TableRow,
   Typography,
-  Theme,
-  createStyles,
-  makeStyles,
   useTheme,
+  Button,
 } from '@material-ui/core';
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
 import moment from 'moment';
 import React, { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Bar,
   BarChart,
@@ -74,16 +74,7 @@ interface TraceSummaryRowProps {
   traceSummary: TraceSummary;
 }
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    chipLabel: {
-      ...theme.typography.body1,
-    },
-  }),
-);
-
 const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
-  const classes = useStyles();
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const handleOpenButtonClick = useCallback(() => {
@@ -95,28 +86,21 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
     if (typeof serviceName === 'number') {
       return null;
     }
-    return (
-      <ServiceNameChip
-        size="small"
-        serviceName={serviceName}
-        label={serviceName}
-        classes={{ label: classes.chipLabel }}
-      />
-    );
+    return <ServiceNameChip serviceName={serviceName} />;
   };
 
   return (
     <>
       <Root>
         <TableCell>
+          <IconButton size="small" onClick={handleOpenButtonClick}>
+            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+          </IconButton>
+        </TableCell>
+        <TableCell>
           <Box display="flex" alignItems="center">
-            <ServiceNameChip
-              size="small"
-              serviceName={traceSummary.root.serviceName}
-              label={traceSummary.root.serviceName}
-              classes={{ label: classes.chipLabel }}
-            />
-            <Typography variant="body1" color="textSecondary">
+            <ServiceNameChip serviceName={traceSummary.root.serviceName} />
+            <Typography variant="body2" color="textSecondary">
               {traceSummary.root.spanName}
             </Typography>
           </Box>
@@ -140,9 +124,14 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
           </Box>
         </TableCell>
         <TableCell>
-          <IconButton size="small" onClick={handleOpenButtonClick}>
-            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-          </IconButton>
+          <Button
+            variant="contained"
+            size="small"
+            component={Link}
+            to={`traces/${traceSummary.traceId}`}
+          >
+            Show
+          </Button>
         </TableCell>
       </Root>
       <TableRow>
@@ -150,12 +139,10 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box margin={1}>
               <Box display="flex" alignItems="center">
-                <Typography variant="caption" color="textSecondary">
+                <Typography variant="body1" color="textSecondary">
                   Trace ID:
                 </Typography>
-                <TraceIdTypography variant="caption">
-                  {traceSummary.traceId}
-                </TraceIdTypography>
+                <TraceIdTypography>{traceSummary.traceId}</TraceIdTypography>
               </Box>
             </Box>
             <Box height={150}>
@@ -201,9 +188,11 @@ const Root = styled(TableRow)`
   }
 `;
 
-const ServiceNameChip = styled(Chip).attrs<{ serviceName: string }>({
-  color: 'primary',
-})<{ serviceName: string }>`
+const ServiceNameChip = styled(
+  ({ serviceName, ...rest }: { serviceName: string } & ChipProps) => (
+    <Chip size="small" label={serviceName} color="primary" {...rest} />
+  ),
+)`
   background-color: ${({ serviceName }) => selectServiceColor(serviceName)};
   margin-right: ${({ theme }) => theme.spacing(1)}px;
 `;
@@ -235,7 +224,7 @@ const CollapsibleTableCell = styled(TableCell).attrs({
 `;
 
 const TraceIdTypography = styled(Typography).attrs({
-  variant: 'caption',
+  variant: 'body1',
 })`
   margin-left: ${({ theme }) => theme.spacing(0.5)}px;
 `;

@@ -37,6 +37,7 @@ const TraceSummaryTable: React.FC<TraceSummaryTableProps> = ({
       <Table>
         <TableHead>
           <TableRow>
+            <TableCell />
             <TableCell>Root Span</TableCell>
             <TableCell align="right">Start Time</TableCell>
             <TableCell align="right">Spans</TableCell>
@@ -46,7 +47,10 @@ const TraceSummaryTable: React.FC<TraceSummaryTableProps> = ({
         </TableHead>
         <TableBody>
           {traceSummaries.map((traceSummary) => (
-            <TraceSummaryRow traceSummary={traceSummary} />
+            <TraceSummaryRow
+              key={traceSummary.traceId}
+              traceSummary={traceSummary}
+            />
           ))}
         </TableBody>
       </Table>
