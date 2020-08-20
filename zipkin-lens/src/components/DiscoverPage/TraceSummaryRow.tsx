@@ -82,13 +82,6 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
   }, []);
   const startTime = moment(traceSummary.timestamp / 1000);
 
-  const labelFormatter = (serviceName: string | number) => {
-    if (typeof serviceName === 'number') {
-      return null;
-    }
-    return <ServiceNameChip serviceName={serviceName} />;
-  };
-
   return (
     <>
       <Root>
@@ -159,7 +152,7 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
                   <XAxis dataKey="serviceName" hide />
                   <YAxis />
                   <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip labelFormatter={labelFormatter} />
+                  <Tooltip />
                   <Bar
                     dataKey="spanCount"
                     fill={theme.palette.primary.light}
