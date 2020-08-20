@@ -19,8 +19,9 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
 } from '@material-ui/core';
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 
 import TraceSummaryRow from './TraceSummaryRow';
 import TraceSummary from '../../models/TraceSummary';
@@ -32,6 +33,36 @@ interface TraceSummaryTableProps {
 const TraceSummaryTable: React.FC<TraceSummaryTableProps> = ({
   traceSummaries,
 }) => {
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
+  const [orderBy, setOrderBy] = useState<
+    'duration' | 'timestamp' | 'spanCount'
+  >('duration');
+
+  const handleSortButtonClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      const { cellkey } = event.currentTarget.dataset;
+      if (
+        !cellkey ||
+        (cellkey !== 'duration' &&
+          cellkey !== 'timestamp' &&
+          cellkey !== 'spanCount')
+      ) {
+        return;
+      }
+
+      if (cellkey === orderBy) {
+        setOrder((prev) => {
+          if (prev === 'asc') return 'desc';
+          return 'asc';
+        });
+      } else {
+        setOrder('desc');
+        setOrderBy(cellkey);
+      }
+    },
+    [orderBy],
+  );
+
   return (
     <TableContainer>
       <Table>
@@ -39,19 +70,43 @@ const TraceSummaryTable: React.FC<TraceSummaryTableProps> = ({
           <TableRow>
             <TableCell />
             <TableCell>Root Span</TableCell>
-            <TableCell align="right">Start Time</TableCell>
-            <TableCell align="right">Spans</TableCell>
-            <TableCell align="right">Duration</TableCell>
+            {[
+              { label: 'Start Time', key: 'timestamp' },
+              { label: 'Spans', key: 'spanCount' },
+              { label: 'Duration', key: 'duration' },
+            ].map(({ label, key }) => (
+              <TableCell
+                key={key}
+                align="right"
+                sortDirection={orderBy === key ? order : false}
+              >
+                <TableSortLabel
+                  active={orderBy === key}
+                  direction={orderBy === key ? order : 'asc'}
+                  data-cellkey={key}
+                  onClick={handleSortButtonClick}
+                >
+                  {label}
+                </TableSortLabel>
+              </TableCell>
+            ))}
             <TableCell />
           </TableRow>
         </TableHead>
         <TableBody>
-          {traceSummaries.map((traceSummary) => (
-            <TraceSummaryRow
-              key={traceSummary.traceId}
-              traceSummary={traceSummary}
-            />
-          ))}
+          {traceSummaries
+            .sort((a, b) => {
+              if (order === 'asc') {
+                return a[orderBy] - b[orderBy];
+              }
+              return b[orderBy] - a[orderBy];
+            })
+            .map((traceSummary) => (
+              <TraceSummaryRow
+                key={traceSummary.traceId}
+                traceSummary={traceSummary}
+              />
+            ))}
         </TableBody>
       </Table>
     </TableContainer>
