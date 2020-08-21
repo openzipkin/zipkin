@@ -20,6 +20,7 @@ import { Box, ClickAwayListener } from '@material-ui/core';
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -148,7 +149,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
   });
 
   const prevIsFocused = useRef(isFocused);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (prevIsFocused.current && !isFocused) {
       if (!fixedText) {
         onDelete(criterionIndex);
