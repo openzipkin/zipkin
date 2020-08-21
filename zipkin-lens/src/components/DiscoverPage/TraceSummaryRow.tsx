@@ -14,8 +14,6 @@
 
 import {
   Box,
-  Chip,
-  ChipProps,
   Collapse,
   IconButton,
   TableCell,
@@ -92,7 +90,9 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
         </TableCell>
         <TableCell>
           <Box display="flex" alignItems="center">
-            <ServiceNameChip serviceName={traceSummary.root.serviceName} />
+            <ServiceNameTypography variant="body1">
+              {traceSummary.root.serviceName}
+            </ServiceNameTypography>
             <Typography variant="body2" color="textSecondary">
               {traceSummary.root.spanName}
             </Typography>
@@ -181,13 +181,13 @@ const Root = styled(TableRow)`
   }
 `;
 
-const ServiceNameChip = styled(
-  ({ serviceName, ...rest }: { serviceName: string } & ChipProps) => (
-    <Chip size="small" label={serviceName} color="primary" {...rest} />
-  ),
-)`
-  background-color: ${({ serviceName }) => selectServiceColor(serviceName)};
+const ServiceNameTypography = styled(Typography).attrs({
+  variant: 'body1',
+})`
   margin-right: ${({ theme }) => theme.spacing(1)}px;
+  &::after {
+    content: ':';
+  }
 `;
 
 const FromNowTypography = styled(Typography).attrs({
