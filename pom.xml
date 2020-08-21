@@ -98,7 +98,7 @@
     <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
     <maven-bundle-plugin.version>5.1.1</maven-bundle-plugin.version>
     <!-- TODO: cleanup any redundant ignores now also in the 4.0 release (once final) -->
-    <license-maven-plugin.version>4.0.rc1</license-maven-plugin.version>
+    <license-maven-plugin.version>4.0.rc2</license-maven-plugin.version>
     <git-commit-id.version>4.0.2</git-commit-id.version>
   </properties>
 
