@@ -16,7 +16,7 @@
 set -eux
 
 echo "*** Installing Kafka and dependencies"
-APACHE_MIRROR=$(curl --stderr /dev/null https://www.apache.org/dyn/closer.cgi\?as_json\=1 |sed -n '/preferred/s/.*"\(.*\)"/\1/gp')
+APACHE_MIRROR=$(curl --stderr /dev/null https://www.apache.org/dyn/closer.cgi\?as_json\=1 | sed -n '/preferred/s/.*"\(.*\)"/\1/gp')
 
 # download kafka binaries
 curl -sSL $APACHE_MIRROR/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz | tar xz
