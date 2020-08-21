@@ -16,9 +16,7 @@
 set -eux
 
 echo "*** Installing Kafka and dependencies"
-apk add --update --no-cache jq curl
-
-APACHE_MIRROR=$(curl --stderr /dev/null https://www.apache.org/dyn/closer.cgi\?as_json\=1 | jq -r '.preferred')
+APACHE_MIRROR=$(curl --stderr /dev/null https://www.apache.org/dyn/closer.cgi\?as_json\=1 |sed -n '/preferred/s/.*"\(.*\)"/\1/gp')
 
 # download kafka binaries
 curl -sSL $APACHE_MIRROR/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz | tar xz
@@ -41,10 +39,35 @@ EOF
 
 mkdir /kafka/logs
 
+# dist includes large dependencies needed by streams and connect: retain only broker and ZK
+# See https://issues.apache.org/jira/browse/KAFKA-10380
+cat > pom.xml <<-EOF
+<project>
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>io.zipkin.kafka</groupId>
+  <artifactId>get-kafka</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka_${SCALA_VERSION}</artifactId>
+      <version>${KAFKA_VERSION}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.30</version>
+    </dependency>
+  </dependencies>
+</project>
+EOF
+rm -rf libs/*
+mvn -q --batch-mode dependency:copy-dependencies -DoutputDirectory=libs
+
 echo "*** Cleaning Up"
-apk del jq curl --purge
-# TODO: eventually cleanup irrelevant binaries from RocksDB
-# https://issues.apache.org/jira/browse/KAFKA-10380
-rm -rf kafka_$SCALA_VERSION-$KAFKA_VERSION site-docs bin/windows
+rm -rf kafka_$SCALA_VERSION-$KAFKA_VERSION site-docs bin/windows */connect* pom.xml
 
 echo "*** Image build complete"

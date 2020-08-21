@@ -12,7 +12,7 @@
 # the License.
 #
 
-FROM alpine:3.12
+FROM openzipkin/zipkin-builder
 
 ENV SCALA_VERSION 2.13
 ENV KAFKA_VERSION 2.6.0
