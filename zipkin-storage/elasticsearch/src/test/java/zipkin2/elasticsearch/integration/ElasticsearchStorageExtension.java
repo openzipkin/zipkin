@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -38,10 +38,14 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
   static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchStorageExtension.class);
   static final int ELASTICSEARCH_PORT = 9200;
   final String image;
+  final Integer priority;
   GenericContainer container;
 
-  ElasticsearchStorageExtension(String image) {
+  ElasticsearchStorageExtension(String image, Integer priority) {
     this.image = image;
+
+    // This is so that both legacy and composable templates can be tested with this class
+    this.priority = priority;
   }
 
   @Override public void beforeAll(ExtensionContext context) throws IOException {
@@ -116,7 +120,8 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
     WebClient client = builder.build();
     return ElasticsearchStorage.newBuilder(() -> client)
       .index("zipkin-test")
-      .flushOnWrites(true);
+      .flushOnWrites(true)
+      .templatePriority(priority);
   }
 
   String baseUrl() {
