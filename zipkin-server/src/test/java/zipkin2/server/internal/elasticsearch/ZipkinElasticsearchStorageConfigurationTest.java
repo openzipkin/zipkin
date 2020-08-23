@@ -137,7 +137,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
     Consumer<ClientOptionsBuilder> one = client -> client.maxResponseLength(12345L);
     Consumer<ClientOptionsBuilder> two =
-      client -> client.addHttpHeader("test", "bar");
+      client -> client.addHeader("test", "bar");
   }
 
   /** Ensures we can wire up network interceptors, such as for logging or authentication */
@@ -149,7 +149,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
     HttpClientFactory factory = context.getBean(HttpClientFactory.class);
     assertThat(factory.options.maxResponseLength()).isEqualTo(12345L);
-    assertThat(factory.options.httpHeaders().get("test")).isEqualTo("bar");
+    assertThat(factory.options.headers().get("test")).isEqualTo("bar");
   }
 
   @Test public void timeout_defaultsTo10Seconds() {
