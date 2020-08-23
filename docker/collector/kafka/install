@@ -11,8 +11,8 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
-#
 
+# install script used only in building the docker image, but not at runtime.
 set -eux
 
 echo "*** Installing Kafka and dependencies"
@@ -23,21 +23,23 @@ curl -sSL $APACHE_MIRROR/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSIO
 mv kafka_$SCALA_VERSION-$KAFKA_VERSION/* .
 
 # Remove bash as our images doesn't have it, and it isn't required
-sed -i 's~#!/bin/bash~#!/bin/sh~g' /kafka/bin/*sh
+sed -i 's~#!/bin/bash~#!/bin/sh~g' bin/*sh
+
+# log.dirs is about Kafka's data not Log4J
+DATA_DIR=data
+mkdir ${DATA_DIR}
 
 # Set explicit, basic configuration
 cat > config/server.properties <<-EOF
 broker.id=0
 zookeeper.connect=127.0.0.1:2181
 replica.socket.timeout.ms=1500
-log.dirs=/kafka/logs
+log.dirs=${DATA_DIR}
 auto.create.topics.enable=true
 offsets.topic.replication.factor=1
 listeners=PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:19092
 listener.security.protocol.map=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
 EOF
-
-mkdir /kafka/logs
 
 # dist includes large dependencies needed by streams and connect: retain only broker and ZK
 # See https://issues.apache.org/jira/browse/KAFKA-10380
