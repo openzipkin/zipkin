@@ -1,10 +1,8 @@
 # Run `travis lint` when changing this file to avoid breaking the build.
 
-
-# Use a larger VM as we run a lot of services
-# https://docs.travis-ci.com/user/ci-environment/#Virtualization-environments
-sudo: required
-dist: trusty
+dist: focal
+language: java
+jdk: openjdk14
 
 # Don't do a shallow clone to allow license plugin to correctly read git history.
 git:
@@ -15,10 +13,6 @@ cache:
   # zipkin-lens gets dependencies via NPM
   - $HOME/.npm
   - $HOME/.m2
-
-language: java
-
-jdk: openjdk14
 
 services:
   - docker
