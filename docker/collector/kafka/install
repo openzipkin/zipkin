@@ -41,7 +41,8 @@ listeners=PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:19092
 listener.security.protocol.map=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
 EOF
 
-# dist includes large dependencies needed by streams and connect: retain only broker and ZK
+# Dist includes large dependencies needed by streams and connect: retain only broker and ZK.
+# We can do this because broker is independent from both kafka-streams and connect modules.
 # See https://issues.apache.org/jira/browse/KAFKA-10380
 cat > pom.xml <<-EOF
 <project>
