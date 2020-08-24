@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# Copyright 2015-2020 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+# ENTRYPOINT script that starts ZooKeeper and then Kafka
+set -eu
+
+echo Starting ZooKeeper
+bin/kafka-run-class.sh -Dlog4j.configuration=file:config/log4j.properties org.apache.zookeeper.server.quorum.QuorumPeerMain config/zookeeper.properties &
+
+# wait for ZooKeeper
+until echo stat | nc 127.0.0.1 2181
+do
+  sleep 1
+done
+
+# Internal docker producers and consumers use the normal hostname:9092, and outside docker the advertised host on port 19092
+ADVERTISED_LISTENERS="advertised.listeners=PLAINTEXT://${HOSTNAME}:9092,PLAINTEXT_HOST://${KAFKA_ADVERTISED_HOST_NAME}:19092"
+# Ensure the line is only added once in the config file.
+CONFIG=config/server.properties
+grep -qF -- "$ADVERTISED_LISTENERS" $CONFIG || echo "$ADVERTISED_LISTENERS" >> $CONFIG
+
+echo Starting Kafka
+exec bin/kafka-run-class.sh -name kafkaServer -Dlog4j.configuration=file:config/log4j.properties kafka.Kafka config/server.properties

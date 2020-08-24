@@ -12,40 +12,37 @@
 # the License.
 #
 
-FROM alpine:3.12
+FROM openzipkin/zipkin-builder as install
 
-ENV SCALA_VERSION 2.13
+# Use latest stable release here. Scala 2.13+ supports JRE 14
 ENV KAFKA_VERSION 2.6.0
+ENV SCALA_VERSION 2.13
 
-WORKDIR /kafka
-ADD docker/collector/kafka/install.sh /kafka/install
-RUN /kafka/install && rm /kafka/install
-
-ADD docker/collector/kafka/wait-for-zookeeper.sh /kafka/bin
-ADD docker/collector/kafka/start.sh /kafka/bin
+WORKDIR /install
+ADD docker/collector/kafka/install /tmp/install
+RUN /tmp/install && rm /tmp/install
 
 # Share the same base image to reduce layers used in testing
 FROM openzipkin/jre-full:14.0.2-14.29.23
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
-WORKDIR /kafka
+# add HEALTHCHECK and ENTRYPOINT scripts
+COPY docker/collector/kafka/docker-bin/* /usr/local/bin/
 
-RUN adduser -g '' -h /kafka -D kafka
+# setup non-root user and its home dir
+ARG USER=kafka
+WORKDIR /${USER}
+RUN adduser -g '' -h /${USER} -D ${USER}
+USER ${USER}
 
-COPY --from=0 --chown=kafka /kafka /kafka
+# copy content we installed earlier into the home dir
+COPY --from=install --chown=${USER} /install /${USER}
 
-USER kafka
-
-# Port 19092 is for connections from the Docker host
+# ${KAFKA_ADVERTISED_HOST_NAME}:19092 is for connections from the Docker host
+ENV KAFKA_ADVERTISED_HOST_NAME=localhost
 EXPOSE 2181 9092 19092
 
 # We use start period of 10s to avoid marking Kafka unhealthy on slow or contended CI hosts
-#
-# We use a timeout of 5s as kafka-topics.sh invokes a Java command which can be slow when
-# multiple processes are starting up (ex docker-compose with >10 containers). A smaller timeout
-# flips the service unhealthy and can interfere with docker-compose v2 condition: service_healthy
-HEALTHCHECK --interval=2s --start-period=10s --timeout=5s \
-  # We use bootstrap-server, not zookeeper, as KIP-500 will eventually remove the dependency
-  CMD /kafka/bin/kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --list > /dev/null || exit 1
+HEALTHCHECK --interval=1s --start-period=10s --timeout=2s CMD ["docker-healthcheck"]
 
-ENTRYPOINT /kafka/bin/start.sh
+ENTRYPOINT ["docker-entrypoint"]
