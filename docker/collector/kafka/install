@@ -45,7 +45,9 @@ EOF
 
 # Dist includes large dependencies needed by streams and connect: retain only broker and ZK.
 # We can do this because broker is independent from both kafka-streams and connect modules.
-# See https://issues.apache.org/jira/browse/KAFKA-10380
+# See KAFKA-10380
+#
+# TODO: MDEP-723 if addressed can remove the pom.xml here
 cat > pom.xml <<-EOF
 <project>
   <modelVersion>4.0.0</modelVersion>
