@@ -15,8 +15,7 @@
 FROM openzipkin/zipkin-builder as install
 
 # Use latest stable release here. Scala 2.13+ supports JRE 14
-ENV KAFKA_VERSION 2.6.0
-ENV SCALA_VERSION 2.13
+ENV KAFKA_VERSION=2.6.0 SCALA_VERSION=2.13
 
 WORKDIR /install
 ADD docker/collector/kafka/install /tmp/install
@@ -26,17 +25,19 @@ RUN /tmp/install && rm /tmp/install
 FROM openzipkin/jre-full:14.0.2-14.29.23
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
-# add HEALTHCHECK and ENTRYPOINT scripts
+# Add HEALTHCHECK and ENTRYPOINT scripts
 COPY docker/collector/kafka/docker-bin/* /usr/local/bin/
 
-# setup non-root user and its home dir
+# All Kafka content including binaries logs writes under WORKDIR
+WORKDIR /kafka
+
+# Ensure the process doesn't run as root
 ARG USER=kafka
-WORKDIR /${USER}
-RUN adduser -g '' -h /${USER} -D ${USER}
+RUN adduser -g '' -h  ${PWD} -D ${USER}
 USER ${USER}
 
-# copy content we installed earlier into the home dir
-COPY --from=install --chown=${USER} /install /${USER}
+# Copy content we installed earlier
+COPY --from=install --chown=${USER} /install .
 
 # ${KAFKA_ADVERTISED_HOST_NAME}:19092 is for connections from the Docker host
 ENV KAFKA_ADVERTISED_HOST_NAME=localhost
