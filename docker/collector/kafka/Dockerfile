@@ -36,7 +36,7 @@ ARG USER=kafka
 RUN adduser -g '' -h  ${PWD} -D ${USER}
 USER ${USER}
 
-# Copy content we installed earlier
+# Copy binaries and config we installed earlier
 COPY --from=install --chown=${USER} /install .
 
 # ${KAFKA_ADVERTISED_HOST_NAME}:19092 is for connections from the Docker host
