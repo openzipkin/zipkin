@@ -25,7 +25,7 @@ RUN /tmp/install && rm /tmp/install
 FROM openzipkin/jre-full:14.0.2-14.29.23
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
-# Add HEALTHCHECK and ENTRYPOINT scripts
+# Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY docker/collector/kafka/docker-bin/* /usr/local/bin/
 
 # All Kafka content including binaries and logs write under WORKDIR
