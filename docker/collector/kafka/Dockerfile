@@ -28,7 +28,7 @@ LABEL MAINTAINER Zipkin "https://zipkin.io/"
 # Add HEALTHCHECK and ENTRYPOINT scripts
 COPY docker/collector/kafka/docker-bin/* /usr/local/bin/
 
-# All Kafka content including binaries logs writes under WORKDIR
+# All Kafka content including binaries and logs write under WORKDIR
 WORKDIR /kafka
 
 # Ensure the process doesn't run as root
