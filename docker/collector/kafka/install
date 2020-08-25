@@ -20,9 +20,9 @@ set -eux
 echo "*** Installing Kafka and dependencies"
 APACHE_MIRROR=$(curl --stderr /dev/null https://www.apache.org/dyn/closer.cgi\?as_json\=1 | sed -n '/preferred/s/.*"\(.*\)"/\1/gp')
 
-# download kafka binaries
-curl -sSL $APACHE_MIRROR/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz | tar xz
-mv kafka_$SCALA_VERSION-$KAFKA_VERSION/* .
+# Download scripts and config for Kafka and ZooKeeper, but not for Connect
+curl -sSL $APACHE_MIRROR/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz | tar xvz \
+  --wildcards --strip=1 --exclude=connect* */bin/zookeeper-* */bin/kafka-* */config
 
 # Remove bash as our images don't have it, and it isn't required
 sed -i 's~#!/bin/bash~#!/bin/sh~g' bin/*sh
@@ -69,10 +69,6 @@ cat > pom.xml <<-EOF
   </dependencies>
 </project>
 EOF
-rm -rf libs/*
-mvn -q --batch-mode dependency:copy-dependencies -DoutputDirectory=libs
-
-echo "*** Cleaning Up"
-rm -rf kafka_$SCALA_VERSION-$KAFKA_VERSION site-docs bin/windows */connect* pom.xml
+mvn -q --batch-mode dependency:copy-dependencies -DoutputDirectory=libs && rm pom.xml
 
 echo "*** Image build complete"
