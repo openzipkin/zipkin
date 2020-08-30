@@ -25,7 +25,7 @@ import {
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
 import moment from 'moment';
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Bar,
@@ -79,6 +79,14 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
     setOpen((prev) => !prev);
   }, []);
   const startTime = moment(traceSummary.timestamp / 1000);
+
+  const sortedServiceSummaries = useMemo(
+    () =>
+      [...traceSummary.serviceSummaries].sort(
+        (a, b) => b.spanCount - a.spanCount,
+      ),
+    [traceSummary.serviceSummaries],
+  );
 
   return (
     <>
@@ -141,7 +149,7 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
             <Box height={150}>
               <ResponsiveContainer>
                 <BarChart
-                  data={traceSummary.serviceSummaries}
+                  data={sortedServiceSummaries}
                   margin={{
                     top: 20,
                     right: 30,
