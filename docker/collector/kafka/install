@@ -18,7 +18,7 @@
 set -eux
 
 echo "*** Installing Kafka and dependencies"
-APACHE_MIRROR=$(curl --stderr /dev/null https://www.apache.org/dyn/closer.cgi\?as_json\=1 | sed -n '/preferred/s/.*"\(.*\)"/\1/gp')
+APACHE_MIRROR=$(curl -sSL https://www.apache.org/dyn/closer.cgi\?as_json\=1 | sed -n '/preferred/s/.*"\(.*\)"/\1/gp')
 
 # Download scripts and config for Kafka and ZooKeeper, but not for Connect
 curl -sSL $APACHE_MIRROR/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz | tar xz \
@@ -26,17 +26,34 @@ curl -sSL $APACHE_MIRROR/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSIO
 
 # Remove bash as our images don't have it, and it isn't required
 sed -i 's~#!/bin/bash~#!/bin/sh~g' bin/*sh
+# Remove bash syntax relating to irrelevant CYGWIN (prevents console errors)
+sed -i -e 's/$(uname -a) =~ "CYGWIN"/0/g' -e  's/.*\(\( CYGWIN \)\).*//g' bin/*
+# Remove bash shopt commands (kafka-start-class uses nullglob, but it is non-critical to avoid it)
+sed -i 's/.*shopt.*//g' bin/*sh
 
-# log.dirs is about Kafka's data not Log4J
-DATA_DIR=data
-mkdir ${DATA_DIR}
+# Hush logging for both Kafka and ZooKeeper
+sed -i 's~INFO~WARN~g' config/log4j.properties
+
+# Make sure you use relative paths in references like this, so that installation
+# is decoupled from runtime
+mkdir -p data/kafka data/zookeeper logs
 
 # Set explicit, basic configuration
+cat > config/zookeeper.properties <<-EOF
+dataDir=./data/zookeeper
+clientPort=2181
+maxClientCnxns=0
+admin.enableServer=false
+# allow ruok command for testing ZK health
+4lw.commands.whitelist=srvr,ruok
+EOF
+
 cat > config/server.properties <<-EOF
 broker.id=0
 zookeeper.connect=127.0.0.1:2181
 replica.socket.timeout.ms=1500
-log.dirs=${DATA_DIR}
+# log.dirs is about Kafka's data not Log4J
+log.dirs=./data/kafka
 auto.create.topics.enable=true
 offsets.topic.replication.factor=1
 listeners=PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:19092
@@ -48,7 +65,7 @@ EOF
 # See KAFKA-10380
 #
 # TODO: MDEP-723 if addressed can remove the pom.xml here
-cat > pom.xml <<-EOF
+cat > pom.xml <<-'EOF'
 <project>
   <modelVersion>4.0.0</modelVersion>
 

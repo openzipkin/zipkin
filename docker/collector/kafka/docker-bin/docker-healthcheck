@@ -14,14 +14,31 @@
 
 # HEALTHCHECK for use in `docker ps` or `docker-compose ps`.
 # It can also be used as a readiness probe in k8s
-set -eu
+
+# Fail on unset variables, but don't quit on rc!=0, so we can log what happened
+set -u +e
 
 IP="$(hostname -i || echo '127.0.0.1')"
 
 # kafka-topics.sh invokes a Java command which can overrun CPU quota, so we
 # check the services at TCP layer instead.
-if nc -z ${IP} 9092 && echo ruok | nc ${IP} 2181; then
-	exit 0
+ZK_HEALTH=$(echo ruok | nc ${IP} 2181)
+ZK_RC=$?
+if [ "$ZK_RC" == "0" ]; then
+  if [ "$ZK_HEALTH" == "imok" ]; then
+    nc -z ${IP} 9092 > /dev/null 2>&1
+    KAFKA_RC=$?
+    if [ "$KAFKA_RC" == "0" ]; then
+      exit 0
+    fi
+
+    echo Kafka port check failed with code: $KAFKA_RC
+    exit 1
+  fi
+
+  echo ZooKeeper not healthy: $ZK_HEALTH
+  exit 1
 fi
 
+echo ZooKeeper port check failed with code: $ZK_RC
 exit 1
