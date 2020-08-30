@@ -27,10 +27,12 @@ import {
   TextField,
   Divider,
   Collapse,
+  Typography,
 } from '@material-ui/core';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import SettingsIcon from '@material-ui/icons/Settings';
+import { Autocomplete } from '@material-ui/lab';
 import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -45,6 +47,7 @@ import { Lookback, fixedLookbackMap, millisecondsToValue } from './lookback';
 import ExplainBox from '../Common/ExplainBox';
 import { useUiConfig } from '../UiConfig';
 import { clearTraces, loadTraces } from '../../actions/traces-action';
+import TraceSummary from '../../models/TraceSummary';
 import { RootState } from '../../store';
 
 interface DiscoverPageContentProps {
@@ -408,27 +411,53 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   ] = useSelector((state: RootState) => [
     state.traces.traces,
     state.traces.isLoading,
-    state.traces.traceSummaries,
+    state.traces.traceSummaries as TraceSummary[],
   ]);
 
   const [isShowingLookbackMenu, setIsShowingLookbackMenu] = useState(false);
-
   const toggleLookbackMenu = useCallback(() => {
     setIsShowingLookbackMenu((prev) => !prev);
   }, []);
-
   const closeLookbackMenu = useCallback(() => {
     setIsShowingLookbackMenu(false);
   }, []);
 
   const [isOpeningSettings, setIsOpeningSettings] = useState(false);
-
   const handleSettingsButtonClick = useCallback(() => {
     setIsOpeningSettings((prev) => !prev);
   }, []);
 
-  let content: JSX.Element | undefined;
+  const [filters, setFilters] = useState<string[]>([]);
+  const filterOptions = useMemo(
+    () =>
+      Object.keys(
+        traceSummaries.reduce((acc, cur) => {
+          cur.serviceSummaries.forEach((serviceSummary) => {
+            acc[serviceSummary.serviceName] = true;
+          });
+          return acc;
+        }, {} as { [key: string]: boolean }),
+      ),
+    [traceSummaries],
+  );
+  const handleFiltersChange = useCallback((event: any, value: string[]) => {
+    setFilters(value);
+  }, []);
 
+  const filteredTraceSummaries = useMemo(() => {
+    return traceSummaries.filter((traceSummary) => {
+      const serviceNameMap = traceSummary.serviceSummaries.reduce(
+        (acc, cur) => {
+          acc[cur.serviceName] = true;
+          return acc;
+        },
+        {} as { [key: string]: boolean },
+      );
+      return !filters.find((filter) => !serviceNameMap[filter]);
+    });
+  }, [filters, traceSummaries]);
+
+  let content: JSX.Element | undefined;
   if (isLoadingTraces) {
     content = (
       <Box
@@ -459,7 +488,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   } else {
     content = (
       <Paper elevation={3}>
-        <TraceSummaryTable traceSummaries={traceSummaries} />
+        <TraceSummaryTable traceSummaries={filteredTraceSummaries} />
       </Paper>
     );
   }
@@ -508,7 +537,18 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
               justifyContent="flex-end"
               mt={1.75}
             >
-              <Box mr={1} position="relative">
+              <TextField
+                label="Limit"
+                type="number"
+                variant="outlined"
+                value={tempLimit}
+                onChange={handleLimitChange}
+                size="small"
+                inputProps={{
+                  'data-testid': 'query-limit',
+                }}
+              />
+              <Box ml={1} position="relative">
                 <LookbackButton
                   onClick={toggleLookbackMenu}
                   isShowingLookbackMenu={isShowingLookbackMenu}
@@ -523,20 +563,44 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
                   />
                 )}
               </Box>
-              <TextField
-                label="Limit"
-                type="number"
-                variant="outlined"
-                value={tempLimit}
-                onChange={handleLimitChange}
-                size="small"
-                inputProps={{
-                  'data-testid': 'query-limit',
-                }}
-              />
             </Box>
           </Container>
         </Collapse>
+        {traceSummaries.length > 0 && (
+          <>
+            <Box mt={1.5} mb={1.5}>
+              <Divider />
+            </Box>
+            <Container>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Typography variant="h6">
+                  {filteredTraceSummaries.length} results
+                </Typography>
+                <Box width={300}>
+                  <Autocomplete
+                    multiple
+                    options={filterOptions}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        variant="outlined"
+                        label="Service filters"
+                        placeholder="Service filters"
+                        size="small"
+                      />
+                    )}
+                    size="small"
+                    onChange={handleFiltersChange}
+                  />
+                </Box>
+              </Box>
+            </Container>
+          </>
+        )}
       </Box>
       <Box flexGrow={1} overflow="auto" pt={3} pb={3}>
         <Container>{content}</Container>
