@@ -11,8 +11,5 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import useEffectOnce from './useEffectOnce';
 
-const useUnmount = (f) => useEffectOnce(() => f, []);
-
-export default useUnmount;
+export { default } from './DependenciesPage';

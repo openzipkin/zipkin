@@ -17,7 +17,7 @@ import { createMemoryHistory } from 'history';
 import React from 'react';
 
 import NodeDetailData from './NodeDetailData';
-import render from '../test/util/render-with-default-settings';
+import render from '../../test/util/render-with-default-settings';
 
 describe('<NodeDetailData />', () => {
   it('should go to the search traces page when the search traces button is clicked.', () => {

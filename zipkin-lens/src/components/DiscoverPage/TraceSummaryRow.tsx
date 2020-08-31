@@ -39,7 +39,10 @@ import {
 } from 'recharts';
 import styled from 'styled-components';
 
-import { selectColorByInfoClass, selectServiceColor } from '../../colors';
+import {
+  selectColorByInfoClass,
+  selectServiceColor,
+} from '../../constants/color';
 import TraceSummary from '../../models/TraceSummary';
 import { formatDuration } from '../../util/timestamp';
 

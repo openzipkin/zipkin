@@ -35,9 +35,9 @@ import styled from 'styled-components';
 
 import LanguageSelector from './LanguageSelector';
 import { useUiConfig } from '../UiConfig';
-import TraceIdSearchInput from '../Common/TraceIdSearchInput';
-import TraceJsonUploader from '../Common/TraceJsonUploader';
-import { darkTheme } from '../../colors';
+import TraceIdSearchInput from '../common/TraceIdSearchInput';
+import TraceJsonUploader from '../common/TraceJsonUploader';
+import { darkTheme } from '../../constants/color';
 import logoSrc from '../../img/zipkin-logo.png';
 import HeaderMenuItem from './HeaderMenuItem';
 

@@ -28,11 +28,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <!-- when changing this, a change to the version of kafka-junit is likely needed, too -->
     <kafka.version>2.6.0</kafka.version>
-    <!-- This version is tightly coupled to the version of kafka-clients being used.
-     https://github.com/charithe/kafka-junit -->
-    <kafka-junit.version>4.1.10</kafka-junit.version>
   </properties>
 
   <dependencies>
@@ -49,16 +45,15 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.charithe</groupId>
-      <artifactId>kafka-junit</artifactId>
-      <version>${kafka-junit.version}</version>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
       <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>log4j-over-slf4j</artifactId>
-        </exclusion>
-      </exclusions>
+    </dependency>
+    <!-- For AdminClient -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

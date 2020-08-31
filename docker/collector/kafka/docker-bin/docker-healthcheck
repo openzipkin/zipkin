@@ -11,10 +11,17 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
-#
 
+# HEALTHCHECK for use in `docker ps` or `docker-compose ps`.
+# It can also be used as a readiness probe in k8s
+set -eu
 
-until echo stat | nc 127.0.0.1 2181
-do
-  sleep 1
-done
+IP="$(hostname -i || echo '127.0.0.1')"
+
+# kafka-topics.sh invokes a Java command which can overrun CPU quota, so we
+# check the services at TCP layer instead.
+if nc -z ${IP} 9092 && echo ruok | nc ${IP} 2181; then
+	exit 0
+fi
+
+exit 1
