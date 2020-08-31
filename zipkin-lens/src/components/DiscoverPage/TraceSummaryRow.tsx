@@ -25,7 +25,7 @@ import {
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
 import moment from 'moment';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo, useReducer } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Bar,
@@ -77,10 +77,7 @@ interface TraceSummaryRowProps {
 
 const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
   const theme = useTheme();
-  const [open, setOpen] = useState(false);
-  const handleOpenButtonClick = useCallback(() => {
-    setOpen((prev) => !prev);
-  }, []);
+  const [open, toggleOpen] = useReducer((state: boolean) => !state, false);
   const startTime = moment(traceSummary.timestamp / 1000);
 
   const sortedServiceSummaries = useMemo(
@@ -95,7 +92,7 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
     <>
       <Root>
         <TableCell>
-          <IconButton size="small" onClick={handleOpenButtonClick}>
+          <IconButton size="small" onClick={toggleOpen}>
             {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
           </IconButton>
         </TableCell>
