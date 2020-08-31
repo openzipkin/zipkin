@@ -41,7 +41,7 @@ import { Lookback, fixedLookbackMap, millisecondsToValue } from './lookback';
 import { useUiConfig } from '../UiConfig';
 import { clearTraces, loadTraces } from '../../actions/traces-action';
 import { RootState } from '../../store';
-import ExplainBox from '../Common/ExplainBox';
+import ExplainBox from '../common/ExplainBox';
 
 const TracesTab = require('./TracesTab').default;
 

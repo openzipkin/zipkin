@@ -34,7 +34,7 @@ import { withRouter, RouteComponentProps } from 'react-router-dom';
 
 import DependenciesGraph from './DependenciesGraph';
 import { clearAlert, setAlert } from '../App/slice';
-import ExplainBox from '../Common/ExplainBox';
+import ExplainBox from '../common/ExplainBox';
 import {
   clearDependencies,
   loadDependencies,
