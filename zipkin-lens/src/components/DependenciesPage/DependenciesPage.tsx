@@ -33,13 +33,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
 
 import DependenciesGraph from './DependenciesGraph';
-import { clearAlert, setAlert } from '../components/App/slice';
+import { clearAlert, setAlert } from '../App/slice';
+import ExplainBox from '../Common/ExplainBox';
 import {
   clearDependencies,
   loadDependencies,
-} from '../slices/dependenciesSlice';
-import { RootState } from '../store';
-import ExplainBox from '../components/Common/ExplainBox';
+} from '../../slices/dependenciesSlice';
+import { RootState } from '../../store';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
