@@ -31,7 +31,7 @@ import DiscoverPage from '../DiscoverPage';
 import TracePage from '../TracePage';
 import { UiConfig, UiConfigConsumer } from '../UiConfig';
 import configureStore from '../../store/configure-store';
-import { theme } from '../../colors';
+import { theme } from '../../constants/color';
 import { i18n } from '../../util/locale';
 import { BASE_PATH } from '../../constants/api';
 import AlertSnackbar from './AlertSnackbar';

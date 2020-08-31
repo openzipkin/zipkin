@@ -23,7 +23,7 @@ import Grid from '@material-ui/core/Grid';
 import ServiceBadge from '../../common/ServiceBadge';
 import { getServiceName } from '../../../zipkin';
 import { traceSummaryPropTypes } from '../../../prop-types';
-import { selectColorByInfoClass } from '../../../colors';
+import { selectColorByInfoClass } from '../../../constants/color';
 
 export function rootServiceAndSpanName(root) {
   const { span } = root;

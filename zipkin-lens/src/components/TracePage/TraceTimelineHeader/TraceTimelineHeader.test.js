@@ -16,7 +16,7 @@ import { createMount } from '@material-ui/core/test-utils';
 import { ThemeProvider } from '@material-ui/styles';
 
 import TraceTimelineHeader from './TraceTimelineHeader';
-import { theme } from '../../../colors';
+import { theme } from '../../../constants/color';
 
 // Only display the component because there is nothing to be tested.
 it('<TraceTimelineHeader />', () => {

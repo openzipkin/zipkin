@@ -25,7 +25,7 @@ import { Router } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 
 import { UiConfigContext } from '../../components/UiConfig';
-import { theme } from '../../colors';
+import { theme } from '../../constants/color';
 import configureStore from '../../store/configure-store';
 import { messages as enMessages } from '../../translations/en/messages';
 
