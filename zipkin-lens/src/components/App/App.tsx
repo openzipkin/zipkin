@@ -11,14 +11,18 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
+import MomentUtils from '@date-io/moment';
 import { I18nProvider } from '@lingui/react';
+import {
+  CircularProgress,
+  ThemeProvider as MuiThemeProvider,
+} from '@material-ui/core';
+import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import React, { Suspense } from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter, Route } from 'react-router-dom';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import { ThemeProvider as MuiThemeProvider } from '@material-ui/styles';
-import { MuiPickersUtilsProvider } from '@material-ui/pickers';
-import MomentUtils from '@date-io/moment';
+import { useTitle } from 'react-use';
 import { ThemeProvider } from 'styled-components';
 
 import Layout from './Layout';
@@ -28,13 +32,13 @@ import TracePage from '../TracePage';
 import { UiConfig, UiConfigConsumer } from '../UiConfig';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../colors';
-import { useDocumentTitle } from '../../hooks';
 import { i18n } from '../../util/locale';
 import { BASE_PATH } from '../../constants/api';
 import AlertSnackbar from './AlertSnackbar';
 
-const App = () => {
-  useDocumentTitle('Zipkin');
+const App: React.FC = () => {
+  useTitle('Zipkin');
+
   return (
     <Suspense fallback={<CircularProgress />}>
       <UiConfig>
