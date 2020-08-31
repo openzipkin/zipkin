@@ -27,7 +27,7 @@ import {
   serviceNameBadgeHeight,
 } from '../sizing';
 import { detailedSpansPropTypes } from '../../../prop-types';
-import { selectServiceColor } from '../../../constants/color';
+import { selectServiceColor } from '../../../colors';
 
 export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
   const stack = [];

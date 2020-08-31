@@ -28,7 +28,7 @@ import {
   spanBarHeight,
 } from '../sizing';
 import { detailedSpanPropTypes } from '../../../prop-types';
-import { selectColorByErrorType } from '../../../constants/color';
+import { selectColorByErrorType } from '../../../colors';
 
 const minWidth = 0.25;
 

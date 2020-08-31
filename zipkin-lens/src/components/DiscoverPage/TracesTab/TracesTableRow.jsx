@@ -20,10 +20,10 @@ import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 
-import ServiceBadge from '../../common/ServiceBadge';
+import ServiceBadge from '../../Common/ServiceBadge';
 import { getServiceName } from '../../../zipkin';
 import { traceSummaryPropTypes } from '../../../prop-types';
-import { selectColorByInfoClass } from '../../../constants/color';
+import { selectColorByInfoClass } from '../../../colors';
 
 export function rootServiceAndSpanName(root) {
   const { span } = root;

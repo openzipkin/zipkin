@@ -33,7 +33,7 @@ import { withRouter, RouteComponentProps } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 import Edge from './Edge';
-import { selectServiceColor } from '../../constants/color';
+import { selectServiceColor } from '../colors';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

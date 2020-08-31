@@ -19,7 +19,7 @@ import classnames from 'classnames';
 import minBy from 'lodash/minBy';
 import maxBy from 'lodash/maxBy';
 
-import { selectServiceColor } from '../../../constants/color';
+import { selectServiceColor } from '../../../colors';
 import { spanAnnotationsPropTypes } from '../../../prop-types';
 import { generateAnnotationKey } from './util';
 

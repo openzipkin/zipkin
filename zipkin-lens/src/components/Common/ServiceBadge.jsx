@@ -19,7 +19,7 @@ import { makeStyles, ThemeProvider } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
 
-import { selectServiceTheme } from '../../constants/color';
+import { selectServiceTheme } from '../../colors';
 
 const useStyles = makeStyles((theme) => ({
   root: {

@@ -17,7 +17,7 @@ import { cleanup } from '@testing-library/react';
 import { TracesTableRowImpl, rootServiceAndSpanName } from './TracesTableRow';
 import { SpanNode } from '../../../zipkin/span-node';
 import render from '../../../test/util/render-with-default-settings';
-import { selectColorByInfoClass } from '../../../constants/color';
+import { selectColorByInfoClass } from '../../../colors';
 
 describe('rootServiceAndSpanName', () => {
   it('should return serviceName and spanName of the span', () => {
