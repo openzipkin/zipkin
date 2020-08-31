@@ -60,7 +60,7 @@ public @interface ConditionalOnSelfTracing {
       String selfTracingEnabled = context.getEnvironment()
           .getProperty("zipkin.self-tracing.enabled");
 
-      if (!Boolean.valueOf(selfTracingEnabled)) {
+      if (!Boolean.parseBoolean(selfTracingEnabled)) {
         return ConditionOutcome.noMatch("zipkin.self-tracing.enabled isn't true");
       }
 

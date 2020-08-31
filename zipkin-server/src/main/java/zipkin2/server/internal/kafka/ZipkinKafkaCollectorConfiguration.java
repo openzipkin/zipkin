@@ -47,9 +47,14 @@ public class ZipkinKafkaCollectorConfiguration { // makes simple type name uniqu
       CollectorMetrics metrics,
       StorageComponent storage,
       Optional<Tracing> maybeTracing) {
-    KafkaCollector.Builder builder = properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage);
+    final KafkaCollector.Builder builder = properties.toBuilder()
+      .sampler(sampler)
+      .metrics(metrics)
+      .storage(storage);
     if (maybeTracing.isPresent()) {
-      KafkaTracing kafkaTracing = KafkaTracing.newBuilder(maybeTracing.get()).build();
+      final KafkaTracing kafkaTracing = KafkaTracing.newBuilder(maybeTracing.get())
+        .remoteServiceName("zipkin-kafka")
+        .build();
       builder.consumerSupplier(props -> kafkaTracing.consumer(new KafkaConsumer<>(props)));
     }
     return builder.build();
