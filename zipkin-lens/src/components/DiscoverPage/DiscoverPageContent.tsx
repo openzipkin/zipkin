@@ -446,14 +446,12 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
 
   const filteredTraceSummaries = useMemo(() => {
     return traceSummaries.filter((traceSummary) => {
-      const serviceNameMap = traceSummary.serviceSummaries.reduce(
-        (acc, cur) => {
-          acc[cur.serviceName] = true;
-          return acc;
-        },
-        {} as { [key: string]: boolean },
+      const serviceNameSet = new Set(
+        traceSummary.serviceSummaries.map(
+          (serviceSummary) => serviceSummary.serviceName,
+        ),
       );
-      return !filters.find((filter) => !serviceNameMap[filter]);
+      return !filters.find((filter) => !serviceNameSet.has(filter));
     });
   }, [filters, traceSummaries]);
 
