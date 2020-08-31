@@ -536,7 +536,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
               mt={1.75}
             >
               <TextField
-                label="Limit"
+                label={<Trans>Limit</Trans>}
                 type="number"
                 variant="outlined"
                 value={tempLimit}
@@ -576,7 +576,11 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
                 alignItems="center"
               >
                 <Typography variant="h6">
-                  {filteredTraceSummaries.length} results
+                  {filteredTraceSummaries.length === 1 ? (
+                    <Trans>1 Result</Trans>
+                  ) : (
+                    <Trans>{filteredTraceSummaries.length} Results</Trans>
+                  )}
                 </Typography>
                 <Box width={300}>
                   <Autocomplete

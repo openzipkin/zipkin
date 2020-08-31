@@ -29,6 +29,7 @@
   "Service Name": "",
   "Services": "",
   "Span ID": "",
+  "Spans": "",
   "Start Time": "",
   "Support": "Support",
   "Tags": "",
@@ -42,5 +43,6 @@
   "hide annotations": "",
   "show all annotations": "",
   "trace id...": "",
-  "{0} Results": ""
+  "{0} Results": "",
+  "1 Result": ""
 }

@@ -12,6 +12,7 @@
  * the License.
  */
 
+import { Trans } from '@lingui/macro';
 import {
   Table,
   TableBody,
@@ -69,11 +70,13 @@ const TraceSummaryTable: React.FC<TraceSummaryTableProps> = ({
         <TableHead>
           <TableRow>
             <TableCell />
-            <TableCell>Root Span</TableCell>
+            <TableCell>
+              <Trans>Root</Trans>
+            </TableCell>
             {[
-              { label: 'Start Time', key: 'timestamp' },
-              { label: 'Spans', key: 'spanCount' },
-              { label: 'Duration', key: 'duration' },
+              { label: <Trans>Start Time</Trans>, key: 'timestamp' },
+              { label: <Trans>Spans</Trans>, key: 'spanCount' },
+              { label: <Trans>Duration</Trans>, key: 'duration' },
             ].map(({ label, key }) => (
               <TableCell
                 key={key}
