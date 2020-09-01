@@ -639,6 +639,9 @@
                 <Dockerfile.release>SCRIPT_STYLE</Dockerfile.release>
                 <post_push>SCRIPT_STYLE</post_push>
                 <build>SCRIPT_STYLE</build>
+                <install>SCRIPT_STYLE</install>
+                <docker-healthcheck>SCRIPT_STYLE</docker-healthcheck>
+                <start-kafka-zookeeper>SCRIPT_STYLE</start-kafka-zookeeper>
               </mapping>
               <excludes>
                 <exclude>**/simplelogger.properties</exclude>
