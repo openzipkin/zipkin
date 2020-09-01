@@ -35,6 +35,12 @@ sed -i 's/.*shopt.*//g' bin/*sh
 # Hush logging for both Kafka and ZooKeeper
 sed -i 's~INFO~WARN~g' config/log4j.properties
 
+# NOTE: Two unavoidable log WARN messages remain:
+# 1. Either no config or no quorum defined in config, running  in standalone mode (org.apache.zookeeper.server.quorum.QuorumPeerMain)
+#   * https://github.com/apache/zookeeper/blob/e91455c1e3c50405666cd8afad71d99dceb7b340/zookeeper-server/src/main/java/org/apache/zookeeper/server/quorum/QuorumPeerMain.java#L138-L140
+# 2. No meta.properties file under dir /kafka/./data/kafka/meta.properties (kafka.server.BrokerMetadataCheckpoint)
+#   * meta.properties file is generated when broker joins the cluster, using an auto-generated cluster id:
+
 # Make sure you use relative paths in references like this, so that installation
 # is decoupled from runtime
 mkdir -p data/kafka data/zookeeper logs

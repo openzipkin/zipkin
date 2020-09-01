@@ -29,8 +29,8 @@ LABEL MAINTAINER Zipkin "https://zipkin.io/"
 COPY docker/collector/kafka/docker-bin/* /usr/local/bin/
 
 # All content including binaries and logs write under WORKDIR
-WORKDIR /opt/kafka
 ARG USER=kafka
+WORKDIR /${USER}
 
 # Ensure the process doesn't run as root
 RUN adduser -g '' -h ${PWD} -D ${USER}
