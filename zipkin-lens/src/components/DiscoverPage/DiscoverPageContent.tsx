@@ -430,13 +430,13 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   const [filters, setFilters] = useState<string[]>([]);
   const filterOptions = useMemo(
     () =>
-      Object.keys(
-        traceSummaries.reduce((acc, cur) => {
-          cur.serviceSummaries.forEach((serviceSummary) => {
-            acc[serviceSummary.serviceName] = true;
+      Array.from(
+        traceSummaries.reduce((set, traceSummary) => {
+          traceSummary.serviceSummaries.forEach((serviceSummary) => {
+            set.add(serviceSummary.serviceName);
           });
-          return acc;
-        }, {} as { [key: string]: boolean }),
+          return set;
+        }, new Set<string>()),
       ),
     [traceSummaries],
   );
