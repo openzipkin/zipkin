@@ -24,7 +24,7 @@ import {
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
 import moment from 'moment';
-import React, { useMemo, useReducer } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -36,13 +36,16 @@ import ServiceBadge from '../common/ServiceBadge';
 interface TraceSummaryRowProps {
   traceSummary: TraceSummary;
   onClickServiceBadge: (serviceName: string) => void;
+  open: boolean;
+  toggleOpen: (traceId: string) => void;
 }
 
 const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({
   traceSummary,
   onClickServiceBadge,
+  open,
+  toggleOpen,
 }) => {
-  const [open, toggleOpen] = useReducer((state: boolean) => !state, false);
   const startTime = moment(traceSummary.timestamp / 1000);
 
   const sortedServiceSummaries = useMemo(
@@ -53,11 +56,15 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({
     [traceSummary.serviceSummaries],
   );
 
+  const handleToggleOpen = useCallback(() => {
+    toggleOpen(traceSummary.traceId);
+  }, [toggleOpen, traceSummary.traceId]);
+
   return (
     <>
       <Root>
         <TableCell>
-          <IconButton size="small" onClick={toggleOpen}>
+          <IconButton size="small" onClick={handleToggleOpen}>
             {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
           </IconButton>
         </TableCell>

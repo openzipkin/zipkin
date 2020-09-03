@@ -28,6 +28,7 @@ import {
   Divider,
   Collapse,
   Typography,
+  ButtonGroup,
 } from '@material-ui/core';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
@@ -456,6 +457,26 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     [filters],
   );
 
+  const [traceSummaryOpenMap, setTraceSummaryOpenMap] = useState<{ [key: string]: boolean }>({});
+  const handleExpandAllButtonClick = useCallback(() => {
+    setTraceSummaryOpenMap(
+      traceSummaries.reduce((acc, cur) => {
+        acc[cur.traceId] = true;
+        return acc;
+      }, {} as { [key: string]: boolean }),
+    );
+  }, [traceSummaries]);
+  const handleCollapseAllButtonClick = useCallback(() => {
+    setTraceSummaryOpenMap({});
+  }, []);
+  const toggleTraceSummaryOpen = useCallback((traceId: string) => {
+    setTraceSummaryOpenMap((prev) => {
+      const newTraceSummaryOpenMap = { ...prev };
+      newTraceSummaryOpenMap[traceId] = !newTraceSummaryOpenMap[traceId];
+      return newTraceSummaryOpenMap;
+    });
+  }, []);
+
   const filteredTraceSummaries = useMemo(() => {
     return traceSummaries.filter((traceSummary) => {
       const serviceNameSet = new Set(
@@ -501,6 +522,8 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
         <TraceSummaryTable
           traceSummaries={filteredTraceSummaries}
           onClickServiceBadge={handleServiceBadgeClick}
+          traceSummaryOpenMap={traceSummaryOpenMap}
+          toggleTraceSummaryOpen={toggleTraceSummaryOpen}
         />
       </Paper>
     );
@@ -597,23 +620,34 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
                     <Trans>{filteredTraceSummaries.length} Results</Trans>
                   )}
                 </Typography>
-                <Box width={300}>
-                  <Autocomplete
-                    multiple
-                    value={filters}
-                    options={filterOptions}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        variant="outlined"
-                        label="Service filters"
-                        placeholder="Service filters"
-                        size="small"
-                      />
-                    )}
-                    size="small"
-                    onChange={handleFiltersChange}
-                  />
+
+                <Box display="flex">
+                  <ButtonGroup>
+                    <Button onClick={handleExpandAllButtonClick}>
+                      Expand All
+                    </Button>
+                    <Button onClick={handleCollapseAllButtonClick}>
+                      Collapse All
+                    </Button>
+                  </ButtonGroup>
+                  <Box width={300} ml={2}>
+                    <Autocomplete
+                      multiple
+                      value={filters}
+                      options={filterOptions}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          variant="outlined"
+                          label="Service filters"
+                          placeholder="Service filters"
+                          size="small"
+                        />
+                      )}
+                      size="small"
+                      onChange={handleFiltersChange}
+                    />
+                  </Box>
                 </Box>
               </Box>
             </Container>
