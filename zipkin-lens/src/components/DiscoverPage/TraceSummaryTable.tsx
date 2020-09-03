@@ -29,14 +29,14 @@ import TraceSummary from '../../models/TraceSummary';
 
 interface TraceSummaryTableProps {
   traceSummaries: TraceSummary[];
-  onClickServiceBadge: (serviceName: string) => void;
+  toggleFilter: (serivceName: string) => void;
   traceSummaryOpenMap: { [key: string]: boolean };
   toggleTraceSummaryOpen: (traceId: string) => void;
 }
 
 const TraceSummaryTable: React.FC<TraceSummaryTableProps> = ({
   traceSummaries,
-  onClickServiceBadge,
+  toggleFilter,
   traceSummaryOpenMap,
   toggleTraceSummaryOpen,
 }) => {
@@ -114,7 +114,7 @@ const TraceSummaryTable: React.FC<TraceSummaryTableProps> = ({
               <TraceSummaryRow
                 key={traceSummary.traceId}
                 traceSummary={traceSummary}
-                onClickServiceBadge={onClickServiceBadge}
+                toggleFilter={toggleFilter}
                 open={!!traceSummaryOpenMap[traceSummary.traceId]}
                 toggleOpen={toggleTraceSummaryOpen}
               />

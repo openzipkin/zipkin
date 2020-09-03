@@ -351,6 +351,81 @@ const initialLookback = (
   };
 };
 
+const useFilters = (traceSummaries: TraceSummary[]) => {
+  const [filters, setFilters] = useState<string[]>([]);
+
+  const filterOptions = useMemo(
+    () =>
+      Array.from(
+        traceSummaries.reduce((set, traceSummary) => {
+          traceSummary.serviceSummaries.forEach((serviceSummary) => {
+            set.add(serviceSummary.serviceName);
+          });
+          return set;
+        }, new Set<string>()),
+      ),
+    [traceSummaries],
+  );
+
+  const handleFiltersChange = useCallback((event: any, value: string[]) => {
+    setFilters(value);
+  }, []);
+
+  const toggleFilter = useCallback(
+    (serviceName: string) => {
+      if (filters.includes(serviceName)) {
+        setFilters(filters.filter((filter) => filter !== serviceName));
+      } else {
+        const newFilters = [...filters];
+        newFilters.push(serviceName);
+        setFilters(newFilters);
+      }
+    },
+    [filters],
+  );
+
+  return {
+    filters,
+    handleFiltersChange,
+    filterOptions,
+    toggleFilter,
+  };
+};
+
+const useTraceSummaryOpenState = (traceSummaries: TraceSummary[]) => {
+  const [traceSummaryOpenMap, setTraceSummaryOpenMap] = useState<{
+    [key: string]: boolean;
+  }>({});
+
+  const expandAll = useCallback(() => {
+    setTraceSummaryOpenMap(
+      traceSummaries.reduce((acc, cur) => {
+        acc[cur.traceId] = true;
+        return acc;
+      }, {} as { [key: string]: boolean }),
+    );
+  }, [traceSummaries]);
+
+  const collapseAll = useCallback(() => {
+    setTraceSummaryOpenMap({});
+  }, []);
+
+  const toggleTraceSummaryOpen = useCallback((traceId: string) => {
+    setTraceSummaryOpenMap((prev) => {
+      const newTraceSummaryOpenMap = { ...prev };
+      newTraceSummaryOpenMap[traceId] = !newTraceSummaryOpenMap[traceId];
+      return newTraceSummaryOpenMap;
+    });
+  }, []);
+
+  return {
+    traceSummaryOpenMap,
+    expandAll,
+    collapseAll,
+    toggleTraceSummaryOpen,
+  };
+};
+
 const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   autocompleteKeys,
 }) => {
@@ -428,54 +503,19 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     setIsOpeningSettings((prev) => !prev);
   }, []);
 
-  const [filters, setFilters] = useState<string[]>([]);
-  const filterOptions = useMemo(
-    () =>
-      Array.from(
-        traceSummaries.reduce((set, traceSummary) => {
-          traceSummary.serviceSummaries.forEach((serviceSummary) => {
-            set.add(serviceSummary.serviceName);
-          });
-          return set;
-        }, new Set<string>()),
-      ),
-    [traceSummaries],
-  );
-  const handleFiltersChange = useCallback((event: any, value: string[]) => {
-    setFilters(value);
-  }, []);
-  const handleServiceBadgeClick = useCallback(
-    (serviceName: string) => {
-      if (filters.includes(serviceName)) {
-        setFilters(filters.filter((filter) => filter !== serviceName));
-      } else {
-        const newFilters = [...filters];
-        newFilters.push(serviceName);
-        setFilters(newFilters);
-      }
-    },
-    [filters],
-  );
+  const {
+    filters,
+    handleFiltersChange,
+    filterOptions,
+    toggleFilter,
+  } = useFilters(traceSummaries);
 
-  const [traceSummaryOpenMap, setTraceSummaryOpenMap] = useState<{ [key: string]: boolean }>({});
-  const handleExpandAllButtonClick = useCallback(() => {
-    setTraceSummaryOpenMap(
-      traceSummaries.reduce((acc, cur) => {
-        acc[cur.traceId] = true;
-        return acc;
-      }, {} as { [key: string]: boolean }),
-    );
-  }, [traceSummaries]);
-  const handleCollapseAllButtonClick = useCallback(() => {
-    setTraceSummaryOpenMap({});
-  }, []);
-  const toggleTraceSummaryOpen = useCallback((traceId: string) => {
-    setTraceSummaryOpenMap((prev) => {
-      const newTraceSummaryOpenMap = { ...prev };
-      newTraceSummaryOpenMap[traceId] = !newTraceSummaryOpenMap[traceId];
-      return newTraceSummaryOpenMap;
-    });
-  }, []);
+  const {
+    traceSummaryOpenMap,
+    expandAll,
+    collapseAll,
+    toggleTraceSummaryOpen,
+  } = useTraceSummaryOpenState(traceSummaries);
 
   const filteredTraceSummaries = useMemo(() => {
     return traceSummaries.filter((traceSummary) => {
@@ -521,7 +561,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
       <Paper elevation={3}>
         <TraceSummaryTable
           traceSummaries={filteredTraceSummaries}
-          onClickServiceBadge={handleServiceBadgeClick}
+          toggleFilter={toggleFilter}
           traceSummaryOpenMap={traceSummaryOpenMap}
           toggleTraceSummaryOpen={toggleTraceSummaryOpen}
         />
@@ -623,12 +663,8 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
 
                 <Box display="flex">
                   <ButtonGroup>
-                    <Button onClick={handleExpandAllButtonClick}>
-                      Expand All
-                    </Button>
-                    <Button onClick={handleCollapseAllButtonClick}>
-                      Collapse All
-                    </Button>
+                    <Button onClick={expandAll}>Expand All</Button>
+                    <Button onClick={collapseAll}>Collapse All</Button>
                   </ButtonGroup>
                   <Box width={300} ml={2}>
                     <Autocomplete

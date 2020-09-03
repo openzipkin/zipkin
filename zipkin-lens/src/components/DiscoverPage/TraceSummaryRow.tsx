@@ -35,14 +35,14 @@ import ServiceBadge from '../common/ServiceBadge';
 
 interface TraceSummaryRowProps {
   traceSummary: TraceSummary;
-  onClickServiceBadge: (serviceName: string) => void;
+  toggleFilter: (serviceName: string) => void;
   open: boolean;
   toggleOpen: (traceId: string) => void;
 }
 
 const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({
   traceSummary,
-  onClickServiceBadge,
+  toggleFilter,
   open,
   toggleOpen,
 }) => {
@@ -122,7 +122,7 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({
                   <ServiceBadge
                     serviceName={serviceSummary.serviceName}
                     count={serviceSummary.spanCount}
-                    onClick={onClickServiceBadge}
+                    onClick={toggleFilter}
                   />
                 ))}
               </BadgesWrapper>
