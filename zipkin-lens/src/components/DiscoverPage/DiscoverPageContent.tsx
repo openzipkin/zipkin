@@ -443,6 +443,18 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   const handleFiltersChange = useCallback((event: any, value: string[]) => {
     setFilters(value);
   }, []);
+  const handleServiceBadgeClick = useCallback(
+    (serviceName: string) => {
+      if (filters.includes(serviceName)) {
+        setFilters(filters.filter((filter) => filter !== serviceName));
+      } else {
+        const newFilters = [...filters];
+        newFilters.push(serviceName);
+        setFilters(newFilters);
+      }
+    },
+    [filters],
+  );
 
   const filteredTraceSummaries = useMemo(() => {
     return traceSummaries.filter((traceSummary) => {
@@ -486,7 +498,10 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   } else {
     content = (
       <Paper elevation={3}>
-        <TraceSummaryTable traceSummaries={filteredTraceSummaries} />
+        <TraceSummaryTable
+          traceSummaries={filteredTraceSummaries}
+          onClickServiceBadge={handleServiceBadgeClick}
+        />
       </Paper>
     );
   }
@@ -585,6 +600,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
                 <Box width={300}>
                   <Autocomplete
                     multiple
+                    value={filters}
                     options={filterOptions}
                     renderInput={(params) => (
                       <TextField

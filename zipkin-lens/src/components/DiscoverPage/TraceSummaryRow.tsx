@@ -19,7 +19,6 @@ import {
   TableCell,
   TableRow,
   Typography,
-  useTheme,
   Button,
 } from '@material-ui/core';
 import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
@@ -27,56 +26,22 @@ import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
 import moment from 'moment';
 import React, { useMemo, useReducer } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  LabelList,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 import styled from 'styled-components';
 
-import {
-  selectColorByInfoClass,
-  selectServiceColor,
-} from '../../constants/color';
+import { selectColorByInfoClass } from '../../constants/color';
 import TraceSummary from '../../models/TraceSummary';
 import { formatDuration } from '../../util/timestamp';
-
-const renderCustomizedLabel = (props: any) => {
-  const { x, y, width, value } = props;
-  const radius = 10;
-
-  return (
-    <g>
-      <circle
-        cx={x + width / 2}
-        cy={y - radius}
-        r={radius}
-        fill={selectServiceColor(value)}
-      />
-      <text
-        x={x + width / 2}
-        y={y - radius}
-        fill="#fff"
-        textAnchor="middle"
-        dominantBaseline="middle"
-      >
-        {value[0].toUpperCase()}
-      </text>
-    </g>
-  );
-};
+import ServiceBadge from '../common/ServiceBadge';
 
 interface TraceSummaryRowProps {
   traceSummary: TraceSummary;
+  onClickServiceBadge: (serviceName: string) => void;
 }
 
-const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
-  const theme = useTheme();
+const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({
+  traceSummary,
+  onClickServiceBadge,
+}) => {
   const [open, toggleOpen] = useReducer((state: boolean) => !state, false);
   const startTime = moment(traceSummary.timestamp / 1000);
 
@@ -145,34 +110,15 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({ traceSummary }) => {
                 </Typography>
                 <TraceIdTypography>{traceSummary.traceId}</TraceIdTypography>
               </Box>
-            </Box>
-            <Box height={150}>
-              <ResponsiveContainer>
-                <BarChart
-                  data={sortedServiceSummaries}
-                  margin={{
-                    top: 20,
-                    right: 30,
-                    left: 20,
-                    bottom: 20,
-                  }}
-                >
-                  <XAxis dataKey="serviceName" hide />
-                  <YAxis />
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip />
-                  <Bar
-                    dataKey="spanCount"
-                    fill={theme.palette.primary.light}
-                    minPointSize={5}
-                  >
-                    <LabelList
-                      dataKey="serviceName"
-                      content={renderCustomizedLabel}
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <BadgesWrapper>
+                {sortedServiceSummaries.map((serviceSummary) => (
+                  <ServiceBadge
+                    serviceName={serviceSummary.serviceName}
+                    count={serviceSummary.spanCount}
+                    onClick={onClickServiceBadge}
+                  />
+                ))}
+              </BadgesWrapper>
             </Box>
           </Collapse>
         </CollapsibleTableCell>
@@ -228,4 +174,12 @@ const TraceIdTypography = styled(Typography).attrs({
   variant: 'body1',
 })`
   margin-left: ${({ theme }) => theme.spacing(0.5)}px;
+`;
+
+const BadgesWrapper = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  & > * {
+    margin: ${({ theme }) => theme.spacing(0.5)}px;
+  }
 `;

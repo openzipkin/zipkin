@@ -29,10 +29,12 @@ import TraceSummary from '../../models/TraceSummary';
 
 interface TraceSummaryTableProps {
   traceSummaries: TraceSummary[];
+  onClickServiceBadge: (serviceName: string) => void;
 }
 
 const TraceSummaryTable: React.FC<TraceSummaryTableProps> = ({
   traceSummaries,
+  onClickServiceBadge,
 }) => {
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [orderBy, setOrderBy] = useState<
@@ -108,6 +110,7 @@ const TraceSummaryTable: React.FC<TraceSummaryTableProps> = ({
               <TraceSummaryRow
                 key={traceSummary.traceId}
                 traceSummary={traceSummary}
+                onClickServiceBadge={onClickServiceBadge}
               />
             ))}
         </TableBody>

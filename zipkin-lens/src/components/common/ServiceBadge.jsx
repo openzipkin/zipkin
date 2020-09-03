@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles, ThemeProvider } from '@material-ui/styles';
@@ -22,12 +22,10 @@ import Paper from '@material-ui/core/Paper';
 import { selectServiceTheme } from '../../constants/color';
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    display: 'flex',
-  },
   paper: {
     overflow: 'hidden',
     display: 'flex',
+    flexShrink: 0,
   },
   buttonBase: {
     height: '1.8rem',
@@ -35,7 +33,6 @@ const useStyles = makeStyles((theme) => ({
     paddingLeft: '0.5rem',
     display: 'flex',
     alignItems: 'center',
-    textTransform: 'uppercase',
     color: theme.palette.common.white,
     backgroundColor: theme.palette.primary.dark,
   },
@@ -71,29 +68,31 @@ const ServiceBadgeImpl = ({ serviceName, count, onClick, onDelete }) => {
     serviceName,
   ]);
 
+  const handleClick = useCallback(() => {
+    onClick(serviceName);
+  }, [onClick, serviceName]);
+
   return (
-    <Box className={classes.root}>
-      <Paper className={classes.paper}>
+    <Paper className={classes.paper}>
+      <Box
+        className={`${classes.buttonBase} ${
+          onClick ? classes.clickableButton : ''
+        }`}
+        onClick={handleClick}
+        data-test="badge"
+      >
+        {label}
+      </Box>
+      {onDelete ? (
         <Box
-          className={`${classes.buttonBase} ${
-            onClick ? classes.clickableButton : ''
-          }`}
-          onClick={onClick}
-          data-test="badge"
+          className={`${classes.buttonBase} ${classes.clickableButton}`}
+          onClick={onDelete}
+          data-test="delete-button"
         >
-          {label}
+          <FontAwesomeIcon icon={faTimes} />
         </Box>
-        {onDelete ? (
-          <Box
-            className={`${classes.buttonBase} ${classes.clickableButton}`}
-            onClick={onDelete}
-            data-test="delete-button"
-          >
-            <FontAwesomeIcon icon={faTimes} />
-          </Box>
-        ) : null}
-      </Paper>
-    </Box>
+      ) : null}
+    </Paper>
   );
 };
 
