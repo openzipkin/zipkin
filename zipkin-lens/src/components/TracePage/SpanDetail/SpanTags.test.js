@@ -24,6 +24,7 @@ describe('<SpanTags />', () => {
           { key: 'key1', value: 'value1' },
           { key: 'key2', value: 'value2' },
           { key: 'key3', value: 'value3' },
+          { key: 'key4', value: 'value4\nvalue4' },
         ]}
       />,
     );
@@ -35,5 +36,7 @@ describe('<SpanTags />', () => {
     expect(values[1]).toHaveTextContent('value2');
     expect(keys[2]).toHaveTextContent('key3');
     expect(values[2]).toHaveTextContent('value3');
+    expect(keys[3]).toHaveTextContent('key4');
+    expect(values[3]).toHaveTextContent('value4 value4');
   });
 });
