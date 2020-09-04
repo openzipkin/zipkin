@@ -29,6 +29,7 @@
   "Service Name": "服务",
   "Services": "服务",
   "Span ID": "Span ID",
+  "Spans": "Spans",
   "Start Time": "开始时间",
   "Support": "支持",
   "Tags": "标签",
@@ -42,5 +43,6 @@
   "hide annotations": "隐藏annotations",
   "show all annotations": "显示全部annotations",
   "trace id...": "trace id...",
-  "{0} Results": "{0} 条结果"
+  "{0} Results": "{0} 条结果",
+  "1 Result": "1 条结果"
 }

@@ -14,7 +14,7 @@
 import orderBy from 'lodash/orderBy';
 import moment from 'moment';
 import { compare } from './span-cleaner';
-import { getErrorType, newSpanRow } from './span-row';
+import { getErrorType, newSpanRow, getServiceName } from './span-row';
 
 // To ensure data doesn't scroll off the screen, we need all timestamps, not just
 // client/server ones.
@@ -82,6 +82,17 @@ export function traceSummary(root) {
   if (timestamps.length === 0)
     throw new Error(`Trace ${traceId} is missing a timestamp`);
 
+  let rootServiceName;
+  let rootSpanName;
+  const [rootSpan] = root.queueRootMostSpans();
+  if (rootSpan) {
+    rootServiceName =
+      getServiceName(rootSpan._span.localEndpoint) ||
+      getServiceName(rootSpan._span.remoteEndpoint) ||
+      'unknown';
+    rootSpanName = rootSpan._span.name || 'unknown';
+  }
+
   return {
     traceId,
     timestamp: timestamps[0],
@@ -89,6 +100,10 @@ export function traceSummary(root) {
     groupedTimestamps,
     errorType,
     spanCount,
+    root: {
+      serviceName: rootServiceName,
+      spanName: rootSpanName,
+    },
   };
 }
 
@@ -188,6 +203,7 @@ export function traceSummaries(serviceName, summaries, utc = false) {
         timestamp, // used only for client-side sort
         startTs: formatDate(timestamp, utc),
         spanCount: t.spanCount,
+        root: t.root,
       };
 
       const duration = t.duration || 0;

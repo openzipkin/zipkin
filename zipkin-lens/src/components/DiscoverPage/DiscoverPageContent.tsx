@@ -20,14 +20,20 @@ import { Trans } from '@lingui/macro';
 import {
   Box,
   Button,
+  ButtonProps,
   CircularProgress,
+  Container,
   Paper,
   TextField,
-  Container,
+  Divider,
+  Collapse,
+  Typography,
+  ButtonGroup,
 } from '@material-ui/core';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import SettingsIcon from '@material-ui/icons/Settings';
+import { Autocomplete } from '@material-ui/lab';
 import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -37,13 +43,13 @@ import styled from 'styled-components';
 import Criterion, { newCriterion } from './Criterion';
 import LookbackMenu from './LookbackMenu';
 import SearchBar from './SearchBar';
+import TraceSummaryTable from './TraceSummaryTable';
 import { Lookback, fixedLookbackMap, millisecondsToValue } from './lookback';
 import { useUiConfig } from '../UiConfig';
-import { clearTraces, loadTraces } from '../../actions/traces-action';
-import { RootState } from '../../store';
 import ExplainBox from '../common/ExplainBox';
-
-const TracesTab = require('./TracesTab').default;
+import { clearTraces, loadTraces } from '../../actions/traces-action';
+import TraceSummary from '../../models/TraceSummary';
+import { RootState } from '../../store';
 
 interface DiscoverPageContentProps {
   autocompleteKeys: string[];
@@ -345,6 +351,81 @@ const initialLookback = (
   };
 };
 
+const useFilters = (traceSummaries: TraceSummary[]) => {
+  const [filters, setFilters] = useState<string[]>([]);
+
+  const filterOptions = useMemo(
+    () =>
+      Array.from(
+        traceSummaries.reduce((set, traceSummary) => {
+          traceSummary.serviceSummaries.forEach((serviceSummary) => {
+            set.add(serviceSummary.serviceName);
+          });
+          return set;
+        }, new Set<string>()),
+      ),
+    [traceSummaries],
+  );
+
+  const handleFiltersChange = useCallback((event: any, value: string[]) => {
+    setFilters(value);
+  }, []);
+
+  const toggleFilter = useCallback(
+    (serviceName: string) => {
+      if (filters.includes(serviceName)) {
+        setFilters(filters.filter((filter) => filter !== serviceName));
+      } else {
+        const newFilters = [...filters];
+        newFilters.push(serviceName);
+        setFilters(newFilters);
+      }
+    },
+    [filters],
+  );
+
+  return {
+    filters,
+    handleFiltersChange,
+    filterOptions,
+    toggleFilter,
+  };
+};
+
+const useTraceSummaryOpenState = (traceSummaries: TraceSummary[]) => {
+  const [traceSummaryOpenMap, setTraceSummaryOpenMap] = useState<{
+    [key: string]: boolean;
+  }>({});
+
+  const expandAll = useCallback(() => {
+    setTraceSummaryOpenMap(
+      traceSummaries.reduce((acc, cur) => {
+        acc[cur.traceId] = true;
+        return acc;
+      }, {} as { [key: string]: boolean }),
+    );
+  }, [traceSummaries]);
+
+  const collapseAll = useCallback(() => {
+    setTraceSummaryOpenMap({});
+  }, []);
+
+  const toggleTraceSummaryOpen = useCallback((traceId: string) => {
+    setTraceSummaryOpenMap((prev) => {
+      const newTraceSummaryOpenMap = { ...prev };
+      newTraceSummaryOpenMap[traceId] = !newTraceSummaryOpenMap[traceId];
+      return newTraceSummaryOpenMap;
+    });
+  }, []);
+
+  return {
+    traceSummaryOpenMap,
+    expandAll,
+    collapseAll,
+    toggleTraceSummaryOpen,
+  };
+};
+
 const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   autocompleteKeys,
 }) => {
@@ -399,29 +480,55 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     }
   }, [setQueryParams, tempCriteria, tempLookback, tempLimit]);
 
-  const [traces, isLoadingTraces] = useSelector((state: RootState) => [
+  const [
+    traces,
+    isLoadingTraces,
+    traceSummaries,
+  ] = useSelector((state: RootState) => [
     state.traces.traces,
     state.traces.isLoading,
+    state.traces.traceSummaries as TraceSummary[],
   ]);
 
   const [isShowingLookbackMenu, setIsShowingLookbackMenu] = useState(false);
-
   const toggleLookbackMenu = useCallback(() => {
     setIsShowingLookbackMenu((prev) => !prev);
   }, []);
-
   const closeLookbackMenu = useCallback(() => {
     setIsShowingLookbackMenu(false);
   }, []);
 
   const [isOpeningSettings, setIsOpeningSettings] = useState(false);
-
   const handleSettingsButtonClick = useCallback(() => {
     setIsOpeningSettings((prev) => !prev);
   }, []);
 
-  let content: JSX.Element | undefined;
+  const {
+    filters,
+    handleFiltersChange,
+    filterOptions,
+    toggleFilter,
+  } = useFilters(traceSummaries);
 
+  const {
+    traceSummaryOpenMap,
+    expandAll,
+    collapseAll,
+    toggleTraceSummaryOpen,
+  } = useTraceSummaryOpenState(traceSummaries);
+
+  const filteredTraceSummaries = useMemo(() => {
+    return traceSummaries.filter((traceSummary) => {
+      const serviceNameSet = new Set(
+        traceSummary.serviceSummaries.map(
+          (serviceSummary) => serviceSummary.serviceName,
+        ),
+      );
+      return !filters.find((filter) => !serviceNameSet.has(filter));
+    });
+  }, [filters, traceSummaries]);
+
+  let content: JSX.Element | undefined;
   if (isLoadingTraces) {
     content = (
       <Box
@@ -452,7 +559,12 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   } else {
     content = (
       <Paper elevation={3}>
-        <TracesTab />
+        <TraceSummaryTable
+          traceSummaries={filteredTraceSummaries}
+          toggleFilter={toggleFilter}
+          traceSummaryOpenMap={traceSummaryOpenMap}
+          toggleTraceSummaryOpen={toggleTraceSummaryOpen}
+        />
       </Paper>
     );
   }
@@ -464,7 +576,13 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
       display="flex"
       flexDirection="column"
     >
-      <Box bgcolor="background.paper" boxShadow={3} pt={3} pb={3} zIndex={1000}>
+      <Box
+        bgcolor="background.paper"
+        boxShadow={3}
+        pt={2}
+        pb={1.5}
+        zIndex={1000}
+      >
         <Container>
           <Box display="flex">
             <Box flexGrow={1} mr={1}>
@@ -483,14 +601,30 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
               <SettingsIcon />
             </SettingsButton>
           </Box>
-          {isOpeningSettings ? (
+        </Container>
+        <Collapse in={isOpeningSettings}>
+          <Box mt={1.5} mb={1.5}>
+            <Divider />
+          </Box>
+          <Container>
             <Box
               display="flex"
               alignItems="center"
               justifyContent="flex-end"
               mt={1.75}
             >
-              <Box mr={1} position="relative">
+              <TextField
+                label={<Trans>Limit</Trans>}
+                type="number"
+                variant="outlined"
+                value={tempLimit}
+                onChange={handleLimitChange}
+                size="small"
+                inputProps={{
+                  'data-testid': 'query-limit',
+                }}
+              />
+              <Box ml={1} position="relative">
                 <LookbackButton
                   onClick={toggleLookbackMenu}
                   isShowingLookbackMenu={isShowingLookbackMenu}
@@ -505,20 +639,56 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
                   />
                 )}
               </Box>
-              <TextField
-                label="Limit"
-                type="number"
-                variant="outlined"
-                value={tempLimit}
-                onChange={handleLimitChange}
-                size="small"
-                inputProps={{
-                  'data-testid': 'query-limit',
-                }}
-              />
             </Box>
-          ) : null}
-        </Container>
+          </Container>
+        </Collapse>
+        {traceSummaries.length > 0 && (
+          <>
+            <Box mt={1.5} mb={1.5}>
+              <Divider />
+            </Box>
+            <Container>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Typography variant="h6">
+                  {filteredTraceSummaries.length === 1 ? (
+                    <Trans>1 Result</Trans>
+                  ) : (
+                    <Trans>{filteredTraceSummaries.length} Results</Trans>
+                  )}
+                </Typography>
+
+                <Box display="flex">
+                  <ButtonGroup>
+                    <Button onClick={expandAll}>Expand All</Button>
+                    <Button onClick={collapseAll}>Collapse All</Button>
+                  </ButtonGroup>
+                  <Box width={300} ml={2}>
+                    <Autocomplete
+                      multiple
+                      value={filters}
+                      options={filterOptions}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          variant="outlined"
+                          label="Service filters"
+                          placeholder="Service filters"
+                          size="small"
+                        />
+                      )}
+                      size="small"
+                      onChange={handleFiltersChange}
+                    />
+                  </Box>
+                </Box>
+              </Box>
+            </Container>
+          </>
+        )}
       </Box>
       <Box flexGrow={1} overflow="auto" pt={3} pb={3}>
         <Container>{content}</Container>
@@ -552,12 +722,15 @@ const SearchButton = styled(Button).attrs({
   color: ${({ theme }) => theme.palette.common.white};
 `;
 
-const SettingsButton = styled(Button).attrs<{ isOpening: boolean }>(
-  ({ isOpening }) => ({
-    variant: 'outlined',
-    endIcon: isOpening ? <ExpandLessIcon /> : <ExpandMoreIcon />,
-  }),
-)<{ isOpening: boolean }>`
+const SettingsButton = styled(
+  ({ isOpening, ...rest }: { isOpening: boolean } & ButtonProps) => (
+    <Button
+      variant="outlined"
+      endIcon={isOpening ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+      {...rest}
+    />
+  ),
+)`
   flex-shrink: 0;
   height: 60px;
   min-width: 0px;
