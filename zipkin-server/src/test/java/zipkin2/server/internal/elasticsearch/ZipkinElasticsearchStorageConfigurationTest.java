@@ -25,6 +25,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.UnsatisfiedDependencyException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -405,6 +406,42 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
     assertThat(es()).extracting("autocompleteCardinality")
       .isEqualTo(5000);
+  }
+
+  @Test public void templatePriority_valid() {
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.template-priority:0")
+      .applyTo(context);
+    Access.registerElasticsearch(context);
+    context.refresh();
+
+    assertThat(es()).extracting("templatePriority")
+      .isEqualTo(0);
+  }
+
+  @Test public void templatePriority_null() {
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.template-priority:")
+      .applyTo(context);
+    Access.registerElasticsearch(context);
+    context.refresh();
+
+    assertThat(es()).extracting("templatePriority")
+      .isNull();
+  }
+
+  @Test(expected = UnsatisfiedDependencyException.class)
+  public void templatePriority_Invalid() {
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.template-priority:string")
+      .applyTo(context);
+    Access.registerElasticsearch(context);
+    context.refresh();
+
+    es();
   }
 
   ElasticsearchStorage es() {

@@ -291,6 +291,8 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                          Options are BASIC, HEADERS, BODY
     * `ES_SSL_NO_VERIFY`: When true, disables the verification of server's key certificate chain.
                           This is not appropriate for production. Defaults to false.
+    * `ES_TEMPLATE_PRIORITY`: The priority value of the composable index templates. This is only applicable
+                              for ES version 7.8 or above. Must be set, even to 0, to use composable template
 
 Example usage:
 

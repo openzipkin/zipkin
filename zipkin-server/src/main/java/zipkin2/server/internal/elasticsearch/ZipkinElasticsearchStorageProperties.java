@@ -50,6 +50,7 @@ import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
  *     enabled: true
  *     http-logging: HEADERS
  *     interval: 3s
+ *   template-priority: 0
  * }</pre>
  */
 @ConfigurationProperties("zipkin.storage.elasticsearch")
@@ -212,6 +213,8 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
 
   private HealthCheck healthCheck = new HealthCheck();
 
+  private Integer templatePriority;
+
   public String getPipeline() {
     return pipeline;
   }
@@ -346,6 +349,10 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     this.ssl = ssl;
   }
 
+  public Integer getTemplatePriority() { return templatePriority; }
+
+  public void setTemplatePriority(Integer templatePriority) { this.templatePriority = templatePriority; }
+
   public ElasticsearchStorage.Builder toBuilder(LazyHttpClient httpClient) {
     ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder(httpClient);
     if (index != null) builder.index(index);
@@ -360,6 +367,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     if (maxRequests != null) {
       log.warning("ES_MAX_REQUESTS is no longer honored. Use STORAGE_THROTTLE_ENABLED instead");
     }
+    if (templatePriority != null) builder.templatePriority(templatePriority);
     return builder;
   }
 

@@ -164,6 +164,7 @@ zipkin:
       health-check:
         enabled: ${ES_HEALTH_CHECK_ENABLED:true}
         interval: ${ES_HEALTH_CHECK_INTERVAL:3s}
+      template-priority: ${ES_TEMPLATE_PRIORITY:}
     mysql:
       jdbc-url: ${MYSQL_JDBC_URL:}
       host: ${MYSQL_HOST:localhost}

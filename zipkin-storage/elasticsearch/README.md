@@ -120,6 +120,17 @@ be written, nor analyzed.
 
 [Disabling search](../../README.md#disabling-search) disables indexing.
 
+### Composable Index Template
+Elasticsearch 7.8 introduces [composable templates](https://www.elastic.co/guide/en/elasticsearch/reference/current/index-templates.html) and
+deprecates [legacy/v1 templates](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-templates-v1.html) used in version prior.
+Merging of multiple templates with matching index patterns is no longer allowed, and Elasticsearch will return error on PUT of the second template
+with matching index pattern and priority. Templates with matching index patterns are required to have different priorities, and Elasticsearch will
+only use the template with the highest priority. This also means that [secondary template](https://gist.github.com/adriancole/1af1259102e7a2da1b3c9103565165d7)
+is no longer achievable.
+
+By default, Zipkin will use legacy template during initialization, but you can opt to use composable template by
+providing `ES_TEMPLATE_PRIORITY` environment variable.
+
 ## Customizing the ingest pipeline
 
 You can setup an [ingest pipeline](https://www.elastic.co/guide/en/elasticsearch/reference/master/pipeline.html) to perform custom processing.
