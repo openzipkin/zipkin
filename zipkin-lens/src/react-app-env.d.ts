@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-// / <reference types="react-scripts" />
+/// <reference types="react-scripts" />
 
 // This file imports type definitions set up by react-scripts, for example the ability to
 // import image files into the bundle.

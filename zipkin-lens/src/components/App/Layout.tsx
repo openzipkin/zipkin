@@ -29,7 +29,6 @@ import {
   IconButton as MuiIconButton,
   Tooltip,
 } from '@material-ui/core';
-import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -41,11 +40,7 @@ import { darkTheme } from '../../constants/color';
 import logoSrc from '../../img/zipkin-logo.png';
 import HeaderMenuItem from './HeaderMenuItem';
 
-const propTypes = {
-  children: PropTypes.arrayOf(PropTypes.element).isRequired,
-};
-
-const Layout = ({ children }) => {
+const Layout: React.FC = ({ children }) => {
   const { i18n } = useLingui();
   const config = useUiConfig();
 
@@ -96,11 +91,13 @@ const Layout = ({ children }) => {
                 <TraceJsonUploader />
                 <TraceIdSearchInput />
                 {config.supportUrl && (
-                  <Tooltip title={i18n._(t`Support`)}>
-                    <IconButton href={config.supportUrl}>
-                      <FontAwesomeIcon icon={faQuestionCircle} />
-                    </IconButton>
-                  </Tooltip>
+                  <Box ml={1}>
+                    <Tooltip title={i18n._(t`Support`)}>
+                      <MuiIconButton href={config.supportUrl}>
+                        <FontAwesomeIcon icon={faQuestionCircle} />
+                      </MuiIconButton>
+                    </Tooltip>
+                  </Box>
                 )}
               </Box>
             </ThemeProvider>
@@ -114,8 +111,6 @@ const Layout = ({ children }) => {
     </Box>
   );
 };
-
-Layout.propTypes = propTypes;
 
 export default Layout;
 
@@ -146,9 +141,4 @@ const Title = styled(Typography).attrs({
 
 const ToolbarSpace = styled.div`
   min-height: 64px;
-`;
-
-const IconButton = styled(MuiIconButton)`
-  margin-right: ${({ theme }) => theme.spacing(2)}px;
-  margin-left: ${({ theme }) => theme.spacing(2)}px;
 `;
