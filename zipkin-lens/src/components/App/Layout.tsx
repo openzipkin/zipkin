@@ -30,22 +30,34 @@ import {
   Tooltip,
 } from '@material-ui/core';
 import React from 'react';
+import { useSelector } from 'react-redux';
 import styled from 'styled-components';
 
+import HeaderMenuItem from './HeaderMenuItem';
 import LanguageSelector from './LanguageSelector';
 import { useUiConfig } from '../UiConfig';
+import LoadingOverlay from '../common/LoadingOverlay';
 import TraceIdSearchInput from '../common/TraceIdSearchInput';
 import TraceJsonUploader from '../common/TraceJsonUploader';
 import { darkTheme } from '../../constants/color';
 import logoSrc from '../../img/zipkin-logo.png';
-import HeaderMenuItem from './HeaderMenuItem';
+import { RootState } from '../../store';
 
 const Layout: React.FC = ({ children }) => {
   const { i18n } = useLingui();
   const config = useUiConfig();
 
+  const [
+    isLoadingTraces,
+    loadingTracesError,
+  ] = useSelector((state: RootState) => [
+    state.traces.isLoading,
+    state.traces.error,
+  ]);
+
   return (
     <Box display="flex">
+      <LoadingOverlay isLoading={isLoadingTraces} error={loadingTracesError} />
       <CssBaseline />
       <AppBar>
         <Toolbar>

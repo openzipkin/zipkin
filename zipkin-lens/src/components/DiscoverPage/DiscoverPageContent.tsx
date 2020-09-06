@@ -21,7 +21,6 @@ import {
   Box,
   Button,
   ButtonProps,
-  CircularProgress,
   Container,
   Paper,
   TextField,
@@ -47,8 +46,8 @@ import TraceSummaryTable from './TraceSummaryTable';
 import { Lookback, fixedLookbackMap, millisecondsToValue } from './lookback';
 import { useUiConfig } from '../UiConfig';
 import ExplainBox from '../common/ExplainBox';
-import { clearTraces, loadTraces } from '../../actions/traces-action';
 import TraceSummary from '../../models/TraceSummary';
+import { clearTraceSummaries, searchTraces } from '../../slices/tracesSlice';
 import { RootState } from '../../store';
 
 interface DiscoverPageContentProps {
@@ -318,14 +317,13 @@ const useFetchTraces = (
 
   useEffect(() => {
     // For searching, lookback and limit are always required.
-    // If it doesn't exist, clear traces.
+    // If it doesn't exist, clear trace summaries.
     if (!lookback || !limit) {
-      dispatch(clearTraces());
+      dispatch(clearTraceSummaries());
       return;
     }
-
     const params = buildApiQuery(criteria, lookback, limit, autocompleteKeys);
-    dispatch(loadTraces(params));
+    dispatch(searchTraces(params));
   }, [autocompleteKeys, criteria, dispatch, limit, lookback]);
 };
 
@@ -480,15 +478,9 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     }
   }, [setQueryParams, tempCriteria, tempLookback, tempLimit]);
 
-  const [
-    traces,
-    isLoadingTraces,
-    traceSummaries,
-  ] = useSelector((state: RootState) => [
-    state.traces.traces,
-    state.traces.isLoading,
-    state.traces.traceSummaries as TraceSummary[],
-  ]);
+  const traceSummaries = useSelector(
+    (state: RootState) => state.traces.traceSummaries,
+  );
 
   const [isShowingLookbackMenu, setIsShowingLookbackMenu] = useState(false);
   const toggleLookbackMenu = useCallback(() => {
@@ -529,21 +521,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   }, [filters, traceSummaries]);
 
   let content: JSX.Element | undefined;
-  if (isLoadingTraces) {
-    content = (
-      <Box
-        width="100%"
-        height="100vh"
-        top={0}
-        position="fixed"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <CircularProgress />
-      </Box>
-    );
-  } else if (traces.length === 0) {
+  if (traceSummaries.length === 0) {
     content = (
       <ExplainBox
         icon={faSearch}
