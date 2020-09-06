@@ -703,7 +703,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
                 </Box>
               </Box>
               <Collapse in={openServiceScatterChart}>
-                <Box width="100%" height={250} pt={1} pb={1} pl={4} pr={4}>
+                <Box width="100%" height={180} pt={1} pb={1} pl={4} pr={4}>
                   <ServiceScatterChart
                     traceSummaries={filteredTraceSummaries}
                   />
