@@ -15,21 +15,21 @@
 import {
   Box,
   Button,
+  ClickAwayListener,
   Grid,
   List,
   ListItem,
   ListItemText,
   Paper,
+  TextField,
   Theme,
   createStyles,
   makeStyles,
-  TextField,
 } from '@material-ui/core';
 import { KeyboardDateTimePicker } from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import moment, { Moment } from 'moment';
-import React, { useCallback, useRef, useState } from 'react';
-import { useEvent } from 'react-use';
+import React, { useCallback, useState } from 'react';
 
 import { fixedLookbackMap, FixedLookbackValue, Lookback } from './lookback';
 
@@ -37,10 +37,10 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       position: 'absolute',
-      top: 35,
+      top: 45,
       right: 0,
       height: 420,
-      width: 500,
+      width: 600,
       zIndex: theme.zIndex.modal,
     },
     containerGrid: {
@@ -101,28 +101,14 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
   }, []);
 
   const handleDialogClose = useCallback(() => {
-    // Use setTimeout to change isOpeningDialog state after
-    // handleOutsideClick callback function is executed.
-    window.setTimeout(() => {
-      setIsOpeningDialog(false);
-    }, 0);
+    setIsOpeningDialog(false);
   }, []);
 
-  const el = useRef<HTMLDivElement>();
-
-  const handleOutsideClick = useCallback(
-    (event: any) => {
-      if (
-        !isOpeningDialog &&
-        (!el.current || !el.current.contains(event.target))
-      ) {
-        close();
-      }
-    },
-    [close, isOpeningDialog],
-  );
-
-  useEvent('click', handleOutsideClick, window, false);
+  const handleOutsideClick = useCallback(() => {
+    if (!isOpeningDialog) {
+      close();
+    }
+  }, [close, isOpeningDialog]);
 
   // For Millis Lookback
   const [millis, setMillis] = useState(initialMillis(lookback));
@@ -177,109 +163,111 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
   }, [startTime, endTime, onChange, close]);
 
   return (
-    <Paper ref={el} elevation={5} className={classes.root}>
-      <Grid container className={classes.containerGrid}>
-        <Grid item xs={5} className={classes.fixedLookbackItemGrid}>
-          <List className={classes.list}>
-            {([
-              '1m',
-              '5m',
-              '15m',
-              '30m',
-              '1h',
-              '2h',
-              '3h',
-              '6h',
-              '12h',
-              '1d',
-              '2d',
-              '7d',
-            ] as FixedLookbackValue[]).map((value) => (
-              <ListItem
-                button
-                onClick={handleListItemClick(value)}
-                key={value}
-                data-testid={`lookback-${value}`}
-              >
-                <ListItemText primary={fixedLookbackMap[value].display} />
-              </ListItem>
-            ))}
-          </List>
-        </Grid>
-        <Grid item xs={7}>
-          <Box p={2}>
-            <Box fontSize="1.1rem" color="text.secondary" mb={2}>
-              Millis Lookback
-            </Box>
-            <TextField
-              label="Milliseconds"
-              onChange={handleMillisChange}
-              value={millis.toString()}
-              variant="outlined"
-              size="small"
-              type="number"
-              inputProps={{
-                min: '0',
-                'data-testid': 'millis-input',
-              }}
-            />
-            <Box display="flex" justifyContent="flex-end" mt={1}>
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={handleMillisApplyButtonClick}
-                data-testid="millis-apply-button"
-              >
-                Apply
-              </Button>
-            </Box>
-          </Box>
-          <Box p={2} borderTop={1} borderColor="divider">
-            <Box fontSize="1.1rem" color="text.secondary" mb={2}>
-              Range Lookback
-            </Box>
-            <Box mb={2}>
-              <KeyboardDateTimePicker
-                label="Start Time"
-                inputVariant="outlined"
-                format="MM/DD/YYYY HH:mm:ss"
-                value={startTime}
-                onChange={handleStartTimeChange}
-                onOpen={handleDialogOpen}
-                onClose={handleDialogClose}
-                data-testid="date-time-picker"
+    <ClickAwayListener onClickAway={handleOutsideClick}>
+      <Paper elevation={5} className={classes.root}>
+        <Grid container className={classes.containerGrid}>
+          <Grid item xs={5} className={classes.fixedLookbackItemGrid}>
+            <List className={classes.list}>
+              {([
+                '1m',
+                '5m',
+                '15m',
+                '30m',
+                '1h',
+                '2h',
+                '3h',
+                '6h',
+                '12h',
+                '1d',
+                '2d',
+                '7d',
+              ] as FixedLookbackValue[]).map((value) => (
+                <ListItem
+                  button
+                  onClick={handleListItemClick(value)}
+                  key={value}
+                  data-testid={`lookback-${value}`}
+                >
+                  <ListItemText primary={fixedLookbackMap[value].display} />
+                </ListItem>
+              ))}
+            </List>
+          </Grid>
+          <Grid item xs={7}>
+            <Box p={2}>
+              <Box fontSize="1.1rem" color="text.secondary" mb={2}>
+                Millis Lookback
+              </Box>
+              <TextField
+                label="Milliseconds"
+                onChange={handleMillisChange}
+                value={millis.toString()}
+                variant="outlined"
                 size="small"
-                fullWidth
+                type="number"
+                inputProps={{
+                  min: '0',
+                  'data-testid': 'millis-input',
+                }}
               />
+              <Box display="flex" justifyContent="flex-end" mt={1}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleMillisApplyButtonClick}
+                  data-testid="millis-apply-button"
+                >
+                  Apply
+                </Button>
+              </Box>
             </Box>
-            <Box mb={2}>
-              <KeyboardDateTimePicker
-                label="End Time"
-                inputVariant="outlined"
-                format="MM/DD/YYYY HH:mm:ss"
-                value={endTime}
-                onChange={handleEndTimeChange}
-                onOpen={handleDialogOpen}
-                onClose={handleDialogClose}
-                data-testid="date-time-picker"
-                size="small"
-                fullWidth
-              />
+            <Box p={2} borderTop={1} borderColor="divider">
+              <Box fontSize="1.1rem" color="text.secondary" mb={2}>
+                Range Lookback
+              </Box>
+              <Box mb={2}>
+                <KeyboardDateTimePicker
+                  label="Start Time"
+                  inputVariant="outlined"
+                  format="MM/DD/YYYY HH:mm:ss"
+                  value={startTime}
+                  onChange={handleStartTimeChange}
+                  onOpen={handleDialogOpen}
+                  onClose={handleDialogClose}
+                  data-testid="date-time-picker"
+                  size="small"
+                  fullWidth
+                />
+              </Box>
+              <Box mb={2}>
+                <KeyboardDateTimePicker
+                  label="End Time"
+                  inputVariant="outlined"
+                  format="MM/DD/YYYY HH:mm:ss"
+                  value={endTime}
+                  onChange={handleEndTimeChange}
+                  onOpen={handleDialogOpen}
+                  onClose={handleDialogClose}
+                  data-testid="date-time-picker"
+                  size="small"
+                  fullWidth
+                />
+              </Box>
+              <Box display="flex" justifyContent="flex-end">
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleRangeApplyButtonClick}
+                  data-testid="apply-button"
+                >
+                  Apply
+                </Button>
+              </Box>
             </Box>
-            <Box display="flex" justifyContent="flex-end">
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={handleRangeApplyButtonClick}
-                data-testid="apply-button"
-              >
-                Apply
-              </Button>
-            </Box>
-          </Box>
+          </Grid>
         </Grid>
-      </Grid>
-    </Paper>
+      </Paper>
+    </ClickAwayListener>
   );
 };
 
