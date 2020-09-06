@@ -82,16 +82,14 @@ export function traceSummary(root) {
   if (timestamps.length === 0)
     throw new Error(`Trace ${traceId} is missing a timestamp`);
 
-  let rootServiceName;
-  let rootSpanName;
+  // If the first element does not exist, Error will be thrown.
+  // So we don't have to check rootSpan exisitence.
   const [rootSpan] = root.queueRootMostSpans();
-  if (rootSpan) {
-    rootServiceName =
-      getServiceName(rootSpan._span.localEndpoint) ||
-      getServiceName(rootSpan._span.remoteEndpoint) ||
-      'unknown';
-    rootSpanName = rootSpan._span.name || 'unknown';
-  }
+  const rootServiceName =
+    getServiceName(rootSpan._span.localEndpoint) ||
+    getServiceName(rootSpan._span.remoteEndpoint) ||
+    'unknown';
+  const rootSpanName = rootSpan._span.name || 'unknown';
 
   return {
     traceId,
@@ -369,17 +367,15 @@ export function detailedTraceSummary(root) {
     modelview.spans.push(spanRow);
   }
 
-  if (modelview.spans.length >= 0) {
-    modelview.rootSpan = {
-      serviceName: modelview.spans[0].serviceName || 'unknown',
-      spanName: modelview.spans[0].spanName || 'unknown',
-    };
-  } else {
-    modelview.rootSpan = {
-      serviceName: 'unknown',
-      spanName: 'unknown',
-    };
-  }
+  modelview.rootSpan = {};
+  // If the first element does not exist, Error will be thrown.
+  // So we don't have to check rootSpan existence.
+  const [rootSpan] = root.queueRootMostSpans();
+  modelview.rootSpan.serviceName =
+    getServiceName(rootSpan._span.localEndpoint) ||
+    getServiceName(rootSpan._span.remoteEndpoint) ||
+    'unknown';
+  modelview.rootSpan.spanName = rootSpan._span.name || 'unknown';
 
   modelview.serviceNameAndSpanCounts = Object.keys(serviceNameToCount)
     .sort()
