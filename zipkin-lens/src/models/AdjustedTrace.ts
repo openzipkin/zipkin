@@ -17,7 +17,7 @@ import { ServiceNameAndSpanCount } from './TraceSummary';
 export type AdjustedAnnotation = {
   value: string;
   timestamp: number;
-  endpoint: string; // If not exist, this filed will be 'unknown'.
+  endpoint: string; // Ex. 'fooo' or 'unknown' on null span.localEndpoint
   relativeTime?: string;
 };
 
