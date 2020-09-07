@@ -12,6 +12,7 @@
  * the License.
  */
 
+// Same type as Endpoint in the OpenApi/Swagger model https://zipkin.io/zipkin-api/#
 type Endpoint = {
   serviceName?: string;
   ipv4?: string;
