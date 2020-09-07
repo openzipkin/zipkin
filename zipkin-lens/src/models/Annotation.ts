@@ -12,6 +12,7 @@
  * the License.
  */
 
+// Same type as Annotation in the OpenApi/Swagger model https://zipkin.io/zipkin-api/#
 type Annotation = {
   timestamp: number;
   value: string;
