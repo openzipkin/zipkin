@@ -158,7 +158,7 @@ export interface TracesState {
   isLoading: boolean;
   error?: SerializedError;
   traces: {
-    [key: string]: {
+    [key: string]: { // key is the traceId
       rawTrace: Span[];
       skewCorrectedTrace: any;
       adjustedTrace?: AdjustedTrace;
