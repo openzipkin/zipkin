@@ -699,13 +699,19 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
 
 export default DiscoverPageContent;
 
-const LookbackButton = styled(Button).attrs<{ isShowingLookbackMenu: boolean }>(
-  ({ isShowingLookbackMenu }) => ({
-    variant: 'outlined',
-    startIcon: <FontAwesomeIcon icon={faHistory} />,
-    endIcon: isShowingLookbackMenu ? <ExpandLessIcon /> : <ExpandMoreIcon />,
-  }),
-)<{ isShowingLookbackMenu: boolean }>`
+const LookbackButton = styled(
+  ({
+    isShowingLookbackMenu,
+    ...rest
+  }: { isShowingLookbackMenu: boolean } & ButtonProps) => (
+    <Button
+      variant="outlined"
+      startIcon={<FontAwesomeIcon icon={faHistory} />}
+      endIcon={isShowingLookbackMenu ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+      {...rest}
+    />
+  ),
+)`
   /* Align LookbackButton height with the TextField height. */
   padding-top: 7.5px;
   padding-bottom: 7.5px;
