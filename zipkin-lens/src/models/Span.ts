@@ -15,6 +15,7 @@
 import Annotation from './Annotation';
 import Endpoint from './Endpoint';
 
+// Same type as Span in the OpenApi/Swagger model https://zipkin.io/zipkin-api/#
 type Span = {
   id: string;
   traceId: string;
