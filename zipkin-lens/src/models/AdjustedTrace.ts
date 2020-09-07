@@ -23,7 +23,7 @@ export type AdjustedAnnotation = {
 
 export type AdjustedSpan = {
   spanId: string;
-  spanName: string; // If not exist, this field will be 'unknown'.
+  spanName: string; // span.name or 'unknown' on null
   serviceName: string; // If not exist, this field will be 'unknown'.
   parentId?: string;
   childIds: string[];
