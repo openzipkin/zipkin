@@ -49,7 +49,7 @@ type AdjustedTrace = {
   durationStr: string;
   rootSpan: { // the root-most span, when the root is missing
     serviceName: string; // If not exist, this field will be 'unknown'.
-    spanName: string; // If not exist, this field will be 'unknown'.
+    spanName: string; // span.name or 'unknown' on null
   };
   spans: AdjustedSpan[];
 };
