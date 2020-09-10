@@ -251,7 +251,7 @@ describe('traceSummariesToMustache', () => {
         serviceName: 'frontend',
         spanCount: 2,
       },
-      { serviceName: 'backend', spanCount: 1},
+      { serviceName: 'backend', spanCount: 1 },
     ]);
   });
 
