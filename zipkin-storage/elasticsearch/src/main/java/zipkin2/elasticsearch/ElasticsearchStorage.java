@@ -162,6 +162,15 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     /** False disables automatic index template installation. */
     public abstract Builder ensureTemplates(boolean ensureTemplates);
 
+    /**
+     * Only valid when the destination is Elasticsearch >= 7.8. Indicates the index template
+     * priority in case of multiple matching templates. The template with highest priority is used.
+     * Default to 0.
+     *
+     * <p>See https://www.elastic.co/guide/en/elasticsearch/reference/7.8/_index_template_and_settings_priority.html
+     */
+    public abstract Builder templatePriority(@Nullable Integer templatePriority);
+
     /** {@inheritDoc} */
     @Override public abstract Builder strictTraceId(boolean strictTraceId);
 
@@ -212,6 +221,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   abstract boolean ensureTemplates();
 
   public abstract int namesLookback();
+
+  @Nullable abstract Integer templatePriority();
 
   @Override public SpanStore spanStore() {
     ensureIndexTemplates();
@@ -337,12 +348,17 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       indexReplicas(),
       indexShards(),
       searchEnabled(),
-      strictTraceId()
+      strictTraceId(),
+      templatePriority()
     ).get(version);
   }
 
   String buildUrl(IndexTemplates templates, String type) {
     String indexPrefix = indexNameFormatter().index() + templates.indexTypeDelimiter();
+
+    if (version() >= 7.8f && templatePriority() != null) {
+      return "/_index_template/" + indexPrefix + type + "_template";
+    }
     return "/_template/" + indexPrefix + type + "_template";
   }
 

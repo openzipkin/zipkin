@@ -6,13 +6,12 @@
   "Dependencies": "Dependencias",
   "Dependencies Page": "Página de Dependencies",
   "Depth": "Profundidad",
-  "Discover": "Descubrir",
-  "Discover Page": "Página de Descubrir",
   "Download JSON": "Descargar JSON",
   "Duration": "Duración",
   "End Time": "Tiempo de Fin",
   "Failed to load this file": "Fallo al cargar este archivo",
   "Filter": "Filtro",
+  "Find a trace": "Encuentra un rastro",
   "Limit": "Límite",
   "None": "Ninguno",
   "One Result": "Un Resultado",
@@ -30,6 +29,7 @@
   "Service Name": "Nombre del Servicio",
   "Services": "Servicios",
   "Span ID": "ID de Tramo",
+  "Spans": "Tramos",
   "Start Time": "Tiempo de Inicio",
   "Support": "Soporte",
   "Tags": "Etiquetas",
@@ -43,5 +43,6 @@
   "hide annotations": "ocultar anotaciones",
   "show all annotations": "mostrar todas las anotaciones",
   "trace id...": "id de traza...",
-  "{0} Results": "{0} Resultados"
+  "{0} Results": "{0} Resultados",
+  "1 Result": "1 Resultado"
 }

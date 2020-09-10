@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -26,12 +26,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
@@ -42,6 +40,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
 import static zipkin2.server.internal.ITZipkinServer.url;
 
+/**
+ * Only add tests that do not consider the value of a counter or gauge, as these will flake and so
+ * should only exist in {@link ITZipkinMetricsDirty}.
+ */
 @SpringBootTest(
   classes = ZipkinServer.class,
   webEnvironment = SpringBootTest.WebEnvironment.NONE, // RANDOM_PORT requires spring-web
@@ -50,7 +52,6 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "spring.config.name=zipkin-server"
   }
 )
-@RunWith(SpringRunner.class)
 public class ITZipkinMetrics {
   @Autowired InMemoryStorage storage;
   @Autowired PrometheusMeterRegistry registry;
@@ -58,11 +59,11 @@ public class ITZipkinMetrics {
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
-  @Before public void init() {
+  @BeforeEach void init() {
     storage.clear();
   }
 
-  @Test public void metricsIsOK() throws Exception {
+  @Test void metricsIsOK() throws Exception {
     assertThat(get("/metrics").isSuccessful())
       .isTrue();
 
@@ -71,7 +72,7 @@ public class ITZipkinMetrics {
       .doesNotContain("metrics");
   }
 
-  @Test public void prometheusIsOK() throws Exception {
+  @Test void prometheusIsOK() throws Exception {
     assertThat(get("/prometheus").isSuccessful())
       .isTrue();
 
@@ -82,7 +83,7 @@ public class ITZipkinMetrics {
       .doesNotContain("uri=\"/\"");
   }
 
-  @Test public void apiTemplate_prometheus() throws Exception {
+  @Test void apiTemplate_prometheus() throws Exception {
     List<Span> spans = asList(LOTS_OF_SPANS[0]);
     byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
     assertThat(post("/api/v2/spans", body).isSuccessful())
@@ -100,7 +101,7 @@ public class ITZipkinMetrics {
       .doesNotContain(LOTS_OF_SPANS[0].traceId());
   }
 
-  @Test public void forwardedRoute_prometheus() throws Exception {
+  @Test void forwardedRoute_prometheus() throws Exception {
     assertThat(get("/zipkin/api/v2/services").isSuccessful())
         .isTrue();
 
@@ -109,7 +110,7 @@ public class ITZipkinMetrics {
         .doesNotContain("uri=\"/zipkin/api/v2/services\"");
   }
 
-  @Test public void jvmMetrics_prometheus() throws Exception {
+  @Test void jvmMetrics_prometheus() throws Exception {
     assertThat(scrape())
         .contains("jvm_memory_max_bytes")
         .contains("jvm_memory_used_bytes")
@@ -126,41 +127,12 @@ public class ITZipkinMetrics {
     // gc metrics are not tested as are not present during test running
   }
 
-  String scrape() throws InterruptedException {
+  String scrape() throws Exception {
     Thread.sleep(100);
     return registry.scrape();
   }
 
-  /**
-   * Makes sure the prometheus filter doesn't count twice
-   */
-  @Test public void writeSpans_updatesPrometheusMetrics() throws Exception {
-    List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
-    byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
-
-    post("/api/v2/spans", body);
-    post("/api/v2/spans", body);
-
-    Thread.sleep(100); // sometimes travis flakes getting the "http.server.requests" timer
-    double messagesCount = registry.counter("zipkin_collector.spans", "transport", "http").count();
-    // Get the http count from the registry and it should match the summation previous count
-    // and count of calls below
-    long httpCount = registry
-      .find("http.server.requests")
-      .tag("uri", "/api/v2/spans")
-      .timer()
-      .count();
-
-    // ensure unscoped counter does not exist
-    assertThat(scrape())
-      .doesNotContain("zipkin_collector_spans_total " + messagesCount)
-      .contains("zipkin_collector_spans_total{transport=\"http\",} " + messagesCount)
-      .contains(
-        "http_server_requests_seconds_count{method=\"POST\",status=\"202\",uri=\"/api/v2/spans\",} "
-          + httpCount);
-  }
-
-  @Test public void writesSpans_readMetricsFormat() throws Exception {
+  @Test void writesSpans_readMetricsFormat() throws Exception {
     byte[] span = {'z', 'i', 'p', 'k', 'i', 'n'};
     List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
     byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);

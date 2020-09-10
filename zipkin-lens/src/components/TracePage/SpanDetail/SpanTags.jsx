@@ -35,6 +35,10 @@ const useStyles = makeStyles((theme) => ({
     color: theme.palette.grey[500],
     fontWeight: theme.typography.fontWeightBold,
   },
+  value: {
+    fontSize: '1.05rem',
+    'white-space': 'pre-line',
+  },
 }));
 
 const propTypes = {
@@ -54,7 +58,7 @@ const SpanTags = React.memo(({ tags }) => {
                 <Box className={classes.key} data-testid="SpanTags-key">
                   {tag.key}
                 </Box>
-                <Box fontSize="1.05rem" data-testid="SpanTags-value">
+                <Box className={classes.value} data-testid="SpanTags-value">
                   {tag.value}
                 </Box>
               </TableCell>

@@ -383,11 +383,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
   public CheckResult check() {
     if (closeCalled) throw new IllegalStateException("closed");
     try {
-      // Use direct CQL instead of query builder for simple statements.
-      // BuiltStatement has a NPE bug when there are no input parameters.
-      //
-      // https://github.com/datastax/java-driver/pull/1138
-      session().execute("select trace_id from traces limit 1");
+      session.healthCheck();
     } catch (Throwable e) {
       Call.propagateIfFatal(e);
       return CheckResult.failed(e);

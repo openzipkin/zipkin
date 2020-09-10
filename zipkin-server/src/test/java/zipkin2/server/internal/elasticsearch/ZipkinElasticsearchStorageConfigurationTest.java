@@ -25,6 +25,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.UnsatisfiedDependencyException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -137,7 +138,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
     Consumer<ClientOptionsBuilder> one = client -> client.maxResponseLength(12345L);
     Consumer<ClientOptionsBuilder> two =
-      client -> client.addHttpHeader("test", "bar");
+      client -> client.addHeader("test", "bar");
   }
 
   /** Ensures we can wire up network interceptors, such as for logging or authentication */
@@ -149,7 +150,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
     HttpClientFactory factory = context.getBean(HttpClientFactory.class);
     assertThat(factory.options.maxResponseLength()).isEqualTo(12345L);
-    assertThat(factory.options.httpHeaders().get("test")).isEqualTo("bar");
+    assertThat(factory.options.headers().get("test")).isEqualTo("bar");
   }
 
   @Test public void timeout_defaultsTo10Seconds() {
@@ -405,6 +406,42 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
     assertThat(es()).extracting("autocompleteCardinality")
       .isEqualTo(5000);
+  }
+
+  @Test public void templatePriority_valid() {
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.template-priority:0")
+      .applyTo(context);
+    Access.registerElasticsearch(context);
+    context.refresh();
+
+    assertThat(es()).extracting("templatePriority")
+      .isEqualTo(0);
+  }
+
+  @Test public void templatePriority_null() {
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.template-priority:")
+      .applyTo(context);
+    Access.registerElasticsearch(context);
+    context.refresh();
+
+    assertThat(es()).extracting("templatePriority")
+      .isNull();
+  }
+
+  @Test(expected = UnsatisfiedDependencyException.class)
+  public void templatePriority_Invalid() {
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.template-priority:string")
+      .applyTo(context);
+    Access.registerElasticsearch(context);
+    context.refresh();
+
+    es();
   }
 
   ElasticsearchStorage es() {

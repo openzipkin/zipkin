@@ -199,6 +199,108 @@ class ElasticsearchStorageTest {
       String.format("ElasticsearchStorage{initialEndpoints=%s, index=zipkin}", server.httpUri()));
   }
 
+  /**
+   * Ensure that Zipkin uses the legacy resource path when priority is not set
+   */
+  @Test void check_create_legacy_indexTemplate_resourcePath_version78() throws Exception {
+    server.enqueue(AggregatedHttpResponse.of(
+      HttpStatus.OK, MediaType.JSON_UTF_8, "{\"version\":{\"number\":\"7.8.0\"}}"));
+    server.enqueue(SUCCESS_RESPONSE); // get span template
+    server.enqueue(SUCCESS_RESPONSE); // get dependency template
+    server.enqueue(SUCCESS_RESPONSE); // get autocomplete template
+    server.enqueue(SUCCESS_RESPONSE); // cluster health
+
+    storage.check();
+
+    server.takeRequest(); // get version
+
+    assertThat(server.takeRequest().request().path()) // get span template
+      .startsWith("/_template/zipkin-span_template");
+    assertThat(server.takeRequest().request().path()) // // get dependency template
+      .startsWith("/_template/zipkin-dependency_template");
+    assertThat(server.takeRequest().request().path()) // get autocomplete template
+      .startsWith("/_template/zipkin-autocomplete_template");
+  }
+
+  /**
+   * Ensure that Zipkin uses the correct resource path of /_index_template when creating index
+   * template for ES 7.8 when priority is set, as opposed to ES < 7.8 that uses /_template/
+   */
+  @Test void check_create_composable_indexTemplate_resourcePath_version78() throws Exception {
+    // Set up a new storage with priority
+    storage.close();
+    storage = newBuilder().templatePriority(0).build();
+
+    server.enqueue(AggregatedHttpResponse.of(
+      HttpStatus.OK, MediaType.JSON_UTF_8, "{\"version\":{\"number\":\"7.8.0\"}}"));
+    server.enqueue(SUCCESS_RESPONSE); // get span template
+    server.enqueue(SUCCESS_RESPONSE); // get dependency template
+    server.enqueue(SUCCESS_RESPONSE); // get autocomplete template
+    server.enqueue(SUCCESS_RESPONSE); // cluster health
+
+    storage.check();
+
+    server.takeRequest(); // get version
+
+    assertThat(server.takeRequest().request().path()) // get span template
+      .startsWith("/_index_template/zipkin-span_template");
+    assertThat(server.takeRequest().request().path()) // // get dependency template
+      .startsWith("/_index_template/zipkin-dependency_template");
+    assertThat(server.takeRequest().request().path()) // get autocomplete template
+      .startsWith("/_index_template/zipkin-autocomplete_template");
+  }
+
+  /**
+   * Ensure that Zipkin uses the legacy resource path when priority is not set
+   */
+  @Test void check_create_legacy_indexTemplate_resourcePath_version79() throws Exception {
+    server.enqueue(AggregatedHttpResponse.of(
+      HttpStatus.OK, MediaType.JSON_UTF_8, "{\"version\":{\"number\":\"7.9.0\"}}"));
+    server.enqueue(SUCCESS_RESPONSE); // get span template
+    server.enqueue(SUCCESS_RESPONSE); // get dependency template
+    server.enqueue(SUCCESS_RESPONSE); // get autocomplete template
+    server.enqueue(SUCCESS_RESPONSE); // cluster health
+
+    storage.check();
+
+    server.takeRequest(); // get version
+
+    assertThat(server.takeRequest().request().path()) // get span template
+      .startsWith("/_template/zipkin-span_template");
+    assertThat(server.takeRequest().request().path()) // // get dependency template
+      .startsWith("/_template/zipkin-dependency_template");
+    assertThat(server.takeRequest().request().path()) // get autocomplete template
+      .startsWith("/_template/zipkin-autocomplete_template");
+  }
+
+  /**
+   * Ensure that Zipkin uses the correct resource path of /_index_template when creating index
+   * template for ES 7.9 when priority is set, as opposed to ES < 7.8 that uses /_template/
+   */
+  @Test void check_create_composable_indexTemplate_resourcePath_version79() throws Exception {
+    // Set up a new storage with priority
+    storage.close();
+    storage = newBuilder().templatePriority(0).build();
+
+    server.enqueue(AggregatedHttpResponse.of(
+      HttpStatus.OK, MediaType.JSON_UTF_8, "{\"version\":{\"number\":\"7.9.0\"}}"));
+    server.enqueue(SUCCESS_RESPONSE); // get span template
+    server.enqueue(SUCCESS_RESPONSE); // get dependency template
+    server.enqueue(SUCCESS_RESPONSE); // get autocomplete template
+    server.enqueue(SUCCESS_RESPONSE); // cluster health
+
+    storage.check();
+
+    server.takeRequest(); // get version
+
+    assertThat(server.takeRequest().request().path()) // get span template
+      .startsWith("/_index_template/zipkin-span_template");
+    assertThat(server.takeRequest().request().path()) // // get dependency template
+      .startsWith("/_index_template/zipkin-dependency_template");
+    assertThat(server.takeRequest().request().path()) // get autocomplete template
+      .startsWith("/_index_template/zipkin-autocomplete_template");
+  }
+
   ElasticsearchStorage.Builder newBuilder() {
     return ElasticsearchStorage.newBuilder(new LazyHttpClient() {
       @Override public WebClient get() {

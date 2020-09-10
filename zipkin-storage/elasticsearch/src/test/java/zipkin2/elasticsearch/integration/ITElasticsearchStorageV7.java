@@ -16,11 +16,12 @@ package zipkin2.elasticsearch.integration;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+/** For testing legacy template */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ITElasticsearchStorageV7 extends ITElasticsearchStorage {
 
   @RegisterExtension ElasticsearchStorageExtension backend = new ElasticsearchStorageExtension(
-    "openzipkin/zipkin-elasticsearch7:2.21.5");
+    "openzipkin/zipkin-elasticsearch7:2.21.5", null);
 
   @Override ElasticsearchStorageExtension backend() {
     return backend;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,13 +22,11 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
@@ -41,8 +39,14 @@ import static zipkin2.TestObjects.LOTS_OF_SPANS;
 import static zipkin2.server.internal.ITZipkinServer.url;
 
 /**
- * We cannot clear the micrometer registry easily, so we have recreate the spring context. This is
- * extremely slow, so please only add tests that require isolation here.
+ * Tests here look at values based on counter values, so need to run independently. It would seem
+ * correct to {@link PrometheusMeterRegistry#clear() clear the registry} to isolate counters
+ * incremented in one test from interfering with another. However, this clears the metrics
+ * themselves, resulting in an empty {@link PrometheusMeterRegistry#scrape()}.
+ *
+ * <p>Currently, the only way we know how to reset the whole registry is to recreate the Spring
+ * context, via {@link DirtiesContext} on each test. This is extremely slow, so please only add
+ * tests that require isolation here!
  */
 @SpringBootTest(
   classes = ZipkinServer.class,
@@ -52,7 +56,8 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "spring.config.name=zipkin-server"
   }
 )
-@RunWith(SpringRunner.class)
+// Clearing the prometheus registry also clears the metrics themselves, not just the values, so we
+// have to use dirties context so that each test runs in a separate instance of Spring Boot.
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
 public class ITZipkinMetricsDirty {
 
@@ -62,11 +67,12 @@ public class ITZipkinMetricsDirty {
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
-  @Before public void init() {
+  @BeforeEach void init() {
+    // We use DirtiesContext, not registry.clear(), as the latter would cause an empty scrape
     storage.clear();
   }
 
-  @Test public void writeSpans_updatesMetrics() throws Exception {
+  @Test void writeSpans_updatesMetrics() throws Exception {
     List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
     byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
     double messagesCount =
@@ -90,7 +96,7 @@ public class ITZipkinMetricsDirty {
       .isEqualTo(spans.size());
   }
 
-  @Test public void writeSpans_malformedUpdatesMetrics() throws Exception {
+  @Test void writeSpans_malformedUpdatesMetrics() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
     double messagesCount =
       registry.counter("zipkin_collector.messages", "transport", "http").count();
@@ -107,7 +113,7 @@ public class ITZipkinMetricsDirty {
   }
 
   /** This tests logic in {@code BodyIsExceptionMessage} is scoped to POST requests. */
-  @Test public void getTrace_malformedDoesntUpdateCollectorMetrics() throws Exception {
+  @Test void getTrace_malformedDoesntUpdateCollectorMetrics() throws Exception {
     double messagesCount =
       registry.counter("zipkin_collector.messages", "transport", "http").count();
     double messagesDroppedCount =
@@ -124,7 +130,36 @@ public class ITZipkinMetricsDirty {
       .isEqualTo(messagesDroppedCount);
   }
 
-  private String getAsString(String path) throws IOException {
+  /**
+   * Makes sure the prometheus filter doesn't count twice
+   */
+  @Test void writeSpans_updatesPrometheusMetrics() throws Exception {
+    List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
+    byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
+
+    post("/api/v2/spans", body);
+    post("/api/v2/spans", body);
+
+    Thread.sleep(100); // sometimes travis flakes getting the "http.server.requests" timer
+    double messagesCount = registry.counter("zipkin_collector.spans", "transport", "http").count();
+    // Get the http count from the registry and it should match the summation previous count
+    // and count of calls below
+    long httpCount = registry
+      .find("http.server.requests")
+      .tag("uri", "/api/v2/spans")
+      .timer()
+      .count();
+
+    // ensure unscoped counter does not exist
+    assertThat(scrape())
+      .doesNotContain("zipkin_collector_spans_total " + messagesCount)
+      .contains("zipkin_collector_spans_total{transport=\"http\",} " + messagesCount)
+      .contains(
+        "http_server_requests_seconds_count{method=\"POST\",status=\"202\",uri=\"/api/v2/spans\",} "
+          + httpCount);
+  }
+
+  String getAsString(String path) throws IOException {
     Response response = get(path);
     assertThat(response.isSuccessful())
       .withFailMessage(response.toString())
@@ -132,15 +167,20 @@ public class ITZipkinMetricsDirty {
     return response.body().string();
   }
 
-  private Response get(String path) throws IOException {
+  Response get(String path) throws IOException {
     return client.newCall(new Request.Builder().url(url(server, path)).build()).execute();
   }
 
-  private Response post(String path, byte[] body) throws IOException {
+  Response post(String path, byte[] body) throws IOException {
     return client.newCall(new Request.Builder()
       .url(url(server, path))
       .post(RequestBody.create(body))
       .build()).execute();
+  }
+
+  String scrape() throws Exception {
+    Thread.sleep(100);
+    return registry.scrape();
   }
 
   static double readDouble(String json, String jsonPath) {

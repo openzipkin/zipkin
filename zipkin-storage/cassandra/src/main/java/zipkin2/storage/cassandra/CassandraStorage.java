@@ -15,6 +15,7 @@ package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
@@ -32,6 +33,8 @@ import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
 import zipkin2.storage.Traces;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
+
+import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
 /**
  * CQL3 implementation of zipkin storage.
@@ -199,6 +202,7 @@ public abstract class CassandraStorage extends StorageComponent {
 
   /** session and close are typically called from different threads */
   volatile Session session;
+  volatile PreparedStatement healthCheck; // guarded by session
   volatile boolean closeCalled;
 
   /** Lazy initializes or returns the session in use by this storage component. */
@@ -207,6 +211,7 @@ public abstract class CassandraStorage extends StorageComponent {
       synchronized (this) {
         if (session == null) {
           session = sessionFactory().create(this);
+          healthCheck = session.prepare("SELECT trace_id FROM " + TABLE_SPAN + " limit 1");
         }
       }
     }
@@ -249,11 +254,7 @@ public abstract class CassandraStorage extends StorageComponent {
   @Override public CheckResult check() {
     try {
       if (closeCalled) throw new IllegalStateException("closed");
-      // Use direct CQL instead of query builder for simple statements.
-      // BuiltStatement has a NPE bug when there are no input parameters.
-      //
-      // https://github.com/datastax/java-driver/pull/1138
-      session().execute("select trace_id from span limit 1");
+      session().execute(healthCheck.bind());
     } catch (Throwable e) {
       Call.propagateIfFatal(e);
       return CheckResult.failed(e);

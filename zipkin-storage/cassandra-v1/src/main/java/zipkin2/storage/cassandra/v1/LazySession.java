@@ -13,12 +13,15 @@
  */
 package zipkin2.storage.cassandra.v1;
 
+import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 
 final class LazySession {
   private final SessionFactory sessionFactory;
   private final CassandraStorage storage;
   private volatile Session session;
+  private volatile PreparedStatement healthCheck; // guarded by session
   private volatile Schema.Metadata metadata; // guarded by session
 
   LazySession(SessionFactory sessionFactory, CassandraStorage storage) {
@@ -32,6 +35,7 @@ final class LazySession {
         if (session == null) {
           session = sessionFactory.create(storage);
           metadata = Schema.readMetadata(session); // warn only once when schema problems exist
+          healthCheck = session.prepare("SELECT trace_id FROM " + Tables.TRACES + " limit 1");
         }
       }
     }
@@ -41,6 +45,11 @@ final class LazySession {
   Schema.Metadata metadata() {
     get();
     return metadata;
+  }
+
+  ResultSet healthCheck() {
+    get();
+    return session.execute(healthCheck.bind());
   }
 
   void close() {

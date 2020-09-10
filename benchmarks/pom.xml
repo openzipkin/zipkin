@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>2.21.7-SNAPSHOT</version>
+    <version>2.21.8-SNAPSHOT</version>
   </parent>
 
   <artifactId>benchmarks</artifactId>
@@ -31,7 +31,7 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
-    <jmh.version>1.23</jmh.version>
+    <jmh.version>1.25</jmh.version>
     <unpack-proto.directory>${project.build.directory}/main/proto</unpack-proto.directory>
   </properties>
 
@@ -75,7 +75,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.12.4</version>
+      <version>3.13.0</version>
     </dependency>
 
     <dependency>

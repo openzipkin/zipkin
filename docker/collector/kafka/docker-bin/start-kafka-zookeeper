@@ -1,0 +1,40 @@
+#!/bin/sh
+#
+# Copyright 2015-2020 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+# ENTRYPOINT script that starts ZooKeeper and then Kafka
+#
+# This intentionally locates config using the current working directory, in order to consolidate
+# Dockerfile instructions to WORKDIR
+set -eu
+
+# Apply one-time deferred configuration that relies on ENV variables
+#
+# Internal docker producers and consumers use the normal hostname:9092, and outside docker the advertised host on port 19092
+ADVERTISED_LISTENERS="advertised.listeners=PLAINTEXT://${HOSTNAME}:9092,PLAINTEXT_HOST://${KAFKA_ADVERTISED_HOST_NAME}:19092"
+KAFKA_CONFIG=./config/server.properties
+grep -qF -- "$ADVERTISED_LISTENERS" $KAFKA_CONFIG || echo "$ADVERTISED_LISTENERS" >> $KAFKA_CONFIG
+
+echo Starting ZooKeeper
+bin/kafka-run-class.sh \
+  -Dlog4j.configuration=file:./config/log4j.properties \
+  org.apache.zookeeper.server.quorum.QuorumPeerMain ./config/zookeeper.properties &
+
+# Wait for ZooKeeper to be ok
+until echo ruok | nc 127.0.0.1 2181 > /dev/null; do sleep 1; done
+
+echo Starting Kafka
+exec bin/kafka-run-class.sh -name kafkaServer \
+  -Dlog4j.configuration=file:./config/log4j.properties \
+  kafka.Kafka ./config/server.properties

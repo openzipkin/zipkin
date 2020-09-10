@@ -166,7 +166,7 @@ const TraceSummary = React.memo(({ traceSummary }) => {
   }, [shownTree, traceSummary.spans]);
 
   return (
-    <>
+    <Box height="calc(100vh - 64px)" display="flex" flexDirection="column">
       <Box boxShadow={3} zIndex={1}>
         <TraceSummaryHeader
           traceSummary={traceSummary}
@@ -190,7 +190,7 @@ const TraceSummary = React.memo(({ traceSummary }) => {
             onCollapseButtonClick={handleCollapseButtonClick}
             onExpandButtonClick={handleExpandButtonClick}
           />
-          <Box height="100%" width="100%">
+          <Box flexGrow={1} width="100%">
             <AutoSizer>
               {({ height, width }) => (
                 <Box height={height} width={width} overflow="auto">
@@ -210,7 +210,7 @@ const TraceSummary = React.memo(({ traceSummary }) => {
             </AutoSizer>
           </Box>
         </Box>
-        <Box height="100%" width={`${100 - traceTimelineWidthPercent}%`}>
+        <Box width={`${100 - traceTimelineWidthPercent}%`}>
           <AutoSizer>
             {({ height, width }) => (
               <Box height={height} width={width} overflow="auto">
@@ -223,7 +223,7 @@ const TraceSummary = React.memo(({ traceSummary }) => {
           </AutoSizer>
         </Box>
       </Box>
-    </>
+    </Box>
   );
 });
 

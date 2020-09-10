@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -27,6 +27,8 @@ import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import zipkin2.v1.V1Span;
 
+import static zipkin2.storage.cassandra.v1.Tables.TRACES;
+
 final class InsertTrace extends ResultSetFutureCall<Void> {
   private static final Logger LOG = LoggerFactory.getLogger(InsertTrace.class);
 
@@ -51,7 +53,7 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
       this.session = session;
       this.timestampCodec = new TimestampCodec(session);
       Insert insertQuery =
-          QueryBuilder.insertInto("traces")
+          QueryBuilder.insertInto(TRACES)
               .value("trace_id", QueryBuilder.bindMarker("trace_id"))
               .value("ts", QueryBuilder.bindMarker("ts"))
               .value("span_name", QueryBuilder.bindMarker("span_name"))
@@ -77,10 +79,10 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
         LOG.warn(
             "Span {} in trace {} had no timestamp. "
                 + "If this happens a lot consider switching back to SizeTieredCompactionStrategy for "
-                + "{}.traces",
+                + "{}.{}",
             span_name,
             v1.traceId(),
-            session.getLoggedKeyspace());
+            session.getLoggedKeyspace(), TRACES);
       }
 
       return new AutoValue_InsertTrace_Input(v1.traceId(), ts_micro, span_name, v1Bytes);

@@ -6,13 +6,12 @@
   "Dependencies": "",
   "Dependencies Page": "",
   "Depth": "",
-  "Discover": "",
-  "Discover Page": "",
   "Download JSON": "",
   "Duration": "",
   "End Time": "",
   "Failed to load this file": "",
   "Filter": "",
+  "Find a trace": "",
   "Limit": "",
   "None": "",
   "One Result": "",
@@ -30,6 +29,7 @@
   "Service Name": "",
   "Services": "",
   "Span ID": "",
+  "Spans": "",
   "Start Time": "",
   "Support": "Support",
   "Tags": "",
@@ -43,5 +43,6 @@
   "hide annotations": "",
   "show all annotations": "",
   "trace id...": "",
-  "{0} Results": ""
+  "{0} Results": "",
+  "1 Result": ""
 }

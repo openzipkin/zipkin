@@ -28,8 +28,6 @@ import { setAlert } from '../App/slice';
 
 import { useUiConfig } from '../UiConfig';
 
-import TraceIdSearchInput from '../Common/TraceIdSearchInput';
-import TraceJsonUploader from '../Common/TraceJsonUploader';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
 import * as api from '../../constants/api';
 
@@ -51,8 +49,8 @@ const useStyles = makeStyles((theme) => ({
   upperBox: {
     width: '100%',
     display: 'flex',
-    justifyContent: 'space-between',
     borderBottom: `1px solid ${theme.palette.grey[300]}`,
+    paddingTop: theme.spacing(1),
   },
   serviceNameAndSpanName: {
     display: 'flex',
@@ -63,11 +61,6 @@ const useStyles = makeStyles((theme) => ({
   },
   spanName: {
     color: theme.palette.text.secondary,
-  },
-  jsonUploaderAndSearchInput: {
-    display: 'flex',
-    alignItems: 'center',
-    paddingRight: theme.spacing(4),
   },
   lowerBox: {
     marginTop: theme.spacing(0.5),
@@ -217,22 +210,16 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
   return (
     <Box className={classes.root}>
       <Box className={classes.upperBox}>
-        <Box className={classes.serviceNameAndSpanName}>
-          {traceSummary ? (
-            <>
-              <Typography variant="h5" className={classes.serviceName}>
-                {traceSummary.rootSpan.serviceName}
-              </Typography>
-              <Typography variant="h5" className={classes.spanName}>
-                {` : ${traceSummary.rootSpan.spanName}`}
-              </Typography>
-            </>
-          ) : null}
-        </Box>
-        <Box className={classes.jsonUploaderAndSearchInput}>
-          <TraceJsonUploader />
-          <TraceIdSearchInput />
-        </Box>
+        {traceSummary ? (
+          <>
+            <Typography variant="h5" className={classes.serviceName}>
+              {traceSummary.rootSpan.serviceName}
+            </Typography>
+            <Typography variant="h5" className={classes.spanName}>
+              {` : ${traceSummary.rootSpan.spanName}`}
+            </Typography>
+          </>
+        ) : null}
       </Box>
       <Grid container className={classes.lowerBox} justify="space-between">
         <Grid item xs={8}>

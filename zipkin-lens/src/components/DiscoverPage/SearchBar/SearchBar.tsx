@@ -12,6 +12,8 @@
  * the License.
  */
 
+/* eslint-disable no-shadow */
+
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -27,10 +29,10 @@ import { ThunkDispatch } from 'redux-thunk';
 
 import Criterion, { newCriterion } from '../Criterion';
 import CriterionBox from './CriterionBox';
-import { fetchAutocompleteValues } from '../../../actions/autocomplete-values-action';
-import { fetchRemoteServices } from '../../../actions/remote-services-action';
-import { fetchServices } from '../../../actions/services-action';
-import { fetchSpans } from '../../../actions/spans-action';
+import { loadAutocompleteValues } from '../../../slices/autocompleteValuesSlice';
+import { loadRemoteServices } from '../../../slices/remoteServicesSlice';
+import { loadServices } from '../../../slices/servicesSlice';
+import { loadSpans } from '../../../slices/spansSlice';
 import { RootState } from '../../../store';
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -188,8 +190,9 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
       pb={1}
       borderRadius={3}
       bgcolor="background.paper"
-      boxShadow={3}
       flexWrap="wrap"
+      borderColor="grey.400"
+      border={1}
     >
       {criteria.map((criterion, index) => (
         <CriterionBox
@@ -247,16 +250,16 @@ const mapDispatchToProps = (
   dispatch: ThunkDispatch<RootState, undefined, any>,
 ) => ({
   loadServices: () => {
-    dispatch(fetchServices());
+    dispatch(loadServices());
   },
   loadRemoteServices: (serviceName: string) => {
-    dispatch(fetchRemoteServices(serviceName));
+    dispatch(loadRemoteServices(serviceName));
   },
   loadSpans: (serviceName: string) => {
-    dispatch(fetchSpans(serviceName));
+    dispatch(loadSpans(serviceName));
   },
   loadAutocompleteValues: (autocompleteKey: string) => {
-    dispatch(fetchAutocompleteValues(autocompleteKey));
+    dispatch(loadAutocompleteValues(autocompleteKey));
   },
 });
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -33,14 +33,16 @@ final class VersionSpecificTemplates {
   final String indexPrefix;
   final int indexReplicas, indexShards;
   final boolean searchEnabled, strictTraceId;
+  final Integer templatePriority;
 
   VersionSpecificTemplates(String indexPrefix, int indexReplicas, int indexShards,
-    boolean searchEnabled, boolean strictTraceId) {
+    boolean searchEnabled, boolean strictTraceId, Integer templatePriority) {
     this.indexPrefix = indexPrefix;
     this.indexReplicas = indexReplicas;
     this.indexShards = indexShards;
     this.searchEnabled = searchEnabled;
     this.strictTraceId = strictTraceId;
+    this.templatePriority = templatePriority;
   }
 
   String indexPattern(String type, float version) {
@@ -66,12 +68,47 @@ final class VersionSpecificTemplates {
     return result + ",\n    \"index.mapper.dynamic\": false\n";
   }
 
-  /** Templatized due to version differences. Only fields used in search are declared */
-  String spanIndexTemplate(float version) {
-    String result = "{\n"
-      + "  " + indexPattern(TYPE_SPAN, version) + ",\n"
+  String indexTemplate(float version) {
+    if (useComposableTemplate(version)) {
+      return "\"template\": {\n";
+    }
+
+    return "";
+  }
+
+  String indexTemplateClosing(float version) {
+    if (useComposableTemplate(version)) {
+      return "},\n";
+    }
+
+    return "";
+  }
+
+  String templatePriority(float version) {
+    if (useComposableTemplate(version)) {
+      return "\"priority\": " + templatePriority + "\n";
+    }
+
+    return "";
+  }
+
+  String beginTemplate(String type, float version) {
+    return "{\n"
+      + "  " + indexPattern(type, version) + ",\n"
+      + indexTemplate(version)
       + "  \"settings\": {\n"
       + indexProperties(version);
+  }
+
+  String endTemplate(float version) {
+    return indexTemplateClosing(version)
+      + templatePriority(version)
+      + "}";
+  }
+
+  /** Templatized due to version differences. Only fields used in search are declared */
+  String spanIndexTemplate(float version) {
+    String result = beginTemplate(TYPE_SPAN, version);
 
     String traceIdMapping = KEYWORD;
     if (!strictTraceId) {
@@ -141,7 +178,7 @@ final class VersionSpecificTemplates {
         + "      \"_q\": " + KEYWORD + "\n"
         + "    }\n")
         + "  }\n"
-        + "}");
+        + endTemplate(version));
     }
     return result
       + ("  \"mappings\": {\n"
@@ -152,29 +189,23 @@ final class VersionSpecificTemplates {
       + "      \"tags\": { \"enabled\": false }\n"
       + "    }\n")
       + "  }\n"
-      + "}");
+      + endTemplate(version));
   }
 
   /** Templatized due to version differences. Only fields used in search are declared */
   String dependencyTemplate(float version) {
-    return "{\n"
-      + "  " + indexPattern(TYPE_DEPENDENCY, version) + ",\n"
-      + "  \"settings\": {\n"
-      + indexProperties(version)
+    return beginTemplate(TYPE_DEPENDENCY, version)
       + "  },\n"
       + "  \"mappings\": {\n"
       + maybeWrap(TYPE_DEPENDENCY, version, "    \"enabled\": false\n")
       + "  }\n"
-      + "}";
+      + endTemplate(version);
   }
 
   // The key filed of a autocompleteKeys is intentionally names as tagKey since it clashes with the
   // BodyConverters KEY
   String autocompleteTemplate(float version) {
-    return "{\n"
-      + "  " + indexPattern(TYPE_AUTOCOMPLETE, version) + ",\n"
-      + "  \"settings\": {\n"
-      + indexProperties(version)
+    return beginTemplate(TYPE_AUTOCOMPLETE, version)
       + "  },\n"
       + "  \"mappings\": {\n"
       + maybeWrap(TYPE_AUTOCOMPLETE, version, ""
@@ -184,7 +215,7 @@ final class VersionSpecificTemplates {
       + "      \"tagValue\": " + KEYWORD + "\n"
       + "    }\n")
       + "  }\n"
-      + "}";
+      + endTemplate(version);
   }
 
   IndexTemplates get(float version) {
@@ -199,6 +230,10 @@ final class VersionSpecificTemplates {
       .dependency(dependencyTemplate(version))
       .autocomplete(autocompleteTemplate(version))
       .build();
+  }
+
+  boolean useComposableTemplate(float version) {
+    return (version >= 7.8f && templatePriority != null);
   }
 
   /**

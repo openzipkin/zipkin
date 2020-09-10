@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,10 +15,11 @@ package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.utils.UUIDs;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import zipkin2.Annotation;
@@ -86,12 +87,12 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     if (input.isEmpty()) return Call.create(null);
 
     Set<InsertSpan.Input> spans = new LinkedHashSet<>();
-    Set<InsertServiceRemoteService.Input> serviceRemoteServices = new LinkedHashSet<>();
-    Set<InsertServiceSpan.Input> serviceSpans = new LinkedHashSet<>();
+    Set<Entry<String, String>> serviceRemoteServices = new LinkedHashSet<>();
+    Set<Entry<String, String>> serviceSpans = new LinkedHashSet<>();
     Set<InsertTraceByServiceRemoteService.Input> traceByServiceRemoteServices =
       new LinkedHashSet<>();
     Set<InsertTraceByServiceSpan.Input> traceByServiceSpans = new LinkedHashSet<>();
-    Set<Map.Entry<String, String>> autocompleteTags = new LinkedHashSet<>();
+    Set<Entry<String, String>> autocompleteTags = new LinkedHashSet<>();
 
     for (Span s : input) {
       // indexing occurs by timestamp, so derive one if not present.
@@ -119,9 +120,9 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       // service span and remote service indexes is refreshed regardless of timestamp
       String remoteService = s.remoteServiceName();
       if (insertServiceRemoteService != null && remoteService != null) {
-        serviceRemoteServices.add(insertServiceRemoteService.newInput(service, remoteService));
+        serviceRemoteServices.add(new SimpleImmutableEntry<>(service, remoteService));
       }
-      serviceSpans.add(insertServiceSpan.newInput(service, span));
+      serviceSpans.add(new SimpleImmutableEntry<>(service, span));
 
       if (ts_micro == 0L) continue; // search is only valid with a timestamp, don't index w/o it!
       int bucket = durationIndexBucket(ts_micro); // duration index is milliseconds not microseconds
@@ -139,7 +140,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
         insertTraceByServiceSpan.newInput(service, "", bucket, ts_uuid, s.traceId(), duration));
 
       if (insertAutocompleteValue != null) {
-        for (Map.Entry<String, String> entry : s.tags().entrySet()) {
+        for (Entry<String, String> entry : s.tags().entrySet()) {
           if (autocompleteKeys.contains(entry.getKey())) autocompleteTags.add(entry);
         }
       }
@@ -148,10 +149,10 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     for (InsertSpan.Input span : spans) {
       calls.add(insertSpan.create(span));
     }
-    for (InsertServiceSpan.Input serviceSpan : serviceSpans) {
+    for (Entry<String, String> serviceSpan : serviceSpans) {
       insertServiceSpan.maybeAdd(serviceSpan, calls);
     }
-    for (InsertServiceRemoteService.Input serviceRemoteService : serviceRemoteServices) {
+    for (Entry<String, String> serviceRemoteService : serviceRemoteServices) {
       insertServiceRemoteService.maybeAdd(serviceRemoteService, calls);
     }
     for (InsertTraceByServiceSpan.Input serviceSpan : traceByServiceSpans) {
@@ -160,7 +161,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     for (InsertTraceByServiceRemoteService.Input serviceRemoteService : traceByServiceRemoteServices) {
       calls.add(insertTraceByServiceRemoteService.create(serviceRemoteService));
     }
-    for (Map.Entry<String, String> autocompleteTag : autocompleteTags) {
+    for (Entry<String, String> autocompleteTag : autocompleteTags) {
       insertAutocompleteValue.maybeAdd(autocompleteTag, calls);
     }
     return calls.isEmpty() ? Call.create(null) : AggregateCall.newVoidCall(calls);

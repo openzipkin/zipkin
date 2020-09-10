@@ -6,13 +6,12 @@
   "Dependencies": "依赖",
   "Dependencies Page": "依赖页面",
   "Depth": "深度",
-  "Discover": "查找",
-  "Discover Page": "查找页面",
   "Download JSON": "下载JSON数据",
   "Duration": "持续时间",
   "End Time": "终止时间",
   "Failed to load this file": "下载文件失败",
   "Filter": "过滤",
+  "Find a trace": "找到一个痕迹",
   "Limit": "数量",
   "None": "空",
   "One Result": "1条结果",
@@ -30,6 +29,7 @@
   "Service Name": "服务",
   "Services": "服务",
   "Span ID": "Span ID",
+  "Spans": "Spans",
   "Start Time": "开始时间",
   "Support": "支持",
   "Tags": "标签",
@@ -43,5 +43,6 @@
   "hide annotations": "隐藏annotations",
   "show all annotations": "显示全部annotations",
   "trace id...": "trace id...",
-  "{0} Results": "{0} 条结果"
+  "{0} Results": "{0} 条结果",
+  "1 Result": "1 条结果"
 }

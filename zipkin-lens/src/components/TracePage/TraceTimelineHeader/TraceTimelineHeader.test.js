@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,7 +16,7 @@ import { createMount } from '@material-ui/core/test-utils';
 import { ThemeProvider } from '@material-ui/styles';
 
 import TraceTimelineHeader from './TraceTimelineHeader';
-import { theme } from '../../../colors';
+import { theme } from '../../../constants/color';
 
 // Only display the component because there is nothing to be tested.
 it('<TraceTimelineHeader />', () => {

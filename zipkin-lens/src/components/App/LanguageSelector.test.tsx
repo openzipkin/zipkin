@@ -17,56 +17,28 @@ import React from 'react';
 import render from '../../test/util/render-with-default-settings';
 import { getLocale } from '../../util/locale';
 
-import LanguageSelector, { LANGUAGES } from './LanguageSelector';
+import LanguageSelector from './LanguageSelector';
 
 describe('<LanguageSelector />', () => {
-  it('loads and displays button and no popover', async () => {
-    const { getByTestId, queryByTestId } = render(<LanguageSelector />);
-
+  it('displays button', async () => {
+    const { getByTestId } = render(<LanguageSelector />);
     const changeLanguageButton = getByTestId('change-language-button');
-    const languageList = queryByTestId('language-list');
-
     expect(changeLanguageButton).toBeInTheDocument();
-    expect(changeLanguageButton).toHaveAttribute('title', 'Change Language');
-
-    expect(languageList).not.toBeInTheDocument();
-
     expect(getLocale()).toEqual('en');
   });
 
-  it('click displays popover', async () => {
-    const { findByTestId, getByTestId } = render(<LanguageSelector />);
-
-    const changeLanguageButton = getByTestId('change-language-button');
-
-    expect(changeLanguageButton).toBeInTheDocument();
-
-    fireEvent.click(changeLanguageButton);
-
-    const languageList = await findByTestId('language-list');
-
-    expect(changeLanguageButton).toBeInTheDocument();
-    expect(languageList).toBeInTheDocument();
-    expect(languageList.children).toHaveLength(LANGUAGES.length);
-
+  it('displays all languages', async () => {
+    const { getByTestId } = render(<LanguageSelector />);
+    expect(getByTestId('language-list-item-en')).toBeInTheDocument();
+    expect(getByTestId('language-list-item-es')).toBeInTheDocument();
+    expect(getByTestId('language-list-item-zh-cn')).toBeInTheDocument();
     expect(getLocale()).toEqual('en');
   });
 
   it('language select changes locale and refreshes', async () => {
-    const { findByTestId, getByTestId } = render(<LanguageSelector />);
-
-    const changeLanguageButton = getByTestId('change-language-button');
-
-    expect(changeLanguageButton).toBeInTheDocument();
-
-    fireEvent.click(changeLanguageButton);
-
-    await findByTestId('language-list');
-
+    const { getByTestId } = render(<LanguageSelector />);
     fireEvent.click(getByTestId('language-list-item-zh-cn'));
-
     await expect(window.location.reload).toHaveBeenCalled();
-
     expect(getLocale()).toEqual('zh-cn');
   });
 });

@@ -1,10 +1,11 @@
 # Run `travis lint` when changing this file to avoid breaking the build.
 
-
-# Use a larger VM as we run a lot of services
-# https://docs.travis-ci.com/user/ci-environment/#Virtualization-environments
-sudo: required
-dist: trusty
+dist: focal
+language: java
+# Intentionally don't use "jdk" key as it is coupled to jdk.java.net availability.
+addons:
+  apt:
+    update: true
 
 # Don't do a shallow clone to allow license plugin to correctly read git history.
 git:
@@ -16,14 +17,15 @@ cache:
   - $HOME/.npm
   - $HOME/.m2
 
-language: java
-
-jdk: openjdk14
-
 services:
   - docker
 
 before_install:
+  # Use OS package to update JDK
+  - export JAVA_VERSION=14
+  - sudo apt-get -y install openjdk-$JAVA_VERSION-jdk
+  - export JAVA_HOME=/usr/lib/jvm/java-$JAVA_VERSION-openjdk-amd64/
+  - ./mvnw -version
 
   # Required for Elasticsearch 5 (See https://github.com/docker-library/docs/tree/master/elasticsearch#host-setup)
   - sudo sysctl -w vm.max_map_count=262144
