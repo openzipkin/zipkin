@@ -171,7 +171,7 @@ export function mkDurationStr(duration) {
   return `${(duration / 1000000).toFixed(3)}s`;
 }
 
-// maxSpanDurationStr is only used in index.mustache
+// Returns a list of {:serviceName, :spanCount} ordered descending by trace duration
 export function getServiceSummaries(groupedTimestamps) {
   const services = Object.entries(groupedTimestamps).map(
     ([serviceName, sts]) => ({
@@ -187,7 +187,6 @@ export function getServiceSummaries(groupedTimestamps) {
   ).map((summary) => ({
     serviceName: summary.serviceName,
     spanCount: summary.spanCount,
-    maxSpanDurationStr: mkDurationStr(summary.maxSpanDuration),
   }));
 }
 

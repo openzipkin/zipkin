@@ -250,9 +250,8 @@ describe('traceSummariesToMustache', () => {
       {
         serviceName: 'frontend',
         spanCount: 2,
-        maxSpanDurationStr: '168.731ms',
       },
-      { serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '26.326ms' },
+      { serviceName: 'backend', spanCount: 1},
     ]);
   });
 
