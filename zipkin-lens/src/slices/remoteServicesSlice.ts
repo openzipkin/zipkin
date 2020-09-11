@@ -77,6 +77,4 @@ const remoteServicesSlice = createSlice({
   },
 });
 
-export const { clearRemoteServices } = remoteServicesSlice.actions;
-
 export default remoteServicesSlice;

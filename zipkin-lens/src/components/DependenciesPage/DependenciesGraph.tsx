@@ -94,10 +94,6 @@ const reactSelectStyles = {
     ...base,
     cursor: 'pointer',
   }),
-  clearIndicator: (base: CSSProperties) => ({
-    ...base,
-    cursor: 'pointer',
-  }),
   dropdownIndicator: (base: CSSProperties) => ({
     ...base,
     cursor: 'pointer',
