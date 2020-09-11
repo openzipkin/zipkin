@@ -37,11 +37,11 @@ export const searchTraces = createAsyncThunk(
   'traces/search',
   async (params: { [key: string]: string }) => {
     const ps = new URLSearchParams(params);
-    const resp = await fetch(`${api.TRACES}?${ps}`);
+    const resp = await fetch(`${api.TRACES}?${ps.toString()}`);
     if (!resp.ok) {
       throw Error(resp.statusText);
     }
-    const rawTraces = (await resp.json()) as Span[][];
+    const rawTraces: Span[][] = await resp.json();
     const traces = rawTraces.reduce(
       (acc, rawTrace) => {
         const [{ traceId }] = rawTrace;
@@ -60,7 +60,7 @@ export const searchTraces = createAsyncThunk(
       },
     );
 
-    const traceSummaries = buildTraceSummaries(
+    const traceSummaries: TraceSummary[] = buildTraceSummaries(
       ps.get('serviceName'),
       Object.keys(traces).map((traceId) =>
         buildTraceSummary(traces[traceId].skewCorrectedTrace),
@@ -70,6 +70,7 @@ export const searchTraces = createAsyncThunk(
     return {
       traces,
       traceSummaries,
+      query: ps.toString(),
     };
   },
 );
@@ -83,19 +84,13 @@ export const loadTrace = createAsyncThunk(
       const { rawTrace, skewCorrectedTrace } = traces[traceId];
       let { adjustedTrace } = traces[traceId];
       if (adjustedTrace) {
-        return {
-          traceId,
-          trace: traces[traceId],
-        };
+        return traces[traceId];
       }
       adjustedTrace = buildDetailedTraceSummary(skewCorrectedTrace);
       return {
-        traceId,
-        trace: {
-          rawTrace,
-          skewCorrectedTrace,
-          adjustedTrace,
-        },
+        rawTrace,
+        skewCorrectedTrace,
+        adjustedTrace,
       };
     }
 
@@ -109,12 +104,9 @@ export const loadTrace = createAsyncThunk(
       skewCorrectedTrace,
     );
     return {
-      traceId,
-      trace: {
-        rawTrace,
-        skewCorrectedTrace,
-        adjustedTrace,
-      },
+      rawTrace,
+      skewCorrectedTrace,
+      adjustedTrace,
     };
   },
 );
@@ -155,85 +147,126 @@ export const loadJsonTrace = createAsyncThunk(
 );
 
 export interface TracesState {
-  isLoading: boolean;
-  error?: SerializedError;
   traces: {
-    [key: string]: { // key is the traceId
-      rawTrace: Span[];
-      skewCorrectedTrace: any;
+    [traceId: string]: {
+      // When fetching a specific trace, these isLoading and error states are used.
+      // They are not used in the search.
+      isLoading?: boolean;
+      error?: SerializedError;
+
+      rawTrace?: Span[];
       adjustedTrace?: AdjustedTrace;
+      // This is a trace data with only the clock-skew modified.
+      // It is the intermediate data used to optimize the conversion process of the trace.
+      skewCorrectedTrace?: any;
     };
   };
-  traceSummaries: TraceSummary[];
+  search: {
+    // When searching, isLoading and error states are used.
+    // They are not used when fetching a specific trace.
+    isLoading: boolean;
+    error?: SerializedError;
+    // Save the previous query to avoid doing the same query unnecessarily.
+    prevQuery?: string;
+    traceSummaries: TraceSummary[];
+  };
 }
 
 const initialState: TracesState = {
-  isLoading: false,
   traces: {},
-  traceSummaries: [],
-  error: undefined,
+  search: {
+    isLoading: false,
+    error: undefined,
+    prevQuery: undefined,
+    traceSummaries: [],
+  },
 };
 
 const tracesSlice = createSlice({
   name: 'traces',
   initialState,
   reducers: {
-    clearTraceSummaries: (state) => {
-      state.traceSummaries = [];
+    clearSearch: (state) => {
+      state.search.isLoading = false;
+      state.search.error = undefined;
+      state.search.prevQuery = undefined;
+      state.search.traceSummaries = [];
     },
   },
   extraReducers: (builder) => {
     builder.addCase(searchTraces.pending, (state) => {
-      state.isLoading = true;
+      const newSearchState = {
+        ...state.search,
+        isLoading: true,
+        error: undefined,
+      };
+      state.search = newSearchState;
     });
+
     builder.addCase(searchTraces.fulfilled, (state, action) => {
-      const { traces, traceSummaries } = action.payload;
+      const { traces } = action.payload;
       const newTraces = { ...state.traces };
       Object.keys(traces).forEach((traceId) => {
         newTraces[traceId] = traces[traceId];
       });
-      state.isLoading = false;
-      state.error = undefined;
+      const newSearchState = {
+        isLoading: false,
+        error: undefined,
+        prevQuery: action.payload.query,
+        traceSummaries: action.payload.traceSummaries,
+      };
+      state.search = newSearchState;
       state.traces = newTraces;
-      state.traceSummaries = traceSummaries;
     });
+
     builder.addCase(searchTraces.rejected, (state, action) => {
-      state.isLoading = false;
-      state.error = action.error;
+      const newSearchState = {
+        ...state.search,
+        isLoading: false,
+        error: action.error,
+      };
+      state.search = newSearchState;
     });
 
-    builder.addCase(loadTrace.pending, (state) => {
-      state.isLoading = true;
-    });
-    builder.addCase(loadTrace.fulfilled, (state, action) => {
-      const { traceId, trace } = action.payload;
+    builder.addCase(loadTrace.pending, (state, action) => {
+      const traceId = action.meta.arg;
       const newTraces = { ...state.traces };
-      newTraces[traceId] = trace;
-      state.isLoading = false;
+      if (!newTraces[traceId]) {
+        newTraces[traceId] = {};
+      }
+      newTraces[traceId].isLoading = true;
+      newTraces[traceId].error = undefined;
       state.traces = newTraces;
     });
-    builder.addCase(loadTrace.rejected, (state, action) => {
-      state.isLoading = false;
-      state.error = action.error;
+
+    builder.addCase(loadTrace.fulfilled, (state, action) => {
+      const traceId = action.meta.arg;
+      const newTraces = { ...state.traces };
+      newTraces[traceId] = { ...action.payload };
+      newTraces[traceId].isLoading = false;
+      newTraces[traceId].error = undefined;
+      state.traces = newTraces;
     });
 
-    builder.addCase(loadJsonTrace.pending, (state) => {
-      state.isLoading = true;
+    builder.addCase(loadTrace.rejected, (state, action) => {
+      const traceId = action.meta.arg;
+      const newTraces = { ...state.traces };
+      newTraces[traceId].isLoading = false;
+      newTraces[traceId].error = action.error;
+      state.traces = newTraces;
     });
+
+    // It's easier to handle isLoading and Error statuses on the component side,
+    // so don't change them here.
     builder.addCase(loadJsonTrace.fulfilled, (state, action) => {
       const { traceId, trace } = action.payload;
       const newTraces = { ...state.traces };
       newTraces[traceId] = trace;
       state.traces = newTraces;
-      state.isLoading = false;
-    });
-    builder.addCase(loadJsonTrace.rejected, (state, action) => {
-      state.isLoading = false;
-      state.error = action.error;
     });
   },
 });
 
 export default tracesSlice;
 
-export const { clearTraceSummaries } = tracesSlice.actions;
+export const { clearSearch } = tracesSlice.actions;

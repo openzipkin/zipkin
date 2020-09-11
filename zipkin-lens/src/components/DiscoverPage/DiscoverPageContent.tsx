@@ -47,7 +47,7 @@ import { Lookback, fixedLookbackMap, millisecondsToValue } from './lookback';
 import { useUiConfig } from '../UiConfig';
 import ExplainBox from '../common/ExplainBox';
 import TraceSummary from '../../models/TraceSummary';
-import { clearTraceSummaries, searchTraces } from '../../slices/tracesSlice';
+import { clearSearch, searchTraces } from '../../slices/tracesSlice';
 import { RootState } from '../../store';
 
 interface DiscoverPageContentProps {
@@ -319,7 +319,7 @@ const useFetchTraces = (
     // For searching, lookback and limit are always required.
     // If it doesn't exist, clear trace summaries.
     if (!lookback || !limit) {
-      dispatch(clearTraceSummaries());
+      dispatch(clearSearch());
       return;
     }
     const params = buildApiQuery(criteria, lookback, limit, autocompleteKeys);
@@ -479,7 +479,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   }, [setQueryParams, tempCriteria, tempLookback, tempLimit]);
 
   const traceSummaries = useSelector(
-    (state: RootState) => state.traces.traceSummaries,
+    (state: RootState) => state.traces.search.traceSummaries,
   );
 
   const [isShowingLookbackMenu, setIsShowingLookbackMenu] = useState(false);
