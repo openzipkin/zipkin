@@ -77,6 +77,4 @@ const spansSlice = createSlice({
   },
 });
 
-export const { clearSpans } = spansSlice.actions;
-
 export default spansSlice;

@@ -85,12 +85,18 @@ export const getNodesAndEdges = (dependencies: Dependencies) => {
   return { nodes, edges };
 };
 
+// IntelliJ may miss on "Unused property" analysis. Double-check here as we don't test CSS:
+// https://github.com/JedWatson/react-select/blob/cba15309c4d7523ab6a785c8d5c0c7ec1048e22f/packages/react-select/src/styles.js#L38-L61
 const reactSelectStyles = {
   control: (base: CSSProperties) => ({
     ...base,
     width: '15rem',
   }),
   option: (base: CSSProperties) => ({
+    ...base,
+    cursor: 'pointer',
+  }),
+  clearIndicator: (base: CSSProperties) => ({
     ...base,
     cursor: 'pointer',
   }),
