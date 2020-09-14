@@ -35,8 +35,21 @@ const {
 
 export const searchTraces = createAsyncThunk(
   'traces/search',
-  async (params: { [key: string]: string }) => {
+  async (params: { [key: string]: string }, thunkApi) => {
     const ps = new URLSearchParams(params);
+
+    // We need to import RootState in order to give the type to getState.
+    // Importing RootState will result in a cyclic import.
+    // So use any type to avoid this.
+    const { search, traces }: TracesState = (thunkApi.getState() as any).traces;
+    // If the query is the same as the previous query, it will not fetch again.
+    if (search.prevQuery === ps.toString()) {
+      return {
+        traces,
+        traceSummaries: search.traceSummaries,
+        query: ps.toString(),
+      };
+    }
 
     const resp = await fetch(`${api.TRACES}?${ps.toString()}`);
     if (!resp.ok) {
@@ -44,7 +57,7 @@ export const searchTraces = createAsyncThunk(
     }
     const rawTraces: Span[][] = await resp.json();
 
-    const traces = rawTraces.reduce(
+    const newTraces = rawTraces.reduce(
       (acc, rawTrace) => {
         const [{ traceId }] = rawTrace;
         const skewCorrectedTrace = treeCorrectedForClockSkew(rawTrace);
@@ -64,13 +77,13 @@ export const searchTraces = createAsyncThunk(
 
     const traceSummaries: TraceSummary[] = buildTraceSummaries(
       ps.get('serviceName'),
-      Object.keys(traces).map((traceId) =>
-        buildTraceSummary(traces[traceId].skewCorrectedTrace),
+      Object.keys(newTraces).map((traceId) =>
+        buildTraceSummary(newTraces[traceId].skewCorrectedTrace),
       ),
     );
 
     return {
-      traces,
+      traces: newTraces,
       traceSummaries,
       query: ps.toString(),
     };
@@ -80,6 +93,9 @@ export const searchTraces = createAsyncThunk(
 export const loadTrace = createAsyncThunk(
   'traces/load',
   async (traceId: string, thunkApi) => {
+    // We need to import RootState in order to give the type to getState.
+    // Importing RootState will result in a cyclic import.
+    // So use any type to avoid this.
     const { traces }: TracesState = (thunkApi.getState() as any).traces;
 
     if (traces[traceId]) {
