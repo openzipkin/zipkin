@@ -20,14 +20,14 @@ import { Trans } from '@lingui/macro';
 import {
   Box,
   Button,
+  ButtonGroup,
   ButtonProps,
+  Collapse,
   Container,
+  Divider,
   Paper,
   TextField,
-  Divider,
-  Collapse,
   Typography,
-  ButtonGroup,
 } from '@material-ui/core';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
@@ -49,6 +49,7 @@ import ExplainBox from '../common/ExplainBox';
 import TraceSummary from '../../models/TraceSummary';
 import { clearSearch, searchTraces } from '../../slices/tracesSlice';
 import { RootState } from '../../store';
+import { LoadingIndicator } from '../common/LoadingIndicator';
 
 interface DiscoverPageContentProps {
   autocompleteKeys: string[];
@@ -478,8 +479,8 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     }
   }, [setQueryParams, tempCriteria, tempLookback, tempLimit]);
 
-  const traceSummaries = useSelector(
-    (state: RootState) => state.traces.search.traceSummaries,
+  const { isLoading, traceSummaries } = useSelector(
+    (state: RootState) => state.traces.search,
   );
 
   const [isShowingLookbackMenu, setIsShowingLookbackMenu] = useState(false);
@@ -521,7 +522,10 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   }, [filters, traceSummaries]);
 
   let content: JSX.Element | undefined;
-  if (traceSummaries.length === 0) {
+
+  if (isLoading) {
+    content = <LoadingIndicator />;
+  } else if (traceSummaries.length === 0) {
     content = (
       <ExplainBox
         icon={faSearch}

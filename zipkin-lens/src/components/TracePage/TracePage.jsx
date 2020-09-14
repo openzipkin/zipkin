@@ -22,6 +22,7 @@ import { withRouter } from 'react-router-dom';
 import MessageBar from './MessageBar';
 import TraceSummary from './TraceSummary';
 import TraceSummaryHeader from './TraceSummaryHeader';
+import { LoadingIndicator } from '../common/LoadingIndicator';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
 import { loadTrace } from '../../slices/tracesSlice';
 
@@ -43,7 +44,7 @@ export const TracePageImpl = React.memo(
     }, [traceId, loadTrace]);
 
     if (isLoading) {
-      return null;
+      return <LoadingIndicator />;
     }
 
     if (!traceSummary) {
@@ -66,10 +67,10 @@ const mapStateToProps = (state, ownProps) => {
   const { traceId } = match.params;
   const props = {};
   props.traceId = traceId;
+  props.isLoading = state.traces.traces[traceId]?.isLoading || false;
   if (state.traces.traces[traceId]) {
     props.traceSummary = state.traces.traces[traceId].adjustedTrace;
   }
-  props.isLoading = state.traces.isLoading;
   return props;
 };
 
