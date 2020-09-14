@@ -37,11 +37,13 @@ export const searchTraces = createAsyncThunk(
   'traces/search',
   async (params: { [key: string]: string }) => {
     const ps = new URLSearchParams(params);
+
     const resp = await fetch(`${api.TRACES}?${ps.toString()}`);
     if (!resp.ok) {
       throw Error(resp.statusText);
     }
     const rawTraces: Span[][] = await resp.json();
+
     const traces = rawTraces.reduce(
       (acc, rawTrace) => {
         const [{ traceId }] = rawTrace;
@@ -86,12 +88,14 @@ export const loadTrace = createAsyncThunk(
       if (adjustedTrace) {
         return traces[traceId];
       }
-      adjustedTrace = buildDetailedTraceSummary(skewCorrectedTrace);
-      return {
-        rawTrace,
-        skewCorrectedTrace,
-        adjustedTrace,
-      };
+      if (skewCorrectedTrace) {
+        adjustedTrace = buildDetailedTraceSummary(skewCorrectedTrace);
+        return {
+          rawTrace,
+          skewCorrectedTrace,
+          adjustedTrace,
+        };
+      }
     }
 
     const resp = await fetch(`${api.TRACE}/${traceId}`);
@@ -256,7 +260,7 @@ const tracesSlice = createSlice({
       state.traces = newTraces;
     });
 
-    // It's easier to handle isLoading and Error statuses on the component side,
+    // It's easier to handle isLoading and error statuses on the component side,
     // so don't change them here.
     builder.addCase(loadJsonTrace.fulfilled, (state, action) => {
       const { traceId, trace } = action.payload;
