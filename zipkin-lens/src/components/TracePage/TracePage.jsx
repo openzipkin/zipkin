@@ -29,7 +29,6 @@ const propTypes = {
       traceId: PropTypes.string.isRequired,
     }),
   }).isRequired,
-  traceId: PropTypes.string.isRequired,
 };
 
 export const TracePageImpl = React.memo(({ match }) => {
