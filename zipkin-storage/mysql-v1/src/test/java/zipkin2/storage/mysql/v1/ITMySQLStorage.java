@@ -36,7 +36,7 @@ import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependenc
 class ITMySQLStorage {
 
   @RegisterExtension MySQLStorageExtension backend = new MySQLStorageExtension(
-    "openzipkin/zipkin-mysql:2.21.5");
+    "openzipkin/zipkin-mysql:2.21.6");
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<MySQLStorage> {

@@ -31,7 +31,7 @@ import java.util.concurrent.ExecutionException;
 /** This should be used as a {@link ClassRule} as it takes a very long time to start-up. */
 class KafkaCollectorRule extends ExternalResource {
   static final Logger LOGGER = LoggerFactory.getLogger(KafkaCollectorRule.class);
-  static final String IMAGE = "openzipkin/zipkin-kafka:2.21.5";
+  static final String IMAGE = "openzipkin/zipkin-kafka:2.21.6";
   static final int KAFKA_PORT = 19092;
   static final String KAFKA_BOOTSTRAP_SERVERS = "localhost:" + KAFKA_PORT;
   static final String KAFKA_TOPIC = "zipkin";
