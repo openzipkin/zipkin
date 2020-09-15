@@ -15,7 +15,6 @@ import {
   traceSummary,
   traceSummaries,
   mkDurationStr,
-  totalDuration,
   detailedTraceSummary,
 } from './trace';
 import { SpanNode } from './span-node';
@@ -260,11 +259,6 @@ describe('traceSummariesToMustache', () => {
     expect(model[0].traceId).toBe(summary.traceId);
   });
 
-  it('should get service percentage', () => {
-    const model = traceSummaries('backend', [summary]);
-    expect(model[0].servicePercentage).toBe(15);
-  });
-
   it('should format start time', () => {
     const model = traceSummaries(null, [summary], true);
     expect(model[0].startTs).toBe('11-02-2018T05:56:09.255+0000');
@@ -379,44 +373,6 @@ describe('mkDurationStr', () => {
 
   it('should format seconds', () => {
     expect(mkDurationStr(2534999)).toBe('2.535s');
-  });
-});
-
-describe('totalDuration', () => {
-  it('should return zero on empty input', () => {
-    expect(totalDuration([])).toBe(0);
-  });
-
-  it('should return only duration when single input', () => {
-    expect(totalDuration([{ timestamp: 10, duration: 200 }])).toBe(200);
-  });
-
-  it('should return root span duration when no children complete after root', () => {
-    const rootLongest = [
-      { timestamp: 1, duration: 300 },
-      { timestamp: 10, duration: 200 },
-      { timestamp: 20, duration: 210 },
-    ];
-    expect(totalDuration(rootLongest)).toBe(300);
-  });
-
-  it('should return the total time in a service and not the time not in service', () => {
-    const asyncTrace = [
-      { timestamp: 1, duration: 300 },
-      { timestamp: 11, duration: 200 }, // enclosed by above
-      { timestamp: 390, duration: 20 },
-      { timestamp: 400, duration: 30 }, // overlaps with above
-    ];
-    expect(totalDuration(asyncTrace)).toBe(300 + (400 + 30 - 390));
-  });
-
-  it('should ignore input missing duration', () => {
-    const rootLongest = [
-      { timestamp: 1, duration: 300 },
-      { timestamp: 10 }, // incomplete span
-      { timestamp: 20, duration: 210 },
-    ];
-    expect(totalDuration(rootLongest)).toBe(300);
   });
 });
 

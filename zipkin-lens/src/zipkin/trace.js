@@ -107,45 +107,6 @@ export function traceSummary(root) {
   };
 }
 
-// This returns a total duration by merging all overlapping intervals found in the the input.
-//
-// This is used to create servicePercentage for index.mustache when a service is selected
-export function totalDuration(timestampAndDurations) {
-  const filtered = timestampAndDurations
-    .filter((s) => !!s.duration) // filter out anything we can't make an interval out of
-    .sort((a, b) => a.timestamp - b.timestamp);
-
-  if (filtered.length === 0) {
-    return 0;
-  }
-  if (filtered.length === 1) {
-    return filtered[0].duration;
-  }
-
-  let result = filtered[0].duration;
-  let currentIntervalEnd = filtered[0].timestamp + filtered[0].duration;
-
-  for (let i = 1; i < filtered.length; i += 1) {
-    const next = filtered[i];
-    const nextIntervalEnd = next.timestamp + next.duration;
-
-    if (nextIntervalEnd <= currentIntervalEnd) {
-      // we are still in the interval
-      continue;
-    } else if (next.timestamp <= currentIntervalEnd) {
-      // we extending the interval
-      result += nextIntervalEnd - currentIntervalEnd;
-      currentIntervalEnd = nextIntervalEnd;
-    } else {
-      // this is a new interval
-      result += next.duration;
-      currentIntervalEnd = nextIntervalEnd;
-    }
-  }
-
-  return result;
-}
-
 function formatDate(timestamp, utc) {
   let m = moment(timestamp / 1000);
   if (utc) {
@@ -220,16 +181,6 @@ export function traceSummaries(serviceName, summaries, utc = false) {
       // don't try to add data dependent on service names.
       if (Object.keys(t.groupedTimestamps).length !== 0) {
         res.serviceSummaries = getServiceSummaries(t.groupedTimestamps);
-
-        // Only add a service percentage when there is a duration for it
-        if (serviceName && duration && t.groupedTimestamps[serviceName]) {
-          const serviceTime = totalDuration(t.groupedTimestamps[serviceName]);
-          // used for display and also client-side sort by service percentage
-          res.servicePercentage = parseInt(
-            (parseFloat(serviceTime) / parseFloat(duration)) * 100,
-            10,
-          );
-        }
       } else {
         res.serviceSummaries = [];
       }

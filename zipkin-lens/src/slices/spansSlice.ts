@@ -51,13 +51,7 @@ const initialState: SpansState = {
 const spansSlice = createSlice({
   name: 'spans',
   initialState,
-  reducers: {
-    clearSpans: (state) => {
-      state.isLoading = false;
-      state.spans = [];
-      state.error = undefined;
-    },
-  },
+  reducers: {}, // SearchBar.tsx issues load on serviceName change, so no need to clear
   extraReducers: (builder) => {
     builder.addCase(loadSpans.pending, (state) => {
       state.isLoading = true;
@@ -76,7 +70,5 @@ const spansSlice = createSlice({
     });
   },
 });
-
-export const { clearSpans } = spansSlice.actions;
 
 export default spansSlice;

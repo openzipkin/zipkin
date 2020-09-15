@@ -51,13 +51,7 @@ const initialState: RemoteServicesState = {
 const remoteServicesSlice = createSlice({
   name: 'remoteServices',
   initialState,
-  reducers: {
-    clearRemoteServices: (state) => {
-      state.isLoading = false;
-      state.remoteServices = [];
-      state.error = undefined;
-    },
-  },
+  reducers: {}, // SearchBar.tsx issues load on serviceName change, so no need to clear
   extraReducers: (builder) => {
     builder.addCase(loadRemoteServices.pending, (state) => {
       state.isLoading = true;
@@ -76,7 +70,5 @@ const remoteServicesSlice = createSlice({
     });
   },
 });
-
-export const { clearRemoteServices } = remoteServicesSlice.actions;
 
 export default remoteServicesSlice;

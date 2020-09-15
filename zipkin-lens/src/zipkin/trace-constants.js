@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -26,25 +26,7 @@ const CLIENT_ADDR = 'ca';
 const MESSAGE_ADDR = 'ma';
 const WIRE_SEND = 'ws';
 const WIRE_RECEIVE = 'wr';
-const ERROR = 'error';
 const LOCAL_COMPONENT = 'lc';
-export const Constants = {
-  CLIENT_SEND,
-  CLIENT_SEND_FRAGMENT,
-  CLIENT_RECEIVE,
-  CLIENT_RECEIVE_FRAGMENT,
-  MESSAGE_SEND,
-  MESSAGE_RECEIVE,
-  SERVER_SEND,
-  SERVER_SEND_FRAGMENT,
-  SERVER_RECEIVE,
-  SERVER_RECEIVE_FRAGMENT,
-  SERVER_ADDR,
-  CLIENT_ADDR,
-  MESSAGE_ADDR,
-  ERROR,
-  LOCAL_COMPONENT,
-};
 
 export const ConstantNames = {};
 ConstantNames[CLIENT_SEND] = 'Client Send';
