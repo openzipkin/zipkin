@@ -13,13 +13,12 @@
  */
 
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 
-import MessageBar from './MessageBar';
 import TraceSummary from './TraceSummary';
-import TraceSummaryHeader from './TraceSummaryHeader';
+import { setAlert } from '../App/slice';
 import { LoadingIndicator } from '../common/LoadingIndicator';
 import { loadTrace } from '../../slices/tracesSlice';
 
@@ -34,9 +33,10 @@ const propTypes = {
 export const TracePageImpl = React.memo(({ match }) => {
   const { traceId } = match.params;
 
-  const { isLoading, traceSummary } = useSelector((state) => ({
+  const { isLoading, traceSummary, error } = useSelector((state) => ({
     isLoading: state.traces.traces[traceId]?.isLoading || false,
     traceSummary: state.traces.traces[traceId]?.adjustedTrace || undefined,
+    error: state.traces.traces[traceId]?.error || undefined,
   }));
 
   const dispatch = useDispatch();
@@ -45,17 +45,34 @@ export const TracePageImpl = React.memo(({ match }) => {
     dispatch(loadTrace(traceId));
   }, [traceId, dispatch]);
 
+  const firstUpdate = useRef(true);
+  useEffect(() => {
+    // In the first rendering, skip this useEffect, because isLoading
+    // is always false and traceSummary always is undefined.
+    if (firstUpdate.current) {
+      firstUpdate.current = false;
+      return;
+    }
+    if (!isLoading && !traceSummary) {
+      let message = 'No trace found';
+      if (error) {
+        message += `: ${error.message}`;
+      }
+      dispatch(
+        setAlert({
+          message,
+          severity: 'error',
+        }),
+      );
+    }
+  }, [dispatch, error, isLoading, traceSummary]);
+
   if (isLoading) {
     return <LoadingIndicator />;
   }
 
   if (!traceSummary) {
-    return (
-      <>
-        <TraceSummaryHeader />
-        <MessageBar variant="error" message="Trace not found" />
-      </>
-    );
+    return null;
   }
   return <TraceSummary traceSummary={traceSummary} />;
 });
