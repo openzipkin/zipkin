@@ -12,72 +12,55 @@
  * the License.
  */
 
-/* eslint-disable no-shadow */
-
 import PropTypes from 'prop-types';
 import React, { useEffect } from 'react';
-import { connect } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 
 import MessageBar from './MessageBar';
 import TraceSummary from './TraceSummary';
 import TraceSummaryHeader from './TraceSummaryHeader';
 import { LoadingIndicator } from '../common/LoadingIndicator';
-import { detailedTraceSummaryPropTypes } from '../../prop-types';
 import { loadTrace } from '../../slices/tracesSlice';
 
 const propTypes = {
+  match: PropTypes.shape({
+    params: PropTypes.shape({
+      traceId: PropTypes.string.isRequired,
+    }),
+  }).isRequired,
   traceId: PropTypes.string.isRequired,
-  traceSummary: detailedTraceSummaryPropTypes,
-  loadTrace: PropTypes.func.isRequired,
-  isLoading: PropTypes.bool.isRequired,
 };
 
-const defaultProps = {
-  traceSummary: undefined,
-};
-
-export const TracePageImpl = React.memo(
-  ({ traceId, traceSummary, loadTrace, isLoading }) => {
-    useEffect(() => {
-      loadTrace(traceId);
-    }, [traceId, loadTrace]);
-
-    if (isLoading) {
-      return <LoadingIndicator />;
-    }
-
-    if (!traceSummary) {
-      return (
-        <>
-          <TraceSummaryHeader />
-          <MessageBar variant="error" message="Trace not found" />
-        </>
-      );
-    }
-    return <TraceSummary traceSummary={traceSummary} />;
-  },
-);
-
-TracePageImpl.propTypes = propTypes;
-TracePageImpl.defaultProps = defaultProps;
-
-const mapStateToProps = (state, ownProps) => {
-  const { match } = ownProps;
+export const TracePageImpl = React.memo(({ match }) => {
   const { traceId } = match.params;
-  const props = {};
-  props.traceId = traceId;
-  props.isLoading = state.traces.traces[traceId]?.isLoading || false;
-  if (state.traces.traces[traceId]) {
-    props.traceSummary = state.traces.traces[traceId].adjustedTrace;
-  }
-  return props;
-};
 
-const mapDispatchToProps = (dispatch) => ({
-  loadTrace: (traceId) => dispatch(loadTrace(traceId)),
+  const { isLoading, traceSummary } = useSelector((state) => ({
+    isLoading: state.traces.traces[traceId]?.isLoading || false,
+    traceSummary: state.traces.traces[traceId]?.adjustedTrace || undefined,
+  }));
+
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(loadTrace(traceId));
+  }, [traceId, dispatch]);
+
+  if (isLoading) {
+    return <LoadingIndicator />;
+  }
+
+  if (!traceSummary) {
+    return (
+      <>
+        <TraceSummaryHeader />
+        <MessageBar variant="error" message="Trace not found" />
+      </>
+    );
+  }
+  return <TraceSummary traceSummary={traceSummary} />;
 });
 
-export default withRouter(
-  connect(mapStateToProps, mapDispatchToProps)(TracePageImpl),
-);
+TracePageImpl.propTypes = propTypes;
+
+export default withRouter(TracePageImpl);
