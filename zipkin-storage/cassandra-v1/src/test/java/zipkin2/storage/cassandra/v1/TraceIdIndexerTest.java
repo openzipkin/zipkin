@@ -13,6 +13,8 @@
  */
 package zipkin2.storage.cassandra.v1;
 
+import java.util.AbstractMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,7 +26,6 @@ import zipkin2.storage.cassandra.v1.TraceIdIndexer.Factory;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
 import static zipkin2.storage.cassandra.v1.Tables.SERVICE_NAME_INDEX;
 
 public class TraceIdIndexerTest {
@@ -144,6 +145,10 @@ public class TraceIdIndexerTest {
     assertThat(factory.cache)
       .hasSameSizeAs(factory.expirations)
       .hasSize(factory.cardinality);
+  }
+
+  static <K, V> Map.Entry<K, V> entry(K key, V value) { // AssertJ entry doesn't substitute
+    return new AbstractMap.SimpleImmutableEntry<>(key, value);
   }
 
   @Test @Timeout(2000L) void cardinality_parallel() throws InterruptedException {
