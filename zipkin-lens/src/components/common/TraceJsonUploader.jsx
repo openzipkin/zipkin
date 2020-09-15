@@ -25,6 +25,7 @@ import Button from '@material-ui/core/Button';
 import Tooltip from '@material-ui/core/Tooltip';
 
 import { loadJsonTrace } from '../../slices/tracesSlice';
+import { setAlert } from '../App/slice';
 
 const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
@@ -61,6 +62,14 @@ const TraceJsonUploader = ({ history }) => {
           history.push({
             pathname: `/traces/${traceId}`,
           });
+        })
+        .catch((err) => {
+          dispatch(
+            setAlert({
+              message: `Failed to load file: ${err.message}`,
+              severity: 'error',
+            }),
+          );
         });
     },
     [dispatch, history],
