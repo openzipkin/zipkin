@@ -55,7 +55,7 @@ export const TracePageImpl = React.memo(({ match }) => {
     }
     if (!isLoading && !traceSummary) {
       let message = 'No trace found';
-      if (error) {
+      if (error && error.message) {
         message += `: ${error.message}`;
       }
       dispatch(

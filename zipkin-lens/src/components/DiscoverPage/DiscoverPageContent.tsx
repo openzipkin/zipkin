@@ -44,6 +44,7 @@ import LookbackMenu from './LookbackMenu';
 import SearchBar from './SearchBar';
 import TraceSummaryTable from './TraceSummaryTable';
 import { Lookback, fixedLookbackMap, millisecondsToValue } from './lookback';
+import { setAlert } from '../App/slice';
 import { useUiConfig } from '../UiConfig';
 import ExplainBox from '../common/ExplainBox';
 import TraceSummary from '../../models/TraceSummary';
@@ -479,7 +480,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     }
   }, [setQueryParams, tempCriteria, tempLookback, tempLimit]);
 
-  const { isLoading, traceSummaries } = useSelector(
+  const { isLoading, traceSummaries, error } = useSelector(
     (state: RootState) => state.traces.search,
   );
 
@@ -520,6 +521,24 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
       return !filters.find((filter) => !serviceNameSet.has(filter));
     });
   }, [filters, traceSummaries]);
+
+  const dispatch = useDispatch();
+
+  // If there is a problem during the search, show it.
+  useEffect(() => {
+    if (error) {
+      let message = 'Failed to search';
+      if (error.message) {
+        message += `: ${error.message}`;
+      }
+      dispatch(
+        setAlert({
+          message,
+          severity: 'error',
+        }),
+      );
+    }
+  }, [dispatch, error]);
 
   let content: JSX.Element | undefined;
 
