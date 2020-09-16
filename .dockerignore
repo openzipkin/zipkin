@@ -1,6 +1,7 @@
 **/.*
 !.dockerignore
 !.git
+!.mvn
 !docker/zipkin/**
 !**/.eslintrc*
 !**/.prettierrc*
@@ -8,6 +9,7 @@
 **/*.test.yml
 
 **/target
+**/build
 **/node_modules
 **/*.iml
 
@@ -16,4 +18,3 @@
 **/Dockerfile
 docker/hooks/**
 travis/**
-mvnw*

@@ -29,7 +29,8 @@ COPY --from=scratch /code /code
 
 WORKDIR /code
 
-RUN mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-server -am
+# Same command as we suggest in zipkin-server/README.md
+RUN ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server install
 
 RUN mkdir -p /zipkin && cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin && cd /zipkin && jar xf *.jar && rm *.jar
 RUN mkdir -p /zipkin-slim && cp zipkin-server/target/zipkin-server-*-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar
@@ -48,7 +49,9 @@ LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 ENV ZIPKIN_BASE_URL=http://zipkin:9411
 
-COPY --from=built /code/zipkin-lens/target/classes/zipkin-lens /var/www/html/zipkin
+
+# :zipkin-lens "npm run build" generates the build directory
+COPY --from=built /code/zipkin-lens/build /var/www/html/zipkin
 RUN mkdir -p /var/tmp/nginx && chown -R nginx:nginx /var/tmp/nginx
 
 # Setup services

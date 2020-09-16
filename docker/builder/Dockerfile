@@ -19,5 +19,10 @@ FROM maven:3-openjdk-14-slim
 
 COPY . /code/
 
-RUN cd /code && mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-server -am && \
+# Unset MAVEN_CONFIG until we don't depend on the maven image which conflicts with the Takari env
+ENV MAVEN_CONFIG=
+
+# Use the same command as we suggest in zipkin-server/README.md to hydrate the maven cache
+RUN cd /code && \
+    ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server package && \
     cd / && rm -rf /code
