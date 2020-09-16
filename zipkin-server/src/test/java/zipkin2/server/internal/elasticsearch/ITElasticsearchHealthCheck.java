@@ -93,8 +93,7 @@ public class ITElasticsearchHealthCheck {
 
   @Test public void allHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      CheckResult result = storage.check();
-      assertThat(result.ok()).isTrue();
+      assertOk(storage.check());
     }
   }
 
@@ -102,8 +101,7 @@ public class ITElasticsearchHealthCheck {
     server1Health.setHealthy(false);
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      CheckResult result = storage.check();
-      assertThat(result.ok()).isTrue();
+      assertOk(storage.check());
     }
   }
 
@@ -135,8 +133,7 @@ public class ITElasticsearchHealthCheck {
   // If this flakes, uncomment in initWithHosts and log4j2.properties
   @Test public void healthyThenNotHealthyThenHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      CheckResult result = storage.check();
-      assertThat(result.ok()).isTrue();
+      assertOk(storage.check());
 
       logger.info("setting server 1 and 2 unhealthy");
       server1Health.setHealthy(false);
@@ -191,8 +188,13 @@ public class ITElasticsearchHealthCheck {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
       // Even though cluster health is false, we ignore that and continue to check index health,
       // which is correctly returned by our mock server.
-      CheckResult result = storage.check();
-      assertThat(result.ok()).isTrue();
+      assertOk(storage.check());
     }
+  }
+
+  static void assertOk(CheckResult result) {
+    assertThat(result.ok())
+      .withFailMessage(() -> "Check failed with exception: " + result.error().getMessage())
+      .isTrue();
   }
 }
