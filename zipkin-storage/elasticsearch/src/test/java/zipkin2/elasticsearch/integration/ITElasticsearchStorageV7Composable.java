@@ -27,7 +27,7 @@ import static zipkin2.elasticsearch.integration.ElasticsearchStorageExtension.in
 public class ITElasticsearchStorageV7Composable extends ITElasticsearchStorage {
 
   @RegisterExtension ElasticsearchStorageExtension backend = new ElasticsearchStorageExtension(
-    "openzipkin/zipkin-elasticsearch7:2.21.5", 0);
+    "openzipkin/zipkin-elasticsearch7:2.21.6", 0);
 
   @Override ElasticsearchStorageExtension backend() {
     return backend;
