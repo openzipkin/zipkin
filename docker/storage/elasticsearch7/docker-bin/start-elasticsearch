@@ -30,7 +30,6 @@ set -eu
 
 exec java \
 $ES_JAVA_OPTS \
-  -verbose:gc \
   -Xms256m -Xmx256m -XX:+ExitOnOutOfMemoryError \
   -Djava.io.tmpdir=/tmp \
   -Dlog4j2.disable.jmx=true \
