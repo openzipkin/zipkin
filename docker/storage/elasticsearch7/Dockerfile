@@ -29,7 +29,7 @@ FROM openzipkin/jre-full:14.0.2-14.29.23
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
-COPY docker/storage/elasticsearch6/docker-bin/* /usr/local/bin/
+COPY docker/storage/elasticsearch7/docker-bin/* /usr/local/bin/
 
 # All content including binaries and logs write under WORKDIR
 ARG USER=elasticsearch
