@@ -18,8 +18,8 @@ FROM openzipkin/zipkin-builder as install
 ENV KAFKA_VERSION=2.6.0 SCALA_VERSION=2.13
 
 WORKDIR /install
-ADD docker/collector/kafka/install /tmp/install
-RUN /tmp/install && rm /tmp/install
+COPY docker/collector/kafka/install.sh /tmp/
+RUN /tmp/install.sh && rm /tmp/install.sh
 
 # Share the same base image to reduce layers used in testing
 FROM openzipkin/jre-full:14.0.2-14.29.23
