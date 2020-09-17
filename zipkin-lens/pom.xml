@@ -62,28 +62,6 @@
         </executions>
       </plugin>
       <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>${maven-resources-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>copy NPM build to zipkin-lens directory</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <!-- NPM build output will end up in the jar under the 'zipkin-lens' directory -->
-              <outputDirectory>${project.build.directory}/classes/zipkin-lens</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>build</directory>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>com.github.eirslett</groupId>
         <artifactId>frontend-maven-plugin</artifactId>
         <version>${frontend-maven-plugin.version}</version>
@@ -142,6 +120,29 @@
             <phase>test</phase>
             <configuration>
               <arguments>run test</arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>${maven-resources-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>copy NPM build to zipkin-lens directory</id>
+            <!-- This needs to happen after compile or it could copy an empty directory! -->
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <!-- NPM build output will end up in the jar under the 'zipkin-lens' directory -->
+              <outputDirectory>${project.build.directory}/classes/zipkin-lens</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>build</directory>
+                </resource>
+              </resources>
             </configuration>
           </execution>
         </executions>
