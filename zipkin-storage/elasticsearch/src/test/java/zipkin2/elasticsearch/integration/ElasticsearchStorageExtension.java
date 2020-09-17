@@ -36,11 +36,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallback {
   static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchStorageExtension.class);
 
-  static {
-    // Gives better context when there's an exception such as AbortedStreamException
-    System.setProperty("com.linecorp.armeria.verboseExceptions", "always");
-  }
-
   static final int ELASTICSEARCH_PORT = 9200;
   final String image;
   final Integer priority;

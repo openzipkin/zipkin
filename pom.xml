@@ -544,6 +544,15 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <systemProperties>
+            <!-- Gives better context when there's an exception such as AbortedStreamException.
+                 Set globally as we have failures sometimes in storage-elasticsearch and sometimes
+                 in zipkin-server tests (same code used two places).
+            -->
+            <com.linecorp.armeria.verboseExceptions>always</com.linecorp.armeria.verboseExceptions>
+          </systemProperties>
+        </configuration>
       </plugin>
 
       <plugin>

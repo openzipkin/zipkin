@@ -198,8 +198,9 @@ public class ITElasticsearchHealthCheck {
   }
 
   static void assertOk(CheckResult result) {
-    assertThat(result.ok())
-      .withFailMessage(() -> "Check failed with exception: " + result.error().getMessage())
-      .isTrue();
+    if (!result.ok()) {
+      Throwable error = result.error();
+      throw new AssertionError("Health check failed with message: " + error.getMessage(), error);
+    }
   }
 }
