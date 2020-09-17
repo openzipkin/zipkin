@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright 2015-2020 The OpenZipkin Authors
 #
@@ -12,8 +13,19 @@
 # the License.
 #
 
-network.host: 0.0.0.0
-node.name: zipkin-elasticsearch
-cluster.name: "docker-cluster"
-cluster.initial_master_nodes:
-  - zipkin-elasticsearch
+# HEALTHCHECK for use in `docker ps` or `docker-compose ps`.
+# It can also be used as a readiness probe in k8s
+
+# Fail on unset variables, but don't quit on rc!=0, so we can log what happened
+set -u +e
+
+IP="$(hostname -i || echo '127.0.0.1')"
+
+HEALTH_OUTPUT=$(wget -qO- http://${IP}:9200/_cluster/health 2>&1)
+HEALTH_RC=$?
+if [ "$HEALTH_RC" == "0" ]; then
+  exit 0
+fi
+
+echo Elasticsearch health check failed: $HEALTH_OUTPUT
+exit 1

@@ -25,10 +25,6 @@ import zipkin2.storage.StorageComponent;
 import static zipkin2.elasticsearch.integration.ElasticsearchStorageExtension.index;
 
 abstract class ITElasticsearchStorage {
-  static {
-    // Gives better context when there's an exception such as AbortedStreamException
-    System.setProperty("com.linecorp.armeria.verboseExceptions", "always");
-  }
 
   abstract ElasticsearchStorageExtension backend();
 

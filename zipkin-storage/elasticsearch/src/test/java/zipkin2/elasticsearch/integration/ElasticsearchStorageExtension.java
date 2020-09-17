@@ -18,7 +18,6 @@ import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.WebClientBuilder;
 import com.linecorp.armeria.client.logging.LoggingClient;
 import com.linecorp.armeria.common.logging.LogLevel;
-import java.io.IOException;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -36,10 +35,16 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallback {
   static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchStorageExtension.class);
+
+  static {
+    // Gives better context when there's an exception such as AbortedStreamException
+    System.setProperty("com.linecorp.armeria.verboseExceptions", "always");
+  }
+
   static final int ELASTICSEARCH_PORT = 9200;
   final String image;
   final Integer priority;
-  GenericContainer container;
+  GenericContainer<?> container;
 
   ElasticsearchStorageExtension(String image, Integer priority) {
     this.image = image;
@@ -48,7 +53,7 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
     this.priority = priority;
   }
 
-  @Override public void beforeAll(ExtensionContext context) throws IOException {
+  @Override public void beforeAll(ExtensionContext context) {
     if (context.getRequiredTestClass().getEnclosingClass() != null) {
       // Only run once in outermost scope.
       return;
@@ -58,11 +63,11 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
       try {
         LOGGER.info("Starting docker image " + image);
         container =
-          new GenericContainer(image)
+          new GenericContainer<>(image)
             .withExposedPorts(ELASTICSEARCH_PORT)
             .waitingFor(new HttpWaitStrategy().forPath("/"));
         container.start();
-        if (Boolean.valueOf(System.getenv("ES_DEBUG"))) {
+        if (Boolean.parseBoolean(System.getenv("ES_DEBUG"))) {
           container.followOutput(new Slf4jLogConsumer(LoggerFactory.getLogger(image)));
         }
         LOGGER.info("Starting docker image " + image);
@@ -75,7 +80,7 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
 
     try {
       tryToInitializeSession();
-    } catch (RuntimeException | IOException | Error e) {
+    } catch (RuntimeException | Error e) {
       if (container == null) throw e;
       LOGGER.warn("Couldn't connect to docker image " + image + ": " + e.getMessage(), e);
       container.stop();
@@ -96,7 +101,7 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
     }
   }
 
-  void tryToInitializeSession() throws IOException {
+  void tryToInitializeSession() {
     try (ElasticsearchStorage result = computeStorageBuilder().build()) {
       CheckResult check = result.check();
       assumeTrue(check.ok(), () -> "Could not connect to storage, skipping test: "

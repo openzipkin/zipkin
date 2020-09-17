@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# Copyright 2015-2020 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+# ENTRYPOINT script that starts Elasticsearch
+#
+# This intentionally locates config using the current working directory, in order to consolidate
+# Dockerfile instructions to WORKDIR
+set -eu
+
+# This file inlines what's done by the Elasticsearch script machinery, which doesn't work here due
+# to our images using busybox (not bash). See #3044
+#
+# Notable settings:
+# * lower heap size
+# * tmpdir manual as https://github.com/elastic/elasticsearch/pull/31003 was closed won't fix
+# * disable log4j JMX not just because we don't use it...
+#  * ES enables security manager https://github.com/elastic/elasticsearch/issues/21932#issuecomment-264435034
+
+exec java \
+$ES_JAVA_OPTS \
+  -Xms256m -Xmx256m -XX:+ExitOnOutOfMemoryError \
+  -Djava.io.tmpdir=/tmp \
+  -Dlog4j2.disable.jmx=true \
+  -Des.path.home=$PWD -Des.path.conf=$PWD/config \
+  -cp 'lib/*' org.elasticsearch.bootstrap.Elasticsearch \
+  "$@"

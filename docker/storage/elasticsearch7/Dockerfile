@@ -12,43 +12,40 @@
 # the License.
 #
 
-FROM alpine:3.12
+FROM openzipkin/zipkin-builder as install
 
-ENV ELASTICSEARCH_VERSION 7.8.1
+ENV ELASTICSEARCH_VERSION 7.9.1
 
-RUN apk add --update curl
+WORKDIR /install
 
-WORKDIR /elasticsearch
+# Download only the OSS distribution (lacks X-Pack)
+# We don't download bin scripts as we customize for reasons including BusyBox problems
+RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-$ELASTICSEARCH_VERSION-no-jdk-linux-x86_64.tar.gz| tar xz \
+    --wildcards --strip=1 --exclude=*/bin
 
-RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-$ELASTICSEARCH_VERSION-linux-x86_64.tar.gz| tar xz && \
-    mv elasticsearch-$ELASTICSEARCH_VERSION/* /elasticsearch/ && \
-    # disable ML as not supported on alpine per https://discuss.elastic.co/t/elasticsearch-failing-to-start-due-to-x-pack/85125/6
-    rm -rf /elasticsearch/modules/x-pack-ml && \
-    # remove binaries and non shell scripts
-    rm -f /elasticsearch/bin/elasticsearch-sql* /elasticsearch/bin/*cmd /elasticsearch/bin/*exe && \
-    # Remove bash as our images doesn't have it, and it isn't required
-    ls -d /elasticsearch/bin/* | xargs sed -i 's~#!/bin/bash~#!/bin/sh~g' && \
-    chmod +x /elasticsearch/bin/*
-
-COPY docker/storage/elasticsearch7/config /elasticsearch/config
-
-# Overwrite start script to fix parse failures when run with busybox.
-COPY docker/storage/elasticsearch7/elasticsearch /elasticsearch/bin/
+COPY docker/storage/elasticsearch7/config /install/config
 
 FROM openzipkin/jre-full:14.0.2-14.29.23
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
-RUN adduser -g '' -h /elasticsearch -D elasticsearch
+# Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
+COPY docker/storage/elasticsearch7/docker-bin/* /usr/local/bin/
 
-COPY --from=0 --chown=elasticsearch /elasticsearch /elasticsearch
+# All content including binaries and logs write under WORKDIR
+ARG USER=elasticsearch
+WORKDIR /${USER}
 
-WORKDIR /elasticsearch
+# Ensure the process doesn't run as root
+RUN adduser -g '' -h ${PWD} -D ${USER}
+USER ${USER}
 
-# elasticsearch complains if run as root
-USER elasticsearch
-
-EXPOSE 9200 9300
+# Copy binaries and config we installed earlier
+COPY --from=install --chown=${USER} /install .
 
 ENV ES_JAVA_OPTS " "
+EXPOSE 9200
 
-ENTRYPOINT /elasticsearch/bin/elasticsearch
+# We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
+HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
+
+ENTRYPOINT ["start-elasticsearch"]
