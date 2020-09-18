@@ -46,12 +46,12 @@ class MySQLStorageExtension implements BeforeAllCallback, AfterAllCallback {
       try {
         container = new ZipkinMySQLContainer(image);
         container.start();
-        LOGGER.info("Starting docker image " + container.getDockerImageName());
-      } catch (Exception e) {
-        LOGGER.warn("Couldn't start docker image " + container.getDockerImageName(), e);
+        LOGGER.info("Starting docker image " + image);
+      } catch (RuntimeException e) {
+        LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
       }
     } else {
-      LOGGER.info("Skipping startup of docker");
+      LOGGER.info("Skipping startup of docker " + image);
     }
 
     try (MySQLStorage result = computeStorageBuilder().build()) {

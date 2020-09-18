@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2015-2019 The OpenZipkin Authors
+# Copyright 2015-2020 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -13,4 +13,20 @@
 # the License.
 #
 
-/usr/bin/mysqld_safe --user=mysql --basedir=/usr/ --datadir=/mysql/data
+# HEALTHCHECK for use in `docker ps` or `docker-compose ps`.
+# It can also be used as a readiness probe in k8s
+
+# Fail on unset variables, but don't quit on rc!=0, so we can log what happened
+set -u +e
+
+IP="$(hostname -i || echo '127.0.0.1')"
+
+# mysqladmin requires another package, which we don't want to install
+NC_OUTPUT=$(nc -z ${IP} 3306 > /dev/null 2>&1)
+NC_RC=$?
+if [ "$NC_RC" == "0" ]; then
+  exit 0
+fi
+
+echo MySQL port check failed: $NC_OUTPUT
+exit 1
