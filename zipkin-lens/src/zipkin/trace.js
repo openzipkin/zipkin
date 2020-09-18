@@ -307,6 +307,7 @@ function addLayoutDetails(
   }
 }
 
+// TODO: Revisit naming
 export function detailedTraceSummary(root) {
   const serviceNameToCount = {};
   let queue = root.queueRootMostSpans();

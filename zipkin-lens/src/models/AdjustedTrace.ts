@@ -47,7 +47,8 @@ type AdjustedTrace = {
   serviceNameAndSpanCounts: ServiceNameAndSpanCount[];
   duration: number;
   durationStr: string;
-  rootSpan: { // the root-most span, when the root is missing
+  // the root-most span, when the root is missing
+  rootSpan: {
     serviceName: string; // span.localEndpoint.serviceName or 'unknown' on null
     spanName: string; // span.name or 'unknown' on null
   };

@@ -102,6 +102,7 @@ export const loadTrace = createAsyncThunk(
       const { rawTrace, skewCorrectedTrace } = traces[traceId];
       let { adjustedTrace } = traces[traceId];
       if (adjustedTrace) {
+        // this trace has already been calculated by buildDetailedTraceSummary
         return traces[traceId];
       }
       if (skewCorrectedTrace) {
