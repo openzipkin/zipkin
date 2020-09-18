@@ -38,6 +38,9 @@ MAINTAINER OpenZipkin "https://zipkin.io/"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY docker/storage/cassandra/docker-bin/* /usr/local/bin/
+# We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
+HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
+ENTRYPOINT ["start-cassandra"]
 
 # All content including binaries and logs write under WORKDIR
 ARG USER=cassandra
@@ -50,10 +53,10 @@ USER ${USER}
 # Copy binaries and config we installed earlier
 COPY --from=install --chown=${USER} /install .
 
-ENV JAVA=/usr/local/java/jre/bin/java \
-    JVM_OPTS="-Dcassandra -Djava.net.preferIPv4Stack=true"
+# Set variables Cassandra's start script wants
+#
+# Integration test currently use a single container for all suites, without cleaning up keyspaces
+# per method. For this reason, we use a higher heap size than 256m, which would be otherwise fine.
+ENV JVM_OPTS="-Xms512m -Xmx512m -XX:+ExitOnOutOfMemoryError -Djava.net.preferIPv4Stack=true"
 
-EXPOSE 9160 7000 7001 9042 7199
-
-ENTRYPOINT ["start-cassandra"]
-
+EXPOSE 9042

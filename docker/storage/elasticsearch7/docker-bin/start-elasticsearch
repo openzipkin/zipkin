@@ -29,8 +29,7 @@ set -eu
 #  * ES enables security manager https://github.com/elastic/elasticsearch/issues/21932#issuecomment-264435034
 
 exec java \
-$ES_JAVA_OPTS \
-  -Xms256m -Xmx256m -XX:+ExitOnOutOfMemoryError \
+$JAVA_OPTS \
   -Djava.io.tmpdir=/tmp \
   -Dlog4j2.disable.jmx=true \
   -Des.path.home=$PWD -Des.path.conf=$PWD/config \

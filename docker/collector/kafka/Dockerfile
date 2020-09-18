@@ -27,6 +27,9 @@ LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY docker/collector/kafka/docker-bin/* /usr/local/bin/
+# We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
+HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
+ENTRYPOINT ["start-kafka-zookeeper"]
 
 # All content including binaries and logs write under WORKDIR
 ARG USER=kafka
@@ -40,10 +43,7 @@ USER ${USER}
 COPY --from=install --chown=${USER} /install .
 
 # ${KAFKA_ADVERTISED_HOST_NAME}:19092 is for connections from the Docker host
-ENV KAFKA_ADVERTISED_HOST_NAME=localhost
+ENV KAFKA_ADVERTISED_HOST_NAME=localhost \
+    KAFKA_HEAP_OPTS="-Xms256m -Xmx256m -XX:+ExitOnOutOfMemoryError"
+
 EXPOSE 2181 9092 19092
-
-# We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
-HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
-
-ENTRYPOINT ["start-kafka-zookeeper"]
