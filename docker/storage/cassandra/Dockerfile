@@ -21,7 +21,7 @@ COPY zipkin-storage/cassandra/src/main/resources/*.cql /zipkin-schemas/
 COPY zipkin-storage/cassandra-v1/src/main/resources/cassandra-schema.cql /zipkin-schemas/
 
 # Until Cassandra supports recent JDKs, we need to install with the JDK 1.8
-FROM openzipkin/jre-full:1.8.0_252 as install
+FROM openzipkin/jre-full:1.8.0_252-b09 as install
 
 # Use latest stable release here.
 ENV CASSANDRA_VERSION=3.11.8
@@ -33,7 +33,7 @@ COPY docker/storage/cassandra/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
 # Share the same base image to reduce layers used in testing
-FROM openzipkin/jre-full:1.8.0_252
+FROM openzipkin/jre-full:1.8.0_252-b09
 MAINTAINER OpenZipkin "https://zipkin.io/"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
