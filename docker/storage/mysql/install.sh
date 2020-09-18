@@ -35,7 +35,7 @@ mysqld ${MYSQL_OPTS} &
 
 # Excessively long timeout to avoid having to create an ENV variable, decide its name, etc.
 timeout=180
-echo "Will wait up to ${timeout} seconds for Cassandra to come up before installing Schema"
+echo "Will wait up to ${timeout} seconds for MySQL to come up before installing Schema"
 while [ "$timeout" -gt 0 ] && ! mysql --protocol=socket -uroot -e 'SELECT 1' > /dev/null 2>&1; do
     sleep 1
     timeout=$(($timeout - 1))
