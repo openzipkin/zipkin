@@ -1,5 +1,4 @@
 #!/bin/sh
-
 #
 # Copyright 2015-2020 The OpenZipkin Authors
 #
@@ -14,11 +13,17 @@
 # the License.
 #
 
-set -e
+# ENTRYPOINT script that starts ZooKeeper and then Kafka
+#
+# This intentionally locates config using the current working directory, in order to consolidate
+# Dockerfile instructions to WORKDIR
+set -eu
 
+# Apply one-time deferred configuration that relies on ENV variables
+#
 # If the schema has been removed due to mounting, restore from our backup. see: install
-if [ ! -d "/cassandra/data/data/zipkin2" ]; then
-    cp -rf /cassandra/data-backup/* /cassandra/data/
+if [ ! -d "data/data/zipkin2" ]; then
+    cp -rf data-backup/* data/
 fi
 
 _ip_address() {
@@ -33,10 +38,10 @@ _ip_address() {
 }
 
 IP="$(_ip_address)"
-sed -i "/listen_address: localhost/clisten_address: $IP" /cassandra/conf/cassandra.yaml
-sed -i '/rpc_address: localhost/crpc_address: 0.0.0.0' /cassandra/conf/cassandra.yaml
-sed -i "/# broadcast_address: 1.2.3.4/cbroadcast_address: $IP" /cassandra/conf/cassandra.yaml
-sed -i "/# broadcast_rpc_address: 1.2.3.4/cbroadcast_rpc_address: $IP" /cassandra/conf/cassandra.yaml
-sed -i "/          - seeds: \"127.0.0.1\"/c\          - seeds: $IP" /cassandra/conf/cassandra.yaml
+sed -i "/listen_address: localhost/clisten_address: $IP" conf/cassandra.yaml
+sed -i '/rpc_address: localhost/crpc_address: 0.0.0.0' conf/cassandra.yaml
+sed -i "/# broadcast_address: 1.2.3.4/cbroadcast_address: $IP" conf/cassandra.yaml
+sed -i "/# broadcast_rpc_address: 1.2.3.4/cbroadcast_rpc_address: $IP" conf/cassandra.yaml
+sed -i "/          - seeds: \"127.0.0.1\"/c\          - seeds: $IP" conf/cassandra.yaml
 
-exec /cassandra/bin/cassandra -f
+exec bin/cassandra -f

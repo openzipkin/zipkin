@@ -30,6 +30,9 @@ LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY docker/storage/elasticsearch7/docker-bin/* /usr/local/bin/
+# We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
+HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
+ENTRYPOINT ["start-elasticsearch"]
 
 # All content including binaries and logs write under WORKDIR
 ARG USER=elasticsearch
@@ -42,10 +45,6 @@ USER ${USER}
 # Copy binaries and config we installed earlier
 COPY --from=install --chown=${USER} /install .
 
-ENV ES_JAVA_OPTS " "
+# Use to set heap, trust store or other system properties.
+ENV JAVA_OPTS="-Xms256m -Xmx256m -XX:+ExitOnOutOfMemoryError"
 EXPOSE 9200
-
-# We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
-HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
-
-ENTRYPOINT ["start-elasticsearch"]

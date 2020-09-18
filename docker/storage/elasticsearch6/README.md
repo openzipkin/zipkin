@@ -8,7 +8,7 @@ To build `openzipkin/zipkin-elasticsearch6`, from the top level of the repositor
 $ docker build -t openzipkin/zipkin-elasticsearch6:test -f docker/storage/elasticsearch6/Dockerfile .
 ```
 
-You can use the env variable `ES_JAVA_OPTS` to change settings such as heap size for Elasticsearch.
+You can use the env variable `JAVA_OPTS` to change settings such as heap size for Elasticsearch.
 
 #### Host setup
 Elasticsearch is [strict](https://github.com/docker-library/docs/tree/master/elasticsearch#host-setup)

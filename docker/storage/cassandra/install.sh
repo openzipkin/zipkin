@@ -1,5 +1,4 @@
 #!/bin/sh
-
 #
 # Copyright 2015-2020 The OpenZipkin Authors
 #
@@ -14,72 +13,69 @@
 # the License.
 #
 
-set -eu
+# install script used only in building the docker image, but not at runtime.
+# This uses relative path so that you can change the home dir without editing this file.
+# This also trims dependencies to only those used at runtime.
+set -eux
 
-echo "*** Temporarily installing Python and curl"
-apk add --update --no-cache python2 curl
-
-echo "*** Installing Cassandra"
-# DataStax only hosts 3.0 series at the moment
-curl -SL https://archive.apache.org/dist/cassandra/$CASSANDRA_VERSION/apache-cassandra-$CASSANDRA_VERSION-bin.tar.gz | tar xz
-mv apache-cassandra-$CASSANDRA_VERSION/* /cassandra/
+echo "*** Installing Cassandra and dependencies"
+# BusyBux built-in tar doesn't support --strip=1
+apk add --update --no-cache python2 curl tar
+APACHE_MIRROR=$(curl -sSL https://www.apache.org/dyn/closer.cgi\?as_json\=1 | sed -n '/preferred/s/.*"\(.*\)"/\1/gp')
+curl -sSL $APACHE_MIRROR/cassandra/$CASSANDRA_VERSION/apache-cassandra-$CASSANDRA_VERSION-bin.tar.gz | tar xz \
+  --strip=1
 
 # Merge in our custom configuration
-sed -i '/enable_user_defined_functions: false/cenable_user_defined_functions: true' /cassandra/conf/cassandra.yaml
+sed -i '/enable_user_defined_functions: false/cenable_user_defined_functions: true' conf/cassandra.yaml
 
 # Default conf for Cassandra 3.x does not work on modern JVMs due to many deprecated flags
-sed -i '/-XX:ThreadPriorityPolicy=42/c\#-XX:ThreadPriorityPolicy=42' /cassandra/conf/jvm.options
-sed -i '/-XX:+UseParNewGC/c\#-XX:+UseParNewGC' /cassandra/conf/jvm.options
-sed -i '/-XX:+UseConcMarkSweepGC/c\#-XX:+UseConcMarkSweepGC' /cassandra/conf/jvm.options
-sed -i '/-XX:+PrintGCDateStamps/c\#-XX:+PrintGCDateStamps' /cassandra/conf/jvm.options
-sed -i '/-XX:+PrintHeapAtGC/c\#-XX:+PrintHeapAtGC' /cassandra/conf/jvm.options
-sed -i '/-XX:+PrintTenuringDistribution/c\#-XX:+PrintTenuringDistribution' /cassandra/conf/jvm.options
-sed -i '/-XX:+PrintGCApplicationStoppedTime/c\#-XX:+PrintGCApplicationStoppedTime' /cassandra/conf/jvm.options
-sed -i '/-XX:+PrintPromotionFailure/c\#-XX:+PrintPromotionFailure' /cassandra/conf/jvm.options
-sed -i '/-XX:+UseGCLogFileRotation/c\#-XX:+UseGCLogFileRotation' /cassandra/conf/jvm.options
-sed -i '/-XX:NumberOfGCLogFiles=10/c\#-XX:NumberOfGCLogFiles=10' /cassandra/conf/jvm.options
-sed -i '/-XX:GCLogFileSize=10M/c\#-XX:GCLogFileSize=10M' /cassandra/conf/jvm.options
+sed -i '/-XX:ThreadPriorityPolicy=42/c\#-XX:ThreadPriorityPolicy=42' conf/jvm.options
+sed -i '/-XX:+UseParNewGC/c\#-XX:+UseParNewGC' conf/jvm.options
+sed -i '/-XX:+UseConcMarkSweepGC/c\#-XX:+UseConcMarkSweepGC' conf/jvm.options
+sed -i '/-XX:+PrintGCDateStamps/c\#-XX:+PrintGCDateStamps' conf/jvm.options
+sed -i '/-XX:+PrintHeapAtGC/c\#-XX:+PrintHeapAtGC' conf/jvm.options
+sed -i '/-XX:+PrintTenuringDistribution/c\#-XX:+PrintTenuringDistribution' conf/jvm.options
+sed -i '/-XX:+PrintGCApplicationStoppedTime/c\#-XX:+PrintGCApplicationStoppedTime' conf/jvm.options
+sed -i '/-XX:+PrintPromotionFailure/c\#-XX:+PrintPromotionFailure' conf/jvm.options
+sed -i '/-XX:+UseGCLogFileRotation/c\#-XX:+UseGCLogFileRotation' conf/jvm.options
+sed -i '/-XX:NumberOfGCLogFiles=10/c\#-XX:NumberOfGCLogFiles=10' conf/jvm.options
+sed -i '/-XX:GCLogFileSize=10M/c\#-XX:GCLogFileSize=10M' conf/jvm.options
 
 # TODO: Add native snappy lib. Native loader stacktraces in the cassandra log as a results, which is distracting.
 
 # Remove bash as Cassandra scripts we use don't have it, and it isn't required
-sed -i 's~#!/bin/bash~#!/bin/sh~g' /cassandra/bin/*sh
+sed -i 's~#!/bin/bash~#!/bin/sh~g' bin/*sh
 
 echo "*** Starting Cassandra"
-/cassandra/bin/cassandra -R
+bin/cassandra -R
 
-timeout=300
-while [[ "$timeout" -gt 0 ]] && ! /cassandra/bin/cqlsh -e 'SHOW VERSION' localhost >/dev/null 2>/dev/null; do
-    echo "Waiting ${timeout} seconds for cassandra to come up"
-    sleep 10
-    timeout=$(($timeout - 10))
+# Excessively long timeout to avoid having to create an ENV variable, decide its name, etc.
+timeout=180
+echo "Will wait up to ${timeout} seconds for Cassandra to come up before installing Schema"
+while [ "$timeout" -gt 0 ] && ! bin/cqlsh -e 'SHOW VERSION' localhost > /dev/null 2>&1; do
+    sleep 1
+    timeout=$(($timeout - 1))
 done
 
 echo "*** Importing Scheme"
-cat /zipkin-schemas/cassandra-schema.cql | /cassandra/bin/cqlsh --debug localhost
-cat /zipkin-schemas/zipkin2-schema.cql | /cassandra/bin/cqlsh --debug localhost
-cat /zipkin-schemas/zipkin2-schema.cql | sed 's/ zipkin2/ zipkin2_udts/g' | /cassandra/bin/cqlsh --debug localhost
-cat /zipkin-schemas/zipkin2-schema-indexes.cql | /cassandra/bin/cqlsh --debug localhost
+cat zipkin-schemas/cassandra-schema.cql | bin/cqlsh --debug localhost
+cat zipkin-schemas/zipkin2-schema.cql | bin/cqlsh --debug localhost
+cat zipkin-schemas/zipkin2-schema.cql | sed 's/ zipkin2/ zipkin2_udts/g' | bin/cqlsh --debug localhost
+cat zipkin-schemas/zipkin2-schema-indexes.cql | bin/cqlsh --debug localhost
 
 echo "*** Adding custom UDFs to zipkin2 keyspace"
-/cassandra/bin/cqlsh -e "CREATE FUNCTION zipkin2.plus (x bigint, y bigint) RETURNS NULL ON NULL INPUT RETURNS bigint LANGUAGE java AS 'return x+y;';"
-/cassandra/bin/cqlsh -e "CREATE FUNCTION zipkin2.minus (x bigint, y bigint) RETURNS NULL ON NULL INPUT RETURNS bigint LANGUAGE java AS 'return x-y;';"
-/cassandra/bin/cqlsh -e "CREATE FUNCTION zipkin2.toTimestamp (x bigint) RETURNS NULL ON NULL INPUT RETURNS timestamp LANGUAGE java AS 'return new java.util.Date(x/1000);';"
-/cassandra/bin/cqlsh -e "CREATE FUNCTION zipkin2.value (x map<text,text>, y text) RETURNS NULL ON NULL INPUT RETURNS text LANGUAGE java AS 'return x.get(y);';"
+bin/cqlsh -e "CREATE FUNCTION zipkin2.plus (x bigint, y bigint) RETURNS NULL ON NULL INPUT RETURNS bigint LANGUAGE java AS 'return x+y;';"
+bin/cqlsh -e "CREATE FUNCTION zipkin2.minus (x bigint, y bigint) RETURNS NULL ON NULL INPUT RETURNS bigint LANGUAGE java AS 'return x-y;';"
+bin/cqlsh -e "CREATE FUNCTION zipkin2.toTimestamp (x bigint) RETURNS NULL ON NULL INPUT RETURNS timestamp LANGUAGE java AS 'return new java.util.Date(x/1000);';"
+bin/cqlsh -e "CREATE FUNCTION zipkin2.value (x map<text,text>, y text) RETURNS NULL ON NULL INPUT RETURNS text LANGUAGE java AS 'return x.get(y);';"
 
 echo "*** Stopping Cassandra"
 pkill -f java
 
-echo "*** Cleaning Up"
-apk del curl python2 --purge
-rm -rf /cassandra/javadoc/ /cassandra/pylib/ /cassandra/tools/ /cassandra/lib/*.zip /zipkin-schemas/
-
-echo "*** Changing to cassandra user"
-adduser -S cassandra
-
 # Take a backup so that we can safely mount an empty volume over the data directory and maintain the schema
-cp -R /cassandra/data/ /cassandra/data-backup/
+cp -R data/ data-backup/
 
-chown -R cassandra /cassandra
+echo "*** Cleaning Up"
+rm -rf javadoc/ pylib/ tools/ lib/*.zip zipkin-schemas/
 
 echo "*** Image build complete"

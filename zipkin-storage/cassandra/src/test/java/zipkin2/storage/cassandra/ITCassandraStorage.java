@@ -188,8 +188,10 @@ class ITCassandraStorage {
     }
 
     @AfterEach void closeStorageBeforeSwitch() {
-      strictTraceId.close();
-      strictTraceId = null;
+      if (strictTraceId != null) {
+        strictTraceId.close();
+        strictTraceId = null;
+      }
     }
 
     @Override protected boolean initializeStoragePerTest() {
