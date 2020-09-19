@@ -482,8 +482,8 @@ describe('detailedTraceSummary', () => {
       { serviceName: 'frontend', spanCount: 1 },
     ]);
     expect(rootSpan).toEqual({
-      serviceName: 'backend',
-      spanName: 'get /api',
+      serviceName: 'frontend',
+      spanName: 'get',
     });
   });
 

@@ -20,7 +20,13 @@ export const LoadingIndicator: React.FC = () => {
   const theme = useTheme();
 
   return (
-    <Box display="flex" justifyContent="center" mt={10} mb={10}>
+    <Box
+      display="flex"
+      justifyContent="center"
+      mt={10}
+      mb={10}
+      data-testid="loading-indicator"
+    >
       <ScaleLoader color={theme.palette.primary.light} />
     </Box>
   );
