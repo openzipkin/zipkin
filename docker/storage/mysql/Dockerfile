@@ -17,17 +17,44 @@
 # COPY --from= works around the issue.
 FROM scratch as scratch
 
-COPY docker/storage/mysql/*.sh /mysql/
-COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /mysql/zipkin.sql
+COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /zipkin-schemas/mysql.sql
 
+FROM alpine:3.12 as install
+
+WORKDIR /install
+
+COPY --from=scratch /zipkin-schemas/* ./zipkin-schemas/
+COPY docker/storage/mysql/install.sh /tmp/
+RUN /tmp/install.sh && rm /tmp/install.sh
+
+# Use a small base image at runtime
 FROM alpine:3.12
-LABEL MAINTAINER Zipkin "https://zipkin.io/"
+LABEL MAINTAINER OpenZipkin "https://zipkin.io/"
 
-WORKDIR /mysql
-COPY --from=scratch /mysql/* /mysql/
+# Add the mysql binary and handle installation edge cases
+RUN apk add --no-cache mysql && \
+    # Prevent "Bind on unix socket: No such file or directory"
+    mkdir -p /run/mysqld/ && chown -R mysql /run/mysqld/ && \
+    # Enable networking
+    echo skip-networking=0 >> /etc/my.cnf && \
+    echo bind-address=0.0.0.0 >> /etc/my.cnf && \
+    # Remove large binaries
+    (cd /usr/bin; rm mysql_* aria_* mysqlbinlog myis* test-connect-t mysqlslap innochecksum resolve* my_print_defaults sst_dump)
 
-RUN /mysql/install.sh
+# Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
+COPY docker/storage/mysql/docker-bin/* /usr/local/bin/
+# We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
+HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
+ENTRYPOINT ["start-mysql"]
 
-CMD /mysql/run.sh
+# All content including binaries and logs write under WORKDIR
+ARG USER=mysql
+WORKDIR /${USER}
+
+# mysql package adds the mysql user
+USER ${USER}
+
+# Copy binaries and config we installed earlier
+COPY --from=install --chown=${USER} /install .
 
 EXPOSE 3306
