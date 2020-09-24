@@ -13,6 +13,7 @@
  */
 import { t } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
+import { unwrapResult } from '@reduxjs/toolkit';
 import PropTypes from 'prop-types';
 import React, { useRef, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
@@ -23,8 +24,8 @@ import { makeStyles } from '@material-ui/styles';
 import Button from '@material-ui/core/Button';
 import Tooltip from '@material-ui/core/Tooltip';
 
-import { ensureV2TraceData } from '../../util/trace';
-import { loadTrace, loadTraceFailure } from '../../actions/trace-viewer-action';
+import { loadJsonTrace } from '../../slices/tracesSlice';
+import { setAlert } from '../App/slice';
 
 const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
@@ -54,46 +55,24 @@ const TraceJsonUploader = ({ history }) => {
 
   const handleFileChange = useCallback(
     (event) => {
-      const fileReader = new FileReader();
-
-      const goToTraceViewerPage = () => {
-        history.push({ pathname: '/traceViewer' });
-      };
-
-      fileReader.onload = () => {
-        const { result } = fileReader;
-
-        let rawTraceData;
-        try {
-          rawTraceData = JSON.parse(result);
-        } catch (error) {
-          dispatch(
-            loadTraceFailure(i18n._(t`This file does not contain JSON`)),
-          );
-          goToTraceViewerPage();
-          return;
-        }
-
-        try {
-          ensureV2TraceData(rawTraceData);
-          dispatch(loadTrace(rawTraceData));
-        } catch (error) {
-          dispatch(loadTraceFailure(i18n._(t`Only V2 format is supported`)));
-        }
-        goToTraceViewerPage();
-      };
-
-      fileReader.onabort = () => {
-        dispatch(loadTraceFailure(i18n._(t`Failed to load this file`)));
-        goToTraceViewerPage();
-      };
-
-      fileReader.onerror = fileReader.onabort;
-
       const [file] = event.target.files;
-      fileReader.readAsText(file);
+      dispatch(loadJsonTrace(file))
+        .then(unwrapResult)
+        .then(({ traceId }) => {
+          history.push({
+            pathname: `/traces/${traceId}`,
+          });
+        })
+        .catch((err) => {
+          dispatch(
+            setAlert({
+              message: `Failed to load file: ${err.message}`,
+              severity: 'error',
+            }),
+          );
+        });
     },
-    [dispatch, history, i18n],
+    [dispatch, history],
   );
 
   return (

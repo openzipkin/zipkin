@@ -11,14 +11,23 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import * as types from '../constants/action-types';
 
-export const loadTrace = (trace) => ({
-  type: types.TRACE_VIEWER__LOAD_TRACE,
-  trace,
-});
+import { Box, useTheme } from '@material-ui/core';
+import React from 'react';
+import { ScaleLoader } from 'react-spinners';
 
-export const loadTraceFailure = (message) => ({
-  type: types.TRACE_VIEWER__LOAD_TRACE_FAILURE,
-  message,
-});
+export const LoadingIndicator: React.FC = () => {
+  const theme = useTheme();
+
+  return (
+    <Box
+      display="flex"
+      justifyContent="center"
+      mt={10}
+      mb={10}
+      data-testid="loading-indicator"
+    >
+      <ScaleLoader color={theme.palette.primary.light} />
+    </Box>
+  );
+};

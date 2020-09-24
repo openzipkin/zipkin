@@ -19,7 +19,6 @@ import { useLingui } from '@lingui/react';
 import {
   Box,
   Button,
-  CircularProgress,
   Theme,
   createStyles,
   makeStyles,
@@ -40,6 +39,7 @@ import {
   loadDependencies,
 } from '../../slices/dependenciesSlice';
 import { RootState } from '../../store';
+import { LoadingIndicator } from '../common/LoadingIndicator';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -185,20 +185,7 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
 
   let content: JSX.Element;
   if (isLoading) {
-    content = (
-      <Box
-        width="100%"
-        height="100vh"
-        top={0}
-        position="fixed"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        data-testid="loading-indicator"
-      >
-        <CircularProgress />
-      </Box>
-    );
+    content = <LoadingIndicator />;
   } else if (dependencies.length > 0) {
     content = <DependenciesGraph dependencies={dependencies} />;
   } else {

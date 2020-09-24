@@ -12,15 +12,14 @@
  * the License.
  */
 
-export const TRACE_LOAD_REQUEST = 'TRACE_LOAD_REQUEST';
-export const TRACE_LOAD_SUCCESS = 'TRACE_LOAD_SUCCESS';
-export const TRACE_LOAD_FAILURE = 'TRACE_LOAD_FAILURE';
+// Refer to https://github.com/openzipkin/zipkin-js/blob/master/packages/zipkin/src/model.js
 
-export const TRACES_LOAD_REQUEST = 'TRACES_LOAD_REQUEST';
-export const TRACES_LOAD_SUCCESS = 'TRACES_LOAD_SUCCESS';
-export const TRACES_LOAD_FAILURE = 'TRACES_LOAD_FAILURE';
-export const CLEAR_TRACES = 'TRACES_RESET';
+// Same type as Endpoint in the OpenApi/Swagger model https://zipkin.io/zipkin-api/#
+type Endpoint = {
+  serviceName?: string;
+  ipv4?: string;
+  ipv6?: string;
+  port?: number;
+};
 
-export const TRACE_VIEWER__LOAD_TRACE = 'TRACE_VIEWER__LOAD_TRACE';
-export const TRACE_VIEWER__LOAD_TRACE_FAILURE =
-  'TRACE_VIEWER__LOAD_TRACE_FAILURE';
+export default Endpoint;

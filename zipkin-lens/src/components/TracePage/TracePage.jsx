@@ -11,137 +11,72 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
-import { connect } from 'react-redux';
+import React, { useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { withRouter } from 'react-router-dom';
-import Box from '@material-ui/core/Box';
-import CircularProgress from '@material-ui/core/CircularProgress';
 
 import TraceSummary from './TraceSummary';
-import TraceSummaryHeader from './TraceSummaryHeader';
-import MessageBar from './MessageBar';
-import { detailedTraceSummaryPropTypes } from '../../prop-types';
-import { detailedTraceSummary, treeCorrectedForClockSkew } from '../../zipkin';
-import * as traceActionCreators from '../../actions/trace-action';
+import { setAlert } from '../App/slice';
+import { LoadingIndicator } from '../common/LoadingIndicator';
+import { loadTrace } from '../../slices/tracesSlice';
 
 const propTypes = {
-  traceId: PropTypes.string,
-  traceSummary: detailedTraceSummaryPropTypes,
-  loadTrace: PropTypes.func.isRequired,
-  isTraceViewerPage: PropTypes.bool.isRequired,
-  isLoading: PropTypes.bool,
-  isMalformedFile: PropTypes.bool,
-  errorMessage: PropTypes.string,
-  correctedTraceMap: PropTypes.shape({}),
+  match: PropTypes.shape({
+    params: PropTypes.shape({
+      traceId: PropTypes.string.isRequired,
+    }),
+  }).isRequired,
 };
 
-const defaultProps = {
-  traceId: null,
-  traceSummary: null,
-  isLoading: false,
-  isMalformedFile: false,
-  errorMessage: '',
-  correctedTraceMap: {},
-};
+export const TracePageImpl = React.memo(({ match }) => {
+  const { traceId } = match.params;
 
-export const TracePageImpl = React.memo(
-  ({
-    traceId,
-    traceSummary,
-    loadTrace,
-    isTraceViewerPage,
-    isLoading,
-    isMalformedFile,
-    errorMessage,
-    correctedTraceMap,
-  }) => {
-    useEffect(() => {
-      if (!isTraceViewerPage) {
-        loadTrace(traceId, correctedTraceMap);
+  const { isLoading, traceSummary, error } = useSelector((state) => ({
+    isLoading: state.traces.traces[traceId]?.isLoading || false,
+    traceSummary: state.traces.traces[traceId]?.adjustedTrace || undefined,
+    error: state.traces.traces[traceId]?.error || undefined,
+  }));
+
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(loadTrace(traceId));
+  }, [traceId, dispatch]);
+
+  const firstUpdate = useRef(true);
+  useEffect(() => {
+    // In the first rendering, skip this useEffect, because isLoading
+    // is always false and traceSummary always is undefined.
+    if (firstUpdate.current) {
+      firstUpdate.current = false;
+      return;
+    }
+    if (!isLoading && !traceSummary) {
+      let message = 'No trace found';
+      if (error && error.message) {
+        message += `: ${error.message}`;
       }
-    }, [traceId, isTraceViewerPage, loadTrace, correctedTraceMap]);
-
-    if (isTraceViewerPage && isMalformedFile) {
-      return (
-        <>
-          <TraceSummaryHeader />
-          <MessageBar
-            variant="error"
-            message={errorMessage || 'Loading error'}
-          />
-        </>
+      dispatch(
+        setAlert({
+          message,
+          severity: 'error',
+        }),
       );
     }
+  }, [dispatch, error, isLoading, traceSummary]);
 
-    if (!isTraceViewerPage && isLoading) {
-      return (
-        <>
-          <TraceSummaryHeader />
-          <Box width="100%" display="flex" justifyContent="center">
-            <CircularProgress data-testid="progress-indicator" />
-          </Box>
-        </>
-      );
-    }
-
-    if (!traceSummary && isTraceViewerPage) {
-      return (
-        <>
-          <TraceSummaryHeader />
-          <MessageBar variant="info" message="You need to upload JSON..." />
-        </>
-      );
-    }
-
-    if (!traceSummary && !isTraceViewerPage) {
-      return (
-        <>
-          <TraceSummaryHeader />
-          <MessageBar variant="error" message="Trace not found" />
-        </>
-      );
-    }
-
-    return <TraceSummary traceSummary={traceSummary} />;
-  },
-);
-
-TracePageImpl.propTypes = propTypes;
-TracePageImpl.defaultProps = defaultProps;
-
-const mapStateToProps = (state, ownProps) => {
-  const { location, match } = ownProps;
-
-  const isTraceViewerPage = location.pathname === '/traceViewer';
-
-  const props = {};
-
-  if (isTraceViewerPage) {
-    props.isMalformedFile = state.traceViewer.isMalformedFile;
-    props.errorMessage = state.traceViewer.errorMessage;
-    if (state.traceViewer.trace) {
-      props.traceSummary = detailedTraceSummary(
-        treeCorrectedForClockSkew(state.traceViewer.trace),
-      );
-    } else {
-      props.traceSummary = null;
-    }
-  } else {
-    props.traceId = match.params.traceId;
-    props.traceSummary = state.trace.traceSummary;
-    props.isLoading = state.trace.isLoading;
-    props.correctedTraceMap = state.traces.correctedTraceMap;
+  if (isLoading) {
+    return <LoadingIndicator />;
   }
-  props.isTraceViewerPage = isTraceViewerPage;
-  return props;
-};
 
-const mapDispatchToProps = (dispatch) => ({
-  loadTrace: (traceId, correctedTraceMap) =>
-    dispatch(traceActionCreators.loadTrace(traceId, correctedTraceMap)),
+  if (!traceSummary) {
+    return null;
+  }
+  return <TraceSummary traceSummary={traceSummary} />;
 });
 
-export default withRouter(
-  connect(mapStateToProps, mapDispatchToProps)(TracePageImpl),
-);
+TracePageImpl.propTypes = propTypes;
+
+export default withRouter(TracePageImpl);
