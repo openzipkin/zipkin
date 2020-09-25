@@ -13,7 +13,7 @@
  */
 
 import { useLingui } from '@lingui/react';
-import { TextField, Tooltip } from '@material-ui/core';
+import { TextField } from '@material-ui/core';
 import { t } from '@lingui/macro';
 import React, { useCallback, useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -43,16 +43,15 @@ const TraceIdSearch: React.FC = () => {
   );
 
   return (
-    <Tooltip title="Search by Trace ID">
-      <TextField
-        value={traceId}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        variant="outlined"
-        size="small"
-        placeholder={`${i18n._(t`Trace ID`)}...`}
-      />
-    </Tooltip>
+    <TextField
+      label="Search by trace ID"
+      value={traceId}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
+      variant="outlined"
+      size="small"
+      placeholder={`${i18n._(t`Trace ID`)}...`}
+    />
   );
 };
 
