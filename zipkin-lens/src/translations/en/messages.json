@@ -25,7 +25,7 @@
   "Root": "",
   "Search Dependencies": "",
   "Search Traces": "",
-  "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"trace id...\" textbox on the top-right.": "",
+  "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right.": "",
   "Service Name": "",
   "Services": "",
   "Span ID": "",
@@ -42,7 +42,6 @@
   "Zipkin Home": "",
   "hide annotations": "",
   "show all annotations": "",
-  "trace id...": "",
   "{0} Results": "",
   "1 Result": ""
 }
