@@ -29,7 +29,7 @@ import zipkin2.storage.SpanConsumer;
 
 import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_AUTOCOMPLETE;
 import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_SPAN;
-import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
+import static zipkin2.internal.RecyclableBuffers.SHORT_STRING_LENGTH;
 
 class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testing
   final ElasticsearchStorage es;

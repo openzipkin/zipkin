@@ -41,8 +41,8 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <!-- default bytecode version for src/main -->
-    <main.java.version>1.7</main.java.version>
-    <main.signature.artifact>java17</main.signature.artifact>
+    <main.java.version>1.8</main.java.version>
+    <main.signature.artifact>java18</main.signature.artifact>
 
     <!-- override to set exclusions per-project -->
     <errorprone.args />
@@ -50,17 +50,17 @@
 
     <!-- This allows you to test feature branches with jitpack -->
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>1.0.0</armeria.version>
+    <armeria.version>1.1.0</armeria.version>
     <!-- Match Armeria version to avoid conflicts including running tests in the IDE -->
-    <netty.version>4.1.51.Final</netty.version>
+    <netty.version>4.1.52.Final</netty.version>
 
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
     <jackson.version>2.11.2</jackson.version>
 
     <cassandra-driver-core.version>3.10.2</cassandra-driver-core.version>
     <jooq.version>3.13.4</jooq.version>
-    <micrometer.version>1.5.4</micrometer.version>
-    <spring-boot.version>2.3.3.RELEASE</spring-boot.version>
+    <micrometer.version>1.5.5</micrometer.version>
+    <spring-boot.version>2.3.4.RELEASE</spring-boot.version>
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
 
@@ -75,7 +75,6 @@
     <!-- Test only dependencies -->
     <junit.version>4.13</junit.version>
     <junit-jupiter.version>5.7.0</junit-jupiter.version>
-    <powermock.version>2.0.7</powermock.version>
     <mockito.version>3.5.10</mockito.version>
     <assertj.version>3.17.2</assertj.version>
     <awaitility.version>4.0.3</awaitility.version>
@@ -404,10 +403,8 @@
           <version>${maven-compiler-plugin.version}</version>
           <inherited>true</inherited>
           <configuration>
-            <!-- Retrolambda will rewrite lambdas as Java 6 bytecode -->
-            <source>1.8</source>
-            <target>1.8</target>
-            <!-- or die! com.sun.tools.javac.api.JavacTool -->
+            <source>${main.java.version}</source>
+            <target>${main.java.version}</target>
             <fork>true</fork>
             <showWarnings>true</showWarnings>
           </configuration>
@@ -599,7 +596,7 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[1.8,15)</version>
+                  <version>[1.8,16)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>

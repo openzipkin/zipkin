@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -280,10 +280,10 @@ public abstract class ReadBuffer extends InputStream {
   final String readUtf8(int length) {
     if (length == 0) return ""; // ex error tag with no value
     require(length);
-    if (length > Platform.SHORT_STRING_LENGTH) return doReadUtf8(length);
+    if (length > RecyclableBuffers.SHORT_STRING_LENGTH) return doReadUtf8(length);
 
     // Speculatively assume all 7-bit ASCII characters.. common in normal tags and names
-    char[] buffer = Platform.shortStringBuffer();
+    char[] buffer = RecyclableBuffers.shortStringBuffer();
     if (tryReadAscii(buffer, length)) {
       return new String(buffer, 0, length);
     }
@@ -315,7 +315,7 @@ public abstract class ReadBuffer extends InputStream {
     }
 
     require(length);
-    char[] result = Platform.shortStringBuffer();
+    char[] result = RecyclableBuffers.shortStringBuffer();
     int hexLength = length * 2;
     for (int i = 0; i < hexLength; i += 2) {
       byte b = readByteUnsafe();

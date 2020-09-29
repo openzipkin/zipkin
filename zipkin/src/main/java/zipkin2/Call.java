@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -55,12 +55,12 @@ public abstract class Call<V> implements Cloneable {
    * output.
    */
   public static <V> Call<V> create(V v) {
-    return new Constant<>(v);
+    return new Constant<V>(v);
   }
 
   @SuppressWarnings("unchecked")
   public static <T> Call<List<T>> emptyList() {
-    return Call.create(Collections.emptyList());
+    return Call.create(Collections.<T>emptyList());
   }
 
   public interface Mapper<V1, V2> {
@@ -80,7 +80,7 @@ public abstract class Call<V> implements Cloneable {
    * in favor of the result of this method.
    */
   public final <R> Call<R> map(Mapper<V, R> mapper) {
-    return new Mapping<>(mapper, this);
+    return new Mapping<R, V>(mapper, this);
   }
 
   public interface FlatMapper<V1, V2> {
@@ -105,7 +105,7 @@ public abstract class Call<V> implements Cloneable {
    * in favor of the result of this method.
    */
   public final <R> Call<R> flatMap(FlatMapper<V, R> flatMapper) {
-    return new FlatMapping<>(flatMapper, this);
+    return new FlatMapping<R, V>(flatMapper, this);
   }
 
   public interface ErrorHandler<V> {
@@ -129,7 +129,7 @@ public abstract class Call<V> implements Cloneable {
    * }</pre>
    */
   public final Call<V> handleError(ErrorHandler<V> errorHandler) {
-    return new ErrorHandling<>(errorHandler, this);
+    return new ErrorHandling<V>(errorHandler, this);
   }
 
   // Taken from RxJava throwIfFatal, which was taken from scala
@@ -199,7 +199,7 @@ public abstract class Call<V> implements Cloneable {
     }
 
     @Override public Call<V> clone() {
-      return new Constant<>(v);
+      return new Constant<V>(v);
     }
 
     @Override public String toString() {
@@ -258,7 +258,7 @@ public abstract class Call<V> implements Cloneable {
     }
 
     @Override public Call<R> clone() {
-      return new Mapping<>(mapper, delegate.clone());
+      return new Mapping<R, V>(mapper, delegate.clone());
     }
   }
 
@@ -303,7 +303,7 @@ public abstract class Call<V> implements Cloneable {
     }
 
     @Override public Call<R> clone() {
-      return new FlatMapping<>(flatMapper, delegate.clone());
+      return new FlatMapping<R, V>(flatMapper, delegate.clone());
     }
   }
 
@@ -320,20 +320,31 @@ public abstract class Call<V> implements Cloneable {
     @Override protected V doExecute() throws IOException {
       try {
         return delegate.execute();
-      } catch (IOException | RuntimeException | Error e) {
-        final AtomicReference ref = new AtomicReference<>(SENTINEL);
-        errorHandler.onErrorReturn(e, new Callback<V>() {
-          @Override public void onSuccess(V value) {
-            ref.set(value);
-          }
-
-          @Override public void onError(Throwable t) {
-          }
-        });
-        Object result = ref.get();
-        if (SENTINEL == result) throw e;
-        return (V) result;
+      } catch (IOException e) {
+        return handleError(e);
+      } catch (RuntimeException e) {
+        return handleError(e);
+      } catch (Error e) {
+        Call.propagateIfFatal(e);
+        return handleError(e);
       }
+    }
+
+    <T extends Throwable> V handleError(T e) throws T {
+      final AtomicReference ref = new AtomicReference(SENTINEL);
+      errorHandler.onErrorReturn(e, new Callback<V>() {
+        @Override
+        public void onSuccess(V value) {
+          ref.set(value);
+        }
+
+        @Override
+        public void onError(Throwable t) {
+        }
+      });
+      Object result = ref.get();
+      if (SENTINEL == result) throw e;
+      return (V) result;
     }
 
     @Override protected void doEnqueue(final Callback<V> callback) {
@@ -357,7 +368,7 @@ public abstract class Call<V> implements Cloneable {
     }
 
     @Override public Call<V> clone() {
-      return new ErrorHandling<>(errorHandler, delegate.clone());
+      return new ErrorHandling<V>(errorHandler, delegate.clone());
     }
   }
 

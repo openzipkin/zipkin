@@ -94,7 +94,7 @@ public final class V1Span {
 
   /** Returns the distinct {@link Endpoint#serviceName() service names} that logged to this span. */
   public Set<String> serviceNames() {
-    Set<String> result = new LinkedHashSet<>();
+    Set<String> result = new LinkedHashSet<String>();
     for (V1Annotation a : annotations) {
       if (a.endpoint == null) continue;
       if (a.endpoint.serviceName() == null) continue;
@@ -239,7 +239,7 @@ public final class V1Span {
 
     /** Sets {@link V1Span#annotations()} */
     public Builder addAnnotation(long timestamp, String value, @Nullable Endpoint endpoint) {
-      if (annotations == null) annotations = new ArrayList<>(4);
+      if (annotations == null) annotations = new ArrayList<V1Annotation>(4);
       if (EMPTY_ENDPOINT.equals(endpoint)) endpoint = null;
       annotations.add(new V1Annotation(timestamp, value, endpoint));
       return this;
@@ -250,7 +250,7 @@ public final class V1Span {
       // Ignore empty endpoints rather than crashing v1 parsers on bad address data
       if (endpoint == null || EMPTY_ENDPOINT.equals(endpoint)) return this;
 
-      if (binaryAnnotations == null) binaryAnnotations = new ArrayList<>(4);
+      if (binaryAnnotations == null) binaryAnnotations = new ArrayList<V1BinaryAnnotation>(4);
       binaryAnnotations.add(new V1BinaryAnnotation(address, null, endpoint));
       return this;
     }
@@ -264,7 +264,7 @@ public final class V1Span {
     public Builder addBinaryAnnotation(String key, String value, Endpoint endpoint) {
       if (value == null) throw new NullPointerException("value == null");
       if (EMPTY_ENDPOINT.equals(endpoint)) endpoint = null;
-      if (binaryAnnotations == null) binaryAnnotations = new ArrayList<>(4);
+      if (binaryAnnotations == null) binaryAnnotations = new ArrayList<V1BinaryAnnotation>(4);
       binaryAnnotations.add(new V1BinaryAnnotation(key, value, endpoint));
       return this;
     }
@@ -326,6 +326,6 @@ public final class V1Span {
   static <T extends Comparable<T>> List<T> sortedList(List<T> input) {
     if (input == null) return Collections.emptyList();
     Collections.sort(input);
-    return unmodifiableList(new ArrayList<>(input));
+    return unmodifiableList(new ArrayList<T>(input));
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -34,7 +34,7 @@ public final class FilterTraces implements Call.Mapper<List<List<Span>>, List<Li
   @Override public List<List<Span>> map(List<List<Span>> input) {
     int length = input.size();
     if (length == 0) return input;
-    ArrayList<List<Span>> result = new ArrayList<>(length);
+    ArrayList<List<Span>> result = new ArrayList<List<Span>>(length);
     for (int i = 0; i < length; i++) {
       List<Span> next = input.get(i);
       if (request.test(next)) result.add(next);

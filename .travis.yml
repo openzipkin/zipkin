@@ -22,7 +22,7 @@ services:
 
 before_install:
   # Use OS package to update JDK
-  - export JAVA_VERSION=14
+  - export JAVA_VERSION=11
   - sudo apt-get -y install openjdk-$JAVA_VERSION-jdk
   - export JAVA_HOME=/usr/lib/jvm/java-$JAVA_VERSION-openjdk-amd64/
   - ./mvnw -version
@@ -43,7 +43,8 @@ before_install:
   - echo "https://$GH_TOKEN:@github.com" > .git/credentials
 
 # Override default travis to use the maven wrapper
-install: ./mvnw install -DskipTests=true -Dlicense.skip=true -Dmaven.javadoc.skip=true -B -V
+# * Use the "release" profile as that ensures the core jar ends up JRE 1.6 compatible
+install: ./mvnw install -DskipTests=true -Dlicense.skip=true -Dmaven.javadoc.skip=true -B -V -Prelease
 script: ./travis/publish.sh
 
 branches:

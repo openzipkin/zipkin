@@ -16,6 +16,12 @@ jobs:
         uses: actions/checkout@v1
         with:
           fetch-depth: 10
+      # Setup latest JDK. We do this to ensure users don't need to use the same version as our
+      # release process. Release uses JDK 11, the last version that can target 1.6 bytecode.
+      - name: Setup java
+        uses: actions/setup-java@v1
+        with:
+          java-version: 15
       - name: Cache NPM Packages
         uses: actions/cache@v1
         with:
@@ -31,6 +37,9 @@ jobs:
         with:
          path: .mvn/wrapper
          key: mvn-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+      - name: Show version
+        run: ./mvnw -version
+        shell: bash
       - name: Execute Server Build
         run: ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server clean install
         shell: bash

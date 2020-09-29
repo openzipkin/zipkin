@@ -35,7 +35,7 @@ public final class TracesAdapter implements Traces {
   @Override public Call<List<List<Span>>> getTraces(Iterable<String> traceIds) {
     if (traceIds == null) throw new NullPointerException("traceIds == null");
 
-    List<Call<List<Span>>> calls = new ArrayList<>();
+    List<Call<List<Span>>> calls = new ArrayList<Call<List<Span>>>();
     for (String traceId : traceIds) {
       calls.add(getTrace(Span.normalizeTraceId(traceId)));
     }
@@ -49,7 +49,8 @@ public final class TracesAdapter implements Traces {
     INSTANCE;
 
     @Override public List<List<Span>> map(List<Span> input) {
-      return input.isEmpty() ? Collections.emptyList() : Collections.singletonList(input);
+      return input.isEmpty() ? Collections.<List<Span>>emptyList()
+        : Collections.singletonList(input);
     }
 
     @Override public String toString() {
@@ -63,7 +64,7 @@ public final class TracesAdapter implements Traces {
     }
 
     @Override protected List<List<Span>> newOutput() {
-      return new ArrayList<>();
+      return new ArrayList<List<Span>>();
     }
 
     @Override protected void append(List<Span> input, List<List<Span>> output) {
