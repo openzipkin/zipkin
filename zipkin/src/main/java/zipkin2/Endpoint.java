@@ -22,7 +22,7 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 import zipkin2.internal.Nullable;
-import zipkin2.internal.Platform;
+import zipkin2.internal.RecyclableBuffers;
 
 import static zipkin2.internal.HexCodec.HEX_DIGITS;
 
@@ -196,7 +196,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
     }
 
     static String writeIpV4(byte[] ipBytes) {
-      char[] buf = Platform.shortStringBuffer();
+      char[] buf = RecyclableBuffers.shortStringBuffer();
       int pos = 0;
       pos = writeBackwards(ipBytes[0] & 0xff, pos, buf);
       buf[pos++] = '.';
@@ -368,7 +368,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
 
   static String writeIpV6(byte[] ipv6) {
     int pos = 0;
-    char[] buf = Platform.shortStringBuffer();
+    char[] buf = RecyclableBuffers.shortStringBuffer();
 
     // Compress the longest string of zeros
     int zeroCompressionIndex = -1;

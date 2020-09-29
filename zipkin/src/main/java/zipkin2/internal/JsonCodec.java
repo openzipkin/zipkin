@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -132,7 +132,7 @@ public final class JsonCodec {
   }
 
   public static @Nullable <T> T readOne(JsonReaderAdapter<T> adapter, ReadBuffer buffer) {
-    List<T> out = new ArrayList<>(1); // TODO: could make single-element list w/o array
+    List<T> out = new ArrayList<T>(1); // TODO: could make single-element list w/o array
     if (!read(adapter, buffer, out)) return null;
     return out.get(0);
   }
@@ -187,7 +187,9 @@ public final class JsonCodec {
           lengthWritten,
           result.length,
           new String(result, 0, lengthWritten, UTF_8));
-      throw Platform.get().assertionError(message, e);
+      AssertionError error = new AssertionError(message);
+      error.initCause(e);
+      throw error;
     }
     return result;
   }

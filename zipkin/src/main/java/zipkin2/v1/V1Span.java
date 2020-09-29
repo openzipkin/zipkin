@@ -36,37 +36,51 @@ import static zipkin2.internal.HexCodec.lowerHexToUnsignedLong;
 public final class V1Span {
   static final Endpoint EMPTY_ENDPOINT = Endpoint.newBuilder().build();
 
-  /** When non-zero, the trace containing this span uses 128-bit trace identifiers. */
+  /**
+   * When non-zero, the trace containing this span uses 128-bit trace identifiers.
+   */
   public long traceIdHigh() {
     return traceIdHigh;
   }
 
-  /** lower 64-bits of the {@link Span#traceId()} */
+  /**
+   * lower 64-bits of the {@link Span#traceId()}
+   */
   public long traceId() {
     return traceId;
   }
 
-  /** Same as {@link zipkin2.Span#id()} except packed into a long. Zero means root span. */
+  /**
+   * Same as {@link zipkin2.Span#id()} except packed into a long. Zero means root span.
+   */
   public long id() {
     return id;
   }
 
-  /** Same as {@link zipkin2.Span#name()} */
+  /**
+   * Same as {@link zipkin2.Span#name()}
+   */
   public String name() {
     return name;
   }
 
-  /** The parent's {@link #id()} or zero if this the root span in a trace. */
+  /**
+   * The parent's {@link #id()} or zero if this the root span in a trace.
+   */
   public long parentId() {
     return parentId;
   }
 
-  /** Same as {@link Span#timestampAsLong()} */
+  /**
+   * Same as {@link Span#timestampAsLong()}
+   */
   public long timestamp() {
     return timestamp;
   }
 
-  /** Same as {@link Span#durationAsLong()} */
+  /**
+   * Same as {@link Span#durationAsLong()}
+   */
   public long duration() {
     return duration;
   }
@@ -87,14 +101,18 @@ public final class V1Span {
     return binaryAnnotations;
   }
 
-  /** Same as {@link Span#debug()} */
+  /**
+   * Same as {@link Span#debug()}
+   */
   public Boolean debug() {
     return debug;
   }
 
-  /** Returns the distinct {@link Endpoint#serviceName() service names} that logged to this span. */
+  /**
+   * Returns the distinct {@link Endpoint#serviceName() service names} that logged to this span.
+   */
   public Set<String> serviceNames() {
-    Set<String> result = new LinkedHashSet<>();
+    Set<String> result = new LinkedHashSet<String>();
     for (V1Annotation a : annotations) {
       if (a.endpoint == null) continue;
       if (a.endpoint.serviceName() == null) continue;
@@ -137,17 +155,23 @@ public final class V1Span {
   public static final class Builder {
     // ID accessors are here to help organize builders by their identifiers
 
-    /** Sets {@link V1Span#traceIdHigh()} */
+    /**
+     * Sets {@link V1Span#traceIdHigh()}
+     */
     public long traceIdHigh() {
       return traceIdHigh;
     }
 
-    /** Sets {@link V1Span#traceId()} */
+    /**
+     * Sets {@link V1Span#traceId()}
+     */
     public long traceId() {
       return traceId;
     }
 
-    /** Sets {@link V1Span#id()} */
+    /**
+     * Sets {@link V1Span#id()}
+     */
     public long id() {
       return id;
     }
@@ -172,7 +196,9 @@ public final class V1Span {
       return this;
     }
 
-    /** Same as {@link Span.Builder#traceId(String)} */
+    /**
+     * Same as {@link Span.Builder#traceId(String)}
+     */
     public Builder traceId(String traceId) {
       if (traceId == null) throw new NullPointerException("traceId == null");
       if (traceId.length() == 32) {
@@ -182,75 +208,97 @@ public final class V1Span {
       return this;
     }
 
-    /** Sets {@link V1Span#traceId()} */
+    /**
+     * Sets {@link V1Span#traceId()}
+     */
     public Builder traceId(long traceId) {
       this.traceId = traceId;
       return this;
     }
 
-    /** Sets {@link V1Span#traceIdHigh()} */
+    /**
+     * Sets {@link V1Span#traceIdHigh()}
+     */
     public Builder traceIdHigh(long traceIdHigh) {
       this.traceIdHigh = traceIdHigh;
       return this;
     }
 
-    /** Sets {@link V1Span#id()} */
+    /**
+     * Sets {@link V1Span#id()}
+     */
     public Builder id(long id) {
       this.id = id;
       return this;
     }
 
-    /** Same as {@link Span.Builder#id(String)} */
+    /**
+     * Same as {@link Span.Builder#id(String)}
+     */
     public Builder id(String id) {
       if (id == null) throw new NullPointerException("id == null");
       this.id = lowerHexToUnsignedLong(id);
       return this;
     }
 
-    /** Same as {@link Span.Builder#parentId(String)} */
+    /**
+     * Same as {@link Span.Builder#parentId(String)}
+     */
     public Builder parentId(String parentId) {
       this.parentId = parentId != null ? lowerHexToUnsignedLong(parentId) : 0L;
       return this;
     }
 
-    /** Sets {@link V1Span#parentId()} */
+    /**
+     * Sets {@link V1Span#parentId()}
+     */
     public Builder parentId(long parentId) {
       this.parentId = parentId;
       return this;
     }
 
-    /** Sets {@link V1Span#name()} */
+    /**
+     * Sets {@link V1Span#name()}
+     */
     public Builder name(String name) {
       this.name = name == null || name.isEmpty() ? null : name.toLowerCase(Locale.ROOT);
       return this;
     }
 
-    /** Sets {@link V1Span#timestamp()} */
+    /**
+     * Sets {@link V1Span#timestamp()}
+     */
     public Builder timestamp(long timestamp) {
       this.timestamp = timestamp;
       return this;
     }
 
-    /** Sets {@link V1Span#duration()} */
+    /**
+     * Sets {@link V1Span#duration()}
+     */
     public Builder duration(long duration) {
       this.duration = duration;
       return this;
     }
 
-    /** Sets {@link V1Span#annotations()} */
+    /**
+     * Sets {@link V1Span#annotations()}
+     */
     public Builder addAnnotation(long timestamp, String value, @Nullable Endpoint endpoint) {
-      if (annotations == null) annotations = new ArrayList<>(4);
+      if (annotations == null) annotations = new ArrayList<V1Annotation>(4);
       if (EMPTY_ENDPOINT.equals(endpoint)) endpoint = null;
       annotations.add(new V1Annotation(timestamp, value, endpoint));
       return this;
     }
 
-    /** Creates an address annotation, which is the same as {@link Span#remoteEndpoint()} */
+    /**
+     * Creates an address annotation, which is the same as {@link Span#remoteEndpoint()}
+     */
     public Builder addBinaryAnnotation(String address, Endpoint endpoint) {
       // Ignore empty endpoints rather than crashing v1 parsers on bad address data
       if (endpoint == null || EMPTY_ENDPOINT.equals(endpoint)) return this;
 
-      if (binaryAnnotations == null) binaryAnnotations = new ArrayList<>(4);
+      if (binaryAnnotations == null) binaryAnnotations = new ArrayList<V1BinaryAnnotation>(4);
       binaryAnnotations.add(new V1BinaryAnnotation(address, null, endpoint));
       return this;
     }
@@ -264,12 +312,14 @@ public final class V1Span {
     public Builder addBinaryAnnotation(String key, String value, Endpoint endpoint) {
       if (value == null) throw new NullPointerException("value == null");
       if (EMPTY_ENDPOINT.equals(endpoint)) endpoint = null;
-      if (binaryAnnotations == null) binaryAnnotations = new ArrayList<>(4);
+      if (binaryAnnotations == null) binaryAnnotations = new ArrayList<V1BinaryAnnotation>(4);
       binaryAnnotations.add(new V1BinaryAnnotation(key, value, endpoint));
       return this;
     }
 
-    /** Sets {@link V1Span#debug()} */
+    /**
+     * Sets {@link V1Span#debug()}
+     */
     public Builder debug(@Nullable Boolean debug) {
       this.debug = debug;
       return this;
@@ -286,15 +336,15 @@ public final class V1Span {
     if (!(o instanceof V1Span)) return false;
     V1Span that = (V1Span) o;
     return traceIdHigh == that.traceIdHigh
-        && traceId == that.traceId
-        && ((name == null) ? (that.name == null) : name.equals(that.name))
-        && id == that.id
-        && parentId == that.parentId
-        && timestamp == that.timestamp
-        && duration == that.duration
-        && annotations.equals(that.annotations)
-        && binaryAnnotations.equals(that.binaryAnnotations)
-        && ((debug == null) ? (that.debug == null) : debug.equals(that.debug));
+      && traceId == that.traceId
+      && ((name == null) ? (that.name == null) : name.equals(that.name))
+      && id == that.id
+      && parentId == that.parentId
+      && timestamp == that.timestamp
+      && duration == that.duration
+      && annotations.equals(that.annotations)
+      && binaryAnnotations.equals(that.binaryAnnotations)
+      && ((debug == null) ? (that.debug == null) : debug.equals(that.debug));
   }
 
   @Override
@@ -326,6 +376,6 @@ public final class V1Span {
   static <T extends Comparable<T>> List<T> sortedList(List<T> input) {
     if (input == null) return Collections.emptyList();
     Collections.sort(input);
-    return unmodifiableList(new ArrayList<>(input));
+    return unmodifiableList(new ArrayList<T>(input));
   }
 }

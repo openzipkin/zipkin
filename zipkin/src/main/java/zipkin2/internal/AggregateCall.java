@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -90,7 +90,7 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
       Call<I> call = calls.get(i);
       try {
         append(call.execute(), result);
-      } catch (IOException | RuntimeException | Error e) {
+      } catch (Throwable e) {
         if (firstError == null) {
           firstError = e;
         } else if (log.isLoggable(Level.INFO)) {
@@ -165,7 +165,7 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
 
   protected final List<Call<I>> cloneCalls() {
     int length = calls.size();
-    List<Call<I>> result = new ArrayList<>(length);
+    List<Call<I>> result = new ArrayList<Call<I>>(length);
     for (int i = 0; i < length; i++) {
       result.add(calls.get(i).clone());
     }

@@ -39,7 +39,7 @@ public final class DateUtil {
     long startMillis = endTs - (lookback != 0 ? lookback : endTs);
     long from = startMillis <= 0 ? 0 : midnightUTC(startMillis); // >= 1970
 
-    List<Long> days = new ArrayList<>();
+    List<Long> days = new ArrayList<Long>();
     for (long time = from; time <= to; time += TimeUnit.DAYS.toMillis(1)) {
       days.add(time);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,7 +28,7 @@ public class Trace {
   public static List<Span> merge(List<Span> spans) {
     int length = spans.size();
     if (length <= 1) return spans;
-    List<Span> result = new ArrayList<>(spans);
+    List<Span> result = new ArrayList<Span>(spans);
     Collections.sort(result, CLEANUP_COMPARATOR);
 
     // Let's cleanup any spans and pick the longest ID

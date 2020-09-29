@@ -52,7 +52,7 @@ public final class DelayLimiter<C> {
     public <C> DelayLimiter<C> build() {
       if (ttl <= 0L) throw new IllegalArgumentException("ttl <= 0");
       if (cardinality <= 0) throw new IllegalArgumentException("cardinality <= 0");
-      return new DelayLimiter<>(new SuppressionFactory(ttlUnit.toNanos(ttl)), cardinality);
+      return new DelayLimiter<C>(new SuppressionFactory(ttlUnit.toNanos(ttl)), cardinality);
     }
 
     Builder() {
@@ -60,8 +60,8 @@ public final class DelayLimiter<C> {
   }
 
   final SuppressionFactory suppressionFactory;
-  final ConcurrentHashMap<C, Suppression<C>> cache = new ConcurrentHashMap<>();
-  final DelayQueue<Suppression<C>> suppressions = new DelayQueue<>();
+  final ConcurrentHashMap<C, Suppression<C>> cache = new ConcurrentHashMap<C, Suppression<C>>();
+  final DelayQueue<Suppression<C>> suppressions = new DelayQueue<Suppression<C>>();
   final int cardinality;
 
   DelayLimiter(SuppressionFactory suppressionFactory, int cardinality) {
@@ -126,7 +126,7 @@ public final class DelayLimiter<C> {
     }
 
     <C> Suppression<C> create(C context) {
-      return new Suppression<>(this, context, nanoTime() + ttlNanos);
+      return new Suppression<C>(this, context, nanoTime() + ttlNanos);
     }
   }
 

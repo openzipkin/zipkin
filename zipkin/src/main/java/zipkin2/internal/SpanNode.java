@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -78,7 +78,7 @@ public final class SpanNode {
   }
 
   static final class BreadthFirstIterator implements Iterator<SpanNode> {
-    final ArrayDeque<SpanNode> queue = new ArrayDeque<>();
+    final ArrayDeque<SpanNode> queue = new ArrayDeque<SpanNode>();
 
     BreadthFirstIterator(SpanNode root) {
       // since the input data could be headless, we first push onto the queue the root-most spans
@@ -113,7 +113,7 @@ public final class SpanNode {
   SpanNode addChild(SpanNode child) {
     if (child == null) throw new NullPointerException("child == null");
     if (child == this) throw new IllegalArgumentException("circular dependency on " + this);
-    if (children.equals(Collections.emptyList())) children = new ArrayList<>();
+    if (children.equals(Collections.emptyList())) children = new ArrayList<SpanNode>();
     children.add(child);
     child.parent = this;
     return this;
@@ -127,8 +127,8 @@ public final class SpanNode {
     }
 
     SpanNode rootSpan = null;
-    Map<Object, SpanNode> keyToNode = new LinkedHashMap<>();
-    Map<Object, Object> spanToParent = new LinkedHashMap<>();
+    Map<Object, SpanNode> keyToNode = new LinkedHashMap<Object, SpanNode>();
+    Map<Object, Object> spanToParent = new LinkedHashMap<Object, Object>();
 
     void clear() {
       rootSpan = null;
@@ -191,7 +191,7 @@ public final class SpanNode {
 
     /** Sorts children at the same level by {@link Span#timestampAsLong()} ascending */
     void sortTreeByTimestamp(SpanNode root) {
-      ArrayDeque<SpanNode> queue = new ArrayDeque<>();
+      ArrayDeque<SpanNode> queue = new ArrayDeque<SpanNode>();
       queue.add(root);
 
       while (!queue.isEmpty()) {
@@ -334,7 +334,7 @@ public final class SpanNode {
   }
 
   @Override public String toString() {
-    List<Span> childrenSpans = new ArrayList<>();
+    List<Span> childrenSpans = new ArrayList<Span>();
     for (int i = 0, length = children.size(); i < length; i++) {
       childrenSpans.add(children.get(i).span);
     }

@@ -14,6 +14,7 @@
 package zipkin2.junit;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,7 +30,6 @@ import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.collector.InMemoryCollectorMetrics;
 import zipkin2.internal.Nullable;
-import zipkin2.internal.Platform;
 import zipkin2.storage.InMemoryStorage;
 
 import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
@@ -51,41 +51,47 @@ public final class ZipkinRule implements TestRule {
 
   public ZipkinRule() {
     Dispatcher dispatcher =
-        new Dispatcher() {
-          final ZipkinDispatcher successDispatch = new ZipkinDispatcher(storage, metrics, server);
+      new Dispatcher() {
+        final ZipkinDispatcher successDispatch = new ZipkinDispatcher(storage, metrics, server);
 
-          @Override
-          public MockResponse dispatch(RecordedRequest request) {
-            MockResponse maybeFailure = failureQueue.poll();
-            if (maybeFailure != null) return maybeFailure;
-            MockResponse result = successDispatch.dispatch(request);
-            if (request.getMethod().equals("POST")) {
-              receivedSpanBytes.addAndGet((int) request.getBodySize());
-            }
-            return result;
+        @Override
+        public MockResponse dispatch(RecordedRequest request) {
+          MockResponse maybeFailure = failureQueue.poll();
+          if (maybeFailure != null) return maybeFailure;
+          MockResponse result = successDispatch.dispatch(request);
+          if (request.getMethod().equals("POST")) {
+            receivedSpanBytes.addAndGet((int) request.getBodySize());
           }
+          return result;
+        }
 
-          @Override
-          public MockResponse peek() {
-            MockResponse maybeFailure = failureQueue.peek();
-            if (maybeFailure != null) return maybeFailure.clone();
-            return new MockResponse().setSocketPolicy(KEEP_OPEN);
-          }
-        };
+        @Override
+        public MockResponse peek() {
+          MockResponse maybeFailure = failureQueue.peek();
+          if (maybeFailure != null) return maybeFailure.clone();
+          return new MockResponse().setSocketPolicy(KEEP_OPEN);
+        }
+      };
     server.setDispatcher(dispatcher);
   }
 
-  /** Use this to connect. The zipkin v1 interface will be under "/api/v1" */
+  /**
+   * Use this to connect. The zipkin v1 interface will be under "/api/v1"
+   */
   public String httpUrl() {
     return String.format("http://%s:%s", server.getHostName(), server.getPort());
   }
 
-  /** Use this to see how many requests you've sent to any zipkin http endpoint. */
+  /**
+   * Use this to see how many requests you've sent to any zipkin http endpoint.
+   */
   public int httpRequestCount() {
     return server.getRequestCount();
   }
 
-  /** Use this to see how many spans or serialized bytes were collected on the http endpoint. */
+  /**
+   * Use this to see how many spans or serialized bytes were collected on the http endpoint.
+   */
   public InMemoryCollectorMetrics collectorMetrics() {
     return metrics;
   }
@@ -100,7 +106,7 @@ public final class ZipkinRule implements TestRule {
     try {
       storage.accept(spans).execute();
     } catch (IOException e) {
-      throw Platform.get().uncheckedIOException(e);
+      throw new UncheckedIOException(e);
     }
     return this;
   }
@@ -121,25 +127,31 @@ public final class ZipkinRule implements TestRule {
     return this;
   }
 
-  /** Retrieves all traces this zipkin server has received. */
+  /**
+   * Retrieves all traces this zipkin server has received.
+   */
   public List<List<Span>> getTraces() {
     return storage.spanStore().getTraces();
   }
 
-  /** Retrieves a trace by ID which Zipkin server has received, or null if not present. */
+  /**
+   * Retrieves a trace by ID which Zipkin server has received, or null if not present.
+   */
   @Nullable
   public List<Span> getTrace(String traceId) {
     List<Span> result;
     try {
       result = storage.traces().getTrace(traceId).execute();
     } catch (IOException e) {
-      throw Platform.get().assertionError("I/O exception in in-memory storage", e);
+      throw new AssertionError("I/O exception in in-memory storage", e);
     }
     // Note: this is a different behavior than Traces.getTrace() which is not nullable!
     return result.isEmpty() ? null : result;
   }
 
-  /** Retrieves all service links between traces this zipkin server has received. */
+  /**
+   * Retrieves all service links between traces this zipkin server has received.
+   */
   public List<DependencyLink> getDependencies() {
     return storage.spanStore().getDependencies();
   }
@@ -153,7 +165,9 @@ public final class ZipkinRule implements TestRule {
     server.start(httpPort);
   }
 
-  /** Used to manually stop the server. */
+  /**
+   * Used to manually stop the server.
+   */
   public void shutdown() throws IOException {
     server.shutdown();
   }
