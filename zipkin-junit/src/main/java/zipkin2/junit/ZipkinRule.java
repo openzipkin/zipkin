@@ -50,48 +50,38 @@ public final class ZipkinRule implements TestRule {
   private final AtomicInteger receivedSpanBytes = new AtomicInteger();
 
   public ZipkinRule() {
-    Dispatcher dispatcher =
-      new Dispatcher() {
-        final ZipkinDispatcher successDispatch = new ZipkinDispatcher(storage, metrics, server);
-
-        @Override
-        public MockResponse dispatch(RecordedRequest request) {
-          MockResponse maybeFailure = failureQueue.poll();
-          if (maybeFailure != null) return maybeFailure;
-          MockResponse result = successDispatch.dispatch(request);
-          if (request.getMethod().equals("POST")) {
-            receivedSpanBytes.addAndGet((int) request.getBodySize());
-          }
-          return result;
+    final ZipkinDispatcher successDispatch = new ZipkinDispatcher(storage, metrics, server);
+    Dispatcher dispatcher = new Dispatcher() {
+      @Override public MockResponse dispatch(RecordedRequest request) {
+        MockResponse maybeFailure = failureQueue.poll();
+        if (maybeFailure != null) return maybeFailure;
+        MockResponse result = successDispatch.dispatch(request);
+        if (request.getMethod().equals("POST")) {
+          receivedSpanBytes.addAndGet((int) request.getBodySize());
         }
+        return result;
+      }
 
-        @Override
-        public MockResponse peek() {
-          MockResponse maybeFailure = failureQueue.peek();
-          if (maybeFailure != null) return maybeFailure.clone();
-          return new MockResponse().setSocketPolicy(KEEP_OPEN);
-        }
-      };
+      @Override public MockResponse peek() {
+        MockResponse maybeFailure = failureQueue.peek();
+        if (maybeFailure != null) return maybeFailure.clone();
+        return new MockResponse().setSocketPolicy(KEEP_OPEN);
+      }
+    };
     server.setDispatcher(dispatcher);
   }
 
-  /**
-   * Use this to connect. The zipkin v1 interface will be under "/api/v1"
-   */
+  /** Use this to connect. The zipkin v1 interface will be under "/api/v1" */
   public String httpUrl() {
     return String.format("http://%s:%s", server.getHostName(), server.getPort());
   }
 
-  /**
-   * Use this to see how many requests you've sent to any zipkin http endpoint.
-   */
+  /** Use this to see how many requests you've sent to any zipkin http endpoint. */
   public int httpRequestCount() {
     return server.getRequestCount();
   }
 
-  /**
-   * Use this to see how many spans or serialized bytes were collected on the http endpoint.
-   */
+  /** Use this to see how many spans or serialized bytes were collected on the http endpoint. */
   public InMemoryCollectorMetrics collectorMetrics() {
     return metrics;
   }
@@ -127,18 +117,13 @@ public final class ZipkinRule implements TestRule {
     return this;
   }
 
-  /**
-   * Retrieves all traces this zipkin server has received.
-   */
+  /** Retrieves all traces this zipkin server has received. */
   public List<List<Span>> getTraces() {
     return storage.spanStore().getTraces();
   }
 
-  /**
-   * Retrieves a trace by ID which Zipkin server has received, or null if not present.
-   */
-  @Nullable
-  public List<Span> getTrace(String traceId) {
+  /** Retrieves a trace by ID which Zipkin server has received, or null if not present. */
+  @Nullable public List<Span> getTrace(String traceId) {
     List<Span> result;
     try {
       result = storage.traces().getTrace(traceId).execute();
@@ -149,9 +134,7 @@ public final class ZipkinRule implements TestRule {
     return result.isEmpty() ? null : result;
   }
 
-  /**
-   * Retrieves all service links between traces this zipkin server has received.
-   */
+  /** Retrieves all service links between traces this zipkin server has received. */
   public List<DependencyLink> getDependencies() {
     return storage.spanStore().getDependencies();
   }
@@ -172,8 +155,7 @@ public final class ZipkinRule implements TestRule {
     server.shutdown();
   }
 
-  @Override
-  public Statement apply(Statement base, Description description) {
+  @Override public Statement apply(Statement base, Description description) {
     return server.apply(base, description);
   }
 }
