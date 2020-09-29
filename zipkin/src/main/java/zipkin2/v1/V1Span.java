@@ -245,9 +245,7 @@ public final class V1Span {
       return this;
     }
 
-    /**
-     * Creates an address annotation, which is the same as {@link Span#remoteEndpoint()}
-     */
+    /** Creates an address annotation, which is the same as {@link Span#remoteEndpoint()} */
     public Builder addBinaryAnnotation(String address, Endpoint endpoint) {
       // Ignore empty endpoints rather than crashing v1 parsers on bad address data
       if (endpoint == null || EMPTY_ENDPOINT.equals(endpoint)) return this;
@@ -288,15 +286,15 @@ public final class V1Span {
     if (!(o instanceof V1Span)) return false;
     V1Span that = (V1Span) o;
     return traceIdHigh == that.traceIdHigh
-      && traceId == that.traceId
-      && ((name == null) ? (that.name == null) : name.equals(that.name))
-      && id == that.id
-      && parentId == that.parentId
-      && timestamp == that.timestamp
-      && duration == that.duration
-      && annotations.equals(that.annotations)
-      && binaryAnnotations.equals(that.binaryAnnotations)
-      && ((debug == null) ? (that.debug == null) : debug.equals(that.debug));
+        && traceId == that.traceId
+        && ((name == null) ? (that.name == null) : name.equals(that.name))
+        && id == that.id
+        && parentId == that.parentId
+        && timestamp == that.timestamp
+        && duration == that.duration
+        && annotations.equals(that.annotations)
+        && binaryAnnotations.equals(that.binaryAnnotations)
+        && ((debug == null) ? (that.debug == null) : debug.equals(that.debug));
   }
 
   @Override
