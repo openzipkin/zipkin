@@ -25,7 +25,7 @@
   "Root": "Raíz",
   "Search Dependencies": "Buscar Dependencias",
   "Search Traces": "Buscar Trazas",
-  "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"trace id...\" textbox on the top-right.": "",
+  "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right.": "",
   "Service Name": "Nombre del Servicio",
   "Services": "Servicios",
   "Span ID": "ID de Tramo",
@@ -42,7 +42,6 @@
   "Zipkin Home": "Zipkin Inicio",
   "hide annotations": "ocultar anotaciones",
   "show all annotations": "mostrar todas las anotaciones",
-  "trace id...": "id de traza...",
   "{0} Results": "{0} Resultados",
   "1 Result": "1 Resultado"
 }

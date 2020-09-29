@@ -25,7 +25,7 @@
   "Root": "Root",
   "Search Dependencies": "查询依赖",
   "Search Traces": "查询trace链路",
-  "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"trace id...\" textbox on the top-right.": "已通过searchEnabled属性禁用搜索，通过在右上角的 \"trace id...\"文本框中输入trace id，您仍然可以查看已知trace id的跟踪信息",
+  "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right.": "已通过searchEnabled属性禁用搜索，通过在右上角的 \"Trace ID...\"文本框中输入trace id，您仍然可以查看已知trace id的跟踪信息",
   "Service Name": "服务",
   "Services": "服务",
   "Span ID": "Span ID",
@@ -42,7 +42,6 @@
   "Zipkin Home": "Zipkin Home",
   "hide annotations": "隐藏annotations",
   "show all annotations": "显示全部annotations",
-  "trace id...": "trace id...",
   "{0} Results": "{0} 条结果",
   "1 Result": "1 条结果"
 }

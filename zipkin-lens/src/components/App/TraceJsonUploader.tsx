@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/macro';
 /*
  * Copyright 2015-2020 The OpenZipkin Authors
  *
@@ -11,45 +12,27 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { t } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
-import { unwrapResult } from '@reduxjs/toolkit';
-import PropTypes from 'prop-types';
-import React, { useRef, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
-import { withRouter } from 'react-router-dom';
+
 import { faUpload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { makeStyles } from '@material-ui/styles';
-import Button from '@material-ui/core/Button';
-import Tooltip from '@material-ui/core/Tooltip';
+import { IconButton, Tooltip } from '@material-ui/core';
+import { unwrapResult } from '@reduxjs/toolkit';
+import React, { useCallback, useRef } from 'react';
+import { useDispatch } from 'react-redux';
+import { useHistory } from 'react-router-dom';
+import styled from 'styled-components';
 
+import { setAlert } from './slice';
 import { loadJsonTrace } from '../../slices/tracesSlice';
-import { setAlert } from '../App/slice';
 
-const propTypes = {
-  history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
-};
-
-const useStyles = makeStyles({
-  button: {
-    marginTop: '8px', // for align with TraceID input.
-    marginRight: '0.4rem',
-    height: '2rem',
-    width: '1.4rem',
-    minWidth: '1.4rem',
-  },
-});
-
-const TraceJsonUploader = ({ history }) => {
-  const classes = useStyles();
+const TraceJsonUploader: React.FC = () => {
   const dispatch = useDispatch();
-  const inputRef = useRef(null);
-  const { i18n } = useLingui();
+  const history = useHistory();
+  const inputEl = useRef<HTMLInputElement>(null);
 
   const handleClick = useCallback(() => {
-    if (inputRef.current) {
-      inputRef.current.click();
+    if (inputEl.current) {
+      inputEl.current.click();
     }
   }, []);
 
@@ -77,25 +60,20 @@ const TraceJsonUploader = ({ history }) => {
 
   return (
     <>
-      <input
-        type="file"
-        style={{ display: 'none' }}
-        ref={inputRef}
-        onChange={handleFileChange}
-      />
-      <Tooltip title={i18n._(t`Upload JSON`)}>
-        <Button
-          variant="outlined"
-          className={classes.button}
-          onClick={handleClick}
-        >
-          <FontAwesomeIcon icon={faUpload} />
-        </Button>
+      <FileInput ref={inputEl} onChange={handleFileChange} />
+      <Tooltip title={<Trans>Upload JSON</Trans>}>
+        <IconButton onClick={handleClick}>
+          <FontAwesomeIcon icon={faUpload} size="sm" />
+        </IconButton>
       </Tooltip>
     </>
   );
 };
 
-TraceJsonUploader.propTypes = propTypes;
+export default TraceJsonUploader;
 
-export default withRouter(TraceJsonUploader);
+const FileInput = styled.input.attrs({
+  type: 'file',
+})`
+  display: none;
+`;
