@@ -20,9 +20,9 @@ set -eux
 
 echo "*** Installing Cassandra and dependencies"
 # BusyBux built-in tar doesn't support --strip=1
-apk add --update --no-cache python2 curl tar
-APACHE_MIRROR=$(curl -sSL https://www.apache.org/dyn/closer.cgi\?as_json\=1 | sed -n '/preferred/s/.*"\(.*\)"/\1/gp')
-curl -sSL $APACHE_MIRROR/cassandra/$CASSANDRA_VERSION/apache-cassandra-$CASSANDRA_VERSION-bin.tar.gz | tar xz \
+apk add --update --no-cache python2 tar
+APACHE_MIRROR=$(wget -qO- https://www.apache.org/dyn/closer.cgi\?as_json\=1 | sed -n '/preferred/s/.*"\(.*\)"/\1/gp')
+wget -qO- $APACHE_MIRROR/cassandra/$CASSANDRA_VERSION/apache-cassandra-$CASSANDRA_VERSION-bin.tar.gz | tar xz \
   --strip=1
 
 # Merge in our custom configuration

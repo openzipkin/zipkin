@@ -22,7 +22,7 @@ COPY docker/collector/kafka/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
 # Share the same base image to reduce layers used in testing
-FROM openzipkin/jre-full:14.0.2-14.29.23
+FROM openzipkin/jre-full:15.0.0-15.27.17
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path

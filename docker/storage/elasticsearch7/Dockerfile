@@ -12,20 +12,20 @@
 # the License.
 #
 
-FROM openzipkin/zipkin-builder as install
+FROM openzipkin/jre-full:15.0.0-15.27.17 as install
 
-ENV ELASTICSEARCH_VERSION 7.9.1
+ENV ELASTICSEARCH_VERSION 7.9.2
 
 WORKDIR /install
 
 # Download only the OSS distribution (lacks X-Pack)
 # We don't download bin scripts as we customize for reasons including BusyBox problems
-RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-$ELASTICSEARCH_VERSION-no-jdk-linux-x86_64.tar.gz| tar xz \
+RUN wget -qO- https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-$ELASTICSEARCH_VERSION-no-jdk-linux-x86_64.tar.gz| tar xz \
     --wildcards --strip=1 --exclude=*/bin
 
 COPY docker/storage/elasticsearch7/config /install/config
 
-FROM openzipkin/jre-full:14.0.2-14.29.23
+FROM openzipkin/jre-full:15.0.0-15.27.17
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
