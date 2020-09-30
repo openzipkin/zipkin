@@ -35,8 +35,14 @@ RUN ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server install
 RUN mkdir -p /zipkin && cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin && cd /zipkin && jar xf *.jar && rm *.jar
 RUN mkdir -p /zipkin-slim && cp zipkin-server/target/zipkin-server-*-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar
 
+# docker/hooks/post_push will republish what is otherwise built in docker/build/Dockerfile
 FROM maven:3-openjdk-14-slim as zipkin-builder
+LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
+# Unset MAVEN_CONFIG until we don't depend on the maven image which conflicts with the Takari env
+ENV MAVEN_CONFIG=
+
+# This cache is used by DockerHub which doesn't support another way to retain cache between builds
 COPY --from=built /root/.m2 /root/.m2
 COPY --from=built /root/.npm /root/.npm
 
@@ -66,7 +72,7 @@ CMD ["/usr/local/bin/nginx.sh"]
 # zipkin-slim - An image containing the slim distribution of Zipkin server.
 #####
 
-FROM openzipkin/jre-full:14.0.2-14.29.23 as zipkin-slim
+FROM openzipkin/jre-full:15.0.0-15.27.17 as zipkin-slim
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.
@@ -117,7 +123,7 @@ ENTRYPOINT /zipkin/run.sh
 # zipkin-server - An image containing the full distribution of Zipkin server.
 #####
 
-FROM openzipkin/jre-full:14.0.2-14.29.23 as zipkin-server
+FROM openzipkin/jre-full:15.0.0-15.27.17 as zipkin-server
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.
