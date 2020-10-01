@@ -212,3 +212,4 @@ See [docker](./docker) for details.
 ### Javadocs
 https://zipkin.io/zipkin contains versioned folders with JavaDocs published on each (non-PR) build, as well
 as releases.
+Zipkin is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in service architectures
