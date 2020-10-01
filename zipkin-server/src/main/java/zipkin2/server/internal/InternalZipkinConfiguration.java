@@ -23,6 +23,7 @@ import zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfigura
 import zipkin2.server.internal.health.ZipkinHealthController;
 import zipkin2.server.internal.kafka.ZipkinKafkaCollectorConfiguration;
 import zipkin2.server.internal.mysql.ZipkinMySQLStorageConfiguration;
+import zipkin2.server.internal.postgres.ZipkinPostgresStorageConfiguration;
 import zipkin2.server.internal.prometheus.ZipkinMetricsController;
 import zipkin2.server.internal.prometheus.ZipkinPrometheusMetricsConfiguration;
 import zipkin2.server.internal.rabbitmq.ZipkinRabbitMQCollectorConfiguration;
@@ -38,6 +39,7 @@ import zipkin2.server.internal.ui.ZipkinUiConfiguration;
   ZipkinCassandra3StorageConfiguration.class,
   ZipkinElasticsearchStorageConfiguration.class,
   ZipkinMySQLStorageConfiguration.class,
+  ZipkinPostgresStorageConfiguration.class,
   ZipkinScribeCollectorConfiguration.class,
   ZipkinSelfTracingConfiguration.class,
   ZipkinQueryApiV2.class,

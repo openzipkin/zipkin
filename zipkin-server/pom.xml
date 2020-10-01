@@ -195,6 +195,12 @@
       <optional>true</optional>
     </dependency>
     <dependency>
+      <groupId>${project.groupId}.zipkin2</groupId>
+      <artifactId>zipkin-storage-postgres-v1</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
       <groupId>org.mariadb.jdbc</groupId>
       <artifactId>mariadb-java-client</artifactId>
       <optional>true</optional>
@@ -260,7 +266,7 @@
     <dependency>
       <groupId>io.zipkin.proto3</groupId>
       <artifactId>zipkin-proto3</artifactId>
-      <scope>test</scope>
+<!--      <scope>test</scope>-->
     </dependency>
     <!-- Our json codec is shaded, but Intellij doesn't understand that when running tests. -->
     <dependency>
@@ -380,6 +386,7 @@
       <build>
         <plugins>
           <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-invoker-plugin</artifactId>
             <version>${maven-invoker-plugin.version}</version>
             <configuration>
@@ -388,7 +395,7 @@
               <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
               <postBuildHookScript>verify</postBuildHookScript>
               <addTestClassPath>true</addTestClassPath>
-              <skipInvocation>${skipTests}</skipInvocation>
+              <skipInvocation>true</skipInvocation>
               <streamLogs>true</streamLogs>
             </configuration>
             <executions>
@@ -416,6 +423,7 @@
     <plugins>
       <!-- wire-maven-plugin cannot get proto definitions from dependencies, so we will -->
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
       </plugin>
       <plugin>
@@ -574,6 +582,12 @@
                 <dependency>
                   <groupId>${project.groupId}.zipkin2</groupId>
                   <artifactId>zipkin-storage-mysql-v1</artifactId>
+                </dependency>
+
+                <!-- MySQL backend -->
+                <dependency>
+                  <groupId>${project.groupId}.zipkin2</groupId>
+                  <artifactId>zipkin-storage-postgres-v1</artifactId>
                 </dependency>
 
                 <!-- ActiveMQ Collector -->
