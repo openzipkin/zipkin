@@ -35,6 +35,6 @@ if [ ! -f "${NODE_MAVEN_PATH}" ]; then
   wget -qO- ${NODE_DOWNLOAD_URL}| tar --transform 's/-musl//' -xz
 
   # Create a new archive where Maven would expect it
-  mkdir -p $(dirname ${NODE_MAVEN_PATH})
+  mkdir -p $(dirname "${NODE_MAVEN_PATH}")
   tar -czf ${NODE_MAVEN_PATH} *
 fi
