@@ -1,6 +1,5 @@
 **/.*
 !.dockerignore
-!.git
 !.mvn
 !docker/zipkin/**
 !**/.eslintrc*
@@ -13,6 +12,7 @@
 **/node_modules
 **/*.iml
 
+**/.idea
 **/*.md
 
 **/Dockerfile

@@ -38,4 +38,6 @@ if [ ! -f "${NODE_MAVEN_PATH}" ]; then
   # Create a new archive where Maven would expect it
   mkdir -p $(dirname "${NODE_MAVEN_PATH}")
   tar -czf ${NODE_MAVEN_PATH} *
+  cd -
+  rm -rf /tmp/$$
 fi
