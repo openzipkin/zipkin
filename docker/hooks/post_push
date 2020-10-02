@@ -33,7 +33,7 @@ if [[ "$DOCKER_REPO" == "index.docker.io/openzipkin/zipkin" ]]; then
   done
 
   if [[ "$DOCKER_TAG" == "master" ]]; then
-    # We repush the builder image on master push, not on release pushes.
+    # We re-push the builder image on master, not on release branches.
     echo Building zipkin-builder
     docker build -f "$DOCKERFILE_PATH" -t openzipkin/zipkin-builder --target zipkin-builder .
 

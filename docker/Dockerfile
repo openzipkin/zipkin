@@ -36,13 +36,16 @@ RUN mkdir -p /zipkin && cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin
 RUN mkdir -p /zipkin-slim && cp zipkin-server/target/zipkin-server-*-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar
 
 # docker/hooks/post_push will republish what is otherwise built in docker/build/Dockerfile
-FROM maven:3-openjdk-14-slim as zipkin-builder
-LABEL MAINTAINER Zipkin "https://zipkin.io/"
+# This is a copy/paste from builder/Dockerfile:
+#
+# zipkin-builder is JDK + artifact caches because DockerHub doesn't support another way to update
+# cache between builds.
+FROM azul/zulu-openjdk-alpine:15.0.0-15.27.17 as zipkin-builder
+MAINTAINER OpenZipkin "https://zipkin.io/"
 
-# Unset MAVEN_CONFIG until we don't depend on the maven image which conflicts with the Takari env
-ENV MAVEN_CONFIG=
+COPY docker/builder/install.sh /tmp/
+RUN /tmp/install.sh && rm /tmp/install.sh
 
-# This cache is used by DockerHub which doesn't support another way to retain cache between builds
 COPY --from=built /root/.m2 /root/.m2
 COPY --from=built /root/.npm /root/.npm
 
