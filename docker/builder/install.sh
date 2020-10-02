@@ -19,9 +19,6 @@ set -eux
 # We only use jar, so special case it.
 ln -s $JAVA_HOME/bin/jar /usr/local/bin/jar
 
-# Default to UTF-8 file.encoding
-ENV LANG C.UTF-8
-
 echo "*** Installing Maven and dependencies"
 # BusyBux built-in tar doesn't support --strip=1
 # Allow boringssl for Netty per https://github.com/grpc/grpc-java/blob/master/SECURITY.md#netty
@@ -29,7 +26,7 @@ apk add --update --no-cache tar libc6-compat
 
 # Java relies on /etc/nsswitch.conf. Put host files first or InetAddress.getLocalHost
 # will throw UnknownHostException as the local hostname isn't in DNS.
-RUN echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf
+echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf
 
 # Use latest stable version here
 MAVEN_VERSION=3.6.3
