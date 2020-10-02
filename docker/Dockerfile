@@ -36,22 +36,16 @@ RUN mkdir -p /zipkin && cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin
 RUN mkdir -p /zipkin-slim && cp zipkin-server/target/zipkin-server-*-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar
 
 # docker/hooks/post_push will republish what is otherwise built in docker/build/Dockerfile
-FROM azul/zulu-openjdk-alpine:15.0.0-15.27.17
+# This is a copy/paste from builder/Dockerfile:
+#
+# zipkin-builder is JDK + artifact caches because DockerHub doesn't support another way to update
+# cache between builds.
+FROM azul/zulu-openjdk-alpine:15.0.0-15.27.17 as zipkin-builder
 MAINTAINER OpenZipkin "https://zipkin.io/"
 
-# BusyBux built-in tar doesn't support --strip=1
-RUN apk add --update --no-cache tar
+COPY docker/builder/install.sh /tmp/
+RUN /tmp/install.sh && rm /tmp/install.sh
 
-# Use latest stable release here.
-ARG MAVEN_VERSION=3.6.3
-WORKDIR /usr/local/maven
-RUN APACHE_MIRROR=$(wget -qO- https://www.apache.org/dyn/closer.cgi\?as_json\=1 | sed -n '/preferred/s/.*"\(.*\)"/\1/gp') && \
-    wget -qO- $APACHE_MIRROR/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xz --strip=1 && \
-    ln -s /usr/local/maven/bin/mvn /usr/local/bin/mvn
-
-WORKDIR /
-
-# This cache is used by DockerHub which doesn't support another way to retain cache between builds
 COPY --from=built /root/.m2 /root/.m2
 COPY --from=built /root/.npm /root/.npm
 

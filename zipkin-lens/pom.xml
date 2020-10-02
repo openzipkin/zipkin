@@ -29,6 +29,9 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
+    <!-- Update occasionally based on LTS. Upon upate, push a new zipkin-builder image
+         per /docker/builder/README.md -->
+    <node.version>v12.18.4</node.version>
     <frontend-maven-plugin.version>1.10.0</frontend-maven-plugin.version>
     <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
     <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
@@ -67,8 +70,7 @@
         <version>${frontend-maven-plugin.version}</version>
         <configuration>
           <installDirectory>target</installDirectory>
-          <!-- Update occasionally based on LTS -->
-          <nodeVersion>v12.18.3</nodeVersion>
+          <nodeVersion>${node.version}</nodeVersion>
           <environmentVariables>
             <!--
             create-react-app runs tests in watch mode unless this is defined. We define it here for running Maven locally.

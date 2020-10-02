@@ -15,31 +15,31 @@
 # Refreshing the builder image to remove stale dependencies just involves building zipkin-server on
 # an empty image.
 
-# TODO: move to alpine when supported https://github.com/openzipkin/zipkin/issues/3218
-FROM azul/zulu-openjdk-alpine:15.0.0-15.27.17 as install
+FROM azul/zulu-openjdk-alpine:15.0.0-15.27.17 as built
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
-WORKDIR /install
+COPY docker/builder/install.sh /tmp/
+RUN /tmp/install.sh && rm /tmp/install.sh
+
+# Copy Maven source tree into the Docker context
+COPY . .
+
+# Temporarily workaround https://github.com/eirslett/frontend-maven-plugin/pull/853
+COPY docker/builder/download-node.sh .
+RUN ./download-node.sh
 
 # Use the same command as we suggest in zipkin-server/README.md to hydrate the Maven and NPM cache
-COPY . /install/.
 RUN ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server package
 
-FROM azul/zulu-openjdk-alpine:15.0.0-15.27.17
+# We make another layer here because we don't want the image to include the docker context
+#
+# zipkin-builder is JDK + artifact caches because DockerHub doesn't support another way to update
+# cache between builds.
+FROM azul/zulu-openjdk-alpine:15.0.0-15.27.17 as zipkin-builder
 MAINTAINER OpenZipkin "https://zipkin.io/"
 
-# BusyBux built-in tar doesn't support --strip=1
-RUN apk add --update --no-cache tar
+COPY docker/builder/install.sh /tmp/
+RUN /tmp/install.sh && rm /tmp/install.sh
 
-# Use latest stable release here.
-ARG MAVEN_VERSION=3.6.3
-WORKDIR /usr/local/maven
-RUN APACHE_MIRROR=$(wget -qO- https://www.apache.org/dyn/closer.cgi\?as_json\=1 | sed -n '/preferred/s/.*"\(.*\)"/\1/gp') && \
-    wget -qO- $APACHE_MIRROR/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xz --strip=1 && \
-    ln -s /usr/local/maven/bin/mvn /usr/local/bin/mvn
-
-WORKDIR /
-
-# Copy Maven cache hydrated earlier
-COPY --from=install /root/.m2 /root/.m2
-COPY --from=install /root/.npm /root/.npm
+COPY --from=built /root/.m2 /root/.m2
+COPY --from=built /root/.npm /root/.npm
