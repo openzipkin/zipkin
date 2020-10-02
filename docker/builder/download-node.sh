@@ -19,8 +19,8 @@
 # See https://github.com/eirslett/frontend-maven-plugin/pull/853
 set -eux
 
-# Get the version of node our build wants, knowing the build version is prefixed with 'v'
-NODE_VERSION=$(mvn -pl zipkin-lens help:evaluate -Dexpression=node.version -q -DforceStdout|sed 's/^v//')
+# Get the version of node our build wants.
+NODE_VERSION=$(mvn -pl zipkin-lens help:evaluate -Dexpression=node.version -q -DforceStdout)
 
 # Get a local path corresponding to the Maven artifact the frontend-maven-plugin expects
 NODE_MAVEN_PATH=~/.m2/repository/com/github/eirslett/node/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz
