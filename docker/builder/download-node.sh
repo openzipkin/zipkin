@@ -13,21 +13,28 @@
 # the License.
 
 # This script downloads the nodejs archive into the Maven local repository so that
-# frontend-maven-plugin can work on Alpine/musl.
+# frontend-maven-plugin can work on Alpine/musl. It mostly plays tricks to get rid
+# of '-musl' in both the archive name and its contents.
 #
 # See https://github.com/eirslett/frontend-maven-plugin/pull/853
 set -eux
 
-# Get the version of node our build wants
-NODE_VERSION=$(mvn -pl zipkin-lens help:evaluate -Dexpression=node.version -q -DforceStdout)
+# Get the version of node our build wants, knowing the build version is prefixed with 'v'
+NODE_VERSION=$(mvn -pl zipkin-lens help:evaluate -Dexpression=node.version -q -DforceStdout|sed 's/^v//')
 
-# Build a cache path the frontend-maven-plugin expects
-NODE_DOWNLOAD_CACHE=~/.m2/repository/com/github/eirslett/node/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz
+# Get a local path corresponding to the Maven artifact the frontend-maven-plugin expects
+NODE_MAVEN_PATH=~/.m2/repository/com/github/eirslett/node/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz
 
-if [ ! -f "${NODE_DOWNLOAD_CACHE}" ]; then
-  # Get the URL of the unofficial build of musl until it is official!
-  NODE_DOWNLOAD_URL=https://unofficial-builds.nodejs.org/download/release/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64-musl.tar.gz
-  mkdir -p $(dirname ${NODE_DOWNLOAD_CACHE})
+if [ ! -f "${NODE_MAVEN_PATH}" ]; then
+  # Get the URL of the unofficial build of musl
+  NODE_DOWNLOAD_URL=https://unofficial-builds.nodejs.org/download/release/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64-musl.tar.gz
   echo "*** Downloading nodejs into the Maven local repository"
-  wget -qO${NODE_DOWNLOAD_CACHE} ${NODE_DOWNLOAD_URL}
+
+  # Strip '-musl' from the original archive's file paths
+  mkdir /tmp/$$ && cd /tmp/$$
+  wget -qO- ${NODE_DOWNLOAD_URL}| tar --transform 's/-musl//' -xz
+
+  # Create a new archive where Maven would expect it
+  mkdir -p $(dirname ${NODE_MAVEN_PATH})
+  tar -czf ${NODE_MAVEN_PATH} *
 fi
