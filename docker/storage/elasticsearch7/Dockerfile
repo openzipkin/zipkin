@@ -12,7 +12,7 @@
 # the License.
 #
 
-FROM openzipkin/jre-full:15.0.0-15.27.17 as install
+FROM openzipkin/zipkin-builder as install
 
 ENV ELASTICSEARCH_VERSION 7.9.2
 

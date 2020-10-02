@@ -19,10 +19,10 @@
 set -eux
 
 echo "*** Installing Kafka and dependencies"
-APACHE_MIRROR=$(curl -sSL https://www.apache.org/dyn/closer.cgi\?as_json\=1 | sed -n '/preferred/s/.*"\(.*\)"/\1/gp')
+APACHE_MIRROR=$(wget -qO- https://www.apache.org/dyn/closer.cgi\?as_json\=1 | sed -n '/preferred/s/.*"\(.*\)"/\1/gp')
 
 # Download scripts and config for Kafka and ZooKeeper, but not for Connect
-curl -sSL $APACHE_MIRROR/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz | tar xz \
+wget -qO- $APACHE_MIRROR/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz | tar xz \
   --wildcards --strip=1 --exclude=connect* */bin/zookeeper-* */bin/kafka-* */config
 
 # Remove bash as our images don't have it, and it isn't required
