@@ -18,28 +18,23 @@
 FROM azul/zulu-openjdk-alpine:15.0.0-15.27.17 as built
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
+# Install Maven, tar and libc hooks
 COPY docker/builder/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
+
+WORKDIR /code
 
 # Copy Maven source tree into the Docker context
 COPY . .
 
+# Make sure zipkin-lens can build on Alpine by eagerly caching an unofficial build.
 # Temporarily workaround https://github.com/eirslett/frontend-maven-plugin/pull/853
 COPY docker/builder/download-node.sh .
 RUN ./download-node.sh
 
 # Use the same command as we suggest in zipkin-server/README.md to hydrate the Maven and NPM cache
-RUN ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server package
+# We delete /code in order to keep the image layer contained to retain ~/.m2 and ~/.npm
+RUN ./mvnw -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server package && \
+    cd / && rm -rf /code
 
-# We make another layer here because we don't want the image to include the docker context
-#
-# zipkin-builder is JDK + artifact caches because DockerHub doesn't support another way to update
-# cache between builds.
-FROM azul/zulu-openjdk-alpine:15.0.0-15.27.17 as zipkin-builder
-MAINTAINER OpenZipkin "https://zipkin.io/"
-
-COPY docker/builder/install.sh /tmp/
-RUN /tmp/install.sh && rm /tmp/install.sh
-
-COPY --from=built /root/.m2 /root/.m2
-COPY --from=built /root/.npm /root/.npm
+WORKDIR /

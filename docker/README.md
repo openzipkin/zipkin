@@ -88,3 +88,9 @@ If you want the slim distribution instead, run:
 ```bash
 $ docker build -t openzipkin/zipkin-slim:test -f docker/Dockerfile . --target zipkin-slim
 ```
+
+If you want the NGINX UI proxy instead, run:
+
+```bash
+$ docker build -t openzipkin/zipkin-ui:test -f docker/Dockerfile . --target zipkin-ui
+```
