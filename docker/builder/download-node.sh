@@ -11,6 +11,7 @@
 # is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
+#
 
 # This script downloads the nodejs archive into the Maven local repository so that
 # frontend-maven-plugin can work on Alpine/musl. It mostly plays tricks to get rid

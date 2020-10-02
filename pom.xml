@@ -649,7 +649,9 @@
                 <build>SCRIPT_STYLE</build>
                 <install>SCRIPT_STYLE</install>
                 <docker-healthcheck>SCRIPT_STYLE</docker-healthcheck>
+                <start-cassandra>SCRIPT_STYLE</start-cassandra>
                 <start-kafka-zookeeper>SCRIPT_STYLE</start-kafka-zookeeper>
+                <start-mysql>SCRIPT_STYLE</start-mysql>
               </mapping>
               <excludes>
                 <exclude>**/simplelogger.properties</exclude>
