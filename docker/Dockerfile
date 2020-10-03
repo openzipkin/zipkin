@@ -25,15 +25,16 @@ COPY . /code/
 
 FROM openzipkin/zipkin-builder as built
 
-COPY --from=scratch /code /code
-
 WORKDIR /code
+COPY --from=scratch /code .
 
 # Use the same command as we suggest in zipkin-server/README.md
 #  * Uses mvn not ./mvnw to reduce layer size: we control the Maven version independently in Docker
 RUN mvn -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server package && \
-    (mkdir -p /zipkin && cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin && cd /zipkin && jar xf *.jar && rm *.jar) && \
-    (mkdir -p /zipkin-slim && cp zipkin-server/target/zipkin-server-*-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar) && \
+    cp -rp docker/zipkin /zipkin && \
+    (cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin && cd /zipkin && jar xf *.jar && rm *.jar) && \
+    cp -rp docker/zipkin /zipkin-slim && \
+    (cp zipkin-server/target/zipkin-server-*-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar) && \
     # :zipkin-lens "npm run build" generates the build directory
     (mkdir -p /zipkin-lens && cp -r zipkin-lens/build/* /zipkin-lens/) && \
     # Delete /code to contain the image layer to static content, server binaries, ~/.m2 and ~/.npm
@@ -44,12 +45,7 @@ RUN mvn -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-s
 #
 # zipkin-builder is JDK + artifact caches because DockerHub doesn't support another way to update
 # cache between builds.
-FROM azul/zulu-openjdk-alpine:15.0.0-15.27.17 as zipkin-builder
-MAINTAINER OpenZipkin "https://zipkin.io/"
-
-# Install Maven, tar and libc hooks
-COPY docker/builder/install.sh /tmp/
-RUN /tmp/install.sh && rm /tmp/install.sh
+FROM openzipkin/java:15.0.0-15.27.17 as zipkin-builder
 
 # Don't re-issue download-node.sh as it should already be in the Maven cache
 COPY --from=built /root/.m2 /root/.m2
@@ -75,21 +71,14 @@ EXPOSE 80
 
 CMD ["/usr/local/bin/nginx.sh"]
 
-#####
-# zipkin-slim - An image containing the slim distribution of Zipkin server.
-#####
-
-FROM openzipkin/jre-full:15.0.0-15.27.17 as zipkin-slim
-LABEL MAINTAINER Zipkin "https://zipkin.io/"
+# Almost everything is common between the slim an normal build
+FROM openzipkin/java:15.0.0-15.27.17-jre as base-server
 
 # Use to set heap, trust store or other system properties.
 ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
 
 RUN adduser -g '' -h /zipkin -D zipkin
 
-COPY --from=built --chown=zipkin /zipkin-slim/ /zipkin/
-# Add environment settings for supported storage types
-COPY --chown=zipkin docker/zipkin/ /zipkin/
 WORKDIR /zipkin
 
 USER zipkin
@@ -127,54 +116,21 @@ HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget -qO- http://1
 ENTRYPOINT /zipkin/run.sh
 
 #####
+# zipkin-slim - An image containing the slim distribution of Zipkin server.
+#####
+FROM base-server as zipkin-slim
+
+COPY --from=built --chown=zipkin /zipkin-slim/ /zipkin/
+
+#####
 # zipkin-server - An image containing the full distribution of Zipkin server.
 #####
+FROM base-server as zipkin-server
 
-FROM openzipkin/jre-full:15.0.0-15.27.17 as zipkin-server
-LABEL MAINTAINER Zipkin "https://zipkin.io/"
-
-# Use to set heap, trust store or other system properties.
-ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
 # 3rd party modules like zipkin-aws will apply profile settings with this
 ENV MODULE_OPTS=
 
-RUN adduser -g '' -h /zipkin -D zipkin
-
 COPY --from=built --chown=zipkin /zipkin/ /zipkin/
-# Add environment settings for supported storage types
-COPY --chown=zipkin docker/zipkin/ /zipkin/
-WORKDIR /zipkin
 
-USER zipkin
-
+# Zipkin's full distribution includes Scribe support (albeit disabled)
 EXPOSE 9410 9411
-
-# This health check was added for Docker Hub automated test service. Parameters
-# were changed in order to mark success faster. You may want to change these
-# further in production.
-#
-#
-# By default, the Docker health check runs after 30s, and if a failure occurs,
-# it waits 30s to try again. This implies a minimum of 30s before the server is
-# marked healthy.
-#
-# https://docs.docker.com/engine/reference/builder/#healthcheck
-#
-# We expect the server startup to take less than 10 seconds, even in a fresh
-# start. Some health checks will trigger a slow "first request" due to schema
-# setup (ex this is the case in Elasticsearch and Cassandra). However, we don't
-# want to force an initial delay of 30s as defaults would.
-#
-# Instead, we lower the interval and timeout from 30s to 5s. If a server starts
-# in 7s and takes another 2s to install schema, it can still pass in 10s vs 30s.
-#
-# We retain the 30s even if it would be an excessively long startup. This is to
-# accomodate test containers, which can boot slower than production sites, and
-# any knock-on effects of that, like slow dependent storage containers which are
-# simultaneously bootstrapping. If in production, you have a 30s startup, please
-# report to https://gitter.im/openzipkin/zipkin including the values of the
-# /health and /info endpoints as this would be unexpected.
-#
-HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget -qO- http://127.0.0.1:9411/health &> /dev/null || exit 1
-
-ENTRYPOINT /zipkin/run.sh
