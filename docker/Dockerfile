@@ -29,8 +29,9 @@ COPY --from=scratch /code /code
 
 WORKDIR /code
 
-# Use the same command as we suggest in zipkin-server/README.md
-RUN ./mvnw -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server package && \
+# Use the same command as we suggest in zipkin-server/README.md to hydrate the Maven and NPM cache
+#  * Uses mvn not ./mvnw to reduce layer size: we control the Maven version independently in Docker
+RUN mvn -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server package && \
     (mkdir -p /zipkin && cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin && cd /zipkin && jar xf *.jar && rm *.jar) && \
     (mkdir -p /zipkin-slim && cp zipkin-server/target/zipkin-server-*-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar) && \
     # :zipkin-lens "npm run build" generates the build directory
