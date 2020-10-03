@@ -66,7 +66,7 @@ CMD ["/usr/local/bin/nginx.sh"]
 # zipkin-slim - An image containing the slim distribution of Zipkin server.
 #####
 
-FROM openzipkin/jre-full:14.0.2-14.29.23 as zipkin-slim
+FROM openzipkin/jre-full:15.0.0-15.27.17 as zipkin-slim
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.
@@ -89,7 +89,7 @@ ENTRYPOINT /zipkin/run.sh
 # zipkin-server - An image containing the full distribution of Zipkin server.
 #####
 
-FROM openzipkin/jre-full:14.0.2-14.29.23 as zipkin-server
+FROM openzipkin/jre-full:15.0.0-15.27.17 as zipkin-server
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.

@@ -46,6 +46,11 @@ public class ITElasticsearchHealthCheck {
 
   static final SettableHealthChecker server1Health = new SettableHealthChecker(true);
 
+  static {
+    // Gives better context when there's an exception such as AbortedStreamException
+    System.setProperty("com.linecorp.armeria.verboseExceptions", "always");
+  }
+
   @ClassRule public static ServerRule server1 = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) {
       sb.service("/", (ctx, req) -> VERSION_RESPONSE.toHttpResponse());
@@ -93,8 +98,7 @@ public class ITElasticsearchHealthCheck {
 
   @Test public void allHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      CheckResult result = storage.check();
-      assertThat(result.ok()).isTrue();
+      assertOk(storage.check());
     }
   }
 
@@ -102,8 +106,7 @@ public class ITElasticsearchHealthCheck {
     server1Health.setHealthy(false);
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      CheckResult result = storage.check();
-      assertThat(result.ok()).isTrue();
+      assertOk(storage.check());
     }
   }
 
@@ -135,8 +138,7 @@ public class ITElasticsearchHealthCheck {
   // If this flakes, uncomment in initWithHosts and log4j2.properties
   @Test public void healthyThenNotHealthyThenHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      CheckResult result = storage.check();
-      assertThat(result.ok()).isTrue();
+      assertOk(storage.check());
 
       logger.info("setting server 1 and 2 unhealthy");
       server1Health.setHealthy(false);
@@ -191,8 +193,14 @@ public class ITElasticsearchHealthCheck {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
       // Even though cluster health is false, we ignore that and continue to check index health,
       // which is correctly returned by our mock server.
-      CheckResult result = storage.check();
-      assertThat(result.ok()).isTrue();
+      assertOk(storage.check());
+    }
+  }
+
+  static void assertOk(CheckResult result) {
+    if (!result.ok()) {
+      Throwable error = result.error();
+      throw new AssertionError("Health check failed with message: " + error.getMessage(), error);
     }
   }
 }

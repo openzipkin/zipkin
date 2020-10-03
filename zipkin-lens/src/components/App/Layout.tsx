@@ -32,13 +32,13 @@ import {
 import React from 'react';
 import styled from 'styled-components';
 
+import HeaderMenuItem from './HeaderMenuItem';
 import LanguageSelector from './LanguageSelector';
+import TraceIdSearch from './TraceIdSearch';
+import TraceJsonUploader from './TraceJsonUploader';
 import { useUiConfig } from '../UiConfig';
-import TraceIdSearchInput from '../common/TraceIdSearchInput';
-import TraceJsonUploader from '../common/TraceJsonUploader';
 import { darkTheme } from '../../constants/color';
 import logoSrc from '../../img/zipkin-logo.png';
-import HeaderMenuItem from './HeaderMenuItem';
 
 const Layout: React.FC = ({ children }) => {
   const { i18n } = useLingui();
@@ -85,11 +85,11 @@ const Layout: React.FC = ({ children }) => {
             </Box>
             <ThemeProvider theme={darkTheme}>
               <Box display="flex" alignItems="center">
-                <Box pr={2} color="inherit">
-                  <LanguageSelector />
+                <LanguageSelector />
+                <Box mr={2} ml={2}>
+                  <TraceJsonUploader />
                 </Box>
-                <TraceJsonUploader />
-                <TraceIdSearchInput />
+                <TraceIdSearch />
                 {config.supportUrl && (
                   <Box ml={1}>
                     <Tooltip title={i18n._(t`Support`)}>

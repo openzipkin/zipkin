@@ -82,16 +82,14 @@ export function traceSummary(root) {
   if (timestamps.length === 0)
     throw new Error(`Trace ${traceId} is missing a timestamp`);
 
-  let rootServiceName;
-  let rootSpanName;
+  // If the first element does not exist, Error will be thrown.
+  // So we don't have to check rootSpan exisitence.
   const [rootSpan] = root.queueRootMostSpans();
-  if (rootSpan) {
-    rootServiceName =
-      getServiceName(rootSpan._span.localEndpoint) ||
-      getServiceName(rootSpan._span.remoteEndpoint) ||
-      'unknown';
-    rootSpanName = rootSpan._span.name || 'unknown';
-  }
+  const rootServiceName =
+    getServiceName(rootSpan._span.localEndpoint) ||
+    getServiceName(rootSpan._span.remoteEndpoint) ||
+    'unknown';
+  const rootSpanName = rootSpan._span.name || 'unknown';
 
   return {
     traceId,
@@ -105,45 +103,6 @@ export function traceSummary(root) {
       spanName: rootSpanName,
     },
   };
-}
-
-// This returns a total duration by merging all overlapping intervals found in the the input.
-//
-// This is used to create servicePercentage for index.mustache when a service is selected
-export function totalDuration(timestampAndDurations) {
-  const filtered = timestampAndDurations
-    .filter((s) => !!s.duration) // filter out anything we can't make an interval out of
-    .sort((a, b) => a.timestamp - b.timestamp);
-
-  if (filtered.length === 0) {
-    return 0;
-  }
-  if (filtered.length === 1) {
-    return filtered[0].duration;
-  }
-
-  let result = filtered[0].duration;
-  let currentIntervalEnd = filtered[0].timestamp + filtered[0].duration;
-
-  for (let i = 1; i < filtered.length; i += 1) {
-    const next = filtered[i];
-    const nextIntervalEnd = next.timestamp + next.duration;
-
-    if (nextIntervalEnd <= currentIntervalEnd) {
-      // we are still in the interval
-      continue;
-    } else if (next.timestamp <= currentIntervalEnd) {
-      // we extending the interval
-      result += nextIntervalEnd - currentIntervalEnd;
-      currentIntervalEnd = nextIntervalEnd;
-    } else {
-      // this is a new interval
-      result += next.duration;
-      currentIntervalEnd = nextIntervalEnd;
-    }
-  }
-
-  return result;
 }
 
 function formatDate(timestamp, utc) {
@@ -171,7 +130,7 @@ export function mkDurationStr(duration) {
   return `${(duration / 1000000).toFixed(3)}s`;
 }
 
-// maxSpanDurationStr is only used in index.mustache
+// Returns a list of {:serviceName, :spanCount} ordered descending by trace duration
 export function getServiceSummaries(groupedTimestamps) {
   const services = Object.entries(groupedTimestamps).map(
     ([serviceName, sts]) => ({
@@ -187,7 +146,6 @@ export function getServiceSummaries(groupedTimestamps) {
   ).map((summary) => ({
     serviceName: summary.serviceName,
     spanCount: summary.spanCount,
-    maxSpanDurationStr: mkDurationStr(summary.maxSpanDuration),
   }));
 }
 
@@ -221,16 +179,6 @@ export function traceSummaries(serviceName, summaries, utc = false) {
       // don't try to add data dependent on service names.
       if (Object.keys(t.groupedTimestamps).length !== 0) {
         res.serviceSummaries = getServiceSummaries(t.groupedTimestamps);
-
-        // Only add a service percentage when there is a duration for it
-        if (serviceName && duration && t.groupedTimestamps[serviceName]) {
-          const serviceTime = totalDuration(t.groupedTimestamps[serviceName]);
-          // used for display and also client-side sort by service percentage
-          res.servicePercentage = parseInt(
-            (parseFloat(serviceTime) / parseFloat(duration)) * 100,
-            10,
-          );
-        }
       } else {
         res.serviceSummaries = [];
       }
@@ -309,6 +257,7 @@ function addLayoutDetails(
   }
 }
 
+// TODO: Revisit naming
 export function detailedTraceSummary(root) {
   const serviceNameToCount = {};
   let queue = root.queueRootMostSpans();
@@ -369,17 +318,15 @@ export function detailedTraceSummary(root) {
     modelview.spans.push(spanRow);
   }
 
-  if (modelview.spans.length >= 0) {
-    modelview.rootSpan = {
-      serviceName: modelview.spans[0].serviceName || 'unknown',
-      spanName: modelview.spans[0].spanName || 'unknown',
-    };
-  } else {
-    modelview.rootSpan = {
-      serviceName: 'unknown',
-      spanName: 'unknown',
-    };
-  }
+  modelview.rootSpan = {};
+  // If the first element does not exist, Error will be thrown.
+  // So we don't have to check rootSpan existence.
+  const [rootSpan] = root.queueRootMostSpans();
+  modelview.rootSpan.serviceName =
+    getServiceName(rootSpan._span.localEndpoint) ||
+    getServiceName(rootSpan._span.remoteEndpoint) ||
+    'unknown';
+  modelview.rootSpan.spanName = rootSpan._span.name || 'unknown';
 
   modelview.serviceNameAndSpanCounts = Object.keys(serviceNameToCount)
     .sort()

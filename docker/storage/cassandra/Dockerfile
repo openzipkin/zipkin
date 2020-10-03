@@ -20,27 +20,43 @@ FROM scratch as scratch
 COPY zipkin-storage/cassandra/src/main/resources/*.cql /zipkin-schemas/
 COPY zipkin-storage/cassandra-v1/src/main/resources/cassandra-schema.cql /zipkin-schemas/
 
-COPY docker/storage/cassandra/install.sh /usr/local/bin/install
+# Until Cassandra supports recent JDKs, we need to install with the JDK 1.8
+FROM openzipkin/jre-full:1.8.0_252-b09 as install
+
+# Use latest stable release here.
+ENV CASSANDRA_VERSION=3.11.8
+
+WORKDIR /install
+
+COPY --from=scratch /zipkin-schemas/* ./zipkin-schemas/
+COPY docker/storage/cassandra/install.sh /tmp/
+RUN /tmp/install.sh && rm /tmp/install.sh
 
 # Share the same base image to reduce layers used in testing
-FROM openzipkin/jre-full:1.8.0_252
+FROM openzipkin/jre-full:1.8.0_252-b09
 MAINTAINER OpenZipkin "https://zipkin.io/"
 
-ENV CASSANDRA_VERSION=3.11.7 \
-    JAVA=/usr/local/java/jre/bin/java \
-    JVM_OPTS="-Dcassandra -Djava.net.preferIPv4Stack=true"
+# Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
+COPY docker/storage/cassandra/docker-bin/* /usr/local/bin/
+# We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
+HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
+ENTRYPOINT ["start-cassandra"]
 
-WORKDIR /cassandra
+# All content including binaries and logs write under WORKDIR
+ARG USER=cassandra
+WORKDIR /${USER}
 
-COPY --from=scratch /zipkin-schemas /zipkin-schemas
-COPY --from=scratch /usr/local/bin/install /usr/local/bin/install
+# Ensure the process doesn't run as root
+RUN adduser -g '' -h ${PWD} -D ${USER}
+USER ${USER}
 
-RUN /usr/local/bin/install
+# Copy binaries and config we installed earlier
+COPY --from=install --chown=${USER} /install .
 
-# cassandra complains if run as root
-USER cassandra
+# Set variables Cassandra's start script wants
+#
+# Integration test currently use a single container for all suites, without cleaning up keyspaces
+# per method. For this reason, we use a higher heap size than 256m, which would be otherwise fine.
+ENV JVM_OPTS="-Xms512m -Xmx512m -XX:+ExitOnOutOfMemoryError -Djava.net.preferIPv4Stack=true"
 
-ADD docker/storage/cassandra/run.sh /usr/local/bin/run.sh
-CMD ["/usr/local/bin/run.sh"]
-
-EXPOSE 9160 7000 7001 9042 7199
+EXPOSE 9042

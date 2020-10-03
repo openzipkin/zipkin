@@ -193,7 +193,7 @@ To run the server from the currently checked out source, enter the
 following. JDK 11 is required to compile the source.
 ```bash
 # Build the server and also make its dependencies
-$ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
+$ ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server clean install
 # Run the server
 $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```

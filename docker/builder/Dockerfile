@@ -15,9 +15,27 @@
 # Refreshing the builder image to remove stale dependencies just involves building zipkin-server on
 # an empty image.
 
-FROM maven:3-openjdk-14-slim
+FROM azul/zulu-openjdk-alpine:15.0.0-15.27.17 as built
+LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
-COPY . /code/
+# Install Maven, tar and libc hooks
+COPY docker/builder/install.sh /tmp/
+RUN /tmp/install.sh && rm /tmp/install.sh
 
-RUN cd /code && mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-server -am && \
+WORKDIR /code
+
+# Copy Maven source tree into the Docker context
+COPY . .
+
+# Make sure zipkin-lens can build on Alpine by eagerly caching an unofficial build.
+# Temporarily workaround https://github.com/eirslett/frontend-maven-plugin/pull/853
+COPY docker/builder/download-node.sh .
+RUN ./download-node.sh
+
+# Use the same command as we suggest in zipkin-server/README.md to hydrate the Maven and NPM cache
+#  * Uses mvn not ./mvnw to reduce layer size: we control the Maven version independently in Docker
+RUN mvn -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server package && \
+    # Delete /code to retain only ~/.m2 and ~/.npm
     cd / && rm -rf /code
+
+WORKDIR /

@@ -37,8 +37,8 @@ import static java.util.logging.Level.FINE;
 public final class DependencyLinker {
   final Logger logger;
   final SpanNode.Builder builder;
-  final Map<Pair, Long> callCounts = new LinkedHashMap<>();
-  final Map<Pair, Long> errorCounts = new LinkedHashMap<>();
+  final Map<Pair, Long> callCounts = new LinkedHashMap<Pair, Long>();
+  final Map<Pair, Long> errorCounts = new LinkedHashMap<Pair, Long>();
 
   public DependencyLinker() {
     this(Logger.getLogger(DependencyLinker.class.getName()));
@@ -184,8 +184,8 @@ public final class DependencyLinker {
 
   /** links are merged by mapping to parent/child and summing corresponding links */
   public static List<DependencyLink> merge(Iterable<DependencyLink> in) {
-    Map<Pair, Long> callCounts = new LinkedHashMap<>();
-    Map<Pair, Long> errorCounts = new LinkedHashMap<>();
+    Map<Pair, Long> callCounts = new LinkedHashMap<Pair, Long>();
+    Map<Pair, Long> errorCounts = new LinkedHashMap<Pair, Long>();
 
     for (DependencyLink link : in) {
       Pair parentChild = new Pair(link.parent(), link.child());
@@ -202,7 +202,7 @@ public final class DependencyLinker {
 
   static List<DependencyLink> link(Map<Pair, Long> callCounts,
     Map<Pair, Long> errorCounts) {
-    List<DependencyLink> result = new ArrayList<>(callCounts.size());
+    List<DependencyLink> result = new ArrayList<DependencyLink>(callCounts.size());
     for (Map.Entry<Pair, Long> entry : callCounts.entrySet()) {
       Pair parentChild = entry.getKey();
       result.add(DependencyLink.newBuilder()

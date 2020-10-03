@@ -33,37 +33,34 @@
   </modules>
 
   <properties>
+    <main.basedir>${project.basedir}</main.basedir>
+
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
+    <project.build.outputEncoding>UTF-8</project.build.outputEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <!-- default bytecode version for src/main -->
-    <main.java.version>1.7</main.java.version>
-    <main.signature.artifact>java17</main.signature.artifact>
+    <main.java.version>1.8</main.java.version>
+    <main.signature.artifact>java18</main.signature.artifact>
 
     <!-- override to set exclusions per-project -->
     <errorprone.args />
     <errorprone.version>2.4.0</errorprone.version>
 
-    <main.basedir>${project.basedir}</main.basedir>
-
     <!-- This allows you to test feature branches with jitpack -->
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>1.0.0</armeria.version>
+    <armeria.version>1.1.0</armeria.version>
     <!-- Match Armeria version to avoid conflicts including running tests in the IDE -->
-    <netty.version>4.1.51.Final</netty.version>
+    <netty.version>4.1.52.Final</netty.version>
 
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
     <jackson.version>2.11.2</jackson.version>
 
-    <!-- Only used for proto interop testing; wire-maven-plugin is usually behind latest. -->
-    <wire.version>3.0.2</wire.version>
-    <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
-
-    <cassandra-driver-core.version>3.10.1</cassandra-driver-core.version>
+    <cassandra-driver-core.version>3.10.2</cassandra-driver-core.version>
     <jooq.version>3.13.4</jooq.version>
-    <micrometer.version>1.5.4</micrometer.version>
-    <spring-boot.version>2.3.3.RELEASE</spring-boot.version>
+    <micrometer.version>1.5.5</micrometer.version>
+    <spring-boot.version>2.3.4.RELEASE</spring-boot.version>
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
 
@@ -72,34 +69,38 @@
     <mariadb-java-client.version>2.6.2</mariadb-java-client.version>
     <HikariCP.version>3.4.5</HikariCP.version>
     <slf4j.version>1.7.30</slf4j.version>
+    <auto-value.version>1.7.4</auto-value.version>
+    <git-commit-id.version>4.0.2</git-commit-id.version>
 
+    <!-- Test only dependencies -->
     <junit.version>4.13</junit.version>
-    <junit-jupiter.version>5.6.2</junit-jupiter.version>
-    <powermock.version>2.0.7</powermock.version>
-    <mockito.version>3.4.6</mockito.version>
-    <assertj.version>3.16.1</assertj.version>
+    <junit-jupiter.version>5.7.0</junit-jupiter.version>
+    <mockito.version>3.5.10</mockito.version>
+    <assertj.version>3.17.2</assertj.version>
     <awaitility.version>4.0.3</awaitility.version>
     <hamcrest.version>1.3</hamcrest.version>
     <testcontainers.version>1.14.3</testcontainers.version>
     <okhttp.version>4.8.1</okhttp.version>
+    <!-- Only used for proto interop testing; wire-maven-plugin is usually behind latest. -->
+    <wire.version>3.0.2</wire.version>
+    <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
-    <auto-value.version>1.7.4</auto-value.version>
     <animal-sniffer-maven-plugin.version>1.19</animal-sniffer-maven-plugin.version>
-    <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
-    <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
-    <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
-    <maven-release-plugin.version>3.0.0-M1</maven-release-plugin.version>
-    <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-    <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
-    <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
-    <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
-    <!-- 3.0.0-M5 breaks the build: https://github.com/openzipkin/zipkin/issues/3159 -->
-    <maven-failsafe-plugin.version>3.0.0-M4</maven-failsafe-plugin.version>
-    <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
-    <maven-bundle-plugin.version>5.1.1</maven-bundle-plugin.version>
     <!-- TODO: cleanup any redundant ignores now also in the 4.0 release (once final) -->
     <license-maven-plugin.version>4.0.rc2</license-maven-plugin.version>
-    <git-commit-id.version>4.0.2</git-commit-id.version>
+    <maven-bundle-plugin.version>5.1.1</maven-bundle-plugin.version>
+    <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+    <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
+    <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
+    <!-- 3.0.0-M5 breaks the build: https://github.com/openzipkin/zipkin/issues/3159 -->
+    <maven-failsafe-plugin.version>3.0.0-M4</maven-failsafe-plugin.version>
+    <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
+    <maven-invoker-plugin.version>3.2.1</maven-invoker-plugin.version>
+    <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
+    <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
+    <maven-release-plugin.version>3.0.0-M1</maven-release-plugin.version>
+    <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
+    <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
@@ -402,10 +403,8 @@
           <version>${maven-compiler-plugin.version}</version>
           <inherited>true</inherited>
           <configuration>
-            <!-- Retrolambda will rewrite lambdas as Java 6 bytecode -->
-            <source>1.8</source>
-            <target>1.8</target>
-            <!-- or die! com.sun.tools.javac.api.JavacTool -->
+            <source>${main.java.version}</source>
+            <target>${main.java.version}</target>
             <fork>true</fork>
             <showWarnings>true</showWarnings>
           </configuration>
@@ -542,6 +541,15 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <systemProperties>
+            <!-- Gives better context when there's an exception such as AbortedStreamException.
+                 Set globally as we have failures sometimes in storage-elasticsearch and sometimes
+                 in zipkin-server tests (same code used two places).
+            -->
+            <com.linecorp.armeria.verboseExceptions>always</com.linecorp.armeria.verboseExceptions>
+          </systemProperties>
+        </configuration>
       </plugin>
 
       <plugin>
@@ -588,7 +596,7 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[1.8,15)</version>
+                  <version>[1.8,16)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -641,7 +649,9 @@
                 <build>SCRIPT_STYLE</build>
                 <install>SCRIPT_STYLE</install>
                 <docker-healthcheck>SCRIPT_STYLE</docker-healthcheck>
+                <start-cassandra>SCRIPT_STYLE</start-cassandra>
                 <start-kafka-zookeeper>SCRIPT_STYLE</start-kafka-zookeeper>
+                <start-mysql>SCRIPT_STYLE</start-mysql>
               </mapping>
               <excludes>
                 <exclude>**/simplelogger.properties</exclude>

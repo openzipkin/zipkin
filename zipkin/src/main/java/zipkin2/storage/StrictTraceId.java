@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -71,7 +71,7 @@ public final class StrictTraceId {
 
     // NOTE: It is probably more efficient to do clever sorting and peeking here, but the call site
     // is query side, which is not in the critical path of user code. A set is much easier to grok.
-    Set<String> traceIdLows = new LinkedHashSet<>();
+    Set<String> traceIdLows = new LinkedHashSet<String>();
     boolean clash = false;
     for (int i = 0; i < traceCount; i++) {
       String traceId = lowerTraceId(input.get(i).get(0).traceId());
@@ -122,7 +122,7 @@ public final class StrictTraceId {
     final Set<String> traceIds;
 
     FilterTracesByIds(Iterable<String> sanitizedIds) {
-      traceIds = new LinkedHashSet<>();
+      traceIds = new LinkedHashSet<String>();
       for (String traceId : sanitizedIds) {
         traceIds.add(traceId);
       }

@@ -10,7 +10,7 @@ accumulated too much cruft, it can be refreshed with
 ```bash
 $ docker login
 $ docker build -t openzipkin/zipkin-builder -f docker/builder/Dockerfile .
-$ docker push openzipkin/zipkin-builder 
+$ docker push openzipkin/zipkin-builder
 ```
 
 We'll add a weekly cron at some point to do this automatically.

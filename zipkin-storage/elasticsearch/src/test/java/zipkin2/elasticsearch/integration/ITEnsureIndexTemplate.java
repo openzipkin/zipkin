@@ -57,21 +57,20 @@ abstract class ITEnsureIndexTemplate {
     clear();
   }
 
-  @Test void createZipkinIndexTemplate_getTraces_returnsSuccess(TestInfo testInfo) throws IOException {
+  @Test void createZipkinIndexTemplate_getTraces_returnsSuccess(TestInfo testInfo)
+    throws IOException {
     ElasticsearchStorage.Builder builder = newStorageBuilder(testInfo);
     storage = builder
       .templatePriority(10)
       .build();
 
     try {
-      /**
-       * Delete all index templates in order to create the "catch-all" index template, because
-       * ES does not allow multiple index templates of the same index_patterns and priority
-       */
+      // Delete all index templates in order to create the "catch-all" index template, because
+      // ES does not allow multiple index templates of the same index_patterns and priority
       deleteIndexTemplate("*");
       setUpCatchAllTemplate();
 
-      /** Create index template with {@link ElasticsearchStorage#ensureIndexTemplates()} */
+      // Implicitly creates an index template
       CheckResult check = storage.check();
 
       assertThat(check.ok()).isTrue();
@@ -91,20 +90,17 @@ abstract class ITEnsureIndexTemplate {
         .limit(10)
         .parseAnnotationQuery("queryTest=" + span.tags().get("queryTest"))
         .build()).execute())
-      .flatExtracting(t -> t).containsExactly(span);
-    }
-    finally {
-      /**
-       * Delete "catch-all" index template so it does not interfere with any other test
-       */
+        .flatExtracting(t -> t).containsExactly(span);
+    } finally {
+      // Delete "catch-all" index template so it does not interfere with any other test
       deleteIndexTemplate("catch-all");
     }
   }
 
   /**
-   * Create a "catch-all" index template with the lowest priority prior to running tests to
-   * ensure that the index templates created during tests with higher priority function as
-   * designed. Only applicable for ES >= 7.8
+   * Create a "catch-all" index template with the lowest priority prior to running tests to ensure
+   * that the index templates created during tests with higher priority function as designed. Only
+   * applicable for ES >= 7.8
    */
   void setUpCatchAllTemplate() throws IOException {
     AggregatedHttpRequest updateTemplate = AggregatedHttpRequest.of(

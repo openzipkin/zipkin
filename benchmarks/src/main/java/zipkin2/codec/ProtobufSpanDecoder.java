@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import zipkin2.Endpoint;
 import zipkin2.Span;
-import zipkin2.internal.Platform;
+import zipkin2.internal.RecyclableBuffers;
 
 public class ProtobufSpanDecoder {
   static final Logger LOG = Logger.getLogger(ProtobufSpanDecoder.class.getName());
@@ -276,7 +276,7 @@ public class ProtobufSpanDecoder {
       throw new AssertionError("hex field greater than 32 chars long: " + length);
     }
 
-    char[] result = Platform.shortStringBuffer();
+    char[] result = RecyclableBuffers.shortStringBuffer();
 
     for (int i = 0; i < length; i += 2) {
       byte b = input.readRawByte();

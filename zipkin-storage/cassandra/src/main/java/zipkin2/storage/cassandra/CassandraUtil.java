@@ -32,10 +32,10 @@ import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.internal.DateUtil;
 import zipkin2.internal.Nullable;
-import zipkin2.internal.Platform;
+import zipkin2.internal.RecyclableBuffers;
 import zipkin2.storage.QueryRequest;
 
-import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
+import static zipkin2.internal.RecyclableBuffers.SHORT_STRING_LENGTH;
 
 final class CassandraUtil {
   static final Logger LOG = LoggerFactory.getLogger(CassandraUtil.class);
@@ -55,7 +55,7 @@ final class CassandraUtil {
   /**
    * Returns a set of annotation getValues and tags joined on equals, delimited by ░
    *
-   * <p>Values over {@link Platform#SHORT_STRING_LENGTH} are not considered. Zipkin's {@link
+   * <p>Values over {@link RecyclableBuffers#SHORT_STRING_LENGTH} are not considered. Zipkin's {@link
    * QueryRequest#annotationQuery()} are equals match. Not all values are lookup values. For
    * example, {@code sql.query} isn't something that is likely to be looked up by value and indexing
    * that could add a potentially kilobyte partition key on {@link Schema#TABLE_SPAN}

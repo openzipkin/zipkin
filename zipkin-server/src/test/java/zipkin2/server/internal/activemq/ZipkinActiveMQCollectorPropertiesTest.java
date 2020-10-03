@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,9 +13,7 @@
  */
 package zipkin2.server.internal.activemq;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
@@ -25,12 +23,9 @@ import zipkin2.collector.activemq.ActiveMQCollector;
 import zipkin2.server.internal.InMemoryConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ZipkinActiveMQCollectorPropertiesTest {
-
-  @Rule public ExpectedException thrown = ExpectedException.none();
-
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
   /** This prevents an empty ACTIVEMQ_URL variable from being mistaken as a real one */
@@ -49,13 +44,9 @@ public class ZipkinActiveMQCollectorPropertiesTest {
       ZipkinActiveMQCollectorConfiguration.class,
       InMemoryConfiguration.class);
 
-    try {
-      context.refresh();
-      failBecauseExceptionWasNotThrown(BeanCreationException.class);
-    } catch (BeanCreationException e) {
-      assertThat(e.getCause()).hasMessageContaining(
-        "Unable to establish connection to ActiveMQ broker: Connection refused");
-    }
+    assertThatThrownBy(context::refresh)
+      .isInstanceOf(BeanCreationException.class)
+      .hasMessageContaining("Unable to establish connection to ActiveMQ broker");
   }
 
   @Test public void doesNotProvidesCollectorComponent_whenUrlSetAndDisabled() {
@@ -68,7 +59,7 @@ public class ZipkinActiveMQCollectorPropertiesTest {
       InMemoryConfiguration.class);
     context.refresh();
 
-    thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(ActiveMQCollector.class);
+    assertThatThrownBy(() -> context.getBean(ActiveMQCollector.class))
+      .isInstanceOf(NoSuchBeanDefinitionException.class);
   }
 }

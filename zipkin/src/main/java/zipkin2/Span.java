@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.internal.Nullable;
-import zipkin2.internal.Platform;
+import zipkin2.internal.RecyclableBuffers;
 
 import static java.lang.String.format;
 import static java.util.logging.Level.FINEST;
@@ -341,11 +341,11 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       localEndpoint = source.localEndpoint;
       remoteEndpoint = source.remoteEndpoint;
       if (!source.annotations.isEmpty()) {
-        annotations = new ArrayList<>(source.annotations.size());
+        annotations = new ArrayList<Annotation>(source.annotations.size());
         annotations.addAll(source.annotations);
       }
       if (!source.tags.isEmpty()) {
-        tags = new TreeMap<>();
+        tags = new TreeMap<String, String>();
         tags.putAll(source.tags);
       }
       flags = source.flags;
@@ -375,12 +375,12 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       }
       if (!source.annotations.isEmpty()) {
         if (annotations == null) {
-          annotations = new ArrayList<>(source.annotations.size());
+          annotations = new ArrayList<Annotation>(source.annotations.size());
         }
         annotations.addAll(source.annotations);
       }
       if (!source.tags.isEmpty()) {
-        if (tags == null) tags = new TreeMap<>();
+        if (tags == null) tags = new TreeMap<String, String>();
         tags.putAll(source.tags);
       }
       flags = flags | source.flags;
@@ -412,7 +412,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
      */
     public Builder traceId(long high, long low) {
       if (high == 0L && low == 0L) throw new IllegalArgumentException("empty trace ID");
-      char[] data = Platform.shortStringBuffer();
+      char[] data = RecyclableBuffers.shortStringBuffer();
       int pos = 0;
       if (high != 0L) {
         writeHexLong(data, pos, high);
@@ -528,7 +528,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
 
     /** Sets {@link Span#annotations} */
     public Builder addAnnotation(long timestamp, String value) {
-      if (annotations == null) annotations = new ArrayList<>(2);
+      if (annotations == null) annotations = new ArrayList<Annotation>(2);
       annotations.add(Annotation.create(timestamp, value));
       return this;
     }
@@ -542,7 +542,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
 
     /** Sets {@link Span#tags} */
     public Builder putTag(String key, String value) {
-      if (tags == null) tags = new TreeMap<>();
+      if (tags == null) tags = new TreeMap<String, String>();
       if (key == null) throw new NullPointerException("key == null");
       if (value == null) throw new NullPointerException("value of " + key + " == null");
       this.tags.put(key, value);
@@ -656,7 +656,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     int length = id.length();
     int numZeros = desiredLength - length;
 
-    char[] data = Platform.shortStringBuffer();
+    char[] data = RecyclableBuffers.shortStringBuffer();
     THIRTY_TWO_ZEROS.getChars(0, numZeros, data, 0);
     id.getChars(0, length, data, numZeros);
 
@@ -664,7 +664,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
   }
 
   static String toLowerHex(long v) {
-    char[] data = Platform.shortStringBuffer();
+    char[] data = RecyclableBuffers.shortStringBuffer();
     writeHexLong(data, 0, v);
     return new String(data, 0, 16);
   }
@@ -745,7 +745,9 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     localEndpoint = builder.localEndpoint;
     remoteEndpoint = builder.remoteEndpoint;
     annotations = sortedList(builder.annotations);
-    tags = builder.tags == null ? Collections.emptyMap() : new LinkedHashMap<>(builder.tags);
+    tags = builder.tags == null
+      ? Collections.<String, String>emptyMap()
+      : new LinkedHashMap<String, String>(builder.tags);
     flags = builder.flags;
   }
 

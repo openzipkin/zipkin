@@ -12,41 +12,39 @@
 # the License.
 #
 
-FROM alpine:3.12
+FROM openzipkin/zipkin-builder as install
 
-ENV ELASTICSEARCH_VERSION 6.8.11
+ENV ELASTICSEARCH_VERSION 6.8.12
 
-RUN apk add --update curl
+WORKDIR /install
 
-WORKDIR /elasticsearch
+# We don't download bin scripts as we customize for reasons including BusyBox problems
+RUN wget -qO- https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-$ELASTICSEARCH_VERSION.tar.gz| tar xz \
+    --wildcards --strip=1 --exclude=*/bin
 
-RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-$ELASTICSEARCH_VERSION.tar.gz| tar xz && \
-    mv elasticsearch-$ELASTICSEARCH_VERSION/* /elasticsearch/ && \
-    # remove binaries and non shell scripts
-    rm -f /elasticsearch/bin/elasticsearch-sql* /elasticsearch/bin/*cmd /elasticsearch/bin/*exe && \
-    # Remove bash as our images doesn't have it, and it isn't required
-    ls -d /elasticsearch/bin/* | grep -v x-pack | xargs sed -i 's~#!/bin/bash~#!/bin/sh~g' && \
-    chmod +x /elasticsearch/bin/*
+COPY docker/storage/elasticsearch6/config /install/config
 
-COPY docker/storage/elasticsearch6/config /elasticsearch/config
-
-FROM openzipkin/jre-full:14.0.2-14.29.23
+FROM openzipkin/jre-full:15.0.0-15.27.17
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
-# https://github.com/elastic/elasticsearch/pull/31003 was closed won't fix
-ENV ES_TMPDIR /tmp
+# Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
+COPY docker/storage/elasticsearch7/docker-bin/* /usr/local/bin/
+# We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
+HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
+ENTRYPOINT ["start-elasticsearch"]
 
-RUN adduser -g '' -h /elasticsearch -D elasticsearch
+# All content including binaries and logs write under WORKDIR
+ARG USER=elasticsearch
+WORKDIR /${USER}
 
-COPY --from=0 --chown=elasticsearch /elasticsearch /elasticsearch
+# Ensure the process doesn't run as root
+RUN adduser -g '' -h ${PWD} -D ${USER}
+USER ${USER}
 
-WORKDIR /elasticsearch
+# Copy binaries and config we installed earlier
+COPY --from=install --chown=${USER} /install .
 
-# elasticsearch complains if run as root
-USER elasticsearch
+# Use to set heap, trust store or other system properties.
+ENV JAVA_OPTS="-Xms256m -Xmx256m -XX:+ExitOnOutOfMemoryError"
 
-EXPOSE 9200 9300
-
-ENV ES_JAVA_OPTS " "
-
-ENTRYPOINT /elasticsearch/bin/elasticsearch
+EXPOSE 9200

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -33,11 +33,11 @@ public final class V1SpanConverter {
   }
 
   final Span.Builder first = Span.newBuilder();
-  final List<Span.Builder> spans = new ArrayList<>();
+  final List<Span.Builder> spans = new ArrayList<Span.Builder>();
   V1Annotation cs, sr, ss, cr, ms, mr, ws, wr;
 
   public List<Span> convert(V1Span source) {
-    List<Span> out = new ArrayList<>();
+    List<Span> out = new ArrayList<Span>();
     convert(source, out);
     return out;
   }

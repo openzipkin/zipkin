@@ -42,17 +42,17 @@ public final class GroupByTraceId implements Call.Mapper<List<Span>, List<List<S
   @Override public List<List<Span>> map(List<Span> input) {
     if (input.isEmpty()) return Collections.emptyList();
 
-    Map<String, List<Span>> groupedByTraceId = new LinkedHashMap<>();
+    Map<String, List<Span>> groupedByTraceId = new LinkedHashMap<String, List<Span>>();
     for (Span span : input) {
       String traceId = span.traceId();
       if (!strictTraceId) traceId = lowerTraceId(traceId);
       if (!groupedByTraceId.containsKey(traceId)) {
-        groupedByTraceId.put(traceId, new ArrayList<>());
+        groupedByTraceId.put(traceId, new ArrayList<Span>());
       }
       groupedByTraceId.get(traceId).add(span);
     }
     // Modifiable so that StrictTraceId can filter without allocating a new list
-    return new ArrayList<>(groupedByTraceId.values());
+    return new ArrayList<List<Span>>(groupedByTraceId.values());
   }
 
   @Override public String toString() {

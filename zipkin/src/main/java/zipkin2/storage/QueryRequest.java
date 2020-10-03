@@ -188,7 +188,7 @@ public final class QueryRequest {
      */
     public Builder parseAnnotationQuery(@Nullable String annotationQuery) {
       if (annotationQuery == null || annotationQuery.isEmpty()) return this;
-      Map<String, String> map = new LinkedHashMap<>();
+      Map<String, String> map = new LinkedHashMap<String, String>();
       for (String ann : annotationQuery.split(" and ", 100)) {
         int idx = ann.indexOf('=');
         if (idx == -1) {
@@ -311,7 +311,8 @@ public final class QueryRequest {
     String serviceNameToMatch = serviceName();
     String remoteServiceNameToMatch = remoteServiceName();
     String spanNameToMatch = spanName();
-    Map<String, String> annotationQueryRemaining = new LinkedHashMap<>(annotationQuery());
+    Map<String, String> annotationQueryRemaining =
+      new LinkedHashMap<String, String>(annotationQuery());
 
     for (Span span : spans) {
       String localServiceName = span.localServiceName();

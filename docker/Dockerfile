@@ -29,13 +29,29 @@ COPY --from=scratch /code /code
 
 WORKDIR /code
 
-RUN mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-server -am
+# Use the same command as we suggest in zipkin-server/README.md
+#  * Uses mvn not ./mvnw to reduce layer size: we control the Maven version independently in Docker
+RUN mvn -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server package && \
+    (mkdir -p /zipkin && cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin && cd /zipkin && jar xf *.jar && rm *.jar) && \
+    (mkdir -p /zipkin-slim && cp zipkin-server/target/zipkin-server-*-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar) && \
+    # :zipkin-lens "npm run build" generates the build directory
+    (mkdir -p /zipkin-lens && cp -r zipkin-lens/build/* /zipkin-lens/) && \
+    # Delete /code to contain the image layer to static content, server binaries, ~/.m2 and ~/.npm
+    cd / && rm -rf /code
 
-RUN mkdir -p /zipkin && cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin && cd /zipkin && jar xf *.jar && rm *.jar
-RUN mkdir -p /zipkin-slim && cp zipkin-server/target/zipkin-server-*-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar
+# docker/hooks/post_push will republish what is otherwise built in docker/build/Dockerfile
+# This is a copy/paste from builder/Dockerfile:
+#
+# zipkin-builder is JDK + artifact caches because DockerHub doesn't support another way to update
+# cache between builds.
+FROM azul/zulu-openjdk-alpine:15.0.0-15.27.17 as zipkin-builder
+MAINTAINER OpenZipkin "https://zipkin.io/"
 
-FROM maven:3-openjdk-14-slim as zipkin-builder
+# Install Maven, tar and libc hooks
+COPY docker/builder/install.sh /tmp/
+RUN /tmp/install.sh && rm /tmp/install.sh
 
+# Don't re-issue download-node.sh as it should already be in the Maven cache
 COPY --from=built /root/.m2 /root/.m2
 COPY --from=built /root/.npm /root/.npm
 
@@ -48,7 +64,7 @@ LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 ENV ZIPKIN_BASE_URL=http://zipkin:9411
 
-COPY --from=built /code/zipkin-lens/target/classes/zipkin-lens /var/www/html/zipkin
+COPY --from=built /zipkin-lens/ /var/www/html/zipkin/
 RUN mkdir -p /var/tmp/nginx && chown -R nginx:nginx /var/tmp/nginx
 
 # Setup services
@@ -63,7 +79,7 @@ CMD ["/usr/local/bin/nginx.sh"]
 # zipkin-slim - An image containing the slim distribution of Zipkin server.
 #####
 
-FROM openzipkin/jre-full:14.0.2-14.29.23 as zipkin-slim
+FROM openzipkin/jre-full:15.0.0-15.27.17 as zipkin-slim
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.
@@ -114,7 +130,7 @@ ENTRYPOINT /zipkin/run.sh
 # zipkin-server - An image containing the full distribution of Zipkin server.
 #####
 
-FROM openzipkin/jre-full:14.0.2-14.29.23 as zipkin-server
+FROM openzipkin/jre-full:15.0.0-15.27.17 as zipkin-server
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.

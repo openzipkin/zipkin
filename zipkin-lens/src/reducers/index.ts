@@ -21,10 +21,7 @@ import dependenciesSlice from '../slices/dependenciesSlice';
 import remoteServicesSlice from '../slices/remoteServicesSlice';
 import servicesSlice from '../slices/servicesSlice';
 import spansSlice from '../slices/spansSlice';
-
-import trace from './trace';
-import traces from './traces';
-import traceViewer from './trace-viewer';
+import tracesSlice from '../slices/tracesSlice';
 
 const createReducer = () =>
   combineReducers({
@@ -35,9 +32,7 @@ const createReducer = () =>
     [remoteServicesSlice.name]: remoteServicesSlice.reducer,
     [servicesSlice.name]: servicesSlice.reducer,
     [spansSlice.name]: spansSlice.reducer,
-    trace,
-    traces,
-    traceViewer,
+    [tracesSlice.name]: tracesSlice.reducer,
   });
 
 export default createReducer;

@@ -29,8 +29,12 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
+    <!-- Update occasionally based on LTS. Upon update, push a new zipkin-builder image
+         per /docker/builder/README.md -->
+    <node.version>12.18.4</node.version>
     <frontend-maven-plugin.version>1.10.0</frontend-maven-plugin.version>
     <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
+    <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
   </properties>
 
   <dependencies>
@@ -44,7 +48,7 @@
         <version>${maven-clean-plugin.version}</version>
         <executions>
           <execution>
-            <id>remove existing output</id>
+            <id>remove existing NPM build</id>
             <phase>compile</phase>
             <goals>
               <goal>clean</goal>
@@ -53,7 +57,7 @@
               <excludeDefaultDirectories>true</excludeDefaultDirectories>
               <filesets>
                 <fileset>
-                  <directory>target/classes/zipkin-lens</directory>
+                  <directory>build</directory>
                 </fileset>
               </filesets>
             </configuration>
@@ -66,8 +70,7 @@
         <version>${frontend-maven-plugin.version}</version>
         <configuration>
           <installDirectory>target</installDirectory>
-          <!-- Update occasionally based on LTS -->
-          <nodeVersion>v12.18.3</nodeVersion>
+          <nodeVersion>v${node.version}</nodeVersion>
           <environmentVariables>
             <!--
             create-react-app runs tests in watch mode unless this is defined. We define it here for running Maven locally.
@@ -119,6 +122,29 @@
             <phase>test</phase>
             <configuration>
               <arguments>run test</arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>${maven-resources-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>copy NPM build to zipkin-lens directory</id>
+            <!-- This needs to happen after compile or it could copy an empty directory! -->
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <!-- NPM build output will end up in the jar under the 'zipkin-lens' directory -->
+              <outputDirectory>${project.build.directory}/classes/zipkin-lens</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>build</directory>
+                </resource>
+              </resources>
             </configuration>
           </execution>
         </executions>

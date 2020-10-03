@@ -42,7 +42,7 @@ import static zipkin2.storage.cassandra.InternalForTests.writeDependencyLinks;
 class ITCassandraStorage {
 
   @RegisterExtension CassandraStorageExtension backend = new CassandraStorageExtension(
-    "openzipkin/zipkin-cassandra:2.21.5");
+    "openzipkin/zipkin-cassandra:2.21.7");
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<CassandraStorage> {
@@ -188,8 +188,10 @@ class ITCassandraStorage {
     }
 
     @AfterEach void closeStorageBeforeSwitch() {
-      strictTraceId.close();
-      strictTraceId = null;
+      if (strictTraceId != null) {
+        strictTraceId.close();
+        strictTraceId = null;
+      }
     }
 
     @Override protected boolean initializeStoragePerTest() {

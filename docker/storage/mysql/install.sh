@@ -19,22 +19,30 @@ echo "*** Installing MySQL"
 apk add --update --no-cache mysql mysql-client
 # Fake auth tools install as 10.4.0 install dies otherwise
 mkdir -p /auth_pam_tool_dir/auth_pam_tool
-mysql_install_db --user=mysql --basedir=/usr/ --datadir=/mysql/data --force
-mkdir -p /run/mysqld/
-chown -R mysql /mysql /run/mysqld/
+
+MYSQL_OPTS="--user=mysql --basedir=${PWD} --datadir=${PWD}/data --tmpdir=/tmp"
+
+# Create the database (stored in the data directory)
+ln -s /usr/bin bin
+ln -s /usr/share share
+mysql_install_db ${MYSQL_OPTS} --force
+
+# Prevent "Bind on unix socket: No such file or directory"
+mkdir -p /run/mysqld/ && chown mysql /run/mysqld/
 
 echo "*** Starting MySQL"
-mysqld --user=mysql --basedir=/usr/ --datadir=/mysql/data &
+mysqld ${MYSQL_OPTS} &
 
-timeout=300
-while [[ "$timeout" -gt 0 ]] && ! mysql --user=mysql --protocol=socket -uroot -e 'SELECT 1' >/dev/null 2>/dev/null; do
-    echo "Waiting ${timeout} seconds for mysql to come up"
-    sleep 2
-    timeout=$(($timeout - 2))
+# Excessively long timeout to avoid having to create an ENV variable, decide its name, etc.
+timeout=180
+echo "Will wait up to ${timeout} seconds for MySQL to come up before installing Schema"
+while [ "$timeout" -gt 0 ] && ! mysql --protocol=socket -uroot -e 'SELECT 1' > /dev/null 2>&1; do
+    sleep 1
+    timeout=$(($timeout - 1))
 done
 
 echo "*** Installing Schema"
-mysql --verbose --user=mysql --protocol=socket -uroot <<-EOSQL
+mysql --verbose --user=mysql --protocol=socket -uroot <<-'EOF'
 USE mysql ;
 
 DELETE FROM mysql.user ;
@@ -43,22 +51,14 @@ DROP DATABASE IF EXISTS test ;
 CREATE DATABASE zipkin ;
 
 USE zipkin;
-SOURCE /mysql/zipkin.sql ;
+SOURCE zipkin-schemas/mysql.sql ;
 
 GRANT ALL PRIVILEGES ON zipkin.* TO zipkin@'%' IDENTIFIED BY 'zipkin' WITH GRANT OPTION ;
 FLUSH PRIVILEGES ;
-EOSQL
+EOF
 
 echo "*** Stopping MySQL"
 pkill -f mysqld
 
-
-echo "*** Enabling Networking"
-cat >> /etc/my.cnf <<-"EOF"
-[mysqld]
-skip-networking=0
-skip-bind-address
-EOF
-
 echo "*** Cleaning Up"
-apk del mysql-client --purge
+rm bin share

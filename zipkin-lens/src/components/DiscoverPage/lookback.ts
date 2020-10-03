@@ -14,8 +14,6 @@
 
 import moment from 'moment';
 
-export type LookbackType = 'fixed' | 'range' | 'millis';
-
 export type FixedLookbackValue =
   | '1m'
   | '5m'
