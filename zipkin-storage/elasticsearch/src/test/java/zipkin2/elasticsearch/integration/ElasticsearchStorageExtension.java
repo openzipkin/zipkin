@@ -124,7 +124,7 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
         // ES will return a 'warning' response header when using deprecated api, detect this and
         // fail early so we can do something about it.
         // Example usage: https://github.com/elastic/elasticsearch/blob/3049e55f093487bb582a7e49ad624961415ba31c/x-pack/plugin/security/src/internalClusterTest/java/org/elasticsearch/integration/IndexPrivilegeIntegTests.java#L559
-        final String warningHeader = r.headers().get("Warning");
+        final String warningHeader = r.headers().get("warning");
         if (warningHeader != null) {
           throw new IllegalArgumentException("Detected usage of deprecated API for request "
             + req.toString() + ":\n" + warningHeader);
