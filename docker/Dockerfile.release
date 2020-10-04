@@ -67,7 +67,6 @@ CMD ["/usr/local/bin/nginx.sh"]
 #####
 
 FROM openzipkin/java:15.0.0-15.27.17-jre as zipkin-slim
-LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.
 ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
@@ -90,7 +89,6 @@ ENTRYPOINT /zipkin/run.sh
 #####
 
 FROM openzipkin/java:15.0.0-15.27.17-jre as zipkin-server
-LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.
 ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
