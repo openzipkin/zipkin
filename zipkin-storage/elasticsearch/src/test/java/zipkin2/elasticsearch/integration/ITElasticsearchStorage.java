@@ -13,15 +13,23 @@
  */
 package zipkin2.elasticsearch.integration;
 
+import com.linecorp.armeria.client.ClientFactory;
+import com.linecorp.armeria.client.WebClient;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
+import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.RequestHeaders;
 import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import zipkin2.Span;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.InternalForTests;
 import zipkin2.storage.StorageComponent;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.elasticsearch.integration.ElasticsearchStorageExtension.index;
 
 abstract class ITElasticsearchStorage {
@@ -113,5 +121,19 @@ abstract class ITElasticsearchStorage {
     @Override public void clear() throws IOException {
       storage.clear();
     }
+  }
+
+  @Test
+  void testUsageOfDeprecatedFeatures() {
+    // see https://www.elastic.co/guide/en/elasticsearch/reference/current/migration-api-deprecation.html
+    // this could trigger 'false' alarms as it only validates no usage of deprecated features in
+    // the configuration of the ES instance we spin up during IT's. Sites are responsible for their
+    // own ES configuration, we have no control over this.
+    WebClient webClient = WebClient.builder(backend().baseUrl()).factory(ClientFactory.builder()
+      .useHttp2Preface(false).build()).build();
+    final AggregatedHttpResponse response =
+      webClient.execute(HttpRequest.of(RequestHeaders.of(HttpMethod.GET,
+        "/_migration/deprecations"))).aggregate().join();
+    assertThat(response.contentAscii()).isEmpty();
   }
 }
