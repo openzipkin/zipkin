@@ -24,6 +24,8 @@ import java.util.List;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin2.Span;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.InternalForTests;
@@ -33,6 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.elasticsearch.integration.ElasticsearchStorageExtension.index;
 
 abstract class ITElasticsearchStorage {
+
+  static final Logger LOGGER = LoggerFactory.getLogger(ITElasticsearchStorage.class);
 
   abstract ElasticsearchStorageExtension backend();
 
@@ -125,15 +129,19 @@ abstract class ITElasticsearchStorage {
 
   @Test
   void testUsageOfDeprecatedFeatures() {
-    // see https://www.elastic.co/guide/en/elasticsearch/reference/current/migration-api-deprecation.html
-    // this could trigger 'false' alarms as it only validates no usage of deprecated features in
-    // the configuration of the ES instance we spin up during IT's. Sites are responsible for their
-    // own ES configuration, we have no control over this.
     WebClient webClient = WebClient.builder(backend().baseUrl()).factory(ClientFactory.builder()
       .useHttp2Preface(false).build()).build();
     final AggregatedHttpResponse response =
       webClient.execute(HttpRequest.of(RequestHeaders.of(HttpMethod.GET,
         "/_migration/deprecations"))).aggregate().join();
-    assertThat(response.contentAscii()).isEmpty();
+    if (!response.contentAscii().isEmpty()) {
+      LOGGER.warn("The ElasticSearch instance used during IT's is using deprecated features or "
+        + "configuration. This is likely nothing to be really worried about (for example 'xpack.monitoring.enabled' "
+        + "setting), but nevertheless it should be looked at to see if our docker image used during "
+        + "integration tests needs updating for the next version of ElasticSearch. "
+        + "See https://www.elastic.co/guide/en/elasticsearch/reference/current/migration-api-deprecation.html"
+        + "for more information. This is the deprecation warning we received:\n\n"
+        + response.contentAscii());
+    }
   }
 }
