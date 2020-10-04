@@ -15,12 +15,7 @@
 # Refreshing the builder image to remove stale dependencies just involves building zipkin-server on
 # an empty image.
 
-FROM azul/zulu-openjdk-alpine:15.0.0-15.27.17 as built
-LABEL MAINTAINER Zipkin "https://zipkin.io/"
-
-# Install Maven, tar and libc hooks
-COPY docker/builder/install.sh /tmp/
-RUN /tmp/install.sh && rm /tmp/install.sh
+FROM openzipkin/java:15.0.0-15.27.17 as zipkin-builder
 
 WORKDIR /code
 

@@ -17,19 +17,20 @@
 # COPY --from= works around the issue.
 FROM scratch as scratch
 
-COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /zipkin-schemas/mysql.sql
+COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /zipkin-schemas/
+COPY docker/storage/mysql/install.sh /install/
+COPY docker/storage/mysql/docker-bin/* /docker-bin/
 
 FROM alpine:3.12 as install
 
 WORKDIR /install
 
 COPY --from=scratch /zipkin-schemas/* ./zipkin-schemas/
-COPY docker/storage/mysql/install.sh /tmp/
+COPY --from=scratch /install/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
 # Use a small base image at runtime
 FROM alpine:3.12
-LABEL MAINTAINER OpenZipkin "https://zipkin.io/"
 
 # Add the mysql binary and handle installation edge cases
 RUN apk add --no-cache mysql && \
@@ -42,7 +43,7 @@ RUN apk add --no-cache mysql && \
     (cd /usr/bin; rm mysql_* aria_* mysqlbinlog myis* test-connect-t mysqlslap innochecksum resolve* my_print_defaults sst_dump)
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
-COPY docker/storage/mysql/docker-bin/* /usr/local/bin/
+COPY --from=scratch /docker-bin/* /usr/local/bin/
 # We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
 HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
 ENTRYPOINT ["start-mysql"]

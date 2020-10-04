@@ -12,21 +12,28 @@
 # the License.
 #
 
+# We copy files from the context into a scratch container first to avoid a problem where docker and
+# docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
+# COPY --from= works around the issue.
+FROM scratch as scratch
+
+COPY docker/collector/kafka/install.sh /install/
+COPY docker/collector/kafka/docker-bin/* /docker-bin/
+
 FROM openzipkin/zipkin-builder as install
 
 # Use latest stable release here. Scala 2.13+ supports JRE 14
 ENV KAFKA_VERSION=2.6.0 SCALA_VERSION=2.13
 
 WORKDIR /install
-COPY docker/collector/kafka/install.sh /tmp/
+COPY --from=scratch /install/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
 # Share the same base image to reduce layers used in testing
-FROM openzipkin/jre-full:15.0.0-15.27.17
-LABEL MAINTAINER Zipkin "https://zipkin.io/"
+FROM openzipkin/java:15.0.0-15.27.17-jre
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
-COPY docker/collector/kafka/docker-bin/* /usr/local/bin/
+COPY --from=scratch /docker-bin/* /usr/local/bin/
 # We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
 HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
 ENTRYPOINT ["start-kafka-zookeeper"]

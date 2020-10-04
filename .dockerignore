@@ -1,6 +1,9 @@
 **/.*
 !.dockerignore
 !.mvn
+# Adds 70+MB on a normal clone, but needed for the git-commit-id in the server console
+# See https://github.com/openzipkin/zipkin/issues/3224
+!.git
 !docker/zipkin/**
 !**/.eslintrc*
 !**/.prettierrc*
