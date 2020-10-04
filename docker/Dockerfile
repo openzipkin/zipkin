@@ -71,7 +71,7 @@ EXPOSE 80
 
 CMD ["/usr/local/bin/nginx.sh"]
 
-# Almost everything is common between the slim an normal build
+# Almost everything is common between the slim and normal build
 FROM openzipkin/java:15.0.0-15.27.17-jre as base-server
 
 # Use to set heap, trust store or other system properties.
