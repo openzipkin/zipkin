@@ -1,8 +1,8 @@
 **/.*
 !.dockerignore
 !.mvn
-# Adds 70+MB on a normal clone, but needed for the git-commit-id in the server console
-# See https://github.com/openzipkin/zipkin/issues/3224
+# Builds don't run license check, but need git-commit-id in the server console
+#  * When releasing docker/builder, use a shallow clone to avoid >70MB!
 !.git
 !docker/zipkin/**
 !**/.eslintrc*
