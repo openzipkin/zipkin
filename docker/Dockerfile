@@ -12,6 +12,8 @@
 # the License.
 #
 
+ARG java_version=15.0.0-15.27.17
+
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
 # COPY --from= works around the issue.
@@ -45,9 +47,8 @@ RUN mvn -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-s
 #
 # zipkin-builder is JDK + artifact caches because DockerHub doesn't support another way to update
 # cache between builds.
-FROM openzipkin/java:15.0.0-15.27.17 as zipkin-builder
+FROM openzipkin/java:${java_version} as zipkin-builder
 
-# Don't re-issue download-node.sh as it should already be in the Maven cache
 COPY --from=built /root/.m2 /root/.m2
 COPY --from=built /root/.npm /root/.npm
 
@@ -72,7 +73,7 @@ EXPOSE 80
 CMD ["/usr/local/bin/nginx.sh"]
 
 # Almost everything is common between the slim and normal build
-FROM openzipkin/java:15.0.0-15.27.17-jre as base-server
+FROM openzipkin/java:${java_version}-jre as base-server
 
 # Use to set heap, trust store or other system properties.
 ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
