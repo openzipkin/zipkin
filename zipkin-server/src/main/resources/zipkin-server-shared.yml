@@ -267,7 +267,11 @@ logging:
     # logging when enabled. https://github.com/line/armeria/issues/2000
     com.linecorp.armeria.client.HttpResponseDecoder: 'OFF'
     com.linecorp.armeria.common.Flags: 'OFF'
+    com.linecorp.armeria.common.SerializationFormat: 'OFF'
     com.linecorp.armeria.server.docs.DocStringExtractor: 'OFF'
+    com.linecorp.armeria.server.docs.DocService: 'OFF'
+    com.linecorp.armeria.internal.common.thrift.ThriftSerializationFormatProvider: 'OFF'
+    com.linecorp.armeria.internal.server.annotation.AnnotatedDocServicePlugin: 'WARN'
     # Redundant to logging already done in c.l.a.s.Server
     com.linecorp.armeria.spring.ArmeriaAutoConfiguration: 'WARN'
     # Hostname logging is not Zipkin's duty
