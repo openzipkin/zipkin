@@ -126,8 +126,12 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
         // Example usage: https://github.com/elastic/elasticsearch/blob/3049e55f093487bb582a7e49ad624961415ba31c/x-pack/plugin/security/src/internalClusterTest/java/org/elasticsearch/integration/IndexPrivilegeIntegTests.java#L559
         final String warningHeader = r.headers().get("warning");
         if (warningHeader != null) {
-          throw new IllegalArgumentException("Detected usage of deprecated API for request "
-            + req.toString() + ":\n" + warningHeader);
+          // explicitly exclude the warning returned when creating indices with ':' under ES6 because
+          // we cannot fix that in our code as we need to stay compatible with existing sites.
+          if (!warningHeader.contains("Elasticsearch 7.x will read, but not allow creation of new indices containing ':'")) {
+            throw new IllegalArgumentException("Detected usage of deprecated API for request "
+              + req.toString() + ":\n" + warningHeader);
+          }
         }
         // Convert AggregatedHttpResponse back to HttpResponse.
         return r.toHttpResponse();
