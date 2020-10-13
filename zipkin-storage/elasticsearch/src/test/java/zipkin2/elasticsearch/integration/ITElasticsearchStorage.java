@@ -31,7 +31,6 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.InternalForTests;
 import zipkin2.storage.StorageComponent;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.elasticsearch.integration.ElasticsearchStorageExtension.index;
 
 abstract class ITElasticsearchStorage {
