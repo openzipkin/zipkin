@@ -19,6 +19,8 @@ FROM scratch as scratch
 
 COPY zipkin-storage/cassandra/src/main/resources/*.cql /zipkin-schemas/
 COPY zipkin-storage/cassandra-v1/src/main/resources/cassandra-schema.cql /zipkin-schemas/
+COPY docker/storage/cassandra/install.sh /install/
+COPY docker/storage/cassandra/docker-bin/* /docker-bin/
 
 # Until Cassandra supports recent JDKs, we need to install with the JDK 1.8
 FROM openzipkin/jre-full:1.8.0_252-b09 as install
@@ -29,15 +31,14 @@ ENV CASSANDRA_VERSION=3.11.8
 WORKDIR /install
 
 COPY --from=scratch /zipkin-schemas/* ./zipkin-schemas/
-COPY docker/storage/cassandra/install.sh /tmp/
+COPY --from=scratch /install/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
 # Share the same base image to reduce layers used in testing
 FROM openzipkin/jre-full:1.8.0_252-b09
-MAINTAINER OpenZipkin "https://zipkin.io/"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
-COPY docker/storage/cassandra/docker-bin/* /usr/local/bin/
+COPY --from=scratch /docker-bin/* /usr/local/bin/
 # We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
 HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
 ENTRYPOINT ["start-cassandra"]
