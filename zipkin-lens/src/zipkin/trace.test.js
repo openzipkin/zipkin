@@ -231,9 +231,10 @@ describe('traceSummariesToMustache', () => {
     expect(traceSummaries(null, [])).toEqual([]);
   });
 
-  it('should convert duration from micros to millis', () => {
+  it('should not change unit of timestamp or duration', () => {
     const model = traceSummaries(null, [summary]);
-    expect(model[0].duration).toBe(168.731);
+    expect(model[0].timestamp).toBe(summary.timestamp);
+    expect(model[0].duration).toBe(summary.duration);
   });
 
   it('should render empty serviceSummaries when spans lack localEndpoint', () => {
