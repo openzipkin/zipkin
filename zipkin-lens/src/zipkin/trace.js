@@ -171,7 +171,7 @@ export function traceSummaries(serviceName, summaries, utc = false) {
           (parseFloat(duration) / parseFloat(maxDuration)) * 100,
           10,
         );
-        res.duration = duration / 1000; // used only for client-side sort
+        res.duration = duration; // Used in summary view and client-side sort
         res.durationStr = mkDurationStr(duration);
       }
 

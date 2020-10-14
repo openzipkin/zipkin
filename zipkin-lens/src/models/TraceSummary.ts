@@ -20,6 +20,7 @@ export type ServiceNameAndSpanCount = {
 type TraceSummary = {
   traceId: string;
   timestamp: number;
+  // Unlike most places, this is milliseconds, not microseconds
   duration: number;
   serviceSummaries: ServiceNameAndSpanCount[];
   infoClass?: string;
