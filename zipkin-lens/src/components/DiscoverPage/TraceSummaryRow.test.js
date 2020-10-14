@@ -42,7 +42,7 @@ describe('<TraceSummaryRow />', () => {
     const startTimeFormat = queryByTestId('TraceSummaryRow-startTimeFormat');
     expect(startTimeFormat).toBeInTheDocument();
     // Don't assert on hour as the timezone will be different in CI
-    expect(startTimeFormat).toHaveTextContent(/10\/24 [0-9][0-9]:52:55:237/);
+    expect(startTimeFormat).toHaveTextContent(/10\/2[34] [0-9][0-9]:52:55:237/);
     // Intentionally not asserting the relative time from now as it would drift tests
 
     const duration = queryByTestId('TraceSummaryRow-duration');
