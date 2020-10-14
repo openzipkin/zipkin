@@ -89,7 +89,7 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({
         <TableCell align="right">{traceSummary.spanCount}</TableCell>
         <TableCell align="right">
           <Box position="relative" width="100%">
-            {formatDuration(traceSummary.duration)}
+            {formatDuration(traceSummary.duration * 1000)}
             <DurationBar
               width={traceSummary.width}
               infoClass={traceSummary.infoClass}
