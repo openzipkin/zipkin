@@ -19,26 +19,31 @@ import render from '../../test/util/render-with-default-settings';
 describe('<TraceSummaryRow />', () => {
   it('should render timestamp and duration in correct unit', () => {
     const { queryByTestId } = render(
-      <TraceSummaryRow
-        traceSummary={{
-          traceId: 'a03ee8fff1dcd9b9',
-          timestamp: 1571896375237354,
-          duration: 131848,
-          serviceSummaries: [],
-          spanCount: 10,
-          width: 10,
-          root: {
-            serviceName: 'routing',
-            spanName: 'post /location/update/v4',
-          },
-        }}
-      />,
+      <table>
+        <tbody>
+          <TraceSummaryRow
+            traceSummary={{
+              traceId: 'a03ee8fff1dcd9b9',
+              timestamp: 1571896375237354,
+              duration: 131848,
+              serviceSummaries: [],
+              spanCount: 10,
+              width: 10,
+              root: {
+                serviceName: 'routing',
+                spanName: 'post /location/update/v4',
+              },
+            }}
+          />
+        </tbody>
+      </table>,
     );
 
     const startTimeFormat = queryByTestId('TraceSummaryRow-startTimeFormat');
     expect(startTimeFormat).toBeInTheDocument();
-    expect(startTimeFormat).toHaveTextContent('10/24 13:52:55:237');
-    // intentionally not asserting the relative time from now as it would drift tests
+    // Don't assert on hour as the timezone will be different in CI
+    expect(startTimeFormat).toHaveTextContent(/10\/24 [0-9][0-9]:52:55:237/);
+    // Intentionally not asserting the relative time from now as it would drift tests
 
     const duration = queryByTestId('TraceSummaryRow-duration');
     expect(duration).toBeInTheDocument();
