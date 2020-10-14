@@ -40,8 +40,6 @@ class VersionSpecificTemplatesTest {
     assertThat(template.autocomplete())
       .withFailMessage("Until v7.x, we delimited index and type with a colon")
       .contains("\"template\": \"zipkin:autocomplete-*\"");
-    assertThat(template.autocomplete())
-      .contains("\"index.mapper.dynamic\": false");
   }
 
   @Test void version6() {
@@ -51,8 +49,6 @@ class VersionSpecificTemplatesTest {
     assertThat(template.autocomplete())
       .withFailMessage("Until v7.x, we delimited index and type with a colon")
       .contains("\"index_patterns\": \"zipkin:autocomplete-*\"");
-    assertThat(template.autocomplete())
-      .contains("\"index.mapper.dynamic\": false");
   }
 
   @Test void version6_wrapsPropertiesWithType() {

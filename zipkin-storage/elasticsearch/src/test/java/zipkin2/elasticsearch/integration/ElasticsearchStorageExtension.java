@@ -17,7 +17,9 @@ import com.linecorp.armeria.client.ClientFactory;
 import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.WebClientBuilder;
 import com.linecorp.armeria.client.logging.LoggingClient;
+import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.logging.LogLevel;
+import java.util.Arrays;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -32,6 +34,7 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.ElasticsearchStorage.Builder;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static zipkin2.elasticsearch.integration.IgnoredDeprecationWarnings.IGNORE_THESE_WARNINGS;
 
 class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallback {
   static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchStorageExtension.class);
@@ -117,6 +120,23 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
         .requestLogLevel(LogLevel.INFO)
         .successfulResponseLogLevel(LogLevel.INFO).build(c));
     }
+    builder.decorator((delegate, ctx, req) -> {
+      final HttpResponse response = delegate.execute(ctx, req);
+      return HttpResponse.from(response.aggregate().thenApply(r -> {
+        // ES will return a 'warning' response header when using deprecated api, detect this and
+        // fail early so we can do something about it.
+        // Example usage: https://github.com/elastic/elasticsearch/blob/3049e55f093487bb582a7e49ad624961415ba31c/x-pack/plugin/security/src/internalClusterTest/java/org/elasticsearch/integration/IndexPrivilegeIntegTests.java#L559
+        final String warningHeader = r.headers().get("warning");
+        if (warningHeader != null) {
+          if (Arrays.stream(IGNORE_THESE_WARNINGS).noneMatch(warningHeader::contains)) {
+            throw new IllegalArgumentException("Detected usage of deprecated API for request "
+              + req.toString() + ":\n" + warningHeader);
+          }
+        }
+        // Convert AggregatedHttpResponse back to HttpResponse.
+        return r.toHttpResponse();
+      }));
+    });
     WebClient client = builder.build();
     return ElasticsearchStorage.newBuilder(() -> client)
       .index("zipkin-test")
