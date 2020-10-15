@@ -63,9 +63,7 @@ final class VersionSpecificTemplates {
       + "    \"index.number_of_shards\": " + indexShards + ",\n"
       + "    \"index.number_of_replicas\": " + indexReplicas + ",\n"
       + "    \"index.requests.cache.enable\": true";
-    // There is no explicit documentation of index.mapper.dynamic being removed in v7, but it was.
-    if (version >= 7.0f) return result + "\n";
-    return result + ",\n    \"index.mapper.dynamic\": false\n";
+    return result + "\n";
   }
 
   String indexTemplate(float version) {
