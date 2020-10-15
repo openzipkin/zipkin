@@ -32,7 +32,7 @@ else
         -DremoteRepositories=bintray::::https://dl.bintray.com/openzipkin/maven -Dtransitive=false \
         -Dartifact=io.zipkin:zipkin-server:${RELEASE_VERSION}:jar:${classifier}
     # Move, don't copy, large archives to prevent zipkin-builder image cache bloat
-    find ~/.m2/repository -name zipkin-server-${RELEASE_VERSION}-{classifier}.jar -exec mv {} zipkin-{classifier}.jar \;
+    find ~/.m2/repository -name zipkin-server-${RELEASE_VERSION}-{classifier}.jar -exec mv {} zipkin-${classifier}.jar \;
   done
 fi
 
