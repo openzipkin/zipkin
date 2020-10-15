@@ -204,7 +204,7 @@ public class ZipkinQueryApiV2 {
     return maybeCacheNames(values.size() > 3, values, ctx.alloc());
   }
 
-  @Trace("regex:^/.*$")
+  @Trace("regex:^.*$")
   public AggregatedHttpResponse disallowTraceRequests() {
     // because https://github.com/openzipkin/zipkin/issues/2286
     return AggregatedHttpResponse.of(HttpStatus.FORBIDDEN);
