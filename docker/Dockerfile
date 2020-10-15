@@ -106,7 +106,7 @@ COPY --from=install --chown=${USER} /install/zipkin-slim/ /zipkin/
 #####
 # zipkin-server - An image containing the full distribution of Zipkin server.
 #####
-FROM base-server as zipkin-server
+FROM base-server as zipkin
 
 # 3rd party modules like zipkin-aws will apply profile settings with this
 ENV MODULE_OPTS=

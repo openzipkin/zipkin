@@ -100,7 +100,7 @@ If using an external MySQL server or image, ensure schema and other parameters m
 To build `openzipkin/zipkin`, from the top level of the repository, run:
 
 ```bash
-$ docker build -t openzipkin/zipkin:test -f docker/Dockerfile .
+$ docker build -t openzipkin/zipkin:test -f docker/Dockerfile . --target zipkin
 ```
 
 If you want the slim distribution instead, run:
