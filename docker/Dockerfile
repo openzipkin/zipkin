@@ -59,6 +59,9 @@ ENV ZIPKIN_BASE_URL=http://zipkin:9411
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=install /code/docker/lens/docker-bin/ /tmp/docker-bin/
 RUN mv /tmp/docker-bin/* /usr/local/bin/ && rm -rf /tmp/docker-bin
+# We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
+HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
+CMD ["start-nginx"]
 
 # Add content and setup NGINX
 COPY --from=install /install/zipkin-lens/ /var/www/html/zipkin/
@@ -66,8 +69,6 @@ COPY --from=install /code/docker/lens/nginx.conf /etc/nginx/conf.d/zipkin.conf.t
 RUN mkdir -p /var/tmp/nginx && chown -R nginx:nginx /var/tmp/nginx
 
 EXPOSE 80
-
-CMD ["start-nginx"]
 
 # Almost everything is common between the slim and normal build
 FROM openzipkin/java:${java_version}-jre as base-server
@@ -82,21 +83,18 @@ RUN adduser -g '' -h ${PWD} -D ${USER}
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=install /code/docker/docker-bin/ /tmp/docker-bin/
 RUN mv /tmp/docker-bin/* /usr/local/bin/ && rm -rf /tmp/docker-bin
-
-# Switch to the runtime user
-USER ${USER}
-
-EXPOSE 9411
-
-# This health check was added for Docker Hub automated test service. Parameters  were changed in
-# order to mark success faster. You may want to change these further in production.
-#
 # We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts.
+#
 # If in production, you have a 30s startup, please report to https://gitter.im/openzipkin/zipkin
 # including the values of the /health and /info endpoints as this would be unexpected.
 HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
 
 ENTRYPOINT ["start-zipkin"]
+
+# Switch to the runtime user
+USER ${USER}
+
+EXPOSE 9411
 
 #####
 # zipkin-slim - An image containing the slim distribution of Zipkin server.

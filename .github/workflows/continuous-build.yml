@@ -41,7 +41,7 @@ jobs:
         run: ./mvnw -version
         shell: bash
       - name: Execute Server Build
-        run: ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server clean install
+        run: ./mvnw -T1C -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server clean package
         shell: bash
         env:
           CI: true

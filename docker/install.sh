@@ -21,7 +21,7 @@ then
   echo "*** Building from source..."
   # Use the same command as we suggest in zipkin-server/README.md
   #  * Uses mvn not ./mvnw to reduce layer size: we control the Maven version in Docker
-  (cd /code; mvn -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server package)
+  (cd /code; mvn -T1C -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server package)
   cp /code/zipkin-server/target/zipkin-server-*-exec.jar zipkin-exec.jar
   cp /code/zipkin-server/target/zipkin-server-*-slim.jar zipkin-slim.jar
 else
