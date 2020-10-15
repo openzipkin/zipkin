@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,6 +20,8 @@ import com.google.auto.value.AutoValue;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.HttpRequestWriter;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.RequestHeaders;
@@ -31,6 +33,7 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
@@ -112,7 +115,9 @@ public final class BulkCallBuilder {
     entries.add(newIndexEntry(index, typeName, input, writer));
   }
 
-  /** Creates a bulk request when there is more than one object to store */
+  /**
+   * Creates a bulk request when there is more than one object to store
+   */
   public HttpCall<Void> build() {
     QueryStringEncoder urlBuilder = new QueryStringEncoder("/_bulk");
     if (pipeline != null) urlBuilder.addParam("pipeline", pipeline);
@@ -139,7 +144,7 @@ public final class BulkCallBuilder {
 
     BulkRequestSupplier(List<IndexEntry<?>> entries, boolean shouldAddType,
       RequestHeaders headers, ByteBufAllocator alloc) {
-      this.entries = entries;
+      this.entries = Collections.unmodifiableList(entries);
       this.shouldAddType = shouldAddType;
       this.headers = headers;
       this.alloc = alloc;
@@ -149,13 +154,29 @@ public final class BulkCallBuilder {
       return headers;
     }
 
-    @Override public void writeBody(HttpCall.RequestStream requestStream) {
-      for (IndexEntry<?> entry : entries) {
-        if (!requestStream.tryWrite(HttpData.wrap(serialize(alloc, entry, shouldAddType)))) {
-          // Stream aborted, no need to serialize anymore.
-          return;
-        }
+    @Override public HttpRequest get() {
+      HttpRequestWriter writer = HttpRequest.streaming(headers);
+      writeEntry(writer, 0);
+      return writer;
+    }
+
+    // There's a high chance that the response is received before the request
+    // is complete. This can be a problem for BulkCallBuilder when it's sending
+    // streaming requests. Hence, we use backpressure, instead of buffering.
+    //
+    // Follow https://github.com/line/armeria/issues/3119 for doc updates.
+    private void writeEntry(HttpRequestWriter writer, int index) {
+      if (index == entries.size()) { // out of entries.
+        writer.close();
+        return;
       }
+      // Write the current entry directly to the current request.
+      if (!writer.tryWrite(HttpData.wrap(serialize(alloc, entries.get(index), shouldAddType)))) {
+        // Stream aborted, no need to serialize anymore.
+        return;
+      }
+      // Recurse to proceed to the next entry, if any.
+      writer.whenConsumed().thenRun(() -> writeEntry(writer, index + 1));
     }
   }
 

@@ -267,7 +267,7 @@ logging:
     com.linecorp.armeria: 'WARN'
     # # But allow to say it's ready to serve requests
     com.linecorp.armeria.server.Server: 'INFO'
-    # kafka is quite chatty so we switch everything off by default
+    # kafka is quite chatty, so we switch everything off by default
     org.apache.kafka: 'OFF'
 #     # investigate /api/v2/dependencies
 #     zipkin2.internal.DependencyLinker: 'DEBUG'
