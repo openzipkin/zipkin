@@ -18,7 +18,5 @@ services:
     container_name: backend
     image: openzipkin/example-brave:${PROJECT:-armeria}
     command: backend
-    environment:
-      - JAVA_OPTS=-Xms32m -Xmx32m -XX:+ExitOnOutOfMemoryError
     depends_on:
       - zipkin
