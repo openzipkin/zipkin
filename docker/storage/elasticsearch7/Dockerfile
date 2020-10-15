@@ -33,7 +33,7 @@ RUN wget -qO- https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch
 
 COPY --from=scratch /config/ ./config/
 
-FROM openzipkin/java:15.0.0-15.27.17-jre
+FROM openzipkin/java:15.0.0-15.27.17-jre as zipkin-elasticsearch7
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=scratch /docker-bin/* /usr/local/bin/

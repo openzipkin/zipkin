@@ -35,7 +35,7 @@ COPY --from=scratch /install/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
 # Share the same base image to reduce layers used in testing
-FROM openzipkin/jre-full:1.8.0_252-b09
+FROM openzipkin/jre-full:1.8.0_252-b09 as zipkin-cassandra
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=scratch /docker-bin/* /usr/local/bin/

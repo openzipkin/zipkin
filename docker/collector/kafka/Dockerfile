@@ -30,7 +30,7 @@ COPY --from=scratch /install/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
 # Share the same base image to reduce layers used in testing
-FROM openzipkin/java:15.0.0-15.27.17-jre
+FROM openzipkin/java:15.0.0-15.27.17-jre as zipkin-kafka
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=scratch /docker-bin/* /usr/local/bin/

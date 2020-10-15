@@ -30,7 +30,7 @@ COPY --from=scratch /install/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
 # Use a small base image at runtime
-FROM alpine:3.12
+FROM alpine:3.12 as zipkin-mysql
 
 # Add the mysql binary and handle installation edge cases
 RUN apk add --no-cache mysql && \

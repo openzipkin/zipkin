@@ -15,6 +15,9 @@
 
 # This script relies on variables defined by Docker Hub Autobuild
 # https://docs.docker.com/docker-hub/builds/advanced/#environment-variables-for-building-and-testing
+#
+# This script uses /bin/bash, not /bin/sh, because /bin/sh on Docker Hub image uses doesn't allow
+# substitutions like: ${DOCKER_TAG//,/ }
 set -eux
 
 # We only push tags for secondary images because "push" would have already done zipkin

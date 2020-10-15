@@ -34,7 +34,7 @@ COPY --from=scratch /code /code
 
 # This will either be "master" or a real version ex. "2.4.5"
 ARG RELEASE_VERSION=master
-COPY docker/install.sh /tmp/
+COPY docker/bin/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
 # docker/hooks/post_push will republish what is otherwise built in docker/build/Dockerfile
@@ -81,8 +81,10 @@ WORKDIR /${USER}
 RUN adduser -g '' -h ${PWD} -D ${USER}
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
-COPY --from=install /code/docker/docker-bin/ /tmp/docker-bin/
-RUN mv /tmp/docker-bin/* /usr/local/bin/ && rm -rf /tmp/docker-bin
+COPY --from=install /code/docker/bin/ /tmp/docker-bin/
+RUN mv /tmp/docker-bin/docker-healthcheck /usr/local/bin/ && \
+    mv /tmp/docker-bin/start-zipkin /usr/local/bin/ && \
+    rm -rf /tmp/docker-bin
 # We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts.
 #
 # If in production, you have a 30s startup, please report to https://gitter.im/openzipkin/zipkin

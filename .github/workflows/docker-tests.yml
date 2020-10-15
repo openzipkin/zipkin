@@ -1,0 +1,41 @@
+name: Continuous Build Docker
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build-on-linux:
+    strategy:
+      matrix:
+        image: [zipkin, zipkin-slim, zipkin-ui, zipkin-kafka, zipkin-cassandra, zipkin-elasticsearch6, zipkin-elasticsearch7, zipkin-mysql]
+    runs-on: ubuntu-latest
+    name: Build and verify Docker images
+    steps:
+      - name: Install Docker
+        uses: docker-practice/actions-setup-docker@master
+        with:
+          docker_version: 19.03
+      - name: Cache docker
+        uses: actions/cache@v1
+        with:
+          path: ~/.docker
+          key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
+          restore-keys: ${{ runner.os }}-docker
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Build Docker image openzipkin/${{ matrix.image }}:test
+        run:  docker/build_image ${{ matrix.image }}
+      - name: Verify Docker image openzipkin/${{ matrix.image }}:test
+        run: |
+          # This just makes sure containers run and the HEALTHCHECK works (for now..)
+          IMAGE=openzipkin/${{ matrix.image }}:test
+          docker run --rm --name frontend -d ${IMAGE} frontend
+          docker run --rm --name backend -d ${IMAGE} backend
+          docker/bin/block-on-health frontend || exit 1
+          docker/bin/block-on-health backend || exit 1

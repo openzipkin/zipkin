@@ -97,20 +97,18 @@ If using an external MySQL server or image, ensure schema and other parameters m
 
 ## Building images
 
-To build `openzipkin/zipkin`, from the top level of the repository, run:
-
+To build `openzipkin/zipkin:test`, from the top level of the repository, run:
 ```bash
-$ docker build -t openzipkin/zipkin:test -f docker/Dockerfile . --target zipkin
+$ docker/build_image zipkin
 ```
 
-If you want the slim distribution instead, run:
-
+If you want the slim distribution (openzipkin/zipkin-slim:test), run:
 ```bash
-$ docker build -t openzipkin/zipkin-slim:test -f docker/Dockerfile . --target zipkin-slim
+$ docker/build_image zipkin-slim
 ```
 
-If you want the NGINX UI proxy instead, run:
-
+If you want the NGINX UI proxy (openzipkin/zipkin-ui:test), run:
 ```bash
-$ docker build -t openzipkin/zipkin-ui:test -f docker/Dockerfile . --target zipkin-ui
+$ docker/build_image zipkin-ui
 ```
+
