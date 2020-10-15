@@ -14,7 +14,7 @@
 #
 
 
-set -v
+set -eux
 
 # Docker Hub's default build command seems to not handle .dockerignore correctly. Doing a simple build command
 # ourselves works fine.

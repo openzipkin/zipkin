@@ -14,9 +14,9 @@
 #
 
 
-set -v
+set -eux
 
-if [[ "$DOCKER_REPO" == "index.docker.io/openzipkin/zipkin" ]]; then
+if [ "$DOCKER_REPO" = "index.docker.io/openzipkin/zipkin" ]; then
   echo Pushing zipkin-slim and test images
   IFS=',' read -ra TAGS <<< "$DOCKER_TAG"
   for tag in ${TAGS[@]}; do
