@@ -81,14 +81,22 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({
         <TableCell>
           <Box display="flex" justifyContent="flex-end" alignItems="center">
             <FromNowTypography>{startTime.fromNow()}</FromNowTypography>
-            <Typography variant="body2" color="textSecondary">
+            <Typography
+              variant="body2"
+              color="textSecondary"
+              data-testid="TraceSummaryRow-startTimeFormat"
+            >
               ({startTime.format('MM/DD HH:mm:ss:SSS')})
             </Typography>
           </Box>
         </TableCell>
         <TableCell align="right">{traceSummary.spanCount}</TableCell>
         <TableCell align="right">
-          <Box position="relative" width="100%">
+          <Box
+            position="relative"
+            width="100%"
+            data-testid="TraceSummaryRow-duration"
+          >
             {formatDuration(traceSummary.duration)}
             <DurationBar
               width={traceSummary.width}
