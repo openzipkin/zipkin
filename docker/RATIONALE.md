@@ -1,7 +1,6 @@
 # zipkin-docker rationale
 
-## Why do we add HEALTHCHECK for test images?
-
+## Why do we add HEALTHCHECK?
 While most of our images are not production, we still add HEALTHCHECK for a better ad-hoc
 and automation experience. Many of our setups will not operate without a service
 dependency: having HEALTHCHECK present makes triage and scripting a bit easier.
@@ -15,6 +14,26 @@ Ex. The following command can be used ad-hoc or in scripts without the user know
 $ docker inspect --format='{{json .State.Health.Status}}' kafka-zookeeper
 "unhealthy"
 ```
+
+### Why do we change default timeouts?
+By default, the Docker health check runs after 30s, and if a failure occurs,
+it waits 30s to try again. This implies a minimum of 30s before the server is
+marked healthy.
+
+https://docs.docker.com/engine/reference/builder/#healthcheck
+
+We expect the server startup to take less than 10 seconds, even in a fresh
+start. Some health checks will trigger a slow "first request" due to schema
+setup (ex this is the case in Elasticsearch and Cassandra). However, we don't
+want to force an initial delay of 30s as defaults would.
+
+Instead, we lower the interval and timeout from 30s to 5s. If a server starts
+in 7s and takes another 2s to install schema, it can still pass in 10s vs 30s.
+
+We retain the 30s even if it would be an excessively long startup. This is to
+accommodate test containers, which can boot slower than production sites, and
+any knock-on effects of that, like slow dependent storage containers which are
+simultaneously bootstrapping.
 
 ### Why default timeout to 5s for Kafka HEALTHCHECK?
 

@@ -25,7 +25,18 @@ cd ..
 
 echo "Building images for $SOURCE_BRANCH"
 
-docker build --build-arg source_branch=${SOURCE_BRANCH} -f "$DOCKERFILE_PATH" -t "$IMAGE_NAME" .
+echo "Building images for $SOURCE_BRANCH"
+
+# $SOURCE_BRANCH is something like
+#
+#   master       - Building the master branch. This cut command will return 'master', and Dockerfiles will ignore it
+#   1.0.1        - Building a release image along with a new Zipkin server version. This cut command will return
+#                  '1.0.1' and Dockerfiles will use it to fetch the correct version of Zipkin.
+#   docker-1.0.1 - Building a release image, but not a new Zipkin server. This cut command will return
+#                  '1.0.1' and Dockerfiles will use it to fetch the correct version of Zipkin.
+RELEASE_VERSION="$(echo "${SOURCE_BRANCH}" | cut -d '-' -f 2)"
+
+docker build --build-arg RELEASE_VERSION="$RELEASE_VERSION" -f "$DOCKERFILE_PATH" -t "$IMAGE_NAME" .
 
 IFS=',' read -ra TAGS <<< "$DOCKER_TAG"
 for tag in ${TAGS[@]}; do
