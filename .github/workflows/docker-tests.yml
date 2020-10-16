@@ -55,8 +55,8 @@ jobs:
           touch docker-sut.env
           if [ "${{ matrix.target }}" = "zipkin-ui" ]; then
             echo ZIPKIN_BASE_URL=http://host.docker.internal:9411 >> docker-sut.env
-            # Fake zipkin's healthpoint to test to proxypass without a build dependency
-            touch health && python -m SimpleHTTPServer 9411 &
+            # Run zipkin-slim from master to eliminate a matrix build dependency
+            docker run --rm --name zipkin -p 9411:9411 -d openzipkin/zipkin-slim:master
           fi
           IMAGE=openzipkin/${{ matrix.target }}:test
           docker run --env-file docker-sut.env --rm --name sut -d ${IMAGE}
