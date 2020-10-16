@@ -52,7 +52,7 @@ jobs:
           # This just makes sure containers run and the HEALTHCHECK works (for now..)
           COMPOSE_FILE=./.github/workflows/docker-compose-${{ matrix.target }}.yml
           if test -f "${COMPOSE_FILE}"; then
-            docker-compose up -f "${COMPOSE_FILE}" -d
+            docker-compose -f "${COMPOSE_FILE}" up -d --quiet-pull
           else
             docker run --name sut -d openzipkin/${{ matrix.target }}:test
           fi
