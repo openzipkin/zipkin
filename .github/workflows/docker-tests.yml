@@ -23,7 +23,7 @@ jobs:
         run: echo "::set-output name=matrix::{\"include\":$(.github/workflows/projects-as-json)}"
   build-and-verify-docker:
     name: Build and verify Docker images
-    needs: discover-projects
+    needs: discover-targets
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{ fromJson(needs.discover-targets.outputs.matrix) }}
