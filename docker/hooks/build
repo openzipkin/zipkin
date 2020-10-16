@@ -40,20 +40,10 @@ RELEASE_VERSION="$(echo "${SOURCE_BRANCH}" | cut -d '-' -f 2)"
 tags=${DOCKER_TAG//,/ }
 tags_0=${DOCKER_TAG//,*/}
 
-for target in zipkin zipkin-slim zipkin-ui; do
+for target in $(docker/bin/targets-to-build); do
   image=openzipkin/${target}
   echo Building ${image}
-  docker build --build-arg RELEASE_VERSION="${RELEASE_VERSION}" -f "${DOCKERFILE_PATH}" -t "${image}:${tags_0}" --target ${target} .
-  for tag in ${tags}; do
-    docker tag "${image}:${tags_0}" "${image}:${tag}"
-  done
-done
-
-# We also build testing images to correspond with the server version to keep schemas up to date
-for path in collector/kafka storage/cassandra storage/elasticsearch6 storage/elasticsearch7 storage/mysql; do
-  image=openzipkin/zipkin-$(basename ${path})
-  echo Building ${image}
-  docker build -f "docker/${path}/Dockerfile" -t "${image}:${tags_0}" .
+  docker/build_image ${target} ${tags_0}
   for tag in ${tags}; do
     docker tag "${image}:${tags_0}" "${image}:${tag}"
   done

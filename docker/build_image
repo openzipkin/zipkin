@@ -6,6 +6,17 @@
 set -ue
 
 TARGET=${1:-zipkin}
+TAG=${2:-test}
+RELEASE_VERSION=${RELEASE_VERSION:-master}
+
+# Try to re-use the same base Alpine Linux version as we do in
+# https://github.com/openzipkin/docker-java/blob/master/Dockerfile
+ALPINE_VERSION=${ALPINE_VERSION:-3.12}
+
+# When publishing jars, we build with JDK 11 to ensure we can write 1.6 zipkin.jar for Brave.
+# However, when creating Docker images, there's no such requirement.
+# Hence, we use one version to keep the layer count manageable and centralized here.
+JAVA_VERSION=${JAVA_VERSION:-15.0.0-15.27.17}
 
 case ${TARGET} in
   zipkin )
@@ -22,6 +33,8 @@ case ${TARGET} in
     ;;
   zipkin-cassandra )
     DOCKERFILE_PATH=docker/storage/cassandra/Dockerfile
+    # Until Cassandra v4, we are stuck on JRE 8 for Cassandra
+    JAVA_VERSION=1.8.0_252-b09
     ;;
   zipkin-elasticsearch6 )
     DOCKERFILE_PATH=docker/storage/elasticsearch6/Dockerfile
@@ -37,11 +50,10 @@ case ${TARGET} in
     exit 1
 esac
 
-TAG=${2:-test}
-RELEASE_VERSION=${RELEASE_VERSION:-master}
-
 # Build the image
 IMAGE=openzipkin/${TARGET}:${TAG}
 echo Building image ${IMAGE}
 docker build -f "${DOCKERFILE_PATH}" -t ${IMAGE} \
-    --build-arg RELEASE_VERSION="${RELEASE_VERSION}" --target ${TARGET} .
+    --build-arg java_version=${JAVA_VERSION} --build-arg alpine_version=${ALPINE_VERSION} \
+    --build-arg release_version="${RELEASE_VERSION}" \
+    --target ${TARGET} .

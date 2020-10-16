@@ -12,7 +12,7 @@
 # the License.
 #
 
-ARG java_version=15.0.0-15.27.17
+ARG java_version
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -33,7 +33,8 @@ WORKDIR /install
 COPY --from=scratch /code /code
 
 # This will either be "master" or a real version ex. "2.4.5"
-ARG RELEASE_VERSION=master
+ARG release_version
+ENV RELEASE_VERSION=${release_version}
 COPY docker/bin/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 

@@ -8,12 +8,25 @@ on:
       - master
 
 jobs:
-  build-on-linux:
-    strategy:
-      matrix:
-        image: [zipkin, zipkin-slim, zipkin-ui, zipkin-kafka, zipkin-cassandra, zipkin-elasticsearch6, zipkin-elasticsearch7, zipkin-mysql]
+  discover-targets:
+    name: Build target matrix
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout Sources
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - id: set-matrix
+        name: Generate outputs.matrix from pom.xml listing
+        run: echo "::set-output name=matrix::{\"include\":$(.github/workflows/projects-as-json)}"
+  build-and-verify-docker:
     name: Build and verify Docker images
+    needs: discover-projects
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.discover-targets.outputs.matrix) }}
     steps:
       - name: Install Docker
         uses: docker-practice/actions-setup-docker@master
@@ -29,13 +42,11 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - name: Build Docker image openzipkin/${{ matrix.image }}:test
-        run:  docker/build_image ${{ matrix.image }}
-      - name: Verify Docker image openzipkin/${{ matrix.image }}:test
+      - name: Build Docker image openzipkin/${{ matrix.target }}:test
+        run:  docker/build_image ${{ matrix.target }}
+      - name: Verify Docker image openzipkin/${{ matrix.target }}:test
         run: |
           # This just makes sure containers run and the HEALTHCHECK works (for now..)
-          IMAGE=openzipkin/${{ matrix.image }}:test
-          docker run --rm --name frontend -d ${IMAGE} frontend
-          docker run --rm --name backend -d ${IMAGE} backend
-          docker/bin/block-on-health frontend || exit 1
-          docker/bin/block-on-health backend || exit 1
+          IMAGE=openzipkin/${{ matrix.target }}:test
+          docker run --rm --name sut -d ${IMAGE}
+          docker/bin/block-on-health sut || exit 1
