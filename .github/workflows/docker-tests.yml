@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 1
       - id: set-matrix
         name: Generate outputs.matrix from pom.xml listing
-        run: echo "::set-output name=matrix::{\"include\":$(.github/workflows/projects-as-json)}"
+        run: echo "::set-output name=matrix::{\"include\":$(.github/workflows/targets-as-json)}"
   build-and-verify-docker:
     name: Build and verify Docker images
     needs: discover-targets
