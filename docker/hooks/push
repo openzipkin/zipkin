@@ -20,6 +20,10 @@
 # substitutions like: ${DOCKER_TAG//,/ }
 set -eux
 
+# This hook is called with the current directory set to the same as the Dockerfile, so we go back
+# to top level.
+cd ..
+
 if [ "${DOCKER_REPO}" = "index.docker.io/openzipkin/zipkin" ]; then
   for tag in ${DOCKER_TAG//,/ }; do
     for target in $(docker/bin/targets-to-build); do
