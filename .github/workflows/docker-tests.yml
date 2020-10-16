@@ -4,8 +4,6 @@ on:
     branches:
       - master
   pull_request:
-    branches:
-      - master
 
 jobs:
   discover-targets:
@@ -52,12 +50,10 @@ jobs:
       - name: Verify Docker image openzipkin/${{ matrix.target }}:test
         run: |
           # This just makes sure containers run and the HEALTHCHECK works (for now..)
-          touch docker-sut.env
-          if [ "${{ matrix.target }}" = "zipkin-ui" ]; then
-            echo ZIPKIN_BASE_URL=http://host.docker.internal:9411 >> docker-sut.env
-            # Run zipkin-slim from master to eliminate a matrix build dependency
-            docker run --rm --name zipkin -p 9411:9411 -d openzipkin/zipkin-slim:master
+          COMPOSE_FILE=./.github/workflows/docker-compose-${{ matrix.target }}.yml
+          if test -f "${COMPOSE_FILE}"; then
+            docker-compose up -f "${COMPOSE_FILE}" -d
+          else
+            docker run --name sut -d openzipkin/${{ matrix.target }}:test
           fi
-          IMAGE=openzipkin/${{ matrix.target }}:test
-          docker run --env-file docker-sut.env --rm --name sut -d ${IMAGE}
-          docker/bin/block-on-health sut || exit 1
+          docker/bin/block-on-health sut || (docker logs sut && exit 1)
