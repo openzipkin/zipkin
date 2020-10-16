@@ -267,13 +267,14 @@ logging:
     # logging when enabled. https://github.com/line/armeria/issues/2000
     com.linecorp.armeria.client.HttpResponseDecoder: 'OFF'
     com.linecorp.armeria.common.Flags: 'OFF'
-    com.linecorp.armeria.server.docs.DocStringExtractor: 'OFF'
-    com.linecorp.armeria.server.docs.DocService: 'OFF'
-    com.linecorp.armeria.internal.common.thrift.ThriftSerializationFormatProvider: 'OFF'
-    # Redundant to logging already done in c.l.a.s.Server
-    com.linecorp.armeria.spring.ArmeriaAutoConfiguration: 'WARN'
+    com.linecorp.armeria.common.SerializationFormat: 'OFF'
     # Hostname logging is not Zipkin's duty
     com.linecorp.armeria.common.util.SystemInfo: 'WARN'
+    com.linecorp.armeria.internal.common.JavaVersionSpecific: 'OFF'
+    com.linecorp.armeria.server.docs.DocStringExtractor: 'OFF'
+    com.linecorp.armeria.server.docs.DocService: 'OFF'
+    # Redundant to logging already done in c.l.a.s.Server
+    com.linecorp.armeria.spring.ArmeriaAutoConfiguration: 'WARN'
     # kafka is quite chatty so we switch everything off by default
     org.apache.kafka: 'OFF'
 #     # investigate /api/v2/dependencies
