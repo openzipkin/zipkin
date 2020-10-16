@@ -47,6 +47,13 @@ jobs:
       - name: Verify Docker image openzipkin/${{ matrix.target }}:test
         run: |
           # This just makes sure containers run and the HEALTHCHECK works (for now..)
+          touch docker-sut.env
+          if [ "${{ matrix.target }}" = "openzipkin/zipkin-ui" ]; then
+            echo ZIPKIN_BASE_URL=http://host.docker.internal:9411 >> docker-sut.env
+            # Fake zipkin's healthpoint to test to proxypass without a build dependency
+            touch health && python -m SimpleHTTPServer 9411 &
+          else
+          fi
           IMAGE=openzipkin/${{ matrix.target }}:test
-          docker run --rm --name sut -d ${IMAGE}
+          docker run --env-file docker-sut.env --rm --name sut -d ${IMAGE}
           docker/bin/block-on-health sut || exit 1

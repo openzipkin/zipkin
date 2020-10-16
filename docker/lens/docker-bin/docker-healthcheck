@@ -20,11 +20,9 @@
 set -u +e
 
 IP="$(hostname -i || echo '127.0.0.1')"
-PORT=${QUERY_PORT:-9411}
 
 # Use b3:0 to ensure health checks aren't traced
-# Use /zipkin/config.json as it implicitly verifies the proxy_pass
-HEALTH_OUT=$(wget -qO- http://${IP}:${PORT}/zipkin/config.json --header=b3:0 2>&1)
+HEALTH_OUT=$(wget -qO- http://${IP}/health --header=b3:0 2>&1)
 HEALTH_RC=$?
 if [ "$HEALTH_RC" == "0" ]; then
   exit 0
