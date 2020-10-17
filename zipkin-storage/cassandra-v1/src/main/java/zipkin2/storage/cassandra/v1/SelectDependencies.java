@@ -18,8 +18,6 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.querybuilder.Select;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Date;
@@ -30,18 +28,19 @@ import zipkin2.internal.Dependencies;
 import zipkin2.internal.DependencyLinker;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+
 final class SelectDependencies extends ResultSetFutureCall<List<DependencyLink>> {
-  static class Factory {
+  static final class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
 
     Factory(Session session) {
       this.session = session;
-      Select.Where select =
-          QueryBuilder.select("dependencies")
-              .from("dependencies")
-              .where(QueryBuilder.in("day", QueryBuilder.bindMarker("days")));
-      this.preparedStatement = session.prepare(select);
+      this.preparedStatement = session.prepare(select("dependencies").from("dependencies")
+        .where(in("day", bindMarker())));
     }
 
     Call<List<DependencyLink>> create(long endTs, long lookback) {
@@ -58,23 +57,19 @@ final class SelectDependencies extends ResultSetFutureCall<List<DependencyLink>>
     this.epochDays = epochDays;
   }
 
-  @Override
-  protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement.bind().setList("days", epochDays));
+  @Override protected ResultSetFuture newFuture() {
+    return factory.session.executeAsync(factory.preparedStatement.bind().setList(0, epochDays));
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "SelectDependencies{days=" + epochDays + "}";
   }
 
-  @Override
-  public SelectDependencies clone() {
+  @Override public SelectDependencies clone() {
     return new SelectDependencies(factory, epochDays);
   }
 
-  @Override
-  public List<DependencyLink> map(ResultSet rs) {
+  @Override public List<DependencyLink> map(ResultSet rs) {
     List<DependencyLink> unmerged = new ArrayList<>();
     for (Row row : rs) {
       ByteBuffer encodedDayOfDependencies = row.getBytes("dependencies");

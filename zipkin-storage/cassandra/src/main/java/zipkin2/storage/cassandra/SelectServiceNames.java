@@ -25,7 +25,7 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_SPANS;
 
 final class SelectServiceNames extends ResultSetFutureCall<ResultSet> {
-  static class Factory {
+  static final class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
 
@@ -36,7 +36,7 @@ final class SelectServiceNames extends ResultSetFutureCall<ResultSet> {
     }
 
     Call<List<String>> create() {
-      return new SelectServiceNames(this).flatMap(new DistinctSortedStrings("service"));
+      return new SelectServiceNames(this).flatMap(DistinctSortedStrings.get());
     }
   }
 

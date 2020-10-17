@@ -18,7 +18,6 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import java.nio.ByteBuffer;
 import org.slf4j.Logger;
@@ -27,6 +26,9 @@ import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import zipkin2.v1.V1Span;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.ttl;
 import static zipkin2.storage.cassandra.v1.Tables.TRACES;
 
 final class InsertTrace extends ResultSetFutureCall<Void> {
@@ -43,46 +45,43 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
     abstract ByteBuffer span();
   }
 
-  static class Factory {
+  static final class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
-    final TimestampCodec timestampCodec;
     final boolean dateTieredCompactionStrategy;
 
     Factory(Session session, Schema.Metadata metadata, int spanTtl) {
       this.session = session;
-      this.timestampCodec = new TimestampCodec(session);
-      Insert insertQuery =
-          QueryBuilder.insertInto(TRACES)
-              .value("trace_id", QueryBuilder.bindMarker("trace_id"))
-              .value("ts", QueryBuilder.bindMarker("ts"))
-              .value("span_name", QueryBuilder.bindMarker("span_name"))
-              .value("span", QueryBuilder.bindMarker("span"));
-      if (spanTtl > 0) insertQuery.using(QueryBuilder.ttl(spanTtl));
+      Insert insertQuery = insertInto(TRACES)
+        .value("trace_id", bindMarker())
+        .value("ts", bindMarker())
+        .value("span_name", bindMarker())
+        .value("span", bindMarker());
+      if (spanTtl > 0) insertQuery.using(ttl(spanTtl));
 
       this.dateTieredCompactionStrategy =
-          metadata.compactionClass.contains("DateTieredCompactionStrategy");
+        metadata.compactionClass.contains("DateTieredCompactionStrategy");
       this.preparedStatement = session.prepare(insertQuery);
     }
 
     Input newInput(V1Span v1, ByteBuffer v1Bytes, long ts_micro) {
       String span_name =
-          String.format(
-              "%s%d_%d_%d",
-              v1.traceIdHigh() == 0 ? "" : v1.traceIdHigh() + "_",
-              v1.id(),
-              v1.annotations().hashCode(),
-              v1.binaryAnnotations().hashCode());
+        String.format(
+          "%s%d_%d_%d",
+          v1.traceIdHigh() == 0 ? "" : v1.traceIdHigh() + "_",
+          v1.id(),
+          v1.annotations().hashCode(),
+          v1.binaryAnnotations().hashCode());
 
       // If we couldn't guess the timestamp, that probably means that there was a missing timestamp.
       if (0L == ts_micro && dateTieredCompactionStrategy) {
         LOG.warn(
-            "Span {} in trace {} had no timestamp. "
-                + "If this happens a lot consider switching back to SizeTieredCompactionStrategy for "
-                + "{}.{}",
-            span_name,
-            v1.traceId(),
-            session.getLoggedKeyspace(), TRACES);
+          "Span {} in trace {} had no timestamp. "
+            + "If this happens a lot consider switching back to SizeTieredCompactionStrategy for "
+            + "{}.{}",
+          span_name,
+          v1.traceId(),
+          session.getLoggedKeyspace(), TRACES);
       }
 
       return new AutoValue_InsertTrace_Input(v1.traceId(), ts_micro, span_name, v1Bytes);
@@ -101,29 +100,23 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
     this.input = input;
   }
 
-  @Override
-  protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(
-        factory
-            .preparedStatement
-            .bind()
-            .setLong("trace_id", input.trace_id())
-            .setBytesUnsafe("ts", factory.timestampCodec.serialize(input.ts()))
-            .setString("span_name", input.span_name())
-            .setBytes("span", input.span()));
+  @Override protected ResultSetFuture newFuture() {
+    return factory.session.executeAsync(factory.preparedStatement.bind()
+      .setLong(0, input.trace_id())
+      .setBytesUnsafe(1, TimestampCodec.serialize(input.ts()))
+      .setString(2, input.span_name())
+      .setBytes(3, input.span()));
   }
 
   @Override public Void map(ResultSet input) {
     return null;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return input.toString().replace("Input", "InsertTrace");
   }
 
-  @Override
-  public InsertTrace clone() {
+  @Override public InsertTrace clone() {
     return new InsertTrace(factory, input);
   }
 }

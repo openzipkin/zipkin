@@ -118,9 +118,7 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
 
     @Override protected void waitUntilContainerStarted() {
       Unreliables.retryUntilSuccess(120, TimeUnit.SECONDS, () -> {
-        if (!isRunning()) {
-          throw new ContainerLaunchException("Container failed to start");
-        }
+        if (!isRunning()) throw new ContainerLaunchException("Container failed to start");
 
         String contactPoint = getContainerIpAddress() + ":" + getMappedPort(9042);
         try (Session session = tryToInitializeSession(contactPoint)) {

@@ -70,7 +70,8 @@ public class SchemaTest {
 
     assertThatThrownBy(() -> Schema.getKeyspaceMetadata(session, "zipkin2"))
       .isInstanceOf(RuntimeException.class)
-      .hasMessage("Host 22222222-2222-2222-2222-222222222222 is running Cassandra 3.11.2, but minimum version is 3.11.3");
+      .hasMessage(
+        "Host 22222222-2222-2222-2222-222222222222 is running Cassandra 3.11.2, but minimum version is 3.11.3");
   }
 
   @Test public void getKeyspaceMetadata_passesWhenVersion3_11_3AndKeyspaceMetadataIsNotNull() {

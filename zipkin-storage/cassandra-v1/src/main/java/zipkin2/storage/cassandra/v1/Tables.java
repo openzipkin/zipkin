@@ -21,8 +21,8 @@ import zipkin2.storage.ServiceAndSpanNames;
 
 final class Tables {
   /**
-   * This table includes {@linkplain V1ThriftSpanWriter thrift-encoded} spans, supporting
-   * {@link SelectFromTraces}.
+   * This table includes {@linkplain V1ThriftSpanWriter thrift-encoded} spans, supporting {@link
+   * SelectFromTraces}.
    */
   static final String TRACES = "traces";
 

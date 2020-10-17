@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,7 +19,6 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import zipkin2.Call;
@@ -27,21 +26,22 @@ import zipkin2.DependencyLink;
 import zipkin2.internal.DependencyLinker;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static zipkin2.storage.cassandra.Schema.TABLE_DEPENDENCY;
 
 final class SelectDependencies extends ResultSetFutureCall<List<DependencyLink>> {
 
-  static class Factory {
+  static final class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
 
     Factory(Session session) {
       this.session = session;
       this.preparedStatement =
-          session.prepare(
-              QueryBuilder.select("parent", "child", "errors", "calls")
-                  .from(TABLE_DEPENDENCY)
-                  .where(QueryBuilder.in("day", QueryBuilder.bindMarker("days"))));
+        session.prepare(select("parent", "child", "errors", "calls").from(TABLE_DEPENDENCY)
+          .where(in("day", bindMarker())));
     }
 
     Call<List<DependencyLink>> create(long endTs, long lookback) {
@@ -58,32 +58,27 @@ final class SelectDependencies extends ResultSetFutureCall<List<DependencyLink>>
     this.days = days;
   }
 
-  @Override
-  protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement.bind().setList("days", days));
+  @Override protected ResultSetFuture newFuture() {
+    return factory.session.executeAsync(factory.preparedStatement.bind().setList(0, days));
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "SelectDependencies{days=" + days + "}";
   }
 
-  @Override
-  public SelectDependencies clone() {
+  @Override public SelectDependencies clone() {
     return new SelectDependencies(factory, days);
   }
 
-  @Override
-  public List<DependencyLink> map(ResultSet rs) {
+  @Override public List<DependencyLink> map(ResultSet rs) {
     List<DependencyLink> unmerged = new ArrayList<>();
     for (Row row : rs) {
-      unmerged.add(
-          DependencyLink.newBuilder()
-              .parent(row.getString("parent"))
-              .child(row.getString("child"))
-              .errorCount(row.getLong("errors"))
-              .callCount(row.getLong("calls"))
-              .build());
+      unmerged.add(DependencyLink.newBuilder()
+        .parent(row.getString("parent"))
+        .child(row.getString("child"))
+        .errorCount(row.getLong("errors"))
+        .callCount(row.getLong("calls"))
+        .build());
     }
     return DependencyLinker.merge(unmerged);
   }

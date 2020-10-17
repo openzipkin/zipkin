@@ -17,35 +17,34 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.List;
 import java.util.Locale;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.DistinctSortedStrings;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_SPANS;
 
 final class SelectSpanNames extends ResultSetFutureCall<ResultSet> {
 
-  static class Factory {
+  static final class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
-    final DistinctSortedStrings spans = new DistinctSortedStrings("span");
 
     Factory(Session session) {
       this.session = session;
-      this.preparedStatement =
-        session.prepare(QueryBuilder.select("span")
-          .from(TABLE_SERVICE_SPANS)
-          .where(QueryBuilder.eq("service", QueryBuilder.bindMarker("service")))
-          .limit(QueryBuilder.bindMarker("limit_")));
+      this.preparedStatement = session.prepare(select("span").from(TABLE_SERVICE_SPANS)
+        .where(eq("service", bindMarker()))
+        .limit(10000));
     }
 
     Call<List<String>> create(String serviceName) {
       if (serviceName == null || serviceName.isEmpty()) return Call.emptyList();
       String service = serviceName.toLowerCase(Locale.ROOT); // service names are always lowercase!
-      return new SelectSpanNames(this, service).flatMap(spans);
+      return new SelectSpanNames(this, service).flatMap(DistinctSortedStrings.get());
     }
   }
 
@@ -58,9 +57,7 @@ final class SelectSpanNames extends ResultSetFutureCall<ResultSet> {
   }
 
   @Override protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement.bind()
-      .setString("service", service)
-      .setInt("limit_", 10000));
+    return factory.session.executeAsync(factory.preparedStatement.bind().setString(0, service));
   }
 
   @Override public ResultSet map(ResultSet input) {

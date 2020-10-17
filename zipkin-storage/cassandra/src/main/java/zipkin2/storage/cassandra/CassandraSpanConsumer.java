@@ -28,8 +28,12 @@ import zipkin2.Span;
 import zipkin2.internal.AggregateCall;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.SpanConsumer;
+import zipkin2.storage.cassandra.internal.call.InsertEntry;
 
 import static zipkin2.storage.cassandra.CassandraUtil.durationIndexBucket;
+import static zipkin2.storage.cassandra.Schema.TABLE_AUTOCOMPLETE_TAGS;
+import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_REMOTE_SERVICES;
+import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_SPANS;
 
 class CassandraSpanConsumer implements SpanConsumer { // not final for testing
   final Session session;
@@ -40,16 +44,26 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
   // Everything below here is null when search is disabled
   @Nullable final InsertTraceByServiceRemoteService.Factory insertTraceByServiceRemoteService;
   @Nullable final InsertTraceByServiceSpan.Factory insertTraceByServiceSpan;
-  @Nullable final InsertServiceSpan.Factory insertServiceSpan;
-  @Nullable final InsertServiceRemoteService.Factory insertServiceRemoteService;
-  @Nullable final InsertAutocompleteValue.Factory insertAutocompleteValue;
+  @Nullable final InsertEntry.Factory insertServiceSpan;
+  @Nullable final InsertEntry.Factory insertServiceRemoteService;
+  @Nullable final InsertEntry.Factory insertAutocompleteValue;
 
   CassandraSpanConsumer(CassandraStorage storage) {
-    session = storage.session();
-    Schema.Metadata metadata = storage.metadata();
-    strictTraceId = storage.strictTraceId();
-    searchEnabled = storage.searchEnabled();
-    autocompleteKeys = new LinkedHashSet<>(storage.autocompleteKeys());
+    this(
+      storage.session(), storage.metadata(),
+      storage.strictTraceId, storage.searchEnabled,
+      storage.autocompleteKeys, storage.autocompleteTtl, storage.autocompleteCardinality
+    );
+  }
+
+  // Exposed to allow tests to switch from strictTraceId to not
+  CassandraSpanConsumer(Session session, Schema.Metadata metadata,
+    boolean strictTraceId, boolean searchEnabled,
+    Set<String> autocompleteKeys, int autocompleteTtl, int autocompleteCardinality) {
+    this.session = session;
+    this.strictTraceId = strictTraceId;
+    this.searchEnabled = searchEnabled;
+    this.autocompleteKeys = autocompleteKeys;
 
     insertSpan = new InsertSpan.Factory(session, strictTraceId, searchEnabled);
 
@@ -66,14 +80,23 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     if (metadata.hasRemoteService) {
       insertTraceByServiceRemoteService =
         new InsertTraceByServiceRemoteService.Factory(session, strictTraceId);
-      insertServiceRemoteService = new InsertServiceRemoteService.Factory(storage);
+      insertServiceRemoteService = new InsertEntry.Factory(
+        TABLE_SERVICE_REMOTE_SERVICES, "service", "remote_service",
+        session, autocompleteTtl, autocompleteCardinality
+      );
     } else {
       insertTraceByServiceRemoteService = null;
       insertServiceRemoteService = null;
     }
-    insertServiceSpan = new InsertServiceSpan.Factory(storage);
-    if (metadata.hasAutocompleteTags && !storage.autocompleteKeys().isEmpty()) {
-      insertAutocompleteValue = new InsertAutocompleteValue.Factory(storage);
+    insertServiceSpan = new InsertEntry.Factory(
+      TABLE_SERVICE_SPANS, "service", "span",
+      session, autocompleteTtl, autocompleteCardinality
+    );
+    if (metadata.hasAutocompleteTags && !autocompleteKeys.isEmpty()) {
+      insertAutocompleteValue = new InsertEntry.Factory(
+        TABLE_AUTOCOMPLETE_TAGS, "key", "value",
+        session, autocompleteTtl, autocompleteCardinality
+      );
     } else {
       insertAutocompleteValue = null;
     }
@@ -170,9 +193,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
   static long guessTimestamp(Span span) {
     assert 0L == span.timestampAsLong() : "method only for when span has no timestamp";
     for (Annotation annotation : span.annotations()) {
-      if (0L < annotation.timestamp()) {
-        return annotation.timestamp();
-      }
+      if (0L < annotation.timestamp()) return annotation.timestamp();
     }
     return 0L; // return a timestamp that won't match a query
   }

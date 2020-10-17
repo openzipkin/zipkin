@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -36,6 +36,7 @@ import zipkin2.storage.cassandra.internal.call.IntersectKeySets;
 import zipkin2.storage.cassandra.internal.call.IntersectMaps;
 
 import static java.util.Arrays.asList;
+import static zipkin2.storage.cassandra.CassandraUtil.durationIndexBucket;
 import static zipkin2.storage.cassandra.CassandraUtil.traceIdsSortedByDescTimestamp;
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_REMOTE_SERVICES;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
@@ -60,10 +61,10 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
   CassandraSpanStore(CassandraStorage storage) {
     Session session = storage.session();
     Schema.Metadata metadata = storage.metadata();
-    int maxTraceCols = storage.maxTraceCols();
-    indexFetchMultiplier = storage.indexFetchMultiplier();
-    boolean strictTraceId = storage.strictTraceId();
-    searchEnabled = storage.searchEnabled();
+    int maxTraceCols = storage.maxTraceCols;
+    indexFetchMultiplier = storage.indexFetchMultiplier;
+    boolean strictTraceId = storage.strictTraceId;
+    searchEnabled = storage.searchEnabled;
 
     spans = new SelectFromSpan.Factory(session, strictTraceId, maxTraceCols);
     dependencies = new SelectDependencies.Factory(session);
@@ -79,7 +80,7 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
       return;
     }
 
-    KeyspaceMetadata md = Schema.ensureKeyspaceMetadata(session, storage.keyspace());
+    KeyspaceMetadata md = Schema.ensureKeyspaceMetadata(session, storage.keyspace);
     indexTtl = md.getTable(TABLE_TRACE_BY_SERVICE_SPAN).getOptions().getDefaultTimeToLive();
     serviceNames = new SelectServiceNames.Factory(session).create();
     if (metadata.hasRemoteService) {
@@ -120,8 +121,7 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
    * rows match). Once IDs are parsed, there's one call for each 5K rows of span data. This means
    * "http.path=/foo and error" is minimally 3 network calls, the first two in parallel.
    */
-  @Override
-  public Call<List<List<Span>>> getTraces(QueryRequest request) {
+  @Override public Call<List<List<Span>>> getTraces(QueryRequest request) {
     if (!searchEnabled) return Call.emptyList();
 
     TimestampRange timestampRange = timestampRange(request);
@@ -150,8 +150,7 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
     }
 
     if (callsToIntersect.size() == 1) {
-      return callsToIntersect
-        .get(0)
+      return callsToIntersect.get(0)
         .map(traceIdsSortedByDescTimestamp())
         .flatMap(spans.newFlatMapper(request));
     }
@@ -181,8 +180,8 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
     // trace_by_service_span adds special empty-string span name in order to search by all
     String spanName = null != request.spanName() ? request.spanName() : "";
     Long minDuration = request.minDuration(), maxDuration = request.maxDuration();
-    int startBucket = CassandraUtil.durationIndexBucket(timestampRange.startMillis * 1000);
-    int endBucket = CassandraUtil.durationIndexBucket(timestampRange.endMillis * 1000);
+    int startBucket = durationIndexBucket(timestampRange.startMillis * 1000);
+    int endBucket = durationIndexBucket(timestampRange.endMillis * 1000);
     if (startBucket > endBucket) {
       throw new IllegalArgumentException(
         "Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");

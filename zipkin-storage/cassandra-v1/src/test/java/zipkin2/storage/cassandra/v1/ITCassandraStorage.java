@@ -16,7 +16,6 @@ package zipkin2.storage.cassandra.v1;
 import com.datastax.driver.core.Host;
 import com.datastax.driver.core.Session;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;

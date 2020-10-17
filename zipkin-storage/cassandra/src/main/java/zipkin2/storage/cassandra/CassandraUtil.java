@@ -55,8 +55,8 @@ final class CassandraUtil {
   /**
    * Returns a set of annotation getValues and tags joined on equals, delimited by ░
    *
-   * <p>Values over {@link RecyclableBuffers#SHORT_STRING_LENGTH} are not considered. Zipkin's {@link
-   * QueryRequest#annotationQuery()} are equals match. Not all values are lookup values. For
+   * <p>Values over {@link RecyclableBuffers#SHORT_STRING_LENGTH} are not considered. Zipkin's
+   * {@link QueryRequest#annotationQuery()} are equals match. Not all values are lookup values. For
    * example, {@code sql.query} isn't something that is likely to be looked up by value and indexing
    * that could add a potentially kilobyte partition key on {@link Schema#TABLE_SPAN}
    *
@@ -101,8 +101,7 @@ final class CassandraUtil {
   enum TraceIdsSortedByDescTimestamp implements Call.Mapper<Map<String, Long>, Set<String>> {
     INSTANCE;
 
-    @Override
-    public Set<String> map(Map<String, Long> map) {
+    @Override public Set<String> map(Map<String, Long> map) {
       // timestamps can collide, so we need to add some random digits on end before using them as
       // serviceSpanKeys
       TreeMap<BigInteger, String> sorted = new TreeMap<>(Collections.reverseOrder());
@@ -116,8 +115,7 @@ final class CassandraUtil {
       return new LinkedHashSet<>(sorted.values());
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "TraceIdsSortedByDescTimestamp";
     }
 

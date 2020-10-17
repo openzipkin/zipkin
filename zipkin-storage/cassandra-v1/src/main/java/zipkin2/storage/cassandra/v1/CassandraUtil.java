@@ -58,8 +58,8 @@ final class CassandraUtil {
   /**
    * Returns keys that concatenate the serviceName associated with an annotation or tag.
    *
-   * <p>Values over {@link RecyclableBuffers#SHORT_STRING_LENGTH} are not considered. Zipkin's {@link
-   * QueryRequest#annotationQuery()} are equals match. Not all values are lookup values. For
+   * <p>Values over {@link RecyclableBuffers#SHORT_STRING_LENGTH} are not considered. Zipkin's
+   * {@link QueryRequest#annotationQuery()} are equals match. Not all values are lookup values. For
    * example, {@code sql.query} isn't something that is likely to be looked up by value and indexing
    * that could add a potentially kilobyte partition key on {@link Tables#ANNOTATIONS_INDEX}
    *
@@ -119,9 +119,9 @@ final class CassandraUtil {
     TreeMap<BigInteger, Long> sorted = new TreeMap<>(Collections.reverseOrder());
     for (Pair pair : set) {
       BigInteger uncollided =
-          BigInteger.valueOf(pair.right)
-              .multiply(OFFSET)
-              .add(BigInteger.valueOf(RAND.nextInt() & Integer.MAX_VALUE));
+        BigInteger.valueOf(pair.right)
+          .multiply(OFFSET)
+          .add(BigInteger.valueOf(RAND.nextInt() & Integer.MAX_VALUE));
       sorted.put(uncollided, pair.left);
     }
     return new LinkedHashSet<>(sorted.values());
@@ -134,13 +134,11 @@ final class CassandraUtil {
   enum SortTraceIdsByDescTimestamp implements Call.Mapper<Set<Pair>, Set<Long>> {
     INSTANCE;
 
-    @Override
-    public Set<Long> map(Set<Pair> set) {
+    @Override public Set<Long> map(Set<Pair> set) {
       return sortTraceIdsByDescTimestamp(set);
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "SortTraceIdsByDescTimestamp";
     }
   }

@@ -15,26 +15,28 @@ package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.querybuilder.Insert;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static zipkin2.storage.cassandra.v1.CassandraUtil.toByteBuffer;
+import static zipkin2.storage.cassandra.v1.IndexTraceId.BUCKET_COUNT;
+import static zipkin2.storage.cassandra.v1.Tables.ANNOTATIONS_INDEX;
 
 // QueryRequest.annotations/binaryAnnotations
 final class IndexTraceIdByAnnotation extends IndexTraceId.Factory {
   IndexTraceIdByAnnotation(CassandraStorage storage, int indexTtl) {
-    super(storage, Tables.ANNOTATIONS_INDEX, indexTtl);
+    super(storage, ANNOTATIONS_INDEX, indexTtl);
   }
 
   @Override public Insert declarePartitionKey(Insert insert) {
     return insert
-      .value("annotation", QueryBuilder.bindMarker("annotation"))
-      .value("bucket", QueryBuilder.bindMarker("bucket"));
+      .value("annotation", bindMarker())
+      .value("bucket", bindMarker());
   }
 
   @Override public BoundStatement bindPartitionKey(BoundStatement bound, String partitionKey) {
     return bound
-      .setInt("bucket", ThreadLocalRandom.current().nextInt(bucketCount))
-      .setBytes("annotation", toByteBuffer(partitionKey));
+      .setBytes(2, toByteBuffer(partitionKey))
+      .setInt(3, ThreadLocalRandom.current().nextInt(BUCKET_COUNT));
   }
 }

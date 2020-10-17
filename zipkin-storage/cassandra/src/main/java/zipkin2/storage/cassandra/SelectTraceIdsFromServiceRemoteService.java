@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,7 +18,6 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,6 +30,11 @@ import zipkin2.storage.cassandra.internal.call.AccumulateTraceIdTsUuid;
 import zipkin2.storage.cassandra.internal.call.AggregateIntoMap;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.gte;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.lte;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE;
 
 final class SelectTraceIdsFromServiceRemoteService extends ResultSetFutureCall<ResultSet> {
@@ -58,20 +62,20 @@ final class SelectTraceIdsFromServiceRemoteService extends ResultSetFutureCall<R
     }
   }
 
-  static class Factory {
+  static final class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
 
     Factory(Session session) {
       this.session = session;
-      this.preparedStatement = session.prepare(QueryBuilder.select("ts", "trace_id")
-        .from(TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE)
-        .where(QueryBuilder.eq("service", QueryBuilder.bindMarker("service")))
-        .and(QueryBuilder.eq("remote_service", QueryBuilder.bindMarker("remote_service")))
-        .and(QueryBuilder.eq("bucket", QueryBuilder.bindMarker("bucket")))
-        .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
-        .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
-        .limit(QueryBuilder.bindMarker("limit_")));
+      this.preparedStatement =
+        session.prepare(select("trace_id", "ts").from(TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE)
+          .where(eq("service", bindMarker()))
+          .and(eq("remote_service", bindMarker()))
+          .and(eq("bucket", bindMarker()))
+          .and(gte("ts", bindMarker()))
+          .and(lte("ts", bindMarker()))
+          .limit(bindMarker("limit_")));
     }
 
     Input newInput(
@@ -102,7 +106,7 @@ final class SelectTraceIdsFromServiceRemoteService extends ResultSetFutureCall<R
 
     Call<Map<String, Long>> newCall(Input input) {
       return new SelectTraceIdsFromServiceRemoteService(this, preparedStatement, input)
-        .flatMap(new AccumulateTraceIdTsUuid());
+        .flatMap(AccumulateTraceIdTsUuid.get());
     }
 
     /** Applies all deferred service names to all input templates */
@@ -156,12 +160,12 @@ final class SelectTraceIdsFromServiceRemoteService extends ResultSetFutureCall<R
 
   @Override protected ResultSetFuture newFuture() {
     Statement bound = preparedStatement.bind()
-      .setString("service", input.service())
-      .setString("remote_service", input.remote_service())
-      .setInt("bucket", input.bucket())
-      .setUUID("start_ts", input.start_ts())
-      .setUUID("end_ts", input.end_ts())
-      .setInt("limit_", input.limit_())
+      .setString(0, input.service())
+      .setString(1, input.remote_service())
+      .setInt(2, input.bucket())
+      .setUUID(3, input.start_ts())
+      .setUUID(4, input.end_ts())
+      .setInt(5, input.limit_())
       .setFetchSize(input.limit_());
     return factory.session.executeAsync(bound);
   }

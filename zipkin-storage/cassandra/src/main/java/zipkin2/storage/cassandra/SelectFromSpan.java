@@ -18,7 +18,6 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -38,11 +37,14 @@ import zipkin2.storage.StrictTraceId;
 import zipkin2.storage.cassandra.internal.call.AccumulateAllResults;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
 final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
 
-  static class Factory {
+  static final class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
     final ReadSpans readSpans;
@@ -53,27 +55,25 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
     Factory(Session session, boolean strictTraceId, int maxTraceCols) {
       this.session = session;
       this.readSpans = new ReadSpans();
-      this.preparedStatement =
-          session.prepare(
-              QueryBuilder.select(
-                      "trace_id_high",
-                      "trace_id",
-                      "parent_id",
-                      "id",
-                      "kind",
-                      "span",
-                      "ts",
-                      "duration",
-                      "l_ep",
-                      "r_ep",
-                      "annotations",
-                      "tags",
-                      "shared",
-                      "debug")
-                  .from(TABLE_SPAN)
-                  // when reading on the partition key, clustering keys are optional
-                  .where(QueryBuilder.in("trace_id", QueryBuilder.bindMarker("trace_id")))
-                  .limit(QueryBuilder.bindMarker("limit_")));
+      this.preparedStatement = session.prepare(select(
+        "trace_id_high",
+        "trace_id",
+        "parent_id",
+        "id",
+        "kind",
+        "span",
+        "ts",
+        "duration",
+        "l_ep",
+        "r_ep",
+        "annotations",
+        "tags",
+        "shared",
+        "debug")
+        .from(TABLE_SPAN)
+        // when reading on the partition key, clustering keys are optional
+        .where(in("trace_id", bindMarker()))
+        .limit(bindMarker()));
       this.strictTraceId = strictTraceId;
       this.maxTraceCols = maxTraceCols;
       this.groupByTraceId = GroupByTraceId.create(strictTraceId);
@@ -128,23 +128,21 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
     this.limit_ = limit_;
   }
 
-  @Override
-  protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(
-        factory.preparedStatement.bind().setSet("trace_id", trace_id).setInt("limit_", limit_));
+  @Override protected ResultSetFuture newFuture() {
+    return factory.session.executeAsync(factory.preparedStatement.bind()
+      .setSet(0, trace_id)
+      .setInt(1, limit_));
   }
 
   @Override public ResultSet map(ResultSet input) {
     return input;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "SelectFromSpan{trace_id=" + trace_id + ", limit_=" + limit_ + "}";
   }
 
-  @Override
-  public SelectFromSpan clone() {
+  @Override public SelectFromSpan clone() {
     return new SelectFromSpan(factory, trace_id, limit_);
   }
 
@@ -161,8 +159,7 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
       this.filter = factory.strictTraceId ? FilterTraces.create(request) : null;
     }
 
-    @Override
-    public Call<List<List<Span>>> map(Set<String> input) {
+    @Override public Call<List<List<Span>>> map(Set<String> input) {
       if (input.isEmpty()) return Call.emptyList();
       Set<String> traceIds;
       if (input.size() > limit) {
@@ -175,38 +172,34 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
         traceIds = input;
       }
       Call<List<List<Span>>> result =
-          new SelectFromSpan(factory, traceIds, factory.maxTraceCols)
-              .flatMap(factory.readSpans)
-              .map(factory.groupByTraceId);
+        new SelectFromSpan(factory, traceIds, factory.maxTraceCols)
+          .flatMap(factory.readSpans)
+          .map(factory.groupByTraceId);
       return filter != null ? result.map(filter) : result;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "SelectSpansByTraceIds{limit=" + limit + "}";
     }
   }
 
   static final class ReadSpans extends AccumulateAllResults<List<Span>> {
 
-    @Override
-    protected Supplier<List<Span>> supplier() {
+    @Override protected Supplier<List<Span>> supplier() {
       return ArrayList::new;
     }
 
-    @Override
-    protected BiConsumer<Row, List<Span>> accumulator() {
+    @Override protected BiConsumer<Row, List<Span>> accumulator() {
       return (row, result) -> {
         String traceId = row.getString("trace_id");
         String traceIdHigh = row.getString("trace_id_high");
         if (traceIdHigh != null) traceId = traceIdHigh + traceId;
-        Span.Builder builder =
-            Span.newBuilder()
-                .traceId(traceId)
-                .parentId(row.getString("parent_id"))
-                .id(row.getString("id"))
-                .name(row.getString("span"))
-                .timestamp(row.getLong("ts"));
+        Span.Builder builder = Span.newBuilder()
+          .traceId(traceId)
+          .parentId(row.getString("parent_id"))
+          .id(row.getString("id"))
+          .name(row.getString("span"))
+          .timestamp(row.getLong("ts"));
 
         if (!row.isNull("duration")) {
           builder.duration(row.getLong("duration"));
@@ -234,15 +227,14 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
           builder.addAnnotation(udt.toAnnotation().timestamp(), udt.toAnnotation().value());
         }
         for (Map.Entry<String, String> tag :
-            row.getMap("tags", String.class, String.class).entrySet()) {
+          row.getMap("tags", String.class, String.class).entrySet()) {
           builder.putTag(tag.getKey(), tag.getValue());
         }
         result.add(builder.build());
       };
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "ReadSpans{}";
     }
   }

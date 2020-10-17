@@ -13,7 +13,9 @@
  */
 package zipkin2.storage.cassandra.v1;
 
+import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.querybuilder.Insert;
 import java.nio.ByteBuffer;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -29,10 +31,12 @@ import zipkin2.internal.HexCodec;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.V1ThriftSpanWriter;
 import zipkin2.storage.SpanConsumer;
+import zipkin2.storage.cassandra.internal.call.InsertEntry;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V2SpanConverter;
 
 import static zipkin2.storage.cassandra.v1.CassandraUtil.annotationKeys;
+import static zipkin2.storage.cassandra.v1.Tables.AUTOCOMPLETE_TAGS;
 
 final class CassandraSpanConsumer implements SpanConsumer {
   final InsertTrace.Factory insertTrace;
@@ -41,9 +45,9 @@ final class CassandraSpanConsumer implements SpanConsumer {
 
   // Everything below here is client-side indexing for QueryRequest and null when search is disabled
   @Nullable final InsertServiceName.Factory insertServiceName;
-  @Nullable final InsertRemoteServiceName.Factory insertRemoteServiceName;
-  @Nullable final InsertSpanName.Factory insertSpanName;
-  @Nullable final InsertAutocompleteValue.Factory insertAutocompleteValue;
+  @Nullable final InsertEntry.Factory insertRemoteServiceName;
+  @Nullable final InsertEntry.Factory insertSpanName;
+  @Nullable final InsertEntry.Factory insertAutocompleteValue;
   @Nullable final IndexTraceIdByServiceName indexTraceIdByServiceName;
   @Nullable final IndexTraceIdByRemoteServiceName indexTraceIdByRemoteServiceName;
   @Nullable final IndexTraceIdBySpanName indexTraceIdBySpanName;
@@ -71,22 +75,38 @@ final class CassandraSpanConsumer implements SpanConsumer {
       return;
     }
 
+    int autocompleteTtl = storage.autocompleteTtl;
+    int autocompleteCardinality = storage.autocompleteCardinality;
     int indexTtl = metadata.hasDefaultTtl ? 0 : storage.indexTtl;
 
     insertServiceName = new InsertServiceName.Factory(storage, indexTtl);
     indexTraceIdByServiceName = new IndexTraceIdByServiceName(storage, indexTtl);
     if (metadata.hasRemoteService) {
-      insertRemoteServiceName = new InsertRemoteServiceName.Factory(storage, indexTtl);
+      insertRemoteServiceName = new InsertEntry.Factory(
+        Tables.REMOTE_SERVICE_NAMES, "service_name", "remote_service_name",
+        session, autocompleteTtl, autocompleteCardinality, indexTtl
+      );
       indexTraceIdByRemoteServiceName = new IndexTraceIdByRemoteServiceName(storage, indexTtl);
     } else {
       insertRemoteServiceName = null;
       indexTraceIdByRemoteServiceName = null;
     }
-    insertSpanName = new InsertSpanName.Factory(storage, indexTtl);
+    insertSpanName = new InsertEntry.Factory(
+      Tables.SPAN_NAMES, "service_name", "span_name",
+      session, autocompleteTtl, autocompleteCardinality, indexTtl
+    ) {
+      // bucket is deprecated on this index
+      @Override protected PreparedStatement prepare(Session session, Insert insert) {
+        return session.prepare(insert.value("bucket", 0));
+      }
+    };
     indexTraceIdBySpanName = new IndexTraceIdBySpanName(storage, indexTtl);
     indexTraceIdByAnnotation = new IndexTraceIdByAnnotation(storage, indexTtl);
     if (metadata.hasAutocompleteTags && !storage.autocompleteKeys.isEmpty()) {
-      insertAutocompleteValue = new InsertAutocompleteValue.Factory(storage, indexTtl);
+      insertAutocompleteValue = new InsertEntry.Factory(
+        AUTOCOMPLETE_TAGS, "key", "value",
+        session, autocompleteTtl, autocompleteCardinality, indexTtl
+      );
     } else {
       insertAutocompleteValue = null;
     }
@@ -230,19 +250,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
     return AggregateCall.newVoidCall(calls);
   }
 
-  /** For testing only: clears any caches */
-  void clear() {
-    if (insertServiceName != null) insertServiceName.clear();
-    if (insertRemoteServiceName != null) insertRemoteServiceName.clear();
-    if (insertSpanName != null) insertSpanName.clear();
-    if (insertAutocompleteValue != null) insertAutocompleteValue.clear();
-    if (indexTraceIdByServiceName != null) indexTraceIdByServiceName.clear();
-    if (indexTraceIdByRemoteServiceName != null) indexTraceIdByRemoteServiceName.clear();
-    if (indexTraceIdBySpanName != null) indexTraceIdBySpanName.clear();
-    if (indexTraceIdByAnnotation != null) indexTraceIdByAnnotation.clear();
-  }
-
-  private static long guessTimestamp(Span span) {
+  static long guessTimestamp(Span span) {
     assert 0L == span.timestampAsLong() : "method only for when span has no timestamp";
     for (Annotation annotation : span.annotations()) {
       if (0L < annotation.timestamp()) return annotation.timestamp();

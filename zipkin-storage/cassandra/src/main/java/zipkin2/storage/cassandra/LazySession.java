@@ -11,11 +11,14 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.storage.cassandra.v1;
+package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
+import zipkin2.storage.cassandra.CassandraStorage.SessionFactory;
+
+import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
 final class LazySession {
   final SessionFactory sessionFactory;
@@ -35,7 +38,7 @@ final class LazySession {
         if (session == null) {
           session = sessionFactory.create(storage);
           metadata = Schema.readMetadata(session); // warn only once when schema problems exist
-          healthCheck = session.prepare("SELECT trace_id FROM " + Tables.TRACES + " limit 1");
+          healthCheck = session.prepare("SELECT trace_id FROM " + TABLE_SPAN + " limit 1");
         }
       }
     }
