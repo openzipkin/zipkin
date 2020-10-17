@@ -62,7 +62,7 @@ public class AggregateCallTest {
   @Test public void newVoidCall_joinsMultipleCalls() {
     assertThat(AggregateCall.newVoidCall(asList(call1, call2)))
       .isInstanceOf(AggregateCall.AggregateVoidCall.class)
-      .extracting("calls")
+      .extracting("delegate")
       .isEqualTo(asList(call1, call2));
   }
 
