@@ -14,13 +14,18 @@
 package zipkin2.storage.cassandra;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
+import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.TestObjects;
+import zipkin2.internal.AggregateCall;
 import zipkin2.storage.ITStorage;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
+import zipkin2.storage.cassandra.internal.call.InsertEntry;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -79,18 +84,22 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
     assertThat(rowCountForTraceByServiceSpan(storage))
       .isGreaterThanOrEqualTo(4L);
 
+    CassandraSpanConsumer withoutStrictTraceId = new CassandraSpanConsumer(
+      storage.session(), storage.metadata(),
+      false /* strictTraceId */, storage.searchEnabled,
+      storage.autocompleteKeys, storage.autocompleteTtl, storage.autocompleteCardinality
+    );
+
     // sanity check base case
-    accept(storage.toBuilder().strictTraceId(false).build().spanConsumer(), trace);
+    accept(withoutStrictTraceId, trace);
 
     assertThat(rowCountForTraceByServiceSpan(storage))
       .isGreaterThanOrEqualTo(120L); // TODO: magic number
     assertThat(rowCountForTraceByServiceSpan(storage))
       .isGreaterThanOrEqualTo(120L);
-
   }
 
-  @Test
-  public void insertTags_SelectTags_CalculateCount() throws IOException {
+  @Test public void insertTags_SelectTags_CalculateCount() throws IOException {
     Span[] trace = new Span[101];
     trace[0] = TestObjects.CLIENT_SPAN.toBuilder().kind(Span.Kind.SERVER).build();
 
@@ -103,8 +112,7 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
       .localEndpoint(FRONTEND)
       .putTag("environment", "dev")
       .putTag("a", "b")
-      .timestamp(
-        trace[0].timestamp() + i * 1000) // all peer span timestamps happen a millisecond later
+      .timestamp(trace[0].timestampAsLong() + i * 1000) // all peer span timestamps happen 1ms later
       .duration(10L)
       .build());
 
@@ -114,7 +122,22 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
       .isEqualTo(1L); // Since tag {a,b} are not in the whitelist
 
     assertThat(getTagValue(storage, "environment")).isEqualTo("dev");
+  }
 
+  /** It is easier to use a real Cassandra connection than mock a prepared statement. */
+  @Test public void insertEntry_niceToString() {
+    AggregateCall<?, ?> acceptCall =
+      (AggregateCall<?, ?>) storage.spanConsumer().accept(asList(TestObjects.CLIENT_SPAN));
+
+    List<Call<?>> insertEntryCalls = acceptCall.delegate().stream()
+      .filter(c -> c instanceof InsertEntry)
+      .collect(Collectors.toList());
+
+    assertThat(insertEntryCalls.get(0))
+      .hasToString("InsertEntry{table=span_by_service, service=frontend, span=get}");
+    assertThat(insertEntryCalls.get(1))
+      .hasToString(
+        "InsertEntry{table=remote_service_by_service, service=frontend, remote_service=backend}");
   }
 
   void accept(SpanConsumer consumer, Span... spans) throws IOException {
@@ -136,6 +159,7 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
       .one()
       .getLong(0);
   }
+
   static String getTagValue(CassandraStorage storage, String key) {
     return storage
       .session()

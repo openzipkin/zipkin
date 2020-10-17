@@ -268,7 +268,7 @@ public class AggregateCallTest {
 
   static final class AggregateDependencyLinks
     extends AggregateCall<List<DependencyLink>, List<DependencyLink>> {
-    AggregateDependencyLinks(List<? extends Call<List<DependencyLink>>> calls) {
+    AggregateDependencyLinks(List<Call<List<DependencyLink>>> calls) {
       super(calls);
     }
 

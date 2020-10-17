@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,7 +21,7 @@ import org.mockito.Mockito;
 import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.storage.QueryRequest;
-import zipkin2.storage.cassandra.v1.SelectTraceIdTimestampFromServiceNames.Factory.FlatMapServiceNamesToInput;
+import zipkin2.storage.cassandra.v1.SelectTraceIdTimestampFromServiceNames.FlatMapServiceNamesToInput;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
@@ -67,14 +67,14 @@ public class CassandraSpanStoreTest {
   @Test public void getTraces() {
     Call<List<List<Span>>> call = spanStore.getTraces(queryBuilder.serviceName("frontend").build());
 
-    assertThat(call.toString()).contains("service_name=frontend,");
+    assertThat(call.toString()).contains("service_name=frontend");
   }
 
   @Test public void getTraces_withSpanName() {
     Call<List<List<Span>>> call = spanStore.getTraces(
       queryBuilder.serviceName("frontend").spanName("get").build());
 
-    assertThat(call.toString()).contains("service_span_name=frontend.get,");
+    assertThat(call.toString()).contains("service_span_name=frontend.get");
   }
 
   @Test public void getTraces_withRemoteServiceName() {
@@ -82,8 +82,8 @@ public class CassandraSpanStoreTest {
       queryBuilder.serviceName("frontend").remoteServiceName("backend").build());
 
     assertThat(call.toString())
-      .contains("service_remote_service_name=frontend.backend,")
-      .doesNotContain("service=frontend, span="); // no need to look at two indexes
+      .contains("service_remote_service_name=frontend.backend")
+      .doesNotContain("service=frontend"); // no need to look at two indexes
   }
 
   @Test public void getTraces_withSpanNameAndRemoteServiceName() {
@@ -91,8 +91,8 @@ public class CassandraSpanStoreTest {
       queryBuilder.serviceName("frontend").remoteServiceName("backend").spanName("get").build());
 
     assertThat(call.toString()) // needs to look at two indexes
-      .contains("service_remote_service_name=frontend.backend,")
-      .contains("service_span_name=frontend.get,");
+      .contains("service_remote_service_name=frontend.backend")
+      .contains("service_span_name=frontend.get");
   }
 
   @Test public void searchDisabled_doesntMakeRemoteQueryRequests() {

@@ -17,8 +17,7 @@ import com.datastax.driver.mapping.annotations.UDT;
 import java.io.Serializable;
 import zipkin2.Annotation;
 
-@UDT(name = "annotation")
-final class AnnotationUDT implements Serializable { // for Spark jobs
+@UDT(name = "annotation") final class AnnotationUDT implements Serializable { // for Spark jobs
   static final long serialVersionUID = 0L;
 
   long ts;
@@ -55,6 +54,6 @@ final class AnnotationUDT implements Serializable { // for Spark jobs
   }
 
   @Override public String toString() {
-    return "AnnotationUDT{SpanBytesDecoderts=" + ts + ", v=" + v + "}";
+    return "AnnotationUDT{ts=" + ts + ", v=" + v + "}";
   }
 }

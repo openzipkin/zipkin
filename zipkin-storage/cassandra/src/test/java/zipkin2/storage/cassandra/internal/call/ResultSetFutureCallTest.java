@@ -23,7 +23,7 @@ import org.junit.Test;
 import zipkin2.Callback;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Answers.CALLS_REAL_METHODS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -46,7 +46,7 @@ public class ResultSetFutureCallTest {
     assertThat(call.isCanceled()).isTrue();
   }
 
-  @Test public void submit_callsFutureGet() throws Exception {
+  @Test public void submit_callsFutureGet() {
     when(call.newFuture()).thenReturn(future);
     when(call.map(resultSet)).thenReturn(resultSet);
 
@@ -71,11 +71,8 @@ public class ResultSetFutureCallTest {
     when(call.newFuture()).thenThrow(new IllegalArgumentException());
 
     // ensure exception is re-thrown
-    try {
-      call.enqueue(callback);
-      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
-    } catch (IllegalArgumentException e) {
-    }
+    assertThatThrownBy(() -> call.enqueue(callback))
+      .isInstanceOf(IllegalArgumentException.class);
 
     // ensure the callback received the exception
     verify(callback).onError(any(IllegalArgumentException.class));

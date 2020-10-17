@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,32 +17,31 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.List;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.DistinctSortedStrings;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static zipkin2.storage.cassandra.Schema.TABLE_AUTOCOMPLETE_TAGS;
 
 final class SelectAutocompleteValues extends ResultSetFutureCall<ResultSet> {
 
-  static class Factory {
+  static final class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
-    final DistinctSortedStrings values = new DistinctSortedStrings("value");
 
     Factory(Session session) {
       this.session = session;
-      this.preparedStatement = session.prepare(
-        QueryBuilder.select("value")
-          .from(TABLE_AUTOCOMPLETE_TAGS)
-          .where(QueryBuilder.eq("key", QueryBuilder.bindMarker("key")))
-          .limit(QueryBuilder.bindMarker("limit_")));
+      this.preparedStatement = session.prepare(select("value").from(TABLE_AUTOCOMPLETE_TAGS)
+        .where(eq("key", bindMarker()))
+        .limit(10000));
     }
 
     Call<List<String>> create(String key) {
-      return new SelectAutocompleteValues(this, key).flatMap(values);
+      return new SelectAutocompleteValues(this, key).flatMap(DistinctSortedStrings.get());
     }
   }
 
@@ -55,9 +54,7 @@ final class SelectAutocompleteValues extends ResultSetFutureCall<ResultSet> {
   }
 
   @Override protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement.bind()
-      .setString("key", key)
-      .setInt("limit_", 10000));
+    return factory.session.executeAsync(factory.preparedStatement.bind().setString(0, key));
   }
 
   @Override public ResultSet map(ResultSet input) {

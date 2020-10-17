@@ -15,7 +15,8 @@ package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.querybuilder.Insert;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
+
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 
 // QueryRequest.remoteServiceName
 final class IndexTraceIdByRemoteServiceName extends IndexTraceId.Factory {
@@ -24,11 +25,10 @@ final class IndexTraceIdByRemoteServiceName extends IndexTraceId.Factory {
   }
 
   @Override public Insert declarePartitionKey(Insert insert) {
-    return insert.value("service_remote_service_name",
-      QueryBuilder.bindMarker("service_remote_service_name"));
+    return insert.value("service_remote_service_name", bindMarker());
   }
 
   @Override public BoundStatement bindPartitionKey(BoundStatement bound, String partitionKey) {
-    return bound.setString("service_remote_service_name", partitionKey);
+    return bound.setString(2, partitionKey);
   }
 }

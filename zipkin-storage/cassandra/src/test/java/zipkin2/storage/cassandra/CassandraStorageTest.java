@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,11 @@
  */
 package zipkin2.storage.cassandra;
 
+import com.datastax.driver.core.AuthProvider;
+import com.datastax.driver.core.Authenticator;
+import com.datastax.driver.core.PlainTextAuthProvider;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import java.net.InetSocketAddress;
 import org.junit.Test;
 import zipkin2.CheckResult;
 import zipkin2.Component;
@@ -22,8 +26,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class CassandraStorageTest {
 
-  @Test
-  public void check_failsInsteadOfThrowing() {
+  @Test public void authProvider_defaultsToNone() {
+    assertThat(CassandraStorage.newBuilder().build().authProvider)
+      .isEqualTo(AuthProvider.NONE);
+  }
+
+  @Test public void usernamePassword_impliesNullDelimitedUtf8Bytes() {
+    PlainTextAuthProvider authProvider = (PlainTextAuthProvider) CassandraStorage.newBuilder()
+      .username("bob")
+      .password("secret")
+      .build().authProvider;
+
+    Authenticator authenticator =
+      authProvider.newAuthenticator(() -> new InetSocketAddress("localhost", 8080), null);
+
+    byte[] SASLhandshake = {0, 'b', 'o', 'b', 0, 's', 'e', 'c', 'r', 'e', 't'};
+    assertThat(authenticator.initialResponse()).isEqualTo(SASLhandshake);
+  }
+
+  @Test public void check_failsInsteadOfThrowing() {
     CheckResult result = CassandraStorage.newBuilder().contactPoints("1.1.1.1").build().check();
 
     assertThat(result.ok()).isFalse();

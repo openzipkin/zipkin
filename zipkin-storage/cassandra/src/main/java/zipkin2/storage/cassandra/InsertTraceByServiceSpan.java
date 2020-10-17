@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,12 +18,13 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import java.util.UUID;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
 final class InsertTraceByServiceSpan extends ResultSetFutureCall<Void> {
@@ -43,22 +44,20 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall<Void> {
     abstract long duration();
   }
 
-  static class Factory {
+  static final class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
     final boolean strictTraceId;
 
     Factory(Session session, boolean strictTraceId) {
       this.session = session;
-      this.preparedStatement =
-          session.prepare(
-              QueryBuilder.insertInto(TABLE_TRACE_BY_SERVICE_SPAN)
-                  .value("service", QueryBuilder.bindMarker("service"))
-                  .value("span", QueryBuilder.bindMarker("span"))
-                  .value("bucket", QueryBuilder.bindMarker("bucket"))
-                  .value("ts", QueryBuilder.bindMarker("ts"))
-                  .value("trace_id", QueryBuilder.bindMarker("trace_id"))
-                  .value("duration", QueryBuilder.bindMarker("duration")));
+      this.preparedStatement = session.prepare(insertInto(TABLE_TRACE_BY_SERVICE_SPAN)
+        .value("service", bindMarker())
+        .value("span", bindMarker())
+        .value("bucket", bindMarker())
+        .value("ts", bindMarker())
+        .value("trace_id", bindMarker())
+        .value("duration", bindMarker()));
       this.strictTraceId = strictTraceId;
     }
 
@@ -67,14 +66,14 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall<Void> {
      * permitted, as it implies the span took less than 1 millisecond (1-999us).
      */
     Input newInput(
-        String service, String span, int bucket, UUID ts, String trace_id, long durationMillis) {
+      String service, String span, int bucket, UUID ts, String trace_id, long durationMillis) {
       return new AutoValue_InsertTraceByServiceSpan_Input(
-          service,
-          span,
-          bucket,
-          ts,
-          !strictTraceId && trace_id.length() == 32 ? trace_id.substring(16) : trace_id,
-          durationMillis);
+        service,
+        span,
+        bucket,
+        ts,
+        !strictTraceId && trace_id.length() == 32 ? trace_id.substring(16) : trace_id,
+        durationMillis);
     }
 
     Call<Void> create(Input input) {
@@ -90,21 +89,16 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall<Void> {
     this.input = input;
   }
 
-  @Override
-  protected ResultSetFuture newFuture() {
-    BoundStatement bound =
-        factory
-            .preparedStatement
-            .bind()
-            .setString("service", input.service())
-            .setString("span", input.span())
-            .setInt("bucket", input.bucket())
-            .setUUID("ts", input.ts())
-            .setString("trace_id", input.trace_id());
+  @Override protected ResultSetFuture newFuture() {
+    BoundStatement bound = factory.preparedStatement.bind()
+      .setString(0, input.service())
+      .setString(1, input.span())
+      .setInt(2, input.bucket())
+      .setUUID(3, input.ts())
+      .setString(4, input.trace_id());
 
-    if (0L != input.duration()) {
-      bound.setLong("duration", input.duration());
-    }
+    if (0L != input.duration()) bound.setLong(5, input.duration());
+
     return factory.session.executeAsync(bound);
   }
 
@@ -112,13 +106,11 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall<Void> {
     return null;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return input.toString().replace("Input", "InsertTraceByServiceSpan");
   }
 
-  @Override
-  public InsertTraceByServiceSpan clone() {
+  @Override public InsertTraceByServiceSpan clone() {
     return new InsertTraceByServiceSpan(factory, input);
   }
 }

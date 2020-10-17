@@ -117,23 +117,21 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
       .getString(0);
   }
 
-  @Test
-  public void addsAutocompleteTag() throws IOException {
+  @Test public void addsAutocompleteTag() throws IOException {
     Span[] trace = new Span[2];
     trace[0] = TestObjects.CLIENT_SPAN;
 
-    trace[1] =
-      Span.newBuilder()
-        .traceId(trace[0].traceId())
-        .parentId(trace[0].id())
-        .id(1)
-        .name("1")
-        .putTag("environment", "dev")
-        .putTag("a", "b")
-        .localEndpoint(FRONTEND)
-        .timestamp(trace[0].timestampAsLong() + 1000L) // child span timestamps happen 1 ms later
-        .addAnnotation(trace[0].annotations().get(0).timestamp() + 1000L, "bar")
-        .build();
+    trace[1] = Span.newBuilder()
+      .traceId(trace[0].traceId())
+      .parentId(trace[0].id())
+      .id(1)
+      .name("1")
+      .putTag("environment", "dev")
+      .putTag("a", "b")
+      .localEndpoint(FRONTEND)
+      .timestamp(trace[0].timestampAsLong() + 1000L) // child span timestamps happen 1 ms later
+      .addAnnotation(trace[0].annotations().get(0).timestamp() + 1000L, "bar")
+      .build();
     accept(storage.spanConsumer(), trace);
 
     assertThat(rowCount(Tables.AUTOCOMPLETE_TAGS))

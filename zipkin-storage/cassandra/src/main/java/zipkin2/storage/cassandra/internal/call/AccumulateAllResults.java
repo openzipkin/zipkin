@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,6 @@ package zipkin2.storage.cassandra.internal.call;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
-import com.google.auto.value.AutoValue;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -34,23 +33,22 @@ public abstract class AccumulateAllResults<T> implements FlatMapper<ResultSet, T
   }
 
   @Override public Call<T> map(ResultSet rs) {
-    return new AutoValue_AccumulateAllResults_AccumulateNextResults<>(
+    return new AccumulateNextResults<>(
       supplier().get(),
       accumulator(),
       finisher()
     ).map(rs);
   }
 
-  @AutoValue
-  static abstract class FetchMoreResults extends ResultSetFutureCall<ResultSet> {
-    static FetchMoreResults create(ResultSet resultSet) {
-      return new AutoValue_AccumulateAllResults_FetchMoreResults(resultSet);
+  static final class FetchMoreResults extends ResultSetFutureCall<ResultSet> {
+    final ResultSet resultSet;
+
+    FetchMoreResults(ResultSet resultSet) {
+      this.resultSet = resultSet;
     }
 
-    abstract ResultSet resultSet();
-
     @Override protected ListenableFuture<ResultSet> newFuture() {
-      return resultSet().fetchMoreResults();
+      return resultSet.fetchMoreResults();
     }
 
     @Override public ResultSet map(ResultSet input) {
@@ -60,25 +58,33 @@ public abstract class AccumulateAllResults<T> implements FlatMapper<ResultSet, T
     @Override public Call<ResultSet> clone() {
       throw new UnsupportedOperationException();
     }
+
+    @Override public String toString() {
+      return "FetchMoreResults{" + resultSet + "}";
+    }
   }
 
-  @AutoValue
-  static abstract class AccumulateNextResults<T> implements FlatMapper<ResultSet, T> {
-    abstract T pendingResults();
+  static final class AccumulateNextResults<T> implements FlatMapper<ResultSet, T> {
+    final T pendingResults;
+    final BiConsumer<Row, T> accumulator;
+    final Function<T, T> finisher;
 
-    abstract BiConsumer<Row, T> accumulator();
-
-    abstract Function<T, T> finisher();
+    AccumulateNextResults(
+      T pendingResults, BiConsumer<Row, T> accumulator, Function<T, T> finisher) {
+      this.pendingResults = pendingResults;
+      this.accumulator = accumulator;
+      this.finisher = finisher;
+    }
 
     /** Iterates through the rows in each page, flatmapping on more results until exhausted */
     @Override public Call<T> map(ResultSet rs) {
       while (rs.getAvailableWithoutFetching() > 0) {
-        accumulator().accept(rs.one(), pendingResults());
+        accumulator.accept(rs.one(), pendingResults);
       }
       // Return collected results if there are no more pages
       return rs.getExecutionInfo().getPagingState() == null && rs.isExhausted()
-        ? Call.create(finisher().apply(pendingResults()))
-        : FetchMoreResults.create(rs).flatMap(this);
+        ? Call.create(finisher.apply(pendingResults))
+        : new FetchMoreResults(rs).flatMap(this);
     }
   }
 }

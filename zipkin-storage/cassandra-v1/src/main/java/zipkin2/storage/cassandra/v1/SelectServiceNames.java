@@ -22,19 +22,21 @@ import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.DistinctSortedStrings;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
+import static zipkin2.storage.cassandra.v1.Tables.SERVICE_NAMES;
+
 final class SelectServiceNames extends ResultSetFutureCall<ResultSet> {
-  static class Factory {
+  static final class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
 
     Factory(Session session) {
       this.session = session;
       this.preparedStatement =
-        session.prepare("SELECT DISTINCT service_name FROM " + Tables.SERVICE_NAMES);
+        session.prepare("SELECT DISTINCT service_name FROM " + SERVICE_NAMES);
     }
 
     Call<List<String>> create() {
-      return new SelectServiceNames(this).flatMap(new DistinctSortedStrings("service_name"));
+      return new SelectServiceNames(this).flatMap(DistinctSortedStrings.get());
     }
   }
 

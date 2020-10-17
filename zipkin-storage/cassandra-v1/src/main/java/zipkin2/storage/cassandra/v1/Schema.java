@@ -27,15 +27,12 @@ import static zipkin2.storage.cassandra.v1.Tables.REMOTE_SERVICE_NAMES;
 import static zipkin2.storage.cassandra.v1.Tables.TRACES;
 
 final class Schema {
-  private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
+  static final Logger LOG = LoggerFactory.getLogger(Schema.class);
 
   static final String SCHEMA = "/cassandra-schema.cql";
   static final String UPGRADE_1 = "/cassandra-schema-upgrade-1.cql";
   static final String UPGRADE_2 = "/cassandra-schema-upgrade-2.cql";
   static final String UPGRADE_3 = "/cassandra-schema-upgrade-3.cql";
-
-  private Schema() {
-  }
 
   static Metadata readMetadata(Session session) {
     KeyspaceMetadata keyspaceMetadata = getKeyspaceMetadata(session);
@@ -147,5 +144,8 @@ final class Schema {
         session.execute(cmd);
       }
     }
+  }
+
+  Schema() {
   }
 }

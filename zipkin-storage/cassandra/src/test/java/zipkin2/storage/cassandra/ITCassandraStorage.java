@@ -114,7 +114,7 @@ class ITCassandraStorage {
 
     @Test void searchingByAnnotationShouldFilterBeforeLimiting() throws IOException {
       int queryLimit = 2;
-      int nbTraceFetched = queryLimit * storage.indexFetchMultiplier();
+      int nbTraceFetched = queryLimit * storage.indexFetchMultiplier;
 
       for (int i = 0; i < nbTraceFetched; i++) {
         accept(TestObjects.LOTS_OF_SPANS[i++].toBuilder().timestamp((TODAY - i) * 1000L).build());
@@ -161,7 +161,7 @@ class ITCassandraStorage {
 
     @Test void doesntCreateIndexes() {
       KeyspaceMetadata metadata =
-        storage.session().getCluster().getMetadata().getKeyspace(storage.keyspace());
+        storage.session().getCluster().getMetadata().getKeyspace(storage.keyspace);
 
       assertThat(metadata.getTable("trace_by_service_span")).isNull();
       assertThat(metadata.getTable("span_by_service")).isNull();
@@ -182,8 +182,8 @@ class ITCassandraStorage {
     CassandraStorage strictTraceId;
 
     @BeforeEach void initializeStorageBeforeSwitch() {
-      strictTraceId = CassandraStorageExtension.newStorageBuilder(storage.contactPoints())
-        .keyspace(storage.keyspace())
+      strictTraceId = CassandraStorageExtension.newStorageBuilder(storage.contactPoints)
+        .keyspace(storage.keyspace)
         .build();
     }
 

@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.storage.cassandra;
+package zipkin2.storage.cassandra.internal;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -24,18 +24,15 @@ import com.datastax.driver.core.policies.RetryPolicy;
 /** This class was copied from org.twitter.zipkin.storage.cassandra.ZipkinRetryPolicy */
 final class ZipkinRetryPolicy implements RetryPolicy {
 
-  public static final ZipkinRetryPolicy INSTANCE = new ZipkinRetryPolicy();
+  static final ZipkinRetryPolicy INSTANCE = new ZipkinRetryPolicy();
 
-  private ZipkinRetryPolicy() {}
-
-  @Override
-  public RetryDecision onReadTimeout(
-      Statement stmt,
-      ConsistencyLevel cl,
-      int required,
-      int received,
-      boolean retrieved,
-      int retry) {
+  @Override public RetryDecision onReadTimeout(
+    Statement stmt,
+    ConsistencyLevel cl,
+    int required,
+    int received,
+    boolean retrieved,
+    int retry) {
 
     if (retry > 1) {
       try {
@@ -45,35 +42,35 @@ final class ZipkinRetryPolicy implements RetryPolicy {
       }
     }
     return stmt.isIdempotent()
-        ? retry < 10 ? RetryDecision.retry(cl) : RetryDecision.rethrow()
-        : DefaultRetryPolicy.INSTANCE.onReadTimeout(stmt, cl, required, received, retrieved, retry);
+      ? retry < 10 ? RetryDecision.retry(cl) : RetryDecision.rethrow()
+      : DefaultRetryPolicy.INSTANCE.onReadTimeout(stmt, cl, required, received, retrieved, retry);
   }
 
-  @Override
-  public RetryDecision onWriteTimeout(
-      Statement stmt, ConsistencyLevel cl, WriteType type, int required, int received, int retry) {
+  @Override public RetryDecision onWriteTimeout(
+    Statement stmt, ConsistencyLevel cl, WriteType type, int required, int received, int retry) {
 
     return stmt.isIdempotent()
-        ? RetryDecision.retry(cl)
-        : DefaultRetryPolicy.INSTANCE.onWriteTimeout(stmt, cl, type, required, received, retry);
+      ? RetryDecision.retry(cl)
+      : DefaultRetryPolicy.INSTANCE.onWriteTimeout(stmt, cl, type, required, received, retry);
   }
 
-  @Override
-  public RetryDecision onUnavailable(
-      Statement stmt, ConsistencyLevel cl, int required, int aliveReplica, int retry) {
+  @Override public RetryDecision onUnavailable(
+    Statement stmt, ConsistencyLevel cl, int required, int aliveReplica, int retry) {
     return DefaultRetryPolicy.INSTANCE.onUnavailable(
-        stmt, cl, required, aliveReplica, retry == 1 ? 0 : retry);
+      stmt, cl, required, aliveReplica, retry == 1 ? 0 : retry);
   }
 
-  @Override
-  public RetryDecision onRequestError(
-      Statement stmt, ConsistencyLevel cl, DriverException ex, int nbRetry) {
+  @Override public RetryDecision onRequestError(
+    Statement stmt, ConsistencyLevel cl, DriverException ex, int nbRetry) {
     return DefaultRetryPolicy.INSTANCE.onRequestError(stmt, cl, ex, nbRetry);
   }
 
-  @Override
-  public void init(Cluster cluster) {}
+  @Override public void init(Cluster cluster) {
+  }
 
-  @Override
-  public void close() {}
+  @Override public void close() {
+  }
+
+  ZipkinRetryPolicy() {
+  }
 }
