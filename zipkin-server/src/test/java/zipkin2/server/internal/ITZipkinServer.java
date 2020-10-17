@@ -268,7 +268,7 @@ public class ITZipkinServer {
           .method("TRACE", null).build())
           .execute();
         assertThat(response.isSuccessful()).isFalse();
-        assertThat(response.code()).isEqualTo(HttpStatus.FORBIDDEN.code());
+        assertThat(response.code()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED.code());
       } catch (IOException e) {
         throw new RuntimeException(e.getMessage(), e);
       }

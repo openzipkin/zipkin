@@ -17,7 +17,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.common.ResponseHeadersBuilder;
@@ -27,7 +26,6 @@ import com.linecorp.armeria.server.annotation.Default;
 import com.linecorp.armeria.server.annotation.ExceptionHandler;
 import com.linecorp.armeria.server.annotation.Get;
 import com.linecorp.armeria.server.annotation.Param;
-import com.linecorp.armeria.server.annotation.Trace;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufOutputStream;
@@ -202,12 +200,6 @@ public class ZipkinQueryApiV2 {
     @Param("key") String key, ServiceRequestContext ctx) throws IOException {
     List<String> values = storage.autocompleteTags().getValues(key).execute();
     return maybeCacheNames(values.size() > 3, values, ctx.alloc());
-  }
-
-  @Trace("regex:^.*$")
-  public AggregatedHttpResponse disallowTraceRequests() {
-    // because https://github.com/openzipkin/zipkin/issues/2286
-    return AggregatedHttpResponse.of(HttpStatus.FORBIDDEN);
   }
 
   /**
