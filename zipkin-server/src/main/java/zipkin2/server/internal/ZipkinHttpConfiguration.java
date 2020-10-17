@@ -15,6 +15,8 @@ package zipkin2.server.internal;
 
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.cors.CorsService;
@@ -74,6 +76,12 @@ public class ZipkinHttpConfiguration {
       // and default to a slightly longer timeout on the server to be able to handle these with
       // better error messages where possible.
       sb.requestTimeout(Duration.ofSeconds(11));
+
+      // because https://github.com/openzipkin/zipkin/issues/2286
+      sb.routeDecorator()
+        .methods(HttpMethod.TRACE)
+        .pathPrefix("/")
+        .build((delegate, ctx, req) -> HttpResponse.of(HttpStatus.METHOD_NOT_ALLOWED));
     };
   }
 
