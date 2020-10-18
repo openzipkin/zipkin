@@ -77,11 +77,14 @@ public class ZipkinHttpConfiguration {
       // better error messages where possible.
       sb.requestTimeout(Duration.ofSeconds(11));
 
-      // because https://github.com/openzipkin/zipkin/issues/2286
-      sb.routeDecorator()
-        .methods(HttpMethod.TRACE)
-        .pathPrefix("/")
-        .build((delegate, ctx, req) -> HttpResponse.of(HttpStatus.METHOD_NOT_ALLOWED));
+      // Block TRACE requests because https://github.com/openzipkin/zipkin/issues/2286
+      sb.routeDecorator().trace("prefix:/")
+        .build((delegate, ctx, req) -> {
+          if (req.method() == HttpMethod.TRACE) { // TODO: we shouldn't need to double-check!
+            return HttpResponse.of(HttpStatus.METHOD_NOT_ALLOWED);
+          }
+          return delegate.serve(ctx, req);
+        });
     };
   }
 
