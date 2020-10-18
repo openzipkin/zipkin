@@ -13,10 +13,10 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.querybuilder.Insert;
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
+import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
 import static zipkin2.storage.cassandra.v1.Tables.SERVICE_SPAN_NAME_INDEX;
 
 // QueryRequest.spanName
@@ -25,11 +25,11 @@ final class IndexTraceIdBySpanName extends IndexTraceId.Factory {
     super(storage, SERVICE_SPAN_NAME_INDEX, indexTtl);
   }
 
-  @Override public Insert declarePartitionKey(Insert insert) {
+  @Override RegularInsert declarePartitionKey(RegularInsert insert) {
     return insert.value("service_span_name", bindMarker());
   }
 
-  @Override public BoundStatement bindPartitionKey(BoundStatement bound, String partitionKey) {
-    return bound.setString(2, partitionKey);
+  @Override void bindPartitionKey(BoundStatementBuilder bound, String partitionKey) {
+    bound.setString(2, partitionKey);
   }
 }

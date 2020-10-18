@@ -13,31 +13,27 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.CassandraSpanStore.TimestampRange;
 import zipkin2.storage.cassandra.internal.call.AccumulateTraceIdTsUuid;
 import zipkin2.storage.cassandra.internal.call.AggregateIntoMap;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.gte;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.lte;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE;
 
-final class SelectTraceIdsFromServiceRemoteService extends ResultSetFutureCall<ResultSet> {
+final class SelectTraceIdsFromServiceRemoteService extends ResultSetFutureCall<AsyncResultSet> {
   @AutoValue abstract static class Input {
     abstract String service();
 
@@ -63,19 +59,20 @@ final class SelectTraceIdsFromServiceRemoteService extends ResultSetFutureCall<R
   }
 
   static final class Factory {
-    final Session session;
+    final CqlSession session;
     final PreparedStatement preparedStatement;
 
-    Factory(Session session) {
+    Factory(CqlSession session) {
       this.session = session;
       this.preparedStatement =
-        session.prepare(select("trace_id", "ts").from(TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE)
-          .where(eq("service", bindMarker()))
-          .and(eq("remote_service", bindMarker()))
-          .and(eq("bucket", bindMarker()))
-          .and(gte("ts", bindMarker()))
-          .and(lte("ts", bindMarker()))
-          .limit(bindMarker("limit_")));
+        session.prepare(QueryBuilder.selectFrom(TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE)
+          .columns("trace_id", "ts")
+          .whereColumn("service").isEqualTo(bindMarker())
+          .whereColumn("remote_service").isEqualTo(bindMarker())
+          .whereColumn("bucket").isEqualTo(bindMarker())
+          .whereColumn("ts").isGreaterThanOrEqualTo(bindMarker())
+          .whereColumn("ts").isLessThanOrEqualTo(bindMarker())
+          .limit(bindMarker()).build());
     }
 
     Input newInput(
@@ -158,19 +155,18 @@ final class SelectTraceIdsFromServiceRemoteService extends ResultSetFutureCall<R
     this.input = input;
   }
 
-  @Override protected ResultSetFuture newFuture() {
-    Statement bound = preparedStatement.bind()
+  @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    return factory.session.executeAsync(preparedStatement.boundStatementBuilder()
       .setString(0, input.service())
       .setString(1, input.remote_service())
       .setInt(2, input.bucket())
-      .setUUID(3, input.start_ts())
-      .setUUID(4, input.end_ts())
+      .setUuid(3, input.start_ts())
+      .setUuid(4, input.end_ts())
       .setInt(5, input.limit_())
-      .setFetchSize(input.limit_());
-    return factory.session.executeAsync(bound);
+      .setPageSize(input.limit_()).build());
   }
 
-  @Override public ResultSet map(ResultSet input) {
+  @Override public AsyncResultSet map(AsyncResultSet input) {
     return input;
   }
 

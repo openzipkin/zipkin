@@ -13,18 +13,17 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.querybuilder.Select;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.querybuilder.select.Select;
 import com.google.auto.value.AutoValue;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import zipkin2.Call;
@@ -33,11 +32,8 @@ import zipkin2.storage.cassandra.CassandraSpanStore.TimestampRange;
 import zipkin2.storage.cassandra.internal.call.AccumulateAllResults;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.gte;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.like;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.lte;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
 /**
@@ -52,9 +48,9 @@ import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
  * of span count, not trace count. This implies an over-fetch function based on average span count
  * per trace in order to achieve N distinct trace IDs. For example if there are 3 spans per trace,
  * and over-fetch function of 3 * intended limit will work. See {@link
- * CassandraStorage#indexFetchMultiplier()} for an associated parameter.
+ * CassandraStorage#indexFetchMultiplier} for an associated parameter.
  */
-final class SelectTraceIdsFromSpan extends ResultSetFutureCall<ResultSet> {
+final class SelectTraceIdsFromSpan extends ResultSetFutureCall<AsyncResultSet> {
   @AutoValue
   abstract static class Input {
     @Nullable abstract String l_service();
@@ -69,26 +65,28 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall<ResultSet> {
   }
 
   static final class Factory {
-    final Session session;
+    final CqlSession session;
     final PreparedStatement withAnnotationQuery, withServiceAndAnnotationQuery;
 
-    Factory(Session session) {
+    Factory(CqlSession session) {
       this.session = session;
       // separate to avoid: "Unsupported unset value for column duration" maybe SASI related
       // TODO: revisit on next driver update
-      this.withAnnotationQuery = session.prepare(select("trace_id", "ts").from(TABLE_SPAN)
-        .where(like("annotation_query", bindMarker("annotation_query")))
-        .and(gte("ts_uuid", bindMarker("start_ts")))
-        .and(lte("ts_uuid", bindMarker("end_ts")))
-        .limit(bindMarker("limit_"))
-        .allowFiltering());
-      this.withServiceAndAnnotationQuery = session.prepare(select("trace_id", "ts").from(TABLE_SPAN)
-        .where(QueryBuilder.eq("l_service", bindMarker("l_service")))
-        .and(like("annotation_query", bindMarker("annotation_query")))
-        .and(gte("ts_uuid", bindMarker("start_ts")))
-        .and(lte("ts_uuid", bindMarker("end_ts")))
-        .limit(bindMarker("limit_"))
-        .allowFiltering());
+      this.withAnnotationQuery =
+        session.prepare(selectFrom(TABLE_SPAN).columns("trace_id", "ts")
+          .whereColumn("annotation_query").like(bindMarker("annotation_query"))
+          .whereColumn("ts_uuid").isGreaterThanOrEqualTo(bindMarker("start_ts"))
+          .whereColumn("ts_uuid").isLessThanOrEqualTo(bindMarker("end_ts"))
+          .limit(bindMarker("limit_"))
+          .allowFiltering().build());
+      this.withServiceAndAnnotationQuery =
+        session.prepare(selectFrom(TABLE_SPAN).columns("trace_id", "ts")
+          .whereColumn("l_service").isEqualTo(bindMarker("l_service"))
+          .whereColumn("annotation_query").like(bindMarker("annotation_query"))
+          .whereColumn("ts_uuid").isGreaterThanOrEqualTo(bindMarker("start_ts"))
+          .whereColumn("ts_uuid").isLessThanOrEqualTo(bindMarker("end_ts"))
+          .limit(bindMarker("limit_"))
+          .allowFiltering().build());
     }
 
     Call<Map<String, Long>> newCall(
@@ -102,10 +100,9 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall<ResultSet> {
         timestampRange.startUUID,
         timestampRange.endUUID,
         limit);
-      return new SelectTraceIdsFromSpan(
-        this,
-        serviceName != null ? withServiceAndAnnotationQuery : withAnnotationQuery,
-        input)
+      PreparedStatement preparedStatement =
+        serviceName != null ? withServiceAndAnnotationQuery : withAnnotationQuery;
+      return new SelectTraceIdsFromSpan(this, preparedStatement, input)
         .flatMap(AccumulateTraceIdTsLong.get());
     }
   }
@@ -120,21 +117,21 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall<ResultSet> {
     this.input = input;
   }
 
-  @Override protected ResultSetFuture newFuture() {
-    BoundStatement bound = preparedStatement.bind();
+  @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    BoundStatementBuilder bound = preparedStatement.boundStatementBuilder();
     if (input.l_service() != null) bound.setString("l_service", input.l_service());
     if (input.annotation_query() != null) {
       bound.setString("annotation_query", input.annotation_query());
     }
     bound
-      .setUUID("start_ts", input.start_ts())
-      .setUUID("end_ts", input.end_ts())
+      .setUuid("start_ts", input.start_ts())
+      .setUuid("end_ts", input.end_ts())
       .setInt("limit_", input.limit_())
-      .setFetchSize(input.limit_());
-    return factory.session.executeAsync(bound);
+      .setPageSize(input.limit_());
+    return factory.session.executeAsync(bound.build());
   }
 
-  @Override public ResultSet map(ResultSet input) {
+  @Override public AsyncResultSet map(AsyncResultSet input) {
     return input;
   }
 

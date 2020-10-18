@@ -13,42 +13,46 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.AuthProvider;
-import com.datastax.driver.core.Authenticator;
-import com.datastax.driver.core.PlainTextAuthProvider;
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
-import java.net.InetSocketAddress;
+import com.datastax.oss.driver.api.core.AllNodesFailedException;
+import com.datastax.oss.driver.api.core.auth.Authenticator;
+import com.datastax.oss.driver.api.core.metadata.EndPoint;
+import com.datastax.oss.driver.internal.core.auth.ProgrammaticPlainTextAuthProvider;
+import java.nio.ByteBuffer;
 import org.junit.Test;
 import zipkin2.CheckResult;
 import zipkin2.Component;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class CassandraStorageTest {
 
-  @Test public void authProvider_defaultsToNone() {
+  @Test public void authProvider_defaultsToNull() {
     assertThat(CassandraStorage.newBuilder().build().authProvider)
-      .isEqualTo(AuthProvider.NONE);
+      .isNull();
   }
 
-  @Test public void usernamePassword_impliesNullDelimitedUtf8Bytes() {
-    PlainTextAuthProvider authProvider = (PlainTextAuthProvider) CassandraStorage.newBuilder()
-      .username("bob")
-      .password("secret")
-      .build().authProvider;
+  @Test public void usernamePassword_impliesNullDelimitedUtf8Bytes() throws Exception {
+    ProgrammaticPlainTextAuthProvider authProvider =
+      (ProgrammaticPlainTextAuthProvider) CassandraStorage.newBuilder()
+        .username("bob")
+        .password("secret")
+        .build().authProvider;
 
     Authenticator authenticator =
-      authProvider.newAuthenticator(() -> new InetSocketAddress("localhost", 8080), null);
+      authProvider.newAuthenticator(mock(EndPoint.class), "serverAuthenticator");
 
     byte[] SASLhandshake = {0, 'b', 'o', 'b', 0, 's', 'e', 'c', 'r', 'e', 't'};
-    assertThat(authenticator.initialResponse()).isEqualTo(SASLhandshake);
+    assertThat(authenticator.initialResponse().toCompletableFuture().get())
+      .extracting(ByteBuffer::array)
+      .isEqualTo(SASLhandshake);
   }
 
   @Test public void check_failsInsteadOfThrowing() {
     CheckResult result = CassandraStorage.newBuilder().contactPoints("1.1.1.1").build().check();
 
     assertThat(result.ok()).isFalse();
-    assertThat(result.error()).isInstanceOf(NoHostAvailableException.class);
+    assertThat(result.error()).isInstanceOf(AllNodesFailedException.class);
   }
 
   /**

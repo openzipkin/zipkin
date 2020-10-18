@@ -13,8 +13,8 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.ProtocolVersion;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.ProtocolVersion;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -58,7 +58,7 @@ public final class CassandraSpanStore implements SpanStore, Traces, ServiceAndSp
   @Nullable final SelectTraceIdTimestampFromAnnotations selectTraceIdsByAnnotation;
 
   CassandraSpanStore(CassandraStorage storage) {
-    Session session = storage.session();
+    CqlSession session = storage.session();
     Schema.Metadata metadata = storage.metadata();
     maxTraceCols = storage.maxTraceCols;
     indexFetchMultiplier = storage.indexFetchMultiplier;
@@ -93,7 +93,7 @@ public final class CassandraSpanStore implements SpanStore, Traces, ServiceAndSp
 
     selectTraceIdsByServiceName = new SelectTraceIdTimestampFromServiceName(session);
 
-    if (metadata.protocolVersion.compareTo(ProtocolVersion.V4) < 0) {
+    if (metadata.protocolVersion.getCode() < ProtocolVersion.V4.getCode()) {
       LOG.warn("Please update Cassandra to 2.2 or later, as some features may fail");
       // Log vs failing on "Partition KEY part service_name cannot be restricted by IN relation"
       selectTraceIdsByServiceNames = null;

@@ -13,9 +13,9 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Insert;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert;
 import java.nio.ByteBuffer;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -35,6 +35,7 @@ import zipkin2.storage.cassandra.internal.call.InsertEntry;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V2SpanConverter;
 
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.literal;
 import static zipkin2.storage.cassandra.v1.CassandraUtil.annotationKeys;
 import static zipkin2.storage.cassandra.v1.Tables.AUTOCOMPLETE_TAGS;
 
@@ -65,7 +66,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
   }
 
   CassandraSpanConsumer(CassandraStorage storage) {
-    Session session = storage.session();
+    CqlSession session = storage.session();
     Schema.Metadata metadata = storage.metadata();
     searchEnabled = storage.searchEnabled;
     autocompleteKeys = new LinkedHashSet<>(storage.autocompleteKeys);
@@ -107,8 +108,8 @@ final class CassandraSpanConsumer implements SpanConsumer {
       session, autocompleteTtl, autocompleteCardinality, indexTtl
     ) {
       // bucket is deprecated on this index
-      @Override protected PreparedStatement prepare(Session session, Insert insert) {
-        return session.prepare(insert.value("bucket", 0));
+      @Override protected PreparedStatement prepare(CqlSession session, RegularInsert insert) {
+        return session.prepare(insert.value("bucket", literal(0)).build());
       }
     };
     indexTraceIdBySpanName = new IndexTraceIdBySpanName(storage, indexTtl);

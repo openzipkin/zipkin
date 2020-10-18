@@ -13,24 +13,25 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Insert;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert;
 import com.google.auto.value.AutoValue;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.concurrent.CompletionStage;
+import zipkin2.Annotation;
 import zipkin2.Call;
+import zipkin2.Endpoint;
+import zipkin2.Span;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
 final class InsertSpan extends ResultSetFutureCall<Void> {
@@ -55,11 +56,11 @@ final class InsertSpan extends ResultSetFutureCall<Void> {
 
     abstract long duration();
 
-    @Nullable abstract EndpointUDT l_ep();
+    @Nullable abstract Endpoint l_ep();
 
-    @Nullable abstract EndpointUDT r_ep();
+    @Nullable abstract Endpoint r_ep();
 
-    abstract List<AnnotationUDT> annotations();
+    abstract List<Annotation> annotations();
 
     abstract Map<String, String> tags();
 
@@ -71,13 +72,13 @@ final class InsertSpan extends ResultSetFutureCall<Void> {
   }
 
   static final class Factory {
-    final Session session;
+    final CqlSession session;
     final PreparedStatement preparedStatement;
     final boolean strictTraceId, searchEnabled;
 
-    Factory(Session session, boolean strictTraceId, boolean searchEnabled) {
+    Factory(CqlSession session, boolean strictTraceId, boolean searchEnabled) {
       this.session = session;
-      Insert insertQuery = insertInto(TABLE_SPAN)
+      RegularInsert insertQuery = insertInto(TABLE_SPAN)
         .value("trace_id", bindMarker("trace_id"))
         .value("trace_id_high", bindMarker("trace_id_high"))
         .value("ts_uuid", bindMarker("ts_uuid"))
@@ -95,24 +96,17 @@ final class InsertSpan extends ResultSetFutureCall<Void> {
         .value("debug", bindMarker("debug"));
 
       if (searchEnabled) {
-        insertQuery.value("l_service", bindMarker("l_service"));
-        insertQuery.value("annotation_query", bindMarker("annotation_query"));
+        insertQuery = insertQuery.value("l_service", bindMarker("l_service"));
+        insertQuery = insertQuery.value("annotation_query", bindMarker("annotation_query"));
       }
 
-      this.preparedStatement = session.prepare(insertQuery);
+      this.preparedStatement = session.prepare(insertQuery.build());
       this.strictTraceId = strictTraceId;
       this.searchEnabled = searchEnabled;
     }
 
-    Input newInput(zipkin2.Span span, UUID ts_uuid) {
+    Input newInput(Span span, UUID ts_uuid) {
       boolean traceIdHigh = !strictTraceId && span.traceId().length() == 32;
-      List<AnnotationUDT> annotations;
-      if (!span.annotations().isEmpty()) {
-        annotations =
-          span.annotations().stream().map(AnnotationUDT::new).collect(Collectors.toList());
-      } else {
-        annotations = Collections.emptyList();
-      }
       String annotation_query = searchEnabled ? CassandraUtil.annotationQuery(span) : null;
       return new AutoValue_InsertSpan_Input(
         ts_uuid,
@@ -124,9 +118,9 @@ final class InsertSpan extends ResultSetFutureCall<Void> {
         span.name(),
         span.timestampAsLong(),
         span.durationAsLong(),
-        EndpointUDT.create(span.localEndpoint()),
-        EndpointUDT.create(span.remoteEndpoint()),
-        annotations,
+        span.localEndpoint(),
+        span.remoteEndpoint(),
+        span.annotations(),
         span.tags(),
         annotation_query,
         Boolean.TRUE.equals(span.debug()),
@@ -170,37 +164,38 @@ final class InsertSpan extends ResultSetFutureCall<Void> {
    * those writes, as the write is asynchronous anyway. An example of this approach is in the
    * cassandra-reaper project here: https://github.com/thelastpickle/cassandra-reaper/blob/master/src/server/src/main/java/io/cassandrareaper/storage/CassandraStorage.java#L622-L642
    */
-  @Override
-  protected ResultSetFuture newFuture() {
-    BoundStatement bound = factory.preparedStatement.bind()
-      .setUUID("ts_uuid", input.ts_uuid())
+  @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    BoundStatementBuilder bound = factory.preparedStatement.boundStatementBuilder()
+      .setUuid("ts_uuid", input.ts_uuid())
       .setString("trace_id", input.trace_id())
       .setString("id", input.id());
 
-    // now set the nullable fields
+    // Don't set null as we don't want to add tombstones
     if (null != input.trace_id_high()) bound.setString("trace_id_high", input.trace_id_high());
     if (null != input.parent_id()) bound.setString("parent_id", input.parent_id());
     if (null != input.kind()) bound.setString("kind", input.kind());
     if (null != input.span()) bound.setString("span", input.span());
     if (0L != input.ts()) bound.setLong("ts", input.ts());
     if (0L != input.duration()) bound.setLong("duration", input.duration());
-    if (null != input.l_ep()) bound.set("l_ep", input.l_ep(), EndpointUDT.class);
-    if (null != input.r_ep()) bound.set("r_ep", input.r_ep(), EndpointUDT.class);
-    if (!input.annotations().isEmpty()) bound.setList("annotations", input.annotations());
-    if (!input.tags().isEmpty()) bound.setMap("tags", input.tags());
-    if (input.shared()) bound.setBool("shared", true);
-    if (input.debug()) bound.setBool("debug", true);
+    if (null != input.l_ep()) bound.set("l_ep", input.l_ep(), Endpoint.class);
+    if (null != input.r_ep()) bound.set("r_ep", input.r_ep(), Endpoint.class);
+    if (!input.annotations().isEmpty()) {
+      bound.setList("annotations", input.annotations(), Annotation.class);
+    }
+    if (!input.tags().isEmpty()) bound.setMap("tags", input.tags(), String.class, String.class);
+    if (input.shared()) bound.setBoolean("shared", true);
+    if (input.debug()) bound.setBoolean("debug", true);
 
     if (factory.searchEnabled) {
-      if (null != input.l_ep()) bound.setString("l_service", input.l_ep().getService());
+      if (null != input.l_ep()) bound.setString("l_service", input.l_ep().serviceName());
       if (null != input.annotation_query()) {
         bound.setString("annotation_query", input.annotation_query());
       }
     }
-    return factory.session.executeAsync(bound);
+    return factory.session.executeAsync(bound.build());
   }
 
-  @Override public Void map(ResultSet input) {
+  @Override public Void map(AsyncResultSet input) {
     return null;
   }
 

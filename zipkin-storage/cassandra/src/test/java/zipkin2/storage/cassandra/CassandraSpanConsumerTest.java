@@ -18,7 +18,6 @@ import org.junit.Test;
 import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.internal.AggregateCall;
-import zipkin2.storage.cassandra.CassandraStorage.SessionFactory;
 import zipkin2.storage.cassandra.internal.call.InsertEntry;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
@@ -26,11 +25,10 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.mockito.Mockito.RETURNS_MOCKS;
-import static org.mockito.Mockito.mock;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.FRONTEND;
 import static zipkin2.TestObjects.TODAY;
+import static zipkin2.storage.cassandra.InternalForTests.mockSession;
 
 public class CassandraSpanConsumerTest {
   CassandraSpanConsumer consumer = spanConsumer(CassandraStorage.newBuilder());
@@ -221,8 +219,6 @@ public class CassandraSpanConsumerTest {
   }
 
   static CassandraSpanConsumer spanConsumer(CassandraStorage.Builder builder) {
-    return new CassandraSpanConsumer(
-      builder.sessionFactory(mock(SessionFactory.class, RETURNS_MOCKS)).build()) {
-    };
+    return new CassandraSpanConsumer(builder.sessionFactory(storage -> mockSession()).build());
   }
 }

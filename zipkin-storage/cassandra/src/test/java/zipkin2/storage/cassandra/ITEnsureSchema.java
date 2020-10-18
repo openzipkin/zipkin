@@ -13,8 +13,8 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.KeyspaceMetadata;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -51,12 +51,12 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
     // don't check as it requires the keyspace which these tests install
   }
 
-  abstract Session session();
+  abstract CqlSession session();
 
   @Test void installsKeyspaceWhenMissing() {
     Schema.ensureExists(storage.keyspace, false, session());
 
-    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(storage.keyspace);
+    KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
     assertThat(metadata).isNotNull();
   }
 
@@ -66,13 +66,13 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
 
     Schema.ensureExists(storage.keyspace, false, session());
 
-    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(storage.keyspace);
+    KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
     assertThat(metadata.getTable(TABLE_SPAN)).isNotNull();
     assertThat(metadata.getTable(TABLE_DEPENDENCY)).isNotNull();
 
     for (String searchTable : SEARCH_TABLES) {
       assertThat(metadata.getTable(searchTable))
-        .withFailMessage("Expected to not find " + searchTable).isNull();
+        .withFailMessage("Expected to not find " + searchTable).isEmpty();
     }
   }
 
@@ -82,11 +82,11 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
 
     Schema.ensureExists(storage.keyspace, true, session());
 
-    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(storage.keyspace);
+    KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
 
     for (String searchTable : SEARCH_TABLES) {
       assertThat(metadata.getTable(searchTable))
-        .withFailMessage("Expected to find " + searchTable).isNotNull();
+        .withFailMessage("Expected to find " + searchTable).isPresent();
     }
   }
 
@@ -96,7 +96,7 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
 
     Schema.ensureExists(storage.keyspace, true, session());
 
-    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(storage.keyspace);
+    KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
     assertThat(Schema.hasUpgrade1_autocompleteTags(metadata)).isTrue();
   }
 
@@ -107,7 +107,7 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
 
     Schema.ensureExists(storage.keyspace, true, session());
 
-    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(storage.keyspace);
+    KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
     assertThat(Schema.hasUpgrade2_remoteService(metadata)).isTrue();
   }
 

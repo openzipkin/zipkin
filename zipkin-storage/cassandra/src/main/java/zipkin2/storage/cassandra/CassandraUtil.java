@@ -13,10 +13,12 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.LocalDate;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -62,7 +64,7 @@ final class CassandraUtil {
    *
    * @see QueryRequest#annotationQuery()
    */
-  static @Nullable String annotationQuery(Span span) {
+  @Nullable static String annotationQuery(Span span) {
     if (span.annotations().isEmpty() && span.tags().isEmpty()) return null;
 
     char delimiter = '░'; // as very unlikely to be in the query
@@ -126,7 +128,7 @@ final class CassandraUtil {
   static List<LocalDate> getDays(long endTs, @Nullable Long lookback) {
     List<LocalDate> result = new ArrayList<>();
     for (long epochMillis : DateUtil.epochDays(endTs, lookback)) {
-      result.add(LocalDate.fromMillisSinceEpoch(epochMillis));
+      result.add(Instant.ofEpochMilli(epochMillis).atZone(ZoneOffset.UTC).toLocalDate());
     }
     return result;
   }

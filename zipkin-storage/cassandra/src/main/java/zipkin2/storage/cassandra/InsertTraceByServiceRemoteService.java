@@ -13,17 +13,17 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.google.auto.value.AutoValue;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE;
 
 final class InsertTraceByServiceRemoteService extends ResultSetFutureCall<Void> {
@@ -41,18 +41,18 @@ final class InsertTraceByServiceRemoteService extends ResultSetFutureCall<Void> 
   }
 
   static final class Factory {
-    final Session session;
+    final CqlSession session;
     final PreparedStatement preparedStatement;
     final boolean strictTraceId;
 
-    Factory(Session session, boolean strictTraceId) {
+    Factory(CqlSession session, boolean strictTraceId) {
       this.session = session;
       this.preparedStatement = session.prepare(insertInto(TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE)
         .value("service", bindMarker())
         .value("remote_service", bindMarker())
         .value("bucket", bindMarker())
         .value("ts", bindMarker())
-        .value("trace_id", bindMarker()));
+        .value("trace_id", bindMarker()).build());
       this.strictTraceId = strictTraceId;
     }
 
@@ -78,16 +78,16 @@ final class InsertTraceByServiceRemoteService extends ResultSetFutureCall<Void> 
     this.input = input;
   }
 
-  @Override protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement.bind()
+  @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    return factory.session.executeAsync(factory.preparedStatement.boundStatementBuilder()
       .setString(0, input.service())
       .setString(1, input.remote_service())
       .setInt(2, input.bucket())
-      .setUUID(3, input.ts())
-      .setString(4, input.trace_id()));
+      .setUuid(3, input.ts())
+      .setString(4, input.trace_id()).build());
   }
 
-  @Override public Void map(ResultSet input) {
+  @Override public Void map(AsyncResultSet input) {
     return null;
   }
 

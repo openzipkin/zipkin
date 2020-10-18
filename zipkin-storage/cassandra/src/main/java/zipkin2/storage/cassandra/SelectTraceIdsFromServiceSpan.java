@@ -13,18 +13,18 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import zipkin2.Call;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.cassandra.CassandraSpanStore.TimestampRange;
@@ -32,13 +32,10 @@ import zipkin2.storage.cassandra.internal.call.AccumulateTraceIdTsUuid;
 import zipkin2.storage.cassandra.internal.call.AggregateIntoMap;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.gte;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
-final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet> {
+final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<AsyncResultSet> {
   @AutoValue
   abstract static class Input {
     abstract String service();
@@ -47,11 +44,9 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
 
     abstract int bucket();
 
-    @Nullable
-    abstract Long start_duration();
+    @Nullable abstract Long start_duration();
 
-    @Nullable
-    abstract Long end_duration();
+    @Nullable abstract Long end_duration();
 
     abstract UUID start_ts();
 
@@ -73,32 +68,40 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
   }
 
   static final class Factory {
-    final Session session;
+    final CqlSession session;
     final PreparedStatement selectTraceIdsByServiceSpanName;
     final PreparedStatement selectTraceIdsByServiceSpanNameAndDuration;
 
-    Factory(Session session) {
+    Factory(CqlSession session) {
       this.session = session;
       // separate to avoid: "Unsupported unset value for column duration" maybe SASI related
       // TODO: revisit on next driver update
       this.selectTraceIdsByServiceSpanName =
-        session.prepare(select("trace_id", "ts").from(TABLE_TRACE_BY_SERVICE_SPAN)
-          .where(eq("service", bindMarker("service")))
-          .and(eq("span", bindMarker("span")))
-          .and(eq("bucket", bindMarker("bucket")))
-          .and(gte("ts", bindMarker("start_ts")))
-          .and(QueryBuilder.lte("ts", bindMarker("end_ts")))
-          .limit(bindMarker("limit_")));
+        session.prepare(selectFrom(TABLE_TRACE_BY_SERVICE_SPAN).columns("trace_id", "ts")
+          .whereColumn("service").isEqualTo(QueryBuilder.bindMarker("service"))
+          .whereColumn("span").isEqualTo(QueryBuilder.bindMarker("span"))
+          .whereColumn("bucket").isEqualTo(QueryBuilder.bindMarker("bucket"))
+          .whereColumn("ts").isGreaterThanOrEqualTo(QueryBuilder.bindMarker("start_ts"))
+          .whereColumn("ts").isLessThanOrEqualTo(QueryBuilder.bindMarker("end_ts"))
+          .limit(QueryBuilder.bindMarker("limit_")).build());
       this.selectTraceIdsByServiceSpanNameAndDuration =
-        session.prepare(select("trace_id", "ts").from(TABLE_TRACE_BY_SERVICE_SPAN)
-          .where(eq("service", bindMarker("service")))
-          .and(eq("span", bindMarker("span")))
-          .and(eq("bucket", bindMarker("bucket")))
-          .and(gte("ts", bindMarker("start_ts")))
-          .and(QueryBuilder.lte("ts", bindMarker("end_ts")))
-          .and(gte("duration", bindMarker("start_duration")))
-          .and(QueryBuilder.lte("duration", bindMarker("end_duration")))
-          .limit(bindMarker("limit_")));
+        session.prepare(selectFrom(TABLE_TRACE_BY_SERVICE_SPAN).columns("trace_id", "ts")
+          .whereColumn("service")
+          .isEqualTo(QueryBuilder.bindMarker("service"))
+          .whereColumn("span")
+          .isEqualTo(QueryBuilder.bindMarker("span"))
+          .whereColumn("bucket")
+          .isEqualTo(QueryBuilder.bindMarker("bucket"))
+          .whereColumn("ts")
+          .isGreaterThanOrEqualTo(QueryBuilder.bindMarker("start_ts"))
+          .whereColumn("ts")
+          .isLessThanOrEqualTo(QueryBuilder.bindMarker("end_ts"))
+          .whereColumn("duration")
+          .isGreaterThanOrEqualTo(QueryBuilder.bindMarker("start_duration"))
+          .whereColumn("duration")
+          .isLessThanOrEqualTo(QueryBuilder.bindMarker("end_duration"))
+          .limit(QueryBuilder.bindMarker("limit_"))
+          .build());
     }
 
     Input newInput(
@@ -137,12 +140,10 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
     }
 
     Call<Map<String, Long>> newCall(Input input) {
-      return new SelectTraceIdsFromServiceSpan(
-        this,
-        input.start_duration() != null
-          ? selectTraceIdsByServiceSpanNameAndDuration
-          : selectTraceIdsByServiceSpanName,
-        input)
+      PreparedStatement preparedStatement = input.start_duration() != null
+        ? selectTraceIdsByServiceSpanNameAndDuration
+        : selectTraceIdsByServiceSpanName;
+      return new SelectTraceIdsFromServiceSpan(this, preparedStatement, input)
         .flatMap(AccumulateTraceIdTsUuid.get());
     }
 
@@ -194,24 +195,27 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
     this.input = input;
   }
 
-  @Override protected ResultSetFuture newFuture() {
-    BoundStatement bound = preparedStatement.bind()
+  @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    BoundStatementBuilder bound = preparedStatement.boundStatementBuilder()
       .setString("service", input.service())
       .setString("span", input.span())
       .setInt("bucket", input.bucket());
+
     if (input.start_duration() != null) {
       bound.setLong("start_duration", input.start_duration());
       bound.setLong("end_duration", input.end_duration());
     }
+
     bound
-      .setUUID("start_ts", input.start_ts())
-      .setUUID("end_ts", input.end_ts())
+      .setUuid("start_ts", input.start_ts())
+      .setUuid("end_ts", input.end_ts())
       .setInt("limit_", input.limit_())
-      .setFetchSize(input.limit_());
-    return factory.session.executeAsync(bound);
+      .setPageSize(input.limit_());
+
+    return factory.session.executeAsync(bound.build());
   }
 
-  @Override public ResultSet map(ResultSet input) {
+  @Override public AsyncResultSet map(AsyncResultSet input) {
     return input;
   }
 

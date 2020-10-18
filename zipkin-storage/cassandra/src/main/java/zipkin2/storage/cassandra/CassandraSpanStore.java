@@ -13,10 +13,10 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.KeyspaceMetadata;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.DriverException;
-import com.datastax.driver.core.utils.UUIDs;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.DriverException;
+import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
+import com.datastax.oss.driver.api.core.uuid.Uuids;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +32,7 @@ import zipkin2.storage.QueryRequest;
 import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.Traces;
+import zipkin2.storage.cassandra.internal.KeyspaceMetadataUtil;
 import zipkin2.storage.cassandra.internal.call.IntersectKeySets;
 import zipkin2.storage.cassandra.internal.call.IntersectMaps;
 
@@ -59,7 +60,7 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
   @Nullable final SelectTraceIdsFromServiceRemoteService.Factory traceIdsFromServiceRemoteService;
 
   CassandraSpanStore(CassandraStorage storage) {
-    Session session = storage.session();
+    CqlSession session = storage.session();
     Schema.Metadata metadata = storage.metadata();
     int maxTraceCols = storage.maxTraceCols;
     indexFetchMultiplier = storage.indexFetchMultiplier;
@@ -81,7 +82,7 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
     }
 
     KeyspaceMetadata md = Schema.ensureKeyspaceMetadata(session, storage.keyspace);
-    indexTtl = md.getTable(TABLE_TRACE_BY_SERVICE_SPAN).getOptions().getDefaultTimeToLive();
+    indexTtl = KeyspaceMetadataUtil.getDefaultTtl(md, TABLE_TRACE_BY_SERVICE_SPAN);
     serviceNames = new SelectServiceNames.Factory(session).create();
     if (metadata.hasRemoteService) {
       remoteServiceNames = new SelectRemoteServiceNames.Factory(session);
@@ -101,7 +102,7 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
    *
    * <p>If dropped, trying to search by annotation in the UI will throw an IllegalStateException.
    */
-  static SelectTraceIdsFromSpan.Factory initialiseSelectTraceIdsFromSpan(Session session) {
+  static SelectTraceIdsFromSpan.Factory initialiseSelectTraceIdsFromSpan(CqlSession session) {
     try {
       return new SelectTraceIdsFromSpan.Factory(session);
     } catch (DriverException ex) {
@@ -308,9 +309,9 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
     long oldestData = Math.max(System.currentTimeMillis() - indexTtl * 1000, 0); // >= 1970
     TimestampRange result = new TimestampRange();
     result.startMillis = Math.max((request.endTs() - request.lookback()), oldestData);
-    result.startUUID = UUIDs.startOf(result.startMillis);
+    result.startUUID = Uuids.startOf(result.startMillis);
     result.endMillis = Math.max(request.endTs(), oldestData);
-    result.endUUID = UUIDs.endOf(result.endMillis);
+    result.endUUID = Uuids.endOf(result.endMillis);
     return result;
   }
 }

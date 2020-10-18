@@ -13,7 +13,7 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Nested;
@@ -131,7 +131,7 @@ class ITCassandraStorageHeavy {
       return backend.newStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
     }
 
-    @Override Session session() {
+    @Override CqlSession session() {
       return backend.globalSession;
     }
 

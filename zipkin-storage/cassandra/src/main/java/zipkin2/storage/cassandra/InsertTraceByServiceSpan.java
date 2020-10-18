@@ -13,18 +13,18 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.google.auto.value.AutoValue;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
 final class InsertTraceByServiceSpan extends ResultSetFutureCall<Void> {
@@ -45,11 +45,11 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall<Void> {
   }
 
   static final class Factory {
-    final Session session;
+    final CqlSession session;
     final PreparedStatement preparedStatement;
     final boolean strictTraceId;
 
-    Factory(Session session, boolean strictTraceId) {
+    Factory(CqlSession session, boolean strictTraceId) {
       this.session = session;
       this.preparedStatement = session.prepare(insertInto(TABLE_TRACE_BY_SERVICE_SPAN)
         .value("service", bindMarker())
@@ -57,7 +57,7 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall<Void> {
         .value("bucket", bindMarker())
         .value("ts", bindMarker())
         .value("trace_id", bindMarker())
-        .value("duration", bindMarker()));
+        .value("duration", bindMarker()).build());
       this.strictTraceId = strictTraceId;
     }
 
@@ -89,20 +89,20 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall<Void> {
     this.input = input;
   }
 
-  @Override protected ResultSetFuture newFuture() {
-    BoundStatement bound = factory.preparedStatement.bind()
+  @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    BoundStatementBuilder bound = factory.preparedStatement.boundStatementBuilder()
       .setString(0, input.service())
       .setString(1, input.span())
       .setInt(2, input.bucket())
-      .setUUID(3, input.ts())
+      .setUuid(3, input.ts())
       .setString(4, input.trace_id());
 
     if (0L != input.duration()) bound.setLong(5, input.duration());
 
-    return factory.session.executeAsync(bound);
+    return factory.session.executeAsync(bound.build());
   }
 
-  @Override public Void map(ResultSet input) {
+  @Override public Void map(AsyncResultSet input) {
     return null;
   }
 

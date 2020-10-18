@@ -13,21 +13,21 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Insert;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.querybuilder.insert.Insert;
+import java.util.concurrent.CompletionStage;
 import zipkin2.internal.DelayLimiter;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingInsert;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.ttl;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 import static zipkin2.storage.cassandra.v1.Tables.SERVICE_NAMES;
 
 final class InsertServiceName extends DeduplicatingInsert<String> {
   static final class Factory extends DeduplicatingInsert.Factory<String> {
-    final Session session;
+    final CqlSession session;
     final PreparedStatement preparedStatement;
 
     Factory(CassandraStorage storage, int indexTtl) {
@@ -35,8 +35,8 @@ final class InsertServiceName extends DeduplicatingInsert<String> {
       session = storage.session();
       Insert insertQuery = insertInto(SERVICE_NAMES)
         .value("service_name", bindMarker());
-      if (indexTtl > 0) insertQuery.using(ttl(indexTtl));
-      preparedStatement = session.prepare(insertQuery);
+      if (indexTtl > 0) insertQuery = insertQuery.usingTtl(indexTtl);
+      preparedStatement = session.prepare(insertQuery.build());
     }
 
     @Override protected InsertServiceName newCall(String input) {
@@ -51,8 +51,9 @@ final class InsertServiceName extends DeduplicatingInsert<String> {
     this.factory = factory;
   }
 
-  @Override protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement.bind().setString(0, input));
+  @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    return factory.session.executeAsync(factory.preparedStatement.boundStatementBuilder()
+      .setString(0, input).build());
   }
 
   @Override public String toString() {

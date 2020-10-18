@@ -19,11 +19,13 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -144,10 +146,10 @@ final class CassandraUtil {
   }
 
   @SuppressWarnings("JdkObsolete")
-  static List<Date> getDays(long endTs, @Nullable Long lookback) {
-    List<Date> result = new ArrayList<>();
+  static List<Instant> getDays(long endTs, @Nullable Long lookback) {
+    List<Instant> result = new ArrayList<>();
     for (long epochMillis : DateUtil.epochDays(endTs, lookback)) {
-      result.add(new Date(epochMillis));
+      result.add(Instant.ofEpochMilli(epochMillis));
     }
     return result;
   }

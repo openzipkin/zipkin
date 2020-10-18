@@ -13,9 +13,9 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.ProtocolVersion;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.TypeCodec;
+import com.datastax.oss.driver.api.core.ProtocolVersion;
+import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.type.codec.TypeCodecs;
 import java.nio.ByteBuffer;
 
 final class TimestampCodec {
@@ -27,7 +27,7 @@ final class TimestampCodec {
    * avoid allocating java.util.Date
    */
   static ByteBuffer serialize(long timestamp) {
-    return TypeCodec.bigint().serializeNoBoxing(timestamp / 1000L, PROTOCOL_VERSION);
+    return TypeCodecs.BIGINT.encodePrimitive(timestamp / 1000L, PROTOCOL_VERSION);
   }
 
   /**
@@ -35,6 +35,6 @@ final class TimestampCodec {
    * converts to microseconds.
    */
   static long deserialize(Row row, int i) {
-    return 1000L * TypeCodec.bigint().deserializeNoBoxing(row.getBytesUnsafe(i), PROTOCOL_VERSION);
+    return 1000L * TypeCodecs.BIGINT.decodePrimitive(row.getBytesUnsafe(i), PROTOCOL_VERSION);
   }
 }

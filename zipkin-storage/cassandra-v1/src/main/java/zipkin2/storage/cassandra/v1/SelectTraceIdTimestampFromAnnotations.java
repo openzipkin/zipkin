@@ -13,30 +13,29 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Select;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
+import com.datastax.oss.driver.api.querybuilder.select.Select;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
 import static zipkin2.storage.cassandra.v1.IndexTraceId.BUCKETS;
 import static zipkin2.storage.cassandra.v1.Tables.ANNOTATIONS_INDEX;
 
 // select blobAsText(annotation),TOUNIXTIMESTAMP(ts),bigintAsBlob(trace_id) from annotations_index;
 final class SelectTraceIdTimestampFromAnnotations extends SelectTraceIdIndex.Factory<String> {
-  SelectTraceIdTimestampFromAnnotations(Session session) {
+  SelectTraceIdTimestampFromAnnotations(CqlSession session) {
     super(session, ANNOTATIONS_INDEX, "annotation", 2);
   }
 
-  @Override Select.Where declarePartitionKey(Select select) {
+  @Override Select declarePartitionKey(Select select) {
     return super
       .declarePartitionKey(select)
-      .and(in("bucket", bindMarker()));
+      .whereColumn("bucket").in(bindMarker());
   }
 
-  @Override void bindPartitionKey(BoundStatement bound, String partitionKey) {
+  @Override void bindPartitionKey(BoundStatementBuilder bound, String partitionKey) {
     bound
-      .setBytes(0, CassandraUtil.toByteBuffer(partitionKey))
+      .setBytesUnsafe(0, CassandraUtil.toByteBuffer(partitionKey))
       .setList(1, BUCKETS, Integer.class);
   }
 }

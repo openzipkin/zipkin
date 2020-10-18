@@ -13,8 +13,8 @@
  */
 package zipkin2.storage.cassandra.internal.call;
 
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.utils.UUIDs;
+import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.uuid.Uuids;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -34,7 +34,7 @@ public final class AccumulateTraceIdTsUuid
 
   @Override protected BiConsumer<Row, Map<String, Long>> accumulator() {
     return (row, result) ->
-      result.put(row.getString(0), UUIDs.unixTimestamp(row.getUUID(1)));
+      result.put(row.getString(0), Uuids.unixTimestamp(row.getUuid(1)));
   }
 
   @Override public String toString() {

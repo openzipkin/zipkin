@@ -13,18 +13,17 @@
  */
 package zipkin2.storage.cassandra.internal.call;
 
-import com.datastax.driver.core.ResultSet;
-import com.google.common.util.concurrent.ListenableFuture;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.internal.DelayLimiter;
 
-import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
-import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.Mockito.mock;
@@ -134,13 +133,15 @@ public class DeduplicatingInsertTest {
       super(delayLimiter, input);
     }
 
-    @Override protected ListenableFuture<ResultSet> newFuture() {
+    @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
       if (input.equals(failValue.get())) {
         failValue.set(null);
-        return immediateFailedFuture(new AssertionError());
+        CompletableFuture<AsyncResultSet> result = new CompletableFuture<>();
+        result.completeExceptionally(new AssertionError());
+        return result;
       }
       values.add(input);
-      return immediateFuture(mock(ResultSet.class));
+      return CompletableFuture.completedFuture(mock(AsyncResultSet.class));
     }
 
     @Override public Call<Void> clone() {

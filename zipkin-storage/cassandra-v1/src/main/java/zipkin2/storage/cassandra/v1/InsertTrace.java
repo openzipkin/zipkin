@@ -13,22 +13,21 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Insert;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.querybuilder.insert.Insert;
 import com.google.auto.value.AutoValue;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import zipkin2.v1.V1Span;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.ttl;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 import static zipkin2.storage.cassandra.v1.Tables.TRACES;
 
 final class InsertTrace extends ResultSetFutureCall<Void> {
@@ -46,22 +45,22 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
   }
 
   static final class Factory {
-    final Session session;
+    final CqlSession session;
     final PreparedStatement preparedStatement;
     final boolean dateTieredCompactionStrategy;
 
-    Factory(Session session, Schema.Metadata metadata, int spanTtl) {
+    Factory(CqlSession session, Schema.Metadata metadata, int spanTtl) {
       this.session = session;
+      this.dateTieredCompactionStrategy =
+        metadata.compactionClass.contains("DateTieredCompactionStrategy");
+
       Insert insertQuery = insertInto(TRACES)
         .value("trace_id", bindMarker())
         .value("ts", bindMarker())
         .value("span_name", bindMarker())
         .value("span", bindMarker());
-      if (spanTtl > 0) insertQuery.using(ttl(spanTtl));
-
-      this.dateTieredCompactionStrategy =
-        metadata.compactionClass.contains("DateTieredCompactionStrategy");
-      this.preparedStatement = session.prepare(insertQuery);
+      if (spanTtl > 0) insertQuery = insertQuery.usingTtl(spanTtl);
+      this.preparedStatement = session.prepare(insertQuery.build());
     }
 
     Input newInput(V1Span v1, ByteBuffer v1Bytes, long ts_micro) {
@@ -81,7 +80,7 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
             + "{}.{}",
           span_name,
           v1.traceId(),
-          session.getLoggedKeyspace(), TRACES);
+          session.getKeyspace().get());
       }
 
       return new AutoValue_InsertTrace_Input(v1.traceId(), ts_micro, span_name, v1Bytes);
@@ -100,15 +99,15 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
     this.input = input;
   }
 
-  @Override protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement.bind()
+  @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    return factory.session.executeAsync(factory.preparedStatement.boundStatementBuilder()
       .setLong(0, input.trace_id())
       .setBytesUnsafe(1, TimestampCodec.serialize(input.ts()))
       .setString(2, input.span_name())
-      .setBytes(3, input.span()));
+      .setBytesUnsafe("span", input.span()).build());
   }
 
-  @Override public Void map(ResultSet input) {
+  @Override public Void map(AsyncResultSet input) {
     return null;
   }
 

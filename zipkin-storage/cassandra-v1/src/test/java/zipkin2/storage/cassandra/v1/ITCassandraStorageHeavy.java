@@ -13,7 +13,7 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -30,9 +30,11 @@ import static zipkin2.Span.Kind.CLIENT;
 import static zipkin2.Span.Kind.SERVER;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.FRONTEND;
+import static zipkin2.TestObjects.TODAY;
 import static zipkin2.TestObjects.appendSuffix;
 import static zipkin2.TestObjects.newClientSpan;
 import static zipkin2.TestObjects.newTrace;
+import static zipkin2.TestObjects.spanBuilder;
 import static zipkin2.storage.ITDependencies.aggregateLinks;
 import static zipkin2.storage.cassandra.v1.CassandraStorageExtension.rowCount;
 import static zipkin2.storage.cassandra.v1.InternalForTests.writeDependencyLinks;
@@ -176,7 +178,7 @@ class ITCassandraStorageHeavy {
       return backend.newStorageBuilder().keyspace(testSuffix(testInfo));
     }
 
-    @Override Session session() {
+    @Override CqlSession session() {
       return backend.globalSession;
     }
 

@@ -13,35 +13,35 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.LocalDate;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.Row;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.internal.DependencyLinker;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
 import static zipkin2.storage.cassandra.Schema.TABLE_DEPENDENCY;
 
 final class SelectDependencies extends ResultSetFutureCall<List<DependencyLink>> {
 
   static final class Factory {
-    final Session session;
+    final CqlSession session;
     final PreparedStatement preparedStatement;
 
-    Factory(Session session) {
+    Factory(CqlSession session) {
       this.session = session;
       this.preparedStatement =
-        session.prepare(select("parent", "child", "errors", "calls").from(TABLE_DEPENDENCY)
-          .where(in("day", bindMarker())));
+        session.prepare(selectFrom(TABLE_DEPENDENCY)
+          .columns("parent", "child", "errors", "calls")
+          .whereColumn("day").in(bindMarker()).build());
     }
 
     Call<List<DependencyLink>> create(long endTs, long lookback) {
@@ -58,8 +58,9 @@ final class SelectDependencies extends ResultSetFutureCall<List<DependencyLink>>
     this.days = days;
   }
 
-  @Override protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement.bind().setList(0, days));
+  @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    return factory.session.executeAsync(factory.preparedStatement.boundStatementBuilder()
+      .setList(0, days, LocalDate.class).build());
   }
 
   @Override public String toString() {
@@ -70,9 +71,9 @@ final class SelectDependencies extends ResultSetFutureCall<List<DependencyLink>>
     return new SelectDependencies(factory, days);
   }
 
-  @Override public List<DependencyLink> map(ResultSet rs) {
+  @Override public List<DependencyLink> map(AsyncResultSet rs) {
     List<DependencyLink> unmerged = new ArrayList<>();
-    for (Row row : rs) {
+    for (Row row : rs.currentPage()) {
       unmerged.add(DependencyLink.newBuilder()
         .parent(row.getString("parent"))
         .child(row.getString("child"))
