@@ -15,7 +15,6 @@ package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select;
 import java.util.Collections;
 import java.util.List;
@@ -36,16 +35,19 @@ import static zipkin2.storage.cassandra.v1.Tables.SERVICE_NAME_INDEX;
 final class SelectTraceIdTimestampFromServiceNames
   extends SelectTraceIdIndex.Factory<List<String>> {
   SelectTraceIdTimestampFromServiceNames(Session session) {
-    super(session, SERVICE_NAME_INDEX, "service_name");
+    super(session, SERVICE_NAME_INDEX, "service_name", 2);
   }
 
   @Override Select.Where declarePartitionKey(Select select) {
-    return select.where(in("service_name", bindMarker("service_name")))
-      .and(QueryBuilder.in("bucket", BUCKETS));
+    return select
+      .where(in("service_name", bindMarker()))
+      .and(in("bucket", bindMarker()));
   }
 
-  @Override BoundStatement bindPartitionKey(BoundStatement bound, List<String> serviceNames) {
-    return bound.setList(0, serviceNames);
+  @Override void bindPartitionKey(BoundStatement bound, List<String> serviceNames) {
+    bound
+      .setList(0, serviceNames)
+      .setList(1, BUCKETS, Integer.class);
   }
 
   Call.FlatMapper<List<String>, Set<Pair>> newFlatMapper(long endTs, long lookback, int limit) {

@@ -17,20 +17,26 @@ import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Select;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
 import static zipkin2.storage.cassandra.v1.IndexTraceId.BUCKETS;
 import static zipkin2.storage.cassandra.v1.Tables.SERVICE_NAME_INDEX;
 
+// select service_name,TOUNIXTIMESTAMP(ts),bigintAsBlob(trace_id) from service_name_index;
 final class SelectTraceIdTimestampFromServiceName extends SelectTraceIdIndex.Factory<String> {
   SelectTraceIdTimestampFromServiceName(Session session) {
-    super(session, SERVICE_NAME_INDEX, "service_name");
+    super(session, SERVICE_NAME_INDEX, "service_name", 2);
   }
 
   @Override Select.Where declarePartitionKey(Select select) {
-    return super.declarePartitionKey(select).and(in("bucket", BUCKETS));
+    return super
+      .declarePartitionKey(select)
+      .and(in("bucket", bindMarker()));
   }
 
-  @Override BoundStatement bindPartitionKey(BoundStatement bound, String partitionKey) {
-    return bound.setString(0, partitionKey);
+  @Override void bindPartitionKey(BoundStatement bound, String serviceName) {
+    bound
+      .setString(0, serviceName)
+      .setList(1, BUCKETS, Integer.class);
   }
 }

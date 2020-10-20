@@ -23,9 +23,6 @@ import static zipkin2.storage.cassandra.v1.Tables.SERVICE_NAME_INDEX;
 
 // QueryRequest.serviceName
 final class IndexTraceIdByServiceName extends IndexTraceId.Factory {
-  // Legacy behaviour was to use a static singleton of ThreadLocalRandom for bucket selection
-  private static final ThreadLocalRandom RAND = ThreadLocalRandom.current();
-
   IndexTraceIdByServiceName(CassandraStorage storage, int indexTtl) {
     super(storage, SERVICE_NAME_INDEX, indexTtl);
   }
@@ -37,6 +34,8 @@ final class IndexTraceIdByServiceName extends IndexTraceId.Factory {
   }
 
   @Override public BoundStatement bindPartitionKey(BoundStatement bound, String partitionKey) {
-    return bound.setString(2, partitionKey).setInt(3, RAND.nextInt(BUCKET_COUNT));
+    return bound
+      .setString(2, partitionKey)
+      .setInt(3, ThreadLocalRandom.current().nextInt(BUCKET_COUNT));
   }
 }

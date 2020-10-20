@@ -18,7 +18,6 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.querybuilder.Select;
 import com.google.auto.value.AutoValue;
 import java.util.Set;
@@ -58,24 +57,29 @@ final class SelectTraceIdIndex<K> extends ResultSetFutureCall<ResultSet> {
     final Session session;
     final String table, partitionKeyColumn;
     final PreparedStatement preparedStatement;
+    final int firstMarkerIndex;
 
-    Factory(Session session, String table, String partitionKeyColumn) {
+    Factory(Session session, String table, String partitionKeyColumn, int partitionKeyCount) {
       this.session = session;
       this.table = table;
       this.partitionKeyColumn = partitionKeyColumn;
+      // Tables queried hare defined CLUSTERING ORDER BY "ts".
+      // We don't use orderBy in queries per: https://www.datastax.com/blog/we-shall-have-order
+      // Sorting is done client-side via sortTraceIdsByDescTimestamp()
       Select select = declarePartitionKey(select("trace_id", "ts").from(table))
         .and(gte("ts", bindMarker()))
         .and(lte("ts", bindMarker()))
         .limit(bindMarker())
         .orderBy(desc("ts"));
       preparedStatement = session.prepare(select);
+      firstMarkerIndex = partitionKeyCount;
     }
 
     Select.Where declarePartitionKey(Select select) {
       return select.where(eq(partitionKeyColumn, bindMarker()));
     }
 
-    abstract BoundStatement bindPartitionKey(BoundStatement bound, K partitionKey);
+    abstract void bindPartitionKey(BoundStatement bound, K partitionKey);
 
     Call<Set<Pair>> newCall(Input<K> input) {
       return new SelectTraceIdIndex<>(this, input).flatMap(AccumulateTraceIdTsLong.get());
@@ -91,12 +95,14 @@ final class SelectTraceIdIndex<K> extends ResultSetFutureCall<ResultSet> {
   }
 
   @Override protected ResultSetFuture newFuture() {
-    Statement bound =
-      factory.bindPartitionKey(factory.preparedStatement.bind(), input.partitionKey())
-        .setBytesUnsafe(1, TimestampCodec.serialize(input.start_ts()))
-        .setBytesUnsafe(2, TimestampCodec.serialize(input.end_ts()))
-        .setInt(3, input.limit_())
-        .setFetchSize(Integer.MAX_VALUE); // NOTE in the new driver, we also set this to limit
+    BoundStatement bound = factory.preparedStatement.bind();
+    factory.bindPartitionKey(bound, input.partitionKey());
+
+    int i = factory.firstMarkerIndex;
+    bound.setBytesUnsafe(i, TimestampCodec.serialize(input.start_ts()))
+      .setBytesUnsafe(i + 1, TimestampCodec.serialize(input.end_ts()))
+      .setInt(i + 2, input.limit_())
+      .setFetchSize(Integer.MAX_VALUE); // NOTE in the new driver, we also set this to limit
     return factory.session.executeAsync(bound);
   }
 
