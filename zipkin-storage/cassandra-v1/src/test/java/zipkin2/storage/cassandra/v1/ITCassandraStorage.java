@@ -13,7 +13,6 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
@@ -22,14 +21,9 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.Span;
-import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
 import static java.util.Arrays.asList;
-import static zipkin2.TestObjects.FRONTEND;
-import static zipkin2.TestObjects.TODAY;
-import static zipkin2.TestObjects.appendSuffix;
-import static zipkin2.TestObjects.spanBuilder;
 import static zipkin2.storage.cassandra.v1.InternalForTests.writeDependencyLinks;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -71,35 +65,6 @@ class ITCassandraStorage {
   class ITSpanStore extends zipkin2.storage.ITSpanStore<CassandraStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend.newStorageBuilder();
-    }
-
-    @Test void searchingByAnnotationShouldFilterBeforeLimiting(TestInfo testInfo) throws Exception {
-      String testSuffix = testSuffix(testInfo);
-      int queryLimit = 2;
-      int nbTraceFetched = queryLimit * storage.indexFetchMultiplier;
-
-      List<Span> traces = new ArrayList<>();
-      for (int i = 0; i < nbTraceFetched; i++) {
-        Span next = spanBuilder(testSuffix).timestamp((TODAY - i) * 1000L).build();
-        traces.add(next);
-      }
-
-      // Add two spans with the tags we're looking for before the preceding ones
-      for (int i = 0; i < 2; i++) {
-        int j = nbTraceFetched + i;
-        accept(traces.get(i).toBuilder()
-          .id("b")
-          .timestamp((TODAY - j) * 1000L)
-          .putTag("host.name", "host1")
-          .build());
-      }
-
-      QueryRequest queryRequest = requestBuilder()
-        .parseAnnotationQuery("host.name=host1")
-        .serviceName(appendSuffix(FRONTEND.serviceName(), testSuffix))
-        .limit(queryLimit)
-        .build();
-      assertGetTracesReturnsCount(queryRequest, queryLimit);
     }
 
     @Override @Test @Disabled("All services query unsupported when combined with other qualifiers")

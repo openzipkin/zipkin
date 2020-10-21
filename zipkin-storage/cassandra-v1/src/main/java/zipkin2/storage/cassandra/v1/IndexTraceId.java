@@ -13,21 +13,22 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Insert;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.querybuilder.insert.Insert;
+import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert;
 import com.google.auto.value.AutoValue;
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.IntStream;
 import zipkin2.internal.DelayLimiter;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingInsert;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.ttl;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 
@@ -63,7 +64,7 @@ final class IndexTraceId extends DeduplicatingInsert<IndexTraceId.Input> {
   }
 
   static abstract class Factory extends DeduplicatingInsert.Factory<Input> {
-    final Session session;
+    final CqlSession session;
     final TraceIdIndexer.Factory indexerFactory;
     final PreparedStatement preparedStatement;
 
@@ -75,13 +76,13 @@ final class IndexTraceId extends DeduplicatingInsert<IndexTraceId.Input> {
       Insert insertQuery = declarePartitionKey(insertInto(table)
         .value("ts", bindMarker())
         .value("trace_id", bindMarker()));
-      if (indexTtl > 0) insertQuery.using(ttl(indexTtl));
-      preparedStatement = session.prepare(insertQuery);
+      if (indexTtl > 0) insertQuery.usingTtl(indexTtl);
+      preparedStatement = session.prepare(insertQuery.build());
     }
 
-    abstract Insert declarePartitionKey(Insert insert);
+    abstract RegularInsert declarePartitionKey(RegularInsert insert);
 
-    abstract BoundStatement bindPartitionKey(BoundStatement bound, String partitionKey);
+    abstract void bindPartitionKey(BoundStatementBuilder bound, String partitionKey);
 
     @Override protected IndexTraceId newCall(Input input) {
       return new IndexTraceId(this, delayLimiter, input);
@@ -104,12 +105,12 @@ final class IndexTraceId extends DeduplicatingInsert<IndexTraceId.Input> {
     this.factory = factory;
   }
 
-  @Override protected ResultSetFuture newFuture() {
-    BoundStatement bound = factory.preparedStatement.bind()
+  @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    BoundStatementBuilder bound = factory.preparedStatement.boundStatementBuilder()
       .setBytesUnsafe(0, TimestampCodec.serialize(input.ts()))
       .setLong(1, input.trace_id());
-    bound = factory.bindPartitionKey(bound, input.partitionKey());
-    return factory.session.executeAsync(bound);
+    factory.bindPartitionKey(bound, input.partitionKey());
+    return factory.session.executeAsync(bound.build());
   }
 
   @Override public String toString() {

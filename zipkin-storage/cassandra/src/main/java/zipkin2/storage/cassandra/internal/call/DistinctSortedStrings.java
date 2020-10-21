@@ -13,7 +13,7 @@
  */
 package zipkin2.storage.cassandra.internal.call;
 
-import com.datastax.driver.core.Row;
+import com.datastax.oss.driver.api.core.cql.Row;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;

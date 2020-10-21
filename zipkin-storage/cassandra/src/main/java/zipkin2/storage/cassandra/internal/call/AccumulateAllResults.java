@@ -13,16 +13,16 @@
  */
 package zipkin2.storage.cassandra.internal.call;
 
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.google.common.util.concurrent.ListenableFuture;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
+import java.util.concurrent.CompletionStage;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import zipkin2.Call;
 import zipkin2.Call.FlatMapper;
 
-public abstract class AccumulateAllResults<T> implements FlatMapper<ResultSet, T> {
+public abstract class AccumulateAllResults<T> implements FlatMapper<AsyncResultSet, T> {
   protected abstract Supplier<T> supplier();
 
   protected abstract BiConsumer<Row, T> accumulator();
@@ -32,7 +32,7 @@ public abstract class AccumulateAllResults<T> implements FlatMapper<ResultSet, T
     return Function.identity();
   }
 
-  @Override public Call<T> map(ResultSet rs) {
+  @Override public Call<T> map(AsyncResultSet rs) {
     return new AccumulateNextResults<>(
       supplier().get(),
       accumulator(),
@@ -40,22 +40,22 @@ public abstract class AccumulateAllResults<T> implements FlatMapper<ResultSet, T
     ).map(rs);
   }
 
-  static final class FetchMoreResults extends ResultSetFutureCall<ResultSet> {
-    final ResultSet resultSet;
+  static final class FetchMoreResults extends ResultSetFutureCall<AsyncResultSet> {
+    final AsyncResultSet resultSet;
 
-    FetchMoreResults(ResultSet resultSet) {
+    FetchMoreResults(AsyncResultSet resultSet) {
       this.resultSet = resultSet;
     }
 
-    @Override protected ListenableFuture<ResultSet> newFuture() {
-      return resultSet.fetchMoreResults();
+    @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+      return resultSet.fetchNextPage().toCompletableFuture();
     }
 
-    @Override public ResultSet map(ResultSet input) {
+    @Override public AsyncResultSet map(AsyncResultSet input) {
       return input;
     }
 
-    @Override public Call<ResultSet> clone() {
+    @Override public Call<AsyncResultSet> clone() {
       throw new UnsupportedOperationException();
     }
 
@@ -64,7 +64,7 @@ public abstract class AccumulateAllResults<T> implements FlatMapper<ResultSet, T
     }
   }
 
-  static final class AccumulateNextResults<T> implements FlatMapper<ResultSet, T> {
+  static final class AccumulateNextResults<T> implements FlatMapper<AsyncResultSet, T> {
     final T pendingResults;
     final BiConsumer<Row, T> accumulator;
     final Function<T, T> finisher;
@@ -77,12 +77,12 @@ public abstract class AccumulateAllResults<T> implements FlatMapper<ResultSet, T
     }
 
     /** Iterates through the rows in each page, flatmapping on more results until exhausted */
-    @Override public Call<T> map(ResultSet rs) {
-      while (rs.getAvailableWithoutFetching() > 0) {
+    @Override public Call<T> map(AsyncResultSet rs) {
+      while (rs.remaining() > 0) {
         accumulator.accept(rs.one(), pendingResults);
       }
       // Return collected results if there are no more pages
-      return rs.getExecutionInfo().getPagingState() == null && rs.isExhausted()
+      return rs.getExecutionInfo().getPagingState() == null && !rs.hasMorePages()
         ? Call.create(finisher.apply(pendingResults))
         : new FetchMoreResults(rs).flatMap(this);
     }

@@ -13,22 +13,18 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.ProtocolVersion;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
-import org.mockito.Mockito;
 import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.cassandra.v1.SelectTraceIdTimestampFromServiceNames.FlatMapServiceNamesToInput;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
+import static zipkin2.storage.cassandra.v1.InternalForTests.mockSession;
 
 // TODO: tests use toString because the call composition chain is complex (includes flat mapping)
 // This could be made a little less complex if we scrub out map=>map to a list of transformations,
@@ -105,10 +101,6 @@ public class CassandraSpanStoreTest {
   }
 
   static CassandraSpanStore spanStore(CassandraStorage.Builder builder) {
-    CassandraStorage storage =
-      spy(builder.sessionFactory(mock(SessionFactory.class, Mockito.RETURNS_MOCKS)).build());
-    doReturn(new Schema.Metadata(ProtocolVersion.V4, "", true, true, true))
-      .when(storage).metadata();
-    return new CassandraSpanStore(storage);
+    return new CassandraSpanStore(builder.sessionFactory(storage -> mockSession()).build());
   }
 }

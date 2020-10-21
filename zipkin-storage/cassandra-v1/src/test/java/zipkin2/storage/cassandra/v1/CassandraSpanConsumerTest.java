@@ -13,10 +13,8 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.ProtocolVersion;
 import java.util.Collections;
 import org.junit.Test;
-import org.mockito.Mockito;
 import zipkin2.Call;
 import zipkin2.Endpoint;
 import zipkin2.Span;
@@ -27,12 +25,10 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.FRONTEND;
 import static zipkin2.TestObjects.TODAY;
+import static zipkin2.storage.cassandra.v1.InternalForTests.mockSession;
 
 public class CassandraSpanConsumerTest {
   CassandraSpanConsumer consumer = spanConsumer(CassandraStorage.newBuilder());
@@ -156,10 +152,6 @@ public class CassandraSpanConsumerTest {
   }
 
   static CassandraSpanConsumer spanConsumer(CassandraStorage.Builder builder) {
-    CassandraStorage storage =
-      spy(builder.sessionFactory(mock(SessionFactory.class, Mockito.RETURNS_MOCKS)).build());
-    doReturn(new Schema.Metadata(ProtocolVersion.V4, "", true, true, true))
-      .when(storage).metadata();
-    return new CassandraSpanConsumer(storage);
+    return new CassandraSpanConsumer(builder.sessionFactory(storage -> mockSession()).build());
   }
 }

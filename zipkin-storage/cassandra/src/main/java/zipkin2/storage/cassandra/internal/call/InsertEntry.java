@@ -13,64 +13,65 @@
  */
 package zipkin2.storage.cassandra.internal.call;
 
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Insert;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
-import java.util.Map.Entry;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert;
+import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import zipkin2.Call;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 
-public final class InsertEntry extends DeduplicatingInsert<Entry<String, String>> {
-  public static class Factory extends DeduplicatingInsert.Factory<Entry<String, String>> {
-    final Session session;
+public final class InsertEntry extends DeduplicatingInsert<Map.Entry<String, String>> {
+
+  public static class Factory extends DeduplicatingInsert.Factory<Map.Entry<String, String>> {
+    final CqlSession session;
     final String table, keyColumn, valueColumn;
     final PreparedStatement preparedStatement;
 
     public Factory(String table, String keyColumn, String valueColumn,
-      Session session, long ttl, int cardinality) {
+      CqlSession session, long ttl, int cardinality) {
       this(table, keyColumn, valueColumn, session, ttl, cardinality, 0);
     }
 
     /** Cassandra v1 has deprecated support for indexTtl. */
     public Factory(String table, String keyColumn, String valueColumn,
-      Session session, long ttl, int cardinality, int indexTtl) {
+      CqlSession session, long ttl, int cardinality, int indexTtl) {
       super(ttl, cardinality);
       this.session = session;
       this.table = table;
       this.keyColumn = keyColumn;
       this.valueColumn = valueColumn;
-      Insert insertQuery = insertInto(table)
+      RegularInsert insert = insertInto(table)
         .value(keyColumn, bindMarker())
         .value(valueColumn, bindMarker());
-      if (indexTtl > 0) insertQuery.using(QueryBuilder.ttl(indexTtl));
+      if (indexTtl > 0) insert.usingTtl(indexTtl);
 
-      preparedStatement = prepare(session, insertQuery);
+      preparedStatement = prepare(session, insert);
     }
 
-    protected PreparedStatement prepare(Session session, Insert insertQuery) {
-      return session.prepare(insertQuery);
+    protected PreparedStatement prepare(CqlSession session, RegularInsert insert) {
+      return session.prepare(insert.build());
     }
 
-    @Override protected Call<Void> newCall(Entry<String, String> input) {
+    @Override protected Call<Void> newCall(Map.Entry<String, String> input) {
       return new InsertEntry(this, input);
     }
   }
 
   final Factory factory;
 
-  InsertEntry(Factory factory, Entry<String, String> input) {
+  InsertEntry(Factory factory, Map.Entry<String, String> input) {
     super(factory.delayLimiter, input);
     this.factory = factory;
   }
 
-  @Override protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement.bind()
+  @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    return factory.session.executeAsync(factory.preparedStatement.boundStatementBuilder()
       .setString(0, input.getKey())
-      .setString(1, input.getValue()));
+      .setString(1, input.getValue()).build());
   }
 
   @Override public String toString() {

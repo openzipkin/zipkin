@@ -13,25 +13,21 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Select;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.querybuilder.select.Select;
 import com.google.auto.value.AutoValue;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.desc;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.gte;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.lte;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
 
-final class SelectTraceIdIndex<K> extends ResultSetFutureCall<ResultSet> {
+final class SelectTraceIdIndex<K> extends ResultSetFutureCall<AsyncResultSet> {
   @AutoValue
   abstract static class Input<K> {
     static <K> Input<K> create(K partitionKey, long endTs, long lookback, int limit) {
@@ -54,32 +50,31 @@ final class SelectTraceIdIndex<K> extends ResultSetFutureCall<ResultSet> {
   }
 
   static abstract class Factory<K> {
-    final Session session;
+    final CqlSession session;
     final String table, partitionKeyColumn;
     final PreparedStatement preparedStatement;
     final int firstMarkerIndex;
 
-    Factory(Session session, String table, String partitionKeyColumn, int partitionKeyCount) {
+    Factory(CqlSession session, String table, String partitionKeyColumn, int partitionKeyCount) {
       this.session = session;
       this.table = table;
       this.partitionKeyColumn = partitionKeyColumn;
       // Tables queried hare defined CLUSTERING ORDER BY "ts".
       // We don't use orderBy in queries per: https://www.datastax.com/blog/we-shall-have-order
       // Sorting is done client-side via sortTraceIdsByDescTimestamp()
-      Select select = declarePartitionKey(select("trace_id", "ts").from(table))
-        .and(gte("ts", bindMarker()))
-        .and(lte("ts", bindMarker()))
-        .limit(bindMarker())
-        .orderBy(desc("ts"));
-      preparedStatement = session.prepare(select);
+      Select select = declarePartitionKey(selectFrom(table).columns("trace_id", "ts"))
+        .whereColumn("ts").isGreaterThanOrEqualTo(bindMarker())
+        .whereColumn("ts").isLessThanOrEqualTo(bindMarker())
+        .limit(bindMarker());
+      preparedStatement = session.prepare(select.build());
       firstMarkerIndex = partitionKeyCount;
     }
 
-    Select.Where declarePartitionKey(Select select) {
-      return select.where(eq(partitionKeyColumn, bindMarker()));
+    Select declarePartitionKey(Select select) {
+      return select.whereColumn(partitionKeyColumn).isEqualTo(bindMarker());
     }
 
-    abstract void bindPartitionKey(BoundStatement bound, K partitionKey);
+    abstract void bindPartitionKey(BoundStatementBuilder bound, K partitionKey);
 
     Call<Set<Pair>> newCall(Input<K> input) {
       return new SelectTraceIdIndex<>(this, input).flatMap(AccumulateTraceIdTsLong.get());
@@ -94,19 +89,19 @@ final class SelectTraceIdIndex<K> extends ResultSetFutureCall<ResultSet> {
     this.input = input;
   }
 
-  @Override protected ResultSetFuture newFuture() {
-    BoundStatement bound = factory.preparedStatement.bind();
+  @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    BoundStatementBuilder bound = factory.preparedStatement.boundStatementBuilder();
     factory.bindPartitionKey(bound, input.partitionKey());
 
     int i = factory.firstMarkerIndex;
-    bound.setBytesUnsafe(i, TimestampCodec.serialize(input.start_ts()))
+    return factory.session.executeAsync(bound
+      .setBytesUnsafe(i, TimestampCodec.serialize(input.start_ts()))
       .setBytesUnsafe(i + 1, TimestampCodec.serialize(input.end_ts()))
       .setInt(i + 2, input.limit_())
-      .setFetchSize(Integer.MAX_VALUE); // NOTE in the new driver, we also set this to limit
-    return factory.session.executeAsync(bound);
+      .setPageSize(input.limit_()).build());
   }
 
-  @Override public ResultSet map(ResultSet input) {
+  @Override public AsyncResultSet map(AsyncResultSet input) {
     return input;
   }
 

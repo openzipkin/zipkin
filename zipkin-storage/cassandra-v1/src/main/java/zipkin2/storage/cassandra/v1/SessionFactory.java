@@ -13,7 +13,7 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.storage.cassandra.internal.SessionBuilder;
@@ -24,7 +24,7 @@ import zipkin2.storage.cassandra.internal.SessionBuilder;
  */
 public interface SessionFactory {
 
-  Session create(CassandraStorage storage);
+  CqlSession create(CassandraStorage storage);
 
   final class Default implements SessionFactory {
     static final Logger LOG = LoggerFactory.getLogger(Schema.class);
@@ -33,8 +33,8 @@ public interface SessionFactory {
      * Creates a session and ensures schema if configured. Closes the cluster and session if any
      * exception occurred.
      */
-    @Override public Session create(CassandraStorage cassandra) {
-      Session session = null;
+    @Override public CqlSession create(CassandraStorage cassandra) {
+      CqlSession session = null;
       try {
         session = buildSession(cassandra);
 
@@ -49,12 +49,12 @@ public interface SessionFactory {
 
         return session;
       } catch (RuntimeException e) { // don't leak on unexpected exception!
-        if (session != null) session.getCluster().close();
+        if (session != null) session.close();
         throw e;
       }
     }
 
-    static Session buildSession(CassandraStorage cassandra) {
+    static CqlSession buildSession(CassandraStorage cassandra) {
       return SessionBuilder.buildSession(
         cassandra.contactPoints,
         cassandra.localDc,

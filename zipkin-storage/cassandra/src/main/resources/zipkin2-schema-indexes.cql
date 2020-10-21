@@ -1,4 +1,5 @@
 ALTER TABLE zipkin2.span ADD l_service text;
+DROP INDEX IF EXISTS zipkin2.span_l_service_idx;
 CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin2.span (l_service) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {'mode': 'PREFIX'};
 

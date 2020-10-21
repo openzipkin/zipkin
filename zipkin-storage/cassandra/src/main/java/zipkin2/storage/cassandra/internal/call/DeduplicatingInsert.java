@@ -13,7 +13,7 @@
  */
 package zipkin2.storage.cassandra.internal.call;
 
-import com.datastax.driver.core.ResultSet;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import zipkin2.Call;
@@ -77,7 +77,7 @@ public abstract class DeduplicatingInsert<I> extends ResultSetFutureCall<Void> {
     super.doCancel();
   }
 
-  @Override public final Void map(ResultSet input) {
+  @Override public final Void map(AsyncResultSet input) {
     return null;
   }
 }

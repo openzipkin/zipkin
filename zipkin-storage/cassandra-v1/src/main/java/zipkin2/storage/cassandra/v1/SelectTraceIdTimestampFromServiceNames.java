@@ -13,17 +13,16 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.querybuilder.Select;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
+import com.datastax.oss.driver.api.querybuilder.select.Select;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.v1.SelectTraceIdIndex.Input;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.in;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
 import static zipkin2.storage.cassandra.v1.IndexTraceId.BUCKETS;
 import static zipkin2.storage.cassandra.v1.Tables.SERVICE_NAME_INDEX;
 
@@ -34,19 +33,20 @@ import static zipkin2.storage.cassandra.v1.Tables.SERVICE_NAME_INDEX;
  */
 final class SelectTraceIdTimestampFromServiceNames
   extends SelectTraceIdIndex.Factory<List<String>> {
-  SelectTraceIdTimestampFromServiceNames(Session session) {
+
+  SelectTraceIdTimestampFromServiceNames(CqlSession session) {
     super(session, SERVICE_NAME_INDEX, "service_name", 2);
   }
 
-  @Override Select.Where declarePartitionKey(Select select) {
+  @Override Select declarePartitionKey(Select select) {
     return select
-      .where(in("service_name", bindMarker()))
-      .and(in("bucket", bindMarker()));
+      .whereColumn(partitionKeyColumn).in(bindMarker())
+      .whereColumn("bucket").in(bindMarker());
   }
 
-  @Override void bindPartitionKey(BoundStatement bound, List<String> serviceNames) {
+  @Override void bindPartitionKey(BoundStatementBuilder bound, List<String> serviceNames) {
     bound
-      .setList(0, serviceNames)
+      .setList(0, serviceNames, String.class)
       .setList(1, BUCKETS, Integer.class);
   }
 

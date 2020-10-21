@@ -13,7 +13,7 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.LocalDate;
+import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -138,7 +138,7 @@ public class CassandraUtilTest {
 
   @Test public void getDays_consistentWithDateUtil() {
     assertThat(CassandraUtil.getDays(DAYS.toMillis(2), DAYS.toMillis(1)))
-      .extracting(LocalDate::getMillisSinceEpoch)
+      .extracting(d -> d.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000)
       .containsExactlyElementsOf(DateUtil.epochDays(DAYS.toMillis(2), DAYS.toMillis(1)));
   }
 }

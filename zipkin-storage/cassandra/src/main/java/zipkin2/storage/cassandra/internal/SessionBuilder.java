@@ -13,84 +13,84 @@
  */
 package zipkin2.storage.cassandra.internal;
 
-import com.datastax.driver.core.AuthProvider;
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.PoolingOptions;
-import com.datastax.driver.core.QueryLogger;
-import com.datastax.driver.core.QueryOptions;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
-import com.datastax.driver.core.policies.LatencyAwarePolicy;
-import com.datastax.driver.core.policies.RoundRobinPolicy;
-import com.datastax.driver.core.policies.TokenAwarePolicy;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.CqlSessionBuilder;
+import com.datastax.oss.driver.api.core.auth.AuthProvider;
+import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
+import com.datastax.oss.driver.api.core.config.DriverOption;
+import com.datastax.oss.driver.api.core.config.ProgrammaticDriverConfigLoaderBuilder;
+import com.datastax.oss.driver.internal.core.ssl.DefaultSslEngineFactory;
+import com.datastax.oss.driver.internal.core.tracker.RequestLogger;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin2.internal.Nullable;
 
-import static zipkin2.Call.propagateIfFatal;
+import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_CONSISTENCY;
+import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_DEFAULT_IDEMPOTENCE;
+import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_LOGGER_SUCCESS_ENABLED;
+import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_LOGGER_VALUES;
+import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_TIMEOUT;
+import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_TRACKER_CLASS;
+import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_WARN_IF_SET_KEYSPACE;
+import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.SSL_ENGINE_FACTORY_CLASS;
 
 public final class SessionBuilder {
   /** Returns a connected session. Closes the cluster if any exception occurred. */
-  public static Session buildSession(
+  public static CqlSession buildSession(
     String contactPoints,
-    @Nullable String localDc,
-    PoolingOptions poolingOptions,
-    AuthProvider authProvider,
+    String localDc,
+    Map<DriverOption, Integer> poolingOptions,
+    @Nullable AuthProvider authProvider,
     boolean useSsl
   ) {
-    // temporary: in Datastax Java Driver v4, there is only Session
-    Cluster cluster = buildCluster(contactPoints, localDc, poolingOptions, authProvider, useSsl);
-    try {
-      return cluster.connect();
-    } catch (Throwable e) {
-      propagateIfFatal(e);
-      cluster.close();
-      throw e;
-    }
-  }
+    // Some options aren't supported by builder methods. In these cases, we use driver config
+    // See https://groups.google.com/a/lists.datastax.com/forum/#!topic/java-driver-user/Z8HrCDX47Q0
+    ProgrammaticDriverConfigLoaderBuilder config =
+      // We aren't reading any resources from the classpath, but this prevents errors running in the
+      // server, where Thread.currentThread().getContextClassLoader() returns null
+      DriverConfigLoader.programmaticBuilder(SessionBuilder.class.getClassLoader());
 
-  // Visible for testing
-  static Cluster buildCluster(
-    String contactPoints,
-    @Nullable String localDc,
-    PoolingOptions poolingOptions,
-    AuthProvider authProvider,
-    boolean useSsl
-  ) {
-    Cluster.Builder builder = Cluster.builder().withoutJMXReporting();
-    List<InetSocketAddress> contactPointsWithPorts = parseContactPoints(contactPoints);
-    int defaultPort = findConnectPort(contactPointsWithPorts);
-    builder.addContactPointsWithPorts(contactPointsWithPorts);
-    builder.withPort(defaultPort); // This ends up protocolOptions.port
-    builder.withAuthProvider(authProvider);
-    builder.withRetryPolicy(ZipkinRetryPolicy.INSTANCE);
-    builder.withLoadBalancingPolicy(
-      new TokenAwarePolicy(
-        new LatencyAwarePolicy.Builder(localDc != null
-          ? DCAwareRoundRobinPolicy.builder().withLocalDc(localDc).build()
-          : new RoundRobinPolicy()
-          // This can select remote, but LatencyAwarePolicy will prefer local
-        )
-          .build()));
-    builder.withPoolingOptions(poolingOptions);
+    // Ported from java-driver v3 PoolingOptions.setPoolTimeoutMillis as request timeout includes that
+    config.withDuration(REQUEST_TIMEOUT, Duration.ofMinutes(1));
 
-    builder.withQueryOptions(
-      new QueryOptions()
-        // if local_dc isn't defined LOCAL_ONE incorrectly sticks to first seed host that connects
-        .setConsistencyLevel(null != localDc ? ConsistencyLevel.LOCAL_ONE : ConsistencyLevel.ONE)
-        .setDefaultIdempotence(true)); // all zipkin cql writes are idempotent
+    CqlSessionBuilder builder = CqlSession.builder();
+    builder.addContactPoints(parseContactPoints(contactPoints));
+    if (authProvider != null) builder.withAuthProvider(authProvider);
 
-    if (useSsl) {
-      builder = builder.withSSL();
+    // In java-driver v3, we used LatencyAwarePolicy(DCAwareRoundRobinPolicy|RoundRobinPolicy)
+    //   where DCAwareRoundRobinPolicy was used if localDc != null
+    //
+    // In java-driver v4, the default policy is token-aware and localDc is required. Hence, we
+    // use the default load balancing policy
+    //  * https://github.com/datastax/java-driver/blob/master/manual/core/load_balancing/README.md
+    builder.withLocalDatacenter(localDc);
+    config = config.withString(REQUEST_CONSISTENCY, "LOCAL_ONE");
+    // Pooling options changed dramatically from v3->v4. This is a close match.
+    poolingOptions.forEach(config::withInt);
+
+    // All Zipkin CQL writes are idempotent
+    config = config.withBoolean(REQUEST_DEFAULT_IDEMPOTENCE, true);
+
+    if (useSsl) config = config.withClass(SSL_ENGINE_FACTORY_CLASS, DefaultSslEngineFactory.class);
+
+    // Log categories can enable query logging
+    Logger requestLogger = LoggerFactory.getLogger(RequestLogger.class);
+    if (requestLogger.isDebugEnabled()) {
+      config = config.withClass(REQUEST_TRACKER_CLASS, RequestLogger.class);
+      config = config.withBoolean(REQUEST_LOGGER_SUCCESS_ENABLED, true);
+      // Only show bodies when TRACE is enabled
+      config = config.withBoolean(REQUEST_LOGGER_VALUES, requestLogger.isTraceEnabled());
     }
 
-    return builder.build()
-      // Ensures log categories can enable query logging
-      .register(new QueryLogger.Builder().build());
+    // Don't warn: ensureSchema creates the keyspace. Hence, we need to "use" it later.
+    config = config.withBoolean(REQUEST_WARN_IF_SET_KEYSPACE, false);
+
+    return builder.withConfigLoader(config.build()).build();
   }
 
   static List<InetSocketAddress> parseContactPoints(String contactPoints) {
@@ -100,14 +100,5 @@ public final class SessionBuilder {
       result.add(new InetSocketAddress(parsed.getHost(), parsed.getPort()));
     }
     return result;
-  }
-
-  /** Returns the consistent port across all contact points or 9042 */
-  static int findConnectPort(List<InetSocketAddress> contactPoints) {
-    Set<Integer> ports = new LinkedHashSet<>();
-    for (InetSocketAddress contactPoint : contactPoints) {
-      ports.add(contactPoint.getPort());
-    }
-    return ports.size() == 1 ? ports.iterator().next() : 9042;
   }
 }

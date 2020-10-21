@@ -13,31 +13,30 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.DistinctSortedStrings;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
-import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
 import static zipkin2.storage.cassandra.Schema.TABLE_AUTOCOMPLETE_TAGS;
 
-final class SelectAutocompleteValues extends ResultSetFutureCall<ResultSet> {
+final class SelectAutocompleteValues extends ResultSetFutureCall<AsyncResultSet> {
 
   static final class Factory {
-    final Session session;
+    final CqlSession session;
     final PreparedStatement preparedStatement;
 
-    Factory(Session session) {
+    Factory(CqlSession session) {
       this.session = session;
-      this.preparedStatement = session.prepare(select("value").from(TABLE_AUTOCOMPLETE_TAGS)
-        .where(eq("key", bindMarker()))
-        .limit(10000));
+      this.preparedStatement = session.prepare(selectFrom(TABLE_AUTOCOMPLETE_TAGS).column("value")
+        .whereColumn("key").isEqualTo(bindMarker())
+        .limit(10000).build());
     }
 
     Call<List<String>> create(String key) {
@@ -53,15 +52,16 @@ final class SelectAutocompleteValues extends ResultSetFutureCall<ResultSet> {
     this.key = key;
   }
 
-  @Override protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement.bind().setString(0, key));
+  @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    return factory.session.executeAsync(factory.preparedStatement.boundStatementBuilder()
+      .setString(0, key).build());
   }
 
-  @Override public ResultSet map(ResultSet input) {
+  @Override public AsyncResultSet map(AsyncResultSet input) {
     return input;
   }
 
-  @Override public Call<ResultSet> clone() {
+  @Override public Call<AsyncResultSet> clone() {
     return new SelectAutocompleteValues(factory, key);
   }
 }

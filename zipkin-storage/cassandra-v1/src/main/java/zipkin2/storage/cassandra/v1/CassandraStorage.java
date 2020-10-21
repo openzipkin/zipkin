@@ -13,10 +13,11 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.AuthProvider;
-import com.datastax.driver.core.PlainTextAuthProvider;
-import com.datastax.driver.core.PoolingOptions;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.auth.AuthProvider;
+import com.datastax.oss.driver.api.core.config.DriverOption;
+import com.datastax.oss.driver.internal.core.auth.ProgrammaticPlainTextAuthProvider;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import zipkin2.Call;
@@ -35,8 +36,8 @@ import zipkin2.storage.cassandra.v1.Schema.Metadata;
 /**
  * CQL3 implementation of zipkin storage.
  *
- * <p>Queries are logged to the category "com.datastax.driver.core.QueryLogger" when debug or trace
- * is enabled via SLF4J. Trace level includes bound values.
+ * <p>Queries are logged to the category "com.datastax.oss.driver.api.core.cql.QueryLogger" when
+ * debug or trace is enabled via SLF4J. Trace level includes bound values.
  *
  * <p>Redundant requests to store service or span names are ignored for an hour to reduce load.
  * This feature is implemented by {@link DeduplicatingInsert}.
@@ -51,7 +52,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
 
   public static final class Builder extends CassandraStorageBuilder<Builder> {
     SessionFactory sessionFactory = new SessionFactory.Default();
-    int indexCacheMax = 100000;
+    int indexCacheMax = 100_000;
     int indexCacheTtl = 60;
     int spanTtl = (int) TimeUnit.DAYS.toSeconds(7);
     int indexTtl = (int) TimeUnit.DAYS.toSeconds(3);
@@ -138,14 +139,12 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
     }
 
     @Override public CassandraStorage build() {
-      AuthProvider authProvider;
+      AuthProvider authProvider = null;
       if (username != null) {
-        authProvider = new PlainTextAuthProvider(username, password);
-      } else {
-        authProvider = AuthProvider.NONE;
+        authProvider = new ProgrammaticPlainTextAuthProvider(username, password);
       }
       return new CassandraStorage(strictTraceId, searchEnabled, autocompleteKeys, autocompleteTtl,
-        autocompleteCardinality, contactPoints, localDc, poolingOptions, authProvider, useSsl,
+        autocompleteCardinality, contactPoints, localDc, poolingOptions(), authProvider, useSsl,
         sessionFactory, keyspace, ensureSchema, maxTraceCols, indexFetchMultiplier,
         indexCacheMax, indexCacheTtl, spanTtl, indexTtl // << cassandra v1 only
       );
@@ -157,7 +156,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
   final int autocompleteTtl, autocompleteCardinality;
 
   final String contactPoints, localDc;
-  final PoolingOptions poolingOptions;
+  final Map<DriverOption, Integer> poolingOptions;
   final AuthProvider authProvider;
   final boolean useSsl;
   final String keyspace;
@@ -173,7 +172,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
 
   CassandraStorage(boolean strictTraceId, boolean searchEnabled, Set<String> autocompleteKeys,
     int autocompleteTtl, int autocompleteCardinality, String contactPoints, String localDc,
-    PoolingOptions poolingOptions, AuthProvider authProvider, boolean useSsl,
+    Map<DriverOption, Integer> poolingOptions, AuthProvider authProvider, boolean useSsl,
     SessionFactory sessionFactory, String keyspace, boolean ensureSchema, int maxTraceCols,
     int indexFetchMultiplier, int indexCacheMax, int indexCacheTtl, int spanTtl, int indexTtl) {
     // Assign generic configuration for all storage components
@@ -215,7 +214,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
   volatile CassandraAutocompleteTags tagStore;
 
   /** Lazy initializes or returns the session in use by this storage component. */
-  Session session() {
+  CqlSession session() {
     return session.get();
   }
 

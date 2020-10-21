@@ -13,18 +13,19 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
 
 import static zipkin2.storage.cassandra.v1.Tables.SERVICE_REMOTE_SERVICE_NAME_INDEX;
 
 final class SelectTraceIdTimestampFromServiceRemoteServiceName
   extends SelectTraceIdIndex.Factory<String> {
-  SelectTraceIdTimestampFromServiceRemoteServiceName(Session session) {
+
+  SelectTraceIdTimestampFromServiceRemoteServiceName(CqlSession session) {
     super(session, SERVICE_REMOTE_SERVICE_NAME_INDEX, "service_remote_service_name", 1);
   }
 
-  @Override void bindPartitionKey(BoundStatement bound, String serviceRemoteServiceName) {
+  @Override void bindPartitionKey(BoundStatementBuilder bound, String serviceRemoteServiceName) {
     bound.setString(0, serviceRemoteServiceName);
   }
 }

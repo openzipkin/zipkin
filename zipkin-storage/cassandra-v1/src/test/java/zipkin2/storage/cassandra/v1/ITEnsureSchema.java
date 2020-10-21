@@ -13,8 +13,8 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.KeyspaceMetadata;
-import com.datastax.driver.core.Session;
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -50,12 +50,12 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
     // don't check as it requires the keyspace which these tests install
   }
 
-  abstract Session session();
+  abstract CqlSession session();
 
   @Test public void installsKeyspaceWhenMissing() {
     Schema.ensureExists(storage.keyspace, session());
 
-    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(storage.keyspace);
+    KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
     assertThat(metadata).isNotNull();
     assertThat(Schema.hasUpgrade1_defaultTtl(metadata)).isTrue();
   }
@@ -66,10 +66,10 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
 
     Schema.ensureExists(storage.keyspace, session());
 
-    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(storage.keyspace);
+    KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
     assertThat(metadata).isNotNull();
     assertThat(Schema.hasUpgrade1_defaultTtl(metadata)).isTrue();
-    assertThat(metadata.getTable("autocomplete_tags")).isNotNull();
+    assertThat(metadata.getTable("autocomplete_tags")).isPresent();
   }
 
   @Test public void upgradesOldSchema() {
@@ -77,7 +77,7 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
 
     Schema.ensureExists(storage.keyspace, session());
 
-    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(storage.keyspace);
+    KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
     assertThat(metadata).isNotNull();
     assertThat(Schema.hasUpgrade1_defaultTtl(metadata)).isTrue();
     assertThat(Schema.hasUpgrade2_autocompleteTags(metadata)).isTrue();
