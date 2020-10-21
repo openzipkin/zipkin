@@ -138,12 +138,20 @@ public class CassandraSpanConsumerTest {
     AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(asList(span1, span2));
     assertThat(call.delegate())
       .filteredOn(c -> c instanceof IndexTraceId)
-      .extracting("factory.indexerFactory.table", "input.partitionKey")
+      .extracting("factory.indexerFactory.statement", "input.partitionKey")
       .containsExactly(
-        tuple(Tables.SERVICE_NAME_INDEX, "app"),
-        tuple(Tables.SERVICE_NAME_INDEX, "app.foo"),
-        tuple(Tables.SERVICE_REMOTE_SERVICE_NAME_INDEX, "app.foo"),
-        tuple(Tables.SERVICE_SPAN_NAME_INDEX, "app.foo")
+        tuple(
+          "INSERT INTO service_name_index (ts, trace_id, service_name, bucket) VALUES (?,?,?,?)",
+          "app"),
+        tuple(
+          "INSERT INTO service_name_index (ts, trace_id, service_name, bucket) VALUES (?,?,?,?)",
+          "app.foo"),
+        tuple(
+          "INSERT INTO service_remote_service_name_index (ts, trace_id, service_remote_service_name) VALUES (?,?,?)",
+          "app.foo"),
+        tuple(
+          "INSERT INTO service_span_name_index (ts, trace_id, service_span_name) VALUES (?,?,?)",
+          "app.foo")
       );
 
     // intentionally redundantly accept span2 which double-checks deduplication of index calls
