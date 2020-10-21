@@ -14,22 +14,18 @@
 package zipkin2.storage.cassandra.v1;
 
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
-import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
 import static zipkin2.storage.cassandra.v1.Tables.SERVICE_SPAN_NAME_INDEX;
 
 // QueryRequest.spanName
 final class IndexTraceIdBySpanName extends IndexTraceId.Factory {
   IndexTraceIdBySpanName(CassandraStorage storage, int indexTtl) {
-    super(storage, SERVICE_SPAN_NAME_INDEX, indexTtl);
+    super("INSERT INTO " + SERVICE_SPAN_NAME_INDEX
+        + " (ts, trace_id, service_span_name) VALUES (?,?,?)",
+      storage, indexTtl);
   }
 
-  @Override RegularInsert declarePartitionKey(RegularInsert insert) {
-    return insert.value("service_span_name", bindMarker());
-  }
-
-  @Override void bindPartitionKey(BoundStatementBuilder bound, String partitionKey) {
-    bound.setString(2, partitionKey);
+  @Override void bindPartitionKey(BoundStatementBuilder bound, String service_span_name) {
+    bound.setString(2, service_span_name);
   }
 }

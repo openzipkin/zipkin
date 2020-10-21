@@ -22,21 +22,19 @@ import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.DistinctSortedStrings;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
 import static zipkin2.storage.cassandra.Schema.TABLE_AUTOCOMPLETE_TAGS;
 
 final class SelectAutocompleteValues extends ResultSetFutureCall<AsyncResultSet> {
-
   static final class Factory {
     final CqlSession session;
     final PreparedStatement preparedStatement;
 
     Factory(CqlSession session) {
       this.session = session;
-      this.preparedStatement = session.prepare(selectFrom(TABLE_AUTOCOMPLETE_TAGS).column("value")
-        .whereColumn("key").isEqualTo(bindMarker())
-        .limit(10000).build());
+      this.preparedStatement = session.prepare("SELECT value"
+        + " FROM " + TABLE_AUTOCOMPLETE_TAGS
+        + " WHERE key=?"
+        + " LIMIT " + 10000);
     }
 
     Call<List<String>> create(String key) {

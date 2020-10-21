@@ -18,7 +18,6 @@ import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,27 +40,23 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V1SpanConverter;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
+import static java.util.Collections.singletonList;
 import static zipkin2.storage.cassandra.v1.Tables.TRACES;
 
 final class SelectFromTraces extends ResultSetFutureCall<AsyncResultSet> {
-
   static final class Factory {
     final CqlSession session;
     final PreparedStatement preparedStatement;
-    final DecodeAndConvertSpans accumulateSpans;
     final Call.Mapper<List<Span>, List<List<Span>>> groupByTraceId;
     final int maxTraceCols; // amount of spans per trace is almost always larger than trace IDs
     final boolean strictTraceId;
 
     Factory(CqlSession session, boolean strictTraceId, int maxTraceCols) {
       this.session = session;
-      this.accumulateSpans = new DecodeAndConvertSpans();
-
-      this.preparedStatement = session.prepare(selectFrom(TRACES).columns("trace_id", "span")
-        .whereColumn("trace_id").in(bindMarker())
-        .limit(bindMarker()).build());
+      this.preparedStatement = session.prepare("SELECT trace_id,span"
+        + " FROM " + TRACES
+        + " WHERE trace_id IN ?"
+        + " LIMIT ?");
       this.maxTraceCols = maxTraceCols;
       this.strictTraceId = strictTraceId;
       this.groupByTraceId = GroupByTraceId.create(strictTraceId);
@@ -69,9 +64,8 @@ final class SelectFromTraces extends ResultSetFutureCall<AsyncResultSet> {
 
     Call<List<Span>> newCall(String hexTraceId) {
       long traceId = HexCodec.lowerHexToUnsignedLong(hexTraceId);
-      Call<List<Span>> result =
-        new SelectFromTraces(this, Collections.singletonList(traceId), maxTraceCols)
-          .flatMap(accumulateSpans);
+      Call<List<Span>> result = new SelectFromTraces(this, singletonList(traceId), maxTraceCols)
+        .flatMap(DecodeAndConvertSpans.get());
       return strictTraceId ? result.map(StrictTraceId.filterSpans(hexTraceId)) : result;
     }
 
@@ -88,7 +82,7 @@ final class SelectFromTraces extends ResultSetFutureCall<AsyncResultSet> {
 
       Call<List<List<Span>>> result =
         new SelectFromTraces(this, new ArrayList<>(longTraceIds), maxTraceCols)
-          .flatMap(accumulateSpans)
+          .flatMap(DecodeAndConvertSpans.get())
           .map(groupByTraceId);
       return strictTraceId ? result.map(StrictTraceId.filterTraces(normalizedTraceIds)) : result;
     }
@@ -155,7 +149,7 @@ final class SelectFromTraces extends ResultSetFutureCall<AsyncResultSet> {
       }
       Call<List<List<Span>>> result =
         new SelectFromTraces(factory, new ArrayList<>(traceIds), factory.maxTraceCols)
-          .flatMap(factory.accumulateSpans)
+          .flatMap(DecodeAndConvertSpans.get())
           .map(factory.groupByTraceId);
       return filter != null ? result.map(filter) : result;
     }
@@ -166,6 +160,12 @@ final class SelectFromTraces extends ResultSetFutureCall<AsyncResultSet> {
   }
 
   static final class DecodeAndConvertSpans extends AccumulateAllResults<List<Span>> {
+    static final AccumulateAllResults<List<Span>> INSTANCE = new DecodeAndConvertSpans();
+
+    public static AccumulateAllResults<List<Span>> get() {
+      return INSTANCE;
+    }
+
     @Override protected Supplier<List<Span>> supplier() {
       return ArrayList::new;
     }

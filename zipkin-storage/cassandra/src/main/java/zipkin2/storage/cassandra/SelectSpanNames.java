@@ -16,7 +16,6 @@ package zipkin2.storage.cassandra;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletionStage;
@@ -24,21 +23,19 @@ import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.DistinctSortedStrings;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_SPANS;
 
 final class SelectSpanNames extends ResultSetFutureCall<AsyncResultSet> {
-
   static final class Factory {
     final CqlSession session;
     final PreparedStatement preparedStatement;
 
     Factory(CqlSession session) {
       this.session = session;
-      this.preparedStatement =
-        session.prepare(QueryBuilder.selectFrom(TABLE_SERVICE_SPANS).columns("span")
-          .whereColumn("service").isEqualTo(bindMarker())
-          .limit(10000).build());
+      this.preparedStatement = session.prepare("SELECT span"
+        + " FROM " + TABLE_SERVICE_SPANS
+        + " WHERE service=?"
+        + " LIMIT " + 10000);
     }
 
     Call<List<String>> create(String serviceName) {

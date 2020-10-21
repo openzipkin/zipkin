@@ -23,22 +23,19 @@ import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.DistinctSortedStrings;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
 import static zipkin2.storage.cassandra.v1.Tables.REMOTE_SERVICE_NAMES;
 
 final class SelectRemoteServiceNames extends ResultSetFutureCall<AsyncResultSet> {
-
   static final class Factory {
     final CqlSession session;
     final PreparedStatement preparedStatement;
 
     Factory(CqlSession session) {
       this.session = session;
-      this.preparedStatement =
-        session.prepare(selectFrom(REMOTE_SERVICE_NAMES).column("remote_service_name")
-          .whereColumn("service_name").isEqualTo(bindMarker())
-          .limit(1000).build());
+      this.preparedStatement = session.prepare("SELECT remote_service_name"
+        + " FROM " + REMOTE_SERVICE_NAMES
+        + " WHERE service_name=?"
+        + " LIMIT " + 1000);
     }
 
     Call<List<String>> create(String serviceName) {

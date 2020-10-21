@@ -15,14 +15,12 @@ package zipkin2.storage.cassandra.v1;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
-import com.datastax.oss.driver.api.querybuilder.select.Select;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.v1.SelectTraceIdIndex.Input;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
 import static zipkin2.storage.cassandra.v1.IndexTraceId.BUCKETS;
 import static zipkin2.storage.cassandra.v1.Tables.SERVICE_NAME_INDEX;
 
@@ -38,10 +36,11 @@ final class SelectTraceIdTimestampFromServiceNames
     super(session, SERVICE_NAME_INDEX, "service_name", 2);
   }
 
-  @Override Select declarePartitionKey(Select select) {
-    return select
-      .whereColumn(partitionKeyColumn).in(bindMarker())
-      .whereColumn("bucket").in(bindMarker());
+  @Override String selectStatement(String table, String partitionKeyColumn) {
+    return "SELECT trace_id,ts"
+      + " FROM " + table
+      + " WHERE " + partitionKeyColumn + " IN ?"
+      + " AND bucket IN ?";
   }
 
   @Override void bindPartitionKey(BoundStatementBuilder bound, List<String> serviceNames) {

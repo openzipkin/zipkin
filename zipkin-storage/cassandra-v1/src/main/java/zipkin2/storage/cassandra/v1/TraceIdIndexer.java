@@ -65,10 +65,10 @@ interface TraceIdIndexer extends Iterable<Input> {
     final DelayQueue<Expiration<Map.Entry<String, Long>, Pair>> expirations = new DelayQueue<>();
     final long ttlNanos;
     final int cardinality;
-    final String table;
+    final String statement;
 
-    Factory(String table, long ttlNanos, int cardinality) {
-      this.table = table;
+    Factory(String statement, long ttlNanos, int cardinality) {
+      this.statement = statement;
       this.ttlNanos = ttlNanos;
       this.cardinality = cardinality;
     }
@@ -165,7 +165,7 @@ interface TraceIdIndexer extends Iterable<Input> {
       Set<Input> result = entriesThatIncreaseGap();
       if (LOG.isDebugEnabled() && inputs.size() > result.size()) {
         int delta = inputs.size() - result.size();
-        LOG.debug("optimized out {}/{} inserts into {}", delta, inputs.size(), factory.table);
+        LOG.debug("optimized out {}/{} inputs to {}", delta, inputs.size(), factory.statement);
       }
       return result.iterator();
     }

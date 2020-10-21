@@ -50,7 +50,7 @@
 
     <dependency>
       <groupId>com.datastax.oss</groupId>
-      <artifactId>java-driver-query-builder</artifactId>
+      <artifactId>java-driver-core</artifactId>
       <version>${java-driver.version}</version>
       <!-- Exclude unused graph and geo dependencies -->
       <exclusions>

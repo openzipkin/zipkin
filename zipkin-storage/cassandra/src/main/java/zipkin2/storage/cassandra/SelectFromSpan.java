@@ -17,7 +17,6 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
-import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -40,11 +39,9 @@ import zipkin2.storage.StrictTraceId;
 import zipkin2.storage.cassandra.internal.call.AccumulateAllResults;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
 final class SelectFromSpan extends ResultSetFutureCall<AsyncResultSet> {
-
   static final class Factory {
     final CqlSession session;
     final PreparedStatement preparedStatement;
@@ -54,24 +51,11 @@ final class SelectFromSpan extends ResultSetFutureCall<AsyncResultSet> {
 
     Factory(CqlSession session, boolean strictTraceId, int maxTraceCols) {
       this.session = session;
-      this.preparedStatement = session.prepare(QueryBuilder.selectFrom(TABLE_SPAN).columns(
-        "trace_id_high",
-        "trace_id",
-        "parent_id",
-        "id",
-        "kind",
-        "span",
-        "ts",
-        "duration",
-        "l_ep",
-        "r_ep",
-        "annotations",
-        "tags",
-        "shared",
-        "debug")
-        // when reading on the partition key, clustering keys are optional
-        .whereColumn("trace_id").in(bindMarker())
-        .limit(bindMarker()).build());
+      this.preparedStatement = session.prepare(
+        "SELECT trace_id_high,trace_id,parent_id,id,kind,span,ts,duration,l_ep,r_ep,annotations,tags,shared,debug"
+          + " FROM " + TABLE_SPAN
+          + " WHERE trace_id IN ?"
+          + " LIMIT ?");
       this.strictTraceId = strictTraceId;
       this.maxTraceCols = maxTraceCols;
       this.groupByTraceId = GroupByTraceId.create(strictTraceId);

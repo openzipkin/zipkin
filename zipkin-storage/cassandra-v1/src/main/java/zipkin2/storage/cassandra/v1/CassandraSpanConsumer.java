@@ -14,8 +14,6 @@
 package zipkin2.storage.cassandra.v1;
 
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert;
 import java.nio.ByteBuffer;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -35,9 +33,7 @@ import zipkin2.storage.cassandra.internal.call.InsertEntry;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V2SpanConverter;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.literal;
 import static zipkin2.storage.cassandra.v1.CassandraUtil.annotationKeys;
-import static zipkin2.storage.cassandra.v1.Tables.AUTOCOMPLETE_TAGS;
 
 final class CassandraSpanConsumer implements SpanConsumer {
   final InsertTrace.Factory insertTrace;
@@ -95,7 +91,8 @@ final class CassandraSpanConsumer implements SpanConsumer {
     indexTraceIdByServiceName = new IndexTraceIdByServiceName(storage, indexTtl);
     if (metadata.hasRemoteService) {
       insertRemoteServiceName = new InsertEntry.Factory(
-        Tables.REMOTE_SERVICE_NAMES, "service_name", "remote_service_name",
+        "INSERT INTO " + Tables.REMOTE_SERVICE_NAMES
+          + " (service_name, remote_service_name) VALUES (?,?)",
         session, autocompleteTtl, autocompleteCardinality, indexTtl
       );
       indexTraceIdByRemoteServiceName = new IndexTraceIdByRemoteServiceName(storage, indexTtl);
@@ -104,19 +101,15 @@ final class CassandraSpanConsumer implements SpanConsumer {
       indexTraceIdByRemoteServiceName = null;
     }
     insertSpanName = new InsertEntry.Factory(
-      Tables.SPAN_NAMES, "service_name", "span_name",
-      session, autocompleteTtl, autocompleteCardinality, indexTtl
-    ) {
       // bucket is deprecated on this index
-      @Override protected PreparedStatement prepare(CqlSession session, RegularInsert insert) {
-        return session.prepare(insert.value("bucket", literal(0)).build());
-      }
-    };
+      "INSERT INTO " + Tables.SPAN_NAMES + " (service_name, span_name, bucket) VALUES (?,?, 0)",
+      session, autocompleteTtl, autocompleteCardinality, indexTtl
+    );
     indexTraceIdBySpanName = new IndexTraceIdBySpanName(storage, indexTtl);
     indexTraceIdByAnnotation = new IndexTraceIdByAnnotation(storage, indexTtl);
     if (metadata.hasAutocompleteTags && !storage.autocompleteKeys.isEmpty()) {
       insertAutocompleteValue = new InsertEntry.Factory(
-        AUTOCOMPLETE_TAGS, "key", "value",
+        "INSERT INTO " + Tables.AUTOCOMPLETE_TAGS + " (key, value) VALUES (?,?)",
         session, autocompleteTtl, autocompleteCardinality, indexTtl
       );
     } else {

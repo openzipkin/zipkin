@@ -14,22 +14,18 @@
 package zipkin2.storage.cassandra.v1;
 
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
-import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
 import static zipkin2.storage.cassandra.v1.Tables.SERVICE_REMOTE_SERVICE_NAME_INDEX;
 
 // QueryRequest.remoteServiceName
 final class IndexTraceIdByRemoteServiceName extends IndexTraceId.Factory {
   IndexTraceIdByRemoteServiceName(CassandraStorage storage, int indexTtl) {
-    super(storage, SERVICE_REMOTE_SERVICE_NAME_INDEX, indexTtl);
+    super("INSERT INTO " + SERVICE_REMOTE_SERVICE_NAME_INDEX
+        + " (ts, trace_id, service_remote_service_name) VALUES (?,?,?)",
+      storage, indexTtl);
   }
 
-  @Override RegularInsert declarePartitionKey(RegularInsert insert) {
-    return insert.value("service_remote_service_name", bindMarker());
-  }
-
-  @Override void bindPartitionKey(BoundStatementBuilder bound, String partitionKey) {
-    bound.setString(2, partitionKey);
+  @Override void bindPartitionKey(BoundStatementBuilder bound, String service_remote_service_name) {
+    bound.setString(2, service_remote_service_name);
   }
 }

@@ -29,8 +29,6 @@ import java.util.Optional;
 import zipkin2.DependencyLink;
 import zipkin2.internal.Dependencies;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -70,9 +68,9 @@ class InternalForTests {
     CassandraStorage storage, List<DependencyLink> links, long midnightUTC) {
     Dependencies deps = Dependencies.create(midnightUTC, midnightUTC /* ignored */, links);
     ByteBuffer thrift = deps.toThrift();
-    PreparedStatement prepared = storage.session().prepare(insertInto(DEPENDENCIES)
-      .value("day", bindMarker())
-      .value("dependencies", bindMarker()).build());
+
+    PreparedStatement prepared =
+      storage.session().prepare("INSERT INTO " + DEPENDENCIES + " (day,dependencies) VALUES (?,?)");
 
     storage.session().execute(prepared.bind(Instant.ofEpochMilli(midnightUTC), thrift));
   }

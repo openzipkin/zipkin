@@ -22,12 +22,9 @@ import java.util.concurrent.CompletionStage;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE;
 
 final class InsertTraceByServiceRemoteService extends ResultSetFutureCall<Void> {
-
   @AutoValue abstract static class Input {
     abstract String service();
 
@@ -47,12 +44,10 @@ final class InsertTraceByServiceRemoteService extends ResultSetFutureCall<Void> 
 
     Factory(CqlSession session, boolean strictTraceId) {
       this.session = session;
-      this.preparedStatement = session.prepare(insertInto(TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE)
-        .value("service", bindMarker())
-        .value("remote_service", bindMarker())
-        .value("bucket", bindMarker())
-        .value("ts", bindMarker())
-        .value("trace_id", bindMarker()).build());
+      this.preparedStatement =
+        session.prepare("INSERT INTO " + TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE
+          + " (service,remote_service,bucket,ts,trace_id)"
+          + " VALUES (?,?,?,?,?)");
       this.strictTraceId = strictTraceId;
     }
 

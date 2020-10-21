@@ -15,9 +15,7 @@ package zipkin2.storage.cassandra.v1;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
-import com.datastax.oss.driver.api.querybuilder.select.Select;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
 import static zipkin2.storage.cassandra.v1.IndexTraceId.BUCKETS;
 import static zipkin2.storage.cassandra.v1.Tables.ANNOTATIONS_INDEX;
 
@@ -27,10 +25,9 @@ final class SelectTraceIdTimestampFromAnnotations extends SelectTraceIdIndex.Fac
     super(session, ANNOTATIONS_INDEX, "annotation", 2);
   }
 
-  @Override Select declarePartitionKey(Select select) {
-    return super
-      .declarePartitionKey(select)
-      .whereColumn("bucket").in(bindMarker());
+  @Override String selectStatement(String table, String partitionKeyColumn) {
+    return super.selectStatement(table, partitionKeyColumn)
+      + " AND bucket IN ?";
   }
 
   @Override void bindPartitionKey(BoundStatementBuilder bound, String partitionKey) {
