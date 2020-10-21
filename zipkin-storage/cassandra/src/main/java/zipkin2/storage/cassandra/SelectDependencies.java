@@ -26,22 +26,18 @@ import zipkin2.DependencyLink;
 import zipkin2.internal.DependencyLinker;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
 import static zipkin2.storage.cassandra.Schema.TABLE_DEPENDENCY;
 
 final class SelectDependencies extends ResultSetFutureCall<List<DependencyLink>> {
-
   static final class Factory {
     final CqlSession session;
     final PreparedStatement preparedStatement;
 
     Factory(CqlSession session) {
       this.session = session;
-      this.preparedStatement =
-        session.prepare(selectFrom(TABLE_DEPENDENCY)
-          .columns("parent", "child", "errors", "calls")
-          .whereColumn("day").in(bindMarker()).build());
+      this.preparedStatement = session.prepare("SELECT parent,child,errors,calls"
+        + " FROM " + TABLE_DEPENDENCY
+        + " WHERE day IN ?");
     }
 
     Call<List<DependencyLink>> create(long endTs, long lookback) {

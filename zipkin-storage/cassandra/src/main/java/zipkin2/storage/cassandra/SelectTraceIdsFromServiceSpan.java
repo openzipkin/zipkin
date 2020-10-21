@@ -17,7 +17,6 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,12 +31,10 @@ import zipkin2.storage.cassandra.internal.call.AccumulateTraceIdTsUuid;
 import zipkin2.storage.cassandra.internal.call.AggregateIntoMap;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
 final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<AsyncResultSet> {
-  @AutoValue
-  abstract static class Input {
+  @AutoValue abstract static class Input {
     abstract String service();
 
     abstract String span();
@@ -74,34 +71,19 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<AsyncResul
 
     Factory(CqlSession session) {
       this.session = session;
-      // separate to avoid: "Unsupported unset value for column duration" maybe SASI related
-      // TODO: revisit on next driver update
-      this.selectTraceIdsByServiceSpanName =
-        session.prepare(selectFrom(TABLE_TRACE_BY_SERVICE_SPAN).columns("trace_id", "ts")
-          .whereColumn("service").isEqualTo(QueryBuilder.bindMarker("service"))
-          .whereColumn("span").isEqualTo(QueryBuilder.bindMarker("span"))
-          .whereColumn("bucket").isEqualTo(QueryBuilder.bindMarker("bucket"))
-          .whereColumn("ts").isGreaterThanOrEqualTo(QueryBuilder.bindMarker("start_ts"))
-          .whereColumn("ts").isLessThanOrEqualTo(QueryBuilder.bindMarker("end_ts"))
-          .limit(QueryBuilder.bindMarker("limit_")).build());
-      this.selectTraceIdsByServiceSpanNameAndDuration =
-        session.prepare(selectFrom(TABLE_TRACE_BY_SERVICE_SPAN).columns("trace_id", "ts")
-          .whereColumn("service")
-          .isEqualTo(QueryBuilder.bindMarker("service"))
-          .whereColumn("span")
-          .isEqualTo(QueryBuilder.bindMarker("span"))
-          .whereColumn("bucket")
-          .isEqualTo(QueryBuilder.bindMarker("bucket"))
-          .whereColumn("ts")
-          .isGreaterThanOrEqualTo(QueryBuilder.bindMarker("start_ts"))
-          .whereColumn("ts")
-          .isLessThanOrEqualTo(QueryBuilder.bindMarker("end_ts"))
-          .whereColumn("duration")
-          .isGreaterThanOrEqualTo(QueryBuilder.bindMarker("start_duration"))
-          .whereColumn("duration")
-          .isLessThanOrEqualTo(QueryBuilder.bindMarker("end_duration"))
-          .limit(QueryBuilder.bindMarker("limit_"))
-          .build());
+      String baseQuery = "SELECT trace_id,ts"
+        + " FROM " + TABLE_TRACE_BY_SERVICE_SPAN
+        + " WHERE service=?"
+        + " AND span=?"
+        + " AND bucket=?"
+        + " AND ts>=?"
+        + " AND ts<=?";
+      this.selectTraceIdsByServiceSpanName = session.prepare(baseQuery
+        + " LIMIT ?");
+      this.selectTraceIdsByServiceSpanNameAndDuration = session.prepare(baseQuery
+        + " AND duration>=?"
+        + " AND duration<=?"
+        + " LIMIT ?");
     }
 
     Input newInput(
@@ -196,20 +178,21 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<AsyncResul
   }
 
   @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
+    int i = 0;
     BoundStatementBuilder bound = preparedStatement.boundStatementBuilder()
-      .setString("service", input.service())
-      .setString("span", input.span())
-      .setInt("bucket", input.bucket());
+      .setString(i++, input.service())
+      .setString(i++, input.span())
+      .setInt(i++, input.bucket())
+      .setUuid(i++, input.start_ts())
+      .setUuid(i++, input.end_ts());
 
     if (input.start_duration() != null) {
-      bound.setLong("start_duration", input.start_duration());
-      bound.setLong("end_duration", input.end_duration());
+      bound.setLong(i++, input.start_duration());
+      bound.setLong(i++, input.end_duration());
     }
 
     bound
-      .setUuid("start_ts", input.start_ts())
-      .setUuid("end_ts", input.end_ts())
-      .setInt("limit_", input.limit_())
+      .setInt(i, input.limit_())
       .setPageSize(input.limit_());
 
     return factory.session.executeAsync(bound.build());

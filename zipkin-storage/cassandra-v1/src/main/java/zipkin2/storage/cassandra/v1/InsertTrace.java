@@ -16,7 +16,6 @@ package zipkin2.storage.cassandra.v1;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.querybuilder.insert.Insert;
 import com.google.auto.value.AutoValue;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletionStage;
@@ -26,15 +25,12 @@ import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import zipkin2.v1.V1Span;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 import static zipkin2.storage.cassandra.v1.Tables.TRACES;
 
 final class InsertTrace extends ResultSetFutureCall<Void> {
   private static final Logger LOG = LoggerFactory.getLogger(InsertTrace.class);
 
-  @AutoValue
-  abstract static class Input {
+  @AutoValue abstract static class Input {
     abstract long trace_id();
 
     abstract long ts();
@@ -53,14 +49,9 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
       this.session = session;
       this.dateTieredCompactionStrategy =
         metadata.compactionClass.contains("DateTieredCompactionStrategy");
-
-      Insert insertQuery = insertInto(TRACES)
-        .value("trace_id", bindMarker())
-        .value("ts", bindMarker())
-        .value("span_name", bindMarker())
-        .value("span", bindMarker());
-      if (spanTtl > 0) insertQuery = insertQuery.usingTtl(spanTtl);
-      this.preparedStatement = session.prepare(insertQuery.build());
+      String statement = "INSERT INTO " + TRACES + " (trace_id,ts,span_name,span) VALUES (?,?,?,?)";
+      this.preparedStatement =
+        session.prepare(spanTtl > 0 ? statement + " USING TTL " + spanTtl : statement);
     }
 
     Input newInput(V1Span v1, ByteBuffer v1Bytes, long ts_micro) {
@@ -104,7 +95,7 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
       .setLong(0, input.trace_id())
       .setBytesUnsafe(1, TimestampCodec.serialize(input.ts()))
       .setString(2, input.span_name())
-      .setBytesUnsafe("span", input.span()).build());
+      .setBytesUnsafe(3, input.span()).build());
   }
 
   @Override public Void map(AsyncResultSet input) {

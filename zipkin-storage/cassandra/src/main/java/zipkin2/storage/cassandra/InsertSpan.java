@@ -17,7 +17,6 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert;
 import com.google.auto.value.AutoValue;
 import java.util.List;
 import java.util.Map;
@@ -30,14 +29,10 @@ import zipkin2.Span;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
 final class InsertSpan extends ResultSetFutureCall<Void> {
-
-  @AutoValue
-  abstract static class Input {
+  @AutoValue abstract static class Input {
     abstract UUID ts_uuid();
 
     @Nullable abstract String trace_id_high();
@@ -78,29 +73,16 @@ final class InsertSpan extends ResultSetFutureCall<Void> {
 
     Factory(CqlSession session, boolean strictTraceId, boolean searchEnabled) {
       this.session = session;
-      RegularInsert insertQuery = insertInto(TABLE_SPAN)
-        .value("trace_id", bindMarker("trace_id"))
-        .value("trace_id_high", bindMarker("trace_id_high"))
-        .value("ts_uuid", bindMarker("ts_uuid"))
-        .value("parent_id", bindMarker("parent_id"))
-        .value("id", bindMarker("id"))
-        .value("kind", bindMarker("kind"))
-        .value("span", bindMarker("span"))
-        .value("ts", bindMarker("ts"))
-        .value("duration", bindMarker("duration"))
-        .value("l_ep", bindMarker("l_ep"))
-        .value("r_ep", bindMarker("r_ep"))
-        .value("annotations", bindMarker("annotations"))
-        .value("tags", bindMarker("tags"))
-        .value("shared", bindMarker("shared"))
-        .value("debug", bindMarker("debug"));
+      String insertQuery = "INSERT INTO " + TABLE_SPAN
+        + " (trace_id,trace_id_high,ts_uuid,parent_id,id,kind,span,ts,duration,l_ep,r_ep,annotations,tags,shared,debug)"
+        + " VALUES (:trace_id,:trace_id_high,:ts_uuid,:parent_id,:id,:kind,:span,:ts,:duration,:l_ep,:r_ep,:annotations,:tags,:shared,:debug)";
 
       if (searchEnabled) {
-        insertQuery = insertQuery.value("l_service", bindMarker("l_service"));
-        insertQuery = insertQuery.value("annotation_query", bindMarker("annotation_query"));
+        insertQuery = insertQuery.replace(",debug)", ",debug, l_service, annotation_query)");
+        insertQuery = insertQuery.replace(",:debug)", ",:debug, :l_service, :annotation_query)");
       }
 
-      this.preparedStatement = session.prepare(insertQuery.build());
+      this.preparedStatement = session.prepare(insertQuery);
       this.strictTraceId = strictTraceId;
       this.searchEnabled = searchEnabled;
     }

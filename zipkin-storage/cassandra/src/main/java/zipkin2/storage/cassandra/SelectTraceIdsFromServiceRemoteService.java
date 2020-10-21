@@ -16,7 +16,6 @@ package zipkin2.storage.cassandra;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,7 +29,6 @@ import zipkin2.storage.cassandra.internal.call.AccumulateTraceIdTsUuid;
 import zipkin2.storage.cassandra.internal.call.AggregateIntoMap;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE;
 
 final class SelectTraceIdsFromServiceRemoteService extends ResultSetFutureCall<AsyncResultSet> {
@@ -64,15 +62,13 @@ final class SelectTraceIdsFromServiceRemoteService extends ResultSetFutureCall<A
 
     Factory(CqlSession session) {
       this.session = session;
-      this.preparedStatement =
-        session.prepare(QueryBuilder.selectFrom(TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE)
-          .columns("trace_id", "ts")
-          .whereColumn("service").isEqualTo(bindMarker())
-          .whereColumn("remote_service").isEqualTo(bindMarker())
-          .whereColumn("bucket").isEqualTo(bindMarker())
-          .whereColumn("ts").isGreaterThanOrEqualTo(bindMarker())
-          .whereColumn("ts").isLessThanOrEqualTo(bindMarker())
-          .limit(bindMarker()).build());
+      this.preparedStatement = session.prepare("SELECT trace_id,ts"
+        + " FROM " + TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE
+        + " WHERE service=? AND remote_service=?"
+        + " AND bucket=?"
+        + " AND ts>=?"
+        + " AND ts<=?"
+        + " LIMIT ?");
     }
 
     Input newInput(

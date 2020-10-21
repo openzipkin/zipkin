@@ -18,7 +18,6 @@ import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
-import com.datastax.oss.driver.api.querybuilder.select.Select;
 import com.google.auto.value.AutoValue;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,16 +31,14 @@ import zipkin2.storage.cassandra.CassandraSpanStore.TimestampRange;
 import zipkin2.storage.cassandra.internal.call.AccumulateAllResults;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
 /**
  * Selects from the {@link Schema#TABLE_SPAN} using data in the partition key or SASI indexes.
  *
- * <p>Note: While queries here use {@link Select#allowFiltering()}, they do so within a SASI
- * clause, and only return (traceId, timestamp) tuples. This means the entire spans table is not
- * scanned, unless the time range implies that.
+ * <p>Note: While queries here use "ALLOW FILTERING", they do so within a SASI clause, and only
+ * return (traceId, timestamp) tuples. This means the entire spans table is not scanned, unless the
+ * time range implies that.
  *
  * <p>The spans table is sorted descending by timestamp. When a query includes only a time range,
  * the first N rows are already in the correct order. However, the cardinality of rows is a function
@@ -51,8 +48,7 @@ import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
  * CassandraStorage#indexFetchMultiplier} for an associated parameter.
  */
 final class SelectTraceIdsFromSpan extends ResultSetFutureCall<AsyncResultSet> {
-  @AutoValue
-  abstract static class Input {
+  @AutoValue abstract static class Input {
     @Nullable abstract String l_service();
 
     @Nullable abstract String annotation_query();
@@ -70,23 +66,18 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall<AsyncResultSet> {
 
     Factory(CqlSession session) {
       this.session = session;
-      // separate to avoid: "Unsupported unset value for column duration" maybe SASI related
-      // TODO: revisit on next driver update
-      this.withAnnotationQuery =
-        session.prepare(selectFrom(TABLE_SPAN).columns("trace_id", "ts")
-          .whereColumn("annotation_query").like(bindMarker("annotation_query"))
-          .whereColumn("ts_uuid").isGreaterThanOrEqualTo(bindMarker("start_ts"))
-          .whereColumn("ts_uuid").isLessThanOrEqualTo(bindMarker("end_ts"))
-          .limit(bindMarker("limit_"))
-          .allowFiltering().build());
-      this.withServiceAndAnnotationQuery =
-        session.prepare(selectFrom(TABLE_SPAN).columns("trace_id", "ts")
-          .whereColumn("l_service").isEqualTo(bindMarker("l_service"))
-          .whereColumn("annotation_query").like(bindMarker("annotation_query"))
-          .whereColumn("ts_uuid").isGreaterThanOrEqualTo(bindMarker("start_ts"))
-          .whereColumn("ts_uuid").isLessThanOrEqualTo(bindMarker("end_ts"))
-          .limit(bindMarker("limit_"))
-          .allowFiltering().build());
+      String querySuffix = "annotation_query LIKE ?"
+        + " AND ts_uuid>=?"
+        + " AND ts_uuid<=?"
+        + " LIMIT ?"
+        + " ALLOW FILTERING";
+      this.withAnnotationQuery = session.prepare("SELECT trace_id,ts"
+        + " FROM " + TABLE_SPAN
+        + " WHERE " + querySuffix);
+      this.withServiceAndAnnotationQuery = session.prepare("SELECT trace_id,ts"
+        + " FROM " + TABLE_SPAN
+        + " WHERE l_service=:l_service"
+        + " AND " + querySuffix);
     }
 
     Call<Map<String, Long>> newCall(
@@ -119,14 +110,17 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall<AsyncResultSet> {
 
   @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
     BoundStatementBuilder bound = preparedStatement.boundStatementBuilder();
-    if (input.l_service() != null) bound.setString("l_service", input.l_service());
+    int i = 0;
+    if (input.l_service() != null) bound.setString(i++, input.l_service());
     if (input.annotation_query() != null) {
-      bound.setString("annotation_query", input.annotation_query());
+      bound.setString(i++, input.annotation_query());
+    } else {
+      throw new IllegalArgumentException(input.toString());
     }
     bound
-      .setUuid("start_ts", input.start_ts())
-      .setUuid("end_ts", input.end_ts())
-      .setInt("limit_", input.limit_())
+      .setUuid(i++, input.start_ts())
+      .setUuid(i++, input.end_ts())
+      .setInt(i, input.limit_())
       .setPageSize(input.limit_());
     return factory.session.executeAsync(bound.build());
   }

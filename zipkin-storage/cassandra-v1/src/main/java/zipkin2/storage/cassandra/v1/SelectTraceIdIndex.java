@@ -17,19 +17,14 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.querybuilder.select.Select;
 import com.google.auto.value.AutoValue;
 import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.selectFrom;
-
 final class SelectTraceIdIndex<K> extends ResultSetFutureCall<AsyncResultSet> {
-  @AutoValue
-  abstract static class Input<K> {
+  @AutoValue abstract static class Input<K> {
     static <K> Input<K> create(K partitionKey, long endTs, long lookback, int limit) {
       long startTs = Math.max(endTs - lookback, 0); // >= 1970
       return new AutoValue_SelectTraceIdIndex_Input<>(partitionKey, startTs, endTs, limit);
@@ -62,16 +57,17 @@ final class SelectTraceIdIndex<K> extends ResultSetFutureCall<AsyncResultSet> {
       // Tables queried hare defined CLUSTERING ORDER BY "ts".
       // We don't use orderBy in queries per: https://www.datastax.com/blog/we-shall-have-order
       // Sorting is done client-side via sortTraceIdsByDescTimestamp()
-      Select select = declarePartitionKey(selectFrom(table).columns("trace_id", "ts"))
-        .whereColumn("ts").isGreaterThanOrEqualTo(bindMarker())
-        .whereColumn("ts").isLessThanOrEqualTo(bindMarker())
-        .limit(bindMarker());
-      preparedStatement = session.prepare(select.build());
+      preparedStatement = session.prepare(selectStatement(table, partitionKeyColumn)
+        + " AND ts>=?"
+        + " AND ts<=?"
+        + " LIMIT ?");
       firstMarkerIndex = partitionKeyCount;
     }
 
-    Select declarePartitionKey(Select select) {
-      return select.whereColumn(partitionKeyColumn).isEqualTo(bindMarker());
+    String selectStatement(String table, String partitionKeyColumn) {
+      return "SELECT trace_id,ts"
+        + " FROM " + table
+        + " WHERE " + partitionKeyColumn + "=?";
     }
 
     abstract void bindPartitionKey(BoundStatementBuilder bound, K partitionKey);

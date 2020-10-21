@@ -130,10 +130,10 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
       .collect(Collectors.toList());
 
     assertThat(insertEntryCalls.get(0))
-      .hasToString("InsertEntry{table=span_by_service, service=frontend, span=get}");
+      .hasToString("INSERT INTO span_by_service (service, span) VALUES (frontend,get)");
     assertThat(insertEntryCalls.get(1))
       .hasToString(
-        "InsertEntry{table=remote_service_by_service, service=frontend, remote_service=backend}");
+        "INSERT INTO remote_service_by_service (service, remote_service) VALUES (frontend,backend)");
   }
 
   static long rowCountForTraceByServiceSpan(CassandraStorage storage) {

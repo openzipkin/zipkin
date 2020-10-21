@@ -31,8 +31,8 @@ final class SelectServiceNames extends ResultSetFutureCall<AsyncResultSet> {
 
     Factory(CqlSession session) {
       this.session = session;
-      this.preparedStatement =
-        session.prepare("SELECT DISTINCT service FROM " + TABLE_SERVICE_SPANS);
+      this.preparedStatement = session.prepare("SELECT DISTINCT service"
+          + " FROM " + TABLE_SERVICE_SPANS);
     }
 
     Call<List<String>> create() {

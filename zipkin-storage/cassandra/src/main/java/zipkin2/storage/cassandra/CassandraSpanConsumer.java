@@ -87,7 +87,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       insertTraceByServiceRemoteService =
         new InsertTraceByServiceRemoteService.Factory(session, strictTraceId);
       insertServiceRemoteService = new InsertEntry.Factory(
-        TABLE_SERVICE_REMOTE_SERVICES, "service", "remote_service",
+        "INSERT INTO " + TABLE_SERVICE_REMOTE_SERVICES + " (service, remote_service) VALUES (?,?)",
         session, autocompleteTtl, autocompleteCardinality
       );
     } else {
@@ -95,12 +95,12 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       insertServiceRemoteService = null;
     }
     insertServiceSpan = new InsertEntry.Factory(
-      TABLE_SERVICE_SPANS, "service", "span",
+      "INSERT INTO " + TABLE_SERVICE_SPANS + " (service, span) VALUES (?,?)",
       session, autocompleteTtl, autocompleteCardinality
     );
     if (metadata.hasAutocompleteTags && !autocompleteKeys.isEmpty()) {
       insertAutocompleteValue = new InsertEntry.Factory(
-        TABLE_AUTOCOMPLETE_TAGS, "key", "value",
+        "INSERT INTO " + TABLE_AUTOCOMPLETE_TAGS + " (key, value) VALUES (?,?)",
         session, autocompleteTtl, autocompleteCardinality
       );
     } else {

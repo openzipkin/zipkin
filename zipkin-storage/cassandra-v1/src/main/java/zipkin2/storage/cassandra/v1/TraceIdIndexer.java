@@ -165,7 +165,7 @@ interface TraceIdIndexer extends Iterable<Input> {
       Set<Input> result = entriesThatIncreaseGap();
       if (LOG.isDebugEnabled() && inputs.size() > result.size()) {
         int delta = inputs.size() - result.size();
-        LOG.debug("optimized out {}/{} inserts into {}", delta, inputs.size(), factory.table);
+        LOG.debug("optimized out {}/{} inputs to {}", delta, inputs.size(), factory.table);
       }
       return result.iterator();
     }

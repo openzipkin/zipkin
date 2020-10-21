@@ -16,13 +16,10 @@ package zipkin2.storage.cassandra.v1;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.querybuilder.insert.Insert;
 import java.util.concurrent.CompletionStage;
 import zipkin2.internal.DelayLimiter;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingInsert;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 import static zipkin2.storage.cassandra.v1.Tables.SERVICE_NAMES;
 
 final class InsertServiceName extends DeduplicatingInsert<String> {
@@ -33,10 +30,9 @@ final class InsertServiceName extends DeduplicatingInsert<String> {
     Factory(CassandraStorage storage, int indexTtl) {
       super(storage.autocompleteTtl, storage.autocompleteCardinality);
       session = storage.session();
-      Insert insertQuery = insertInto(SERVICE_NAMES)
-        .value("service_name", bindMarker());
-      if (indexTtl > 0) insertQuery = insertQuery.usingTtl(indexTtl);
-      preparedStatement = session.prepare(insertQuery.build());
+      String statement = "INSERT INTO " + SERVICE_NAMES + " (service_name) VALUES (?)";
+      this.preparedStatement =
+        session.prepare(indexTtl > 0 ? statement + " USING TTL " + indexTtl : statement);
     }
 
     @Override protected InsertServiceName newCall(String input) {

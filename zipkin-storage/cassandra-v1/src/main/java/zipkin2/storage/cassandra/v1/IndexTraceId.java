@@ -17,8 +17,6 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.querybuilder.insert.Insert;
-import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert;
 import com.google.auto.value.AutoValue;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -27,8 +25,6 @@ import zipkin2.internal.DelayLimiter;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingInsert;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 
@@ -50,8 +46,7 @@ final class IndexTraceId extends DeduplicatingInsert<IndexTraceId.Input> {
   static final int BUCKET_COUNT = 10;
   static final List<Integer> BUCKETS = IntStream.range(0, BUCKET_COUNT).boxed().collect(toList());
 
-  @AutoValue
-  abstract static class Input {
+  @AutoValue abstract static class Input {
     static Input create(String partitionKey, long timestamp, long traceId) {
       return new AutoValue_IndexTraceId_Input(partitionKey, timestamp, traceId);
     }
@@ -68,19 +63,14 @@ final class IndexTraceId extends DeduplicatingInsert<IndexTraceId.Input> {
     final TraceIdIndexer.Factory indexerFactory;
     final PreparedStatement preparedStatement;
 
-    Factory(CassandraStorage storage, String table, int indexTtl) {
+    Factory(String statement, CassandraStorage storage, int indexTtl) {
       super(SECONDS.toMillis(storage.indexCacheTtl), storage.indexCacheMax);
       session = storage.session();
-      indexerFactory = new TraceIdIndexer.Factory(table, SECONDS.toNanos(storage.indexCacheTtl),
+      indexerFactory = new TraceIdIndexer.Factory(statement, SECONDS.toNanos(storage.indexCacheTtl),
         storage.indexCacheMax);
-      Insert insertQuery = declarePartitionKey(insertInto(table)
-        .value("ts", bindMarker())
-        .value("trace_id", bindMarker()));
-      if (indexTtl > 0) insertQuery.usingTtl(indexTtl);
-      preparedStatement = session.prepare(insertQuery.build());
+      this.preparedStatement = session.prepare(
+        indexTtl > 0 ? statement + " USING TTL " + indexTtl : statement);
     }
-
-    abstract RegularInsert declarePartitionKey(RegularInsert insert);
 
     abstract void bindPartitionKey(BoundStatementBuilder bound, String partitionKey);
 

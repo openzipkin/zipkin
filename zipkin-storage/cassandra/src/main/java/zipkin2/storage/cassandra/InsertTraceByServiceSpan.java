@@ -23,14 +23,10 @@ import java.util.concurrent.CompletionStage;
 import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
 final class InsertTraceByServiceSpan extends ResultSetFutureCall<Void> {
-
-  @AutoValue
-  abstract static class Input {
+  @AutoValue abstract static class Input {
     abstract String service();
 
     abstract String span();
@@ -51,13 +47,9 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall<Void> {
 
     Factory(CqlSession session, boolean strictTraceId) {
       this.session = session;
-      this.preparedStatement = session.prepare(insertInto(TABLE_TRACE_BY_SERVICE_SPAN)
-        .value("service", bindMarker())
-        .value("span", bindMarker())
-        .value("bucket", bindMarker())
-        .value("ts", bindMarker())
-        .value("trace_id", bindMarker())
-        .value("duration", bindMarker()).build());
+      this.preparedStatement = session.prepare("INSERT INTO " + TABLE_TRACE_BY_SERVICE_SPAN
+        + " (service,span,bucket,ts,trace_id,duration)"
+        + " VALUES (?,?,?,?,?,?)");
       this.strictTraceId = strictTraceId;
     }
 

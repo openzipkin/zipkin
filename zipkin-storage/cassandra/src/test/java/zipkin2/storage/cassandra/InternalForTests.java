@@ -14,19 +14,18 @@
 package zipkin2.storage.cassandra;
 
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.cql.SimpleStatement;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
-import com.datastax.oss.driver.api.querybuilder.QueryBuilder;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.TestInfo;
 import zipkin2.DependencyLink;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.literal;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_REMOTE_SERVICES;
@@ -47,15 +46,19 @@ class InternalForTests {
 
   static void writeDependencyLinks(
     CassandraStorage storage, List<DependencyLink> links, long midnightUTC) {
+    CqlSession session = storage.session();
+    PreparedStatement prepared = session.prepare("INSERT INTO " + Schema.TABLE_DEPENDENCY
+      + " (day,parent,child,calls,errors)"
+      + " VALUES (?,?,?,?,?)");
+    LocalDate day = Instant.ofEpochMilli(midnightUTC).atZone(ZoneOffset.UTC).toLocalDate();
     for (DependencyLink link : links) {
-      SimpleStatement statement = QueryBuilder.insertInto(Schema.TABLE_DEPENDENCY)
-        .value("day",
-          literal(Instant.ofEpochMilli(midnightUTC).atZone(ZoneOffset.UTC).toLocalDate()))
-        .value("parent", literal(link.parent()))
-        .value("child", literal(link.child()))
-        .value("calls", literal(link.callCount()))
-        .value("errors", literal(link.errorCount())).build();
-      storage.session().execute(statement);
+      int i = 0;
+      storage.session().execute(prepared.bind()
+        .setLocalDate(i++, day)
+        .setString(i++, link.parent())
+        .setString(i++, link.child())
+        .setLong(i++, link.callCount())
+        .setLong(i, link.errorCount()));
     }
   }
 

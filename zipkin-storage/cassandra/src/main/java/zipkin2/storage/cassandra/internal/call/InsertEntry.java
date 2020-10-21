@@ -16,44 +16,25 @@ package zipkin2.storage.cassandra.internal.call;
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import zipkin2.Call;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.bindMarker;
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.insertInto;
-
 public final class InsertEntry extends DeduplicatingInsert<Map.Entry<String, String>> {
-
-  public static class Factory extends DeduplicatingInsert.Factory<Map.Entry<String, String>> {
+  public static final class Factory extends DeduplicatingInsert.Factory<Map.Entry<String, String>> {
     final CqlSession session;
-    final String table, keyColumn, valueColumn;
     final PreparedStatement preparedStatement;
 
-    public Factory(String table, String keyColumn, String valueColumn,
-      CqlSession session, long ttl, int cardinality) {
-      this(table, keyColumn, valueColumn, session, ttl, cardinality, 0);
+    public Factory(String statement, CqlSession session, long ttl, int cardinality) {
+      this(statement, session, ttl, cardinality, 0);
     }
 
     /** Cassandra v1 has deprecated support for indexTtl. */
-    public Factory(String table, String keyColumn, String valueColumn,
-      CqlSession session, long ttl, int cardinality, int indexTtl) {
+    public Factory(String statement, CqlSession session, long ttl, int cardinality, int indexTtl) {
       super(ttl, cardinality);
       this.session = session;
-      this.table = table;
-      this.keyColumn = keyColumn;
-      this.valueColumn = valueColumn;
-      RegularInsert insert = insertInto(table)
-        .value(keyColumn, bindMarker())
-        .value(valueColumn, bindMarker());
-      if (indexTtl > 0) insert.usingTtl(indexTtl);
-
-      preparedStatement = prepare(session, insert);
-    }
-
-    protected PreparedStatement prepare(CqlSession session, RegularInsert insert) {
-      return session.prepare(insert.build());
+      this.preparedStatement =
+        session.prepare(indexTtl > 0 ? statement + " USING TTL " + indexTtl : statement);
     }
 
     @Override protected Call<Void> newCall(Map.Entry<String, String> input) {
@@ -75,10 +56,8 @@ public final class InsertEntry extends DeduplicatingInsert<Map.Entry<String, Str
   }
 
   @Override public String toString() {
-    return "InsertEntry{table=" + factory.table + ", "
-      + factory.keyColumn + "=" + input.getKey() + ", "
-      + factory.valueColumn + "=" + input.getValue()
-      + "}";
+    return factory.preparedStatement.getQuery()
+      .replace("(?,?)", "(" + input.getKey() + "," + input.getValue() + ")");
   }
 
   @Override public Call<Void> clone() {
