@@ -21,10 +21,10 @@ import static zipkin2.storage.cassandra.v1.Tables.SERVICE_REMOTE_SERVICE_NAME_IN
 final class SelectTraceIdTimestampFromServiceRemoteServiceName
   extends SelectTraceIdIndex.Factory<String> {
   SelectTraceIdTimestampFromServiceRemoteServiceName(Session session) {
-    super(session, SERVICE_REMOTE_SERVICE_NAME_INDEX, "service_remote_service_name");
+    super(session, SERVICE_REMOTE_SERVICE_NAME_INDEX, "service_remote_service_name", 1);
   }
 
-  @Override BoundStatement bindPartitionKey(BoundStatement bound, String serviceRemoteServiceName) {
-    return bound.setString(0, serviceRemoteServiceName);
+  @Override void bindPartitionKey(BoundStatement bound, String serviceRemoteServiceName) {
+    bound.setString(0, serviceRemoteServiceName);
   }
 }

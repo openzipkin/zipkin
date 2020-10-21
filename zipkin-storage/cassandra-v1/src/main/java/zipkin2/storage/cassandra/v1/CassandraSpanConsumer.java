@@ -21,7 +21,7 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
 import zipkin2.Annotation;
 import zipkin2.Call;
@@ -52,6 +52,17 @@ final class CassandraSpanConsumer implements SpanConsumer {
   @Nullable final IndexTraceIdByRemoteServiceName indexTraceIdByRemoteServiceName;
   @Nullable final IndexTraceIdBySpanName indexTraceIdBySpanName;
   @Nullable final IndexTraceIdByAnnotation indexTraceIdByAnnotation;
+
+  void clear() {
+    if (insertServiceName != null) insertServiceName.clear();
+    if (insertRemoteServiceName != null) insertRemoteServiceName.clear();
+    if (insertSpanName != null) insertSpanName.clear();
+    if (insertAutocompleteValue != null) insertAutocompleteValue.clear();
+    if (indexTraceIdByServiceName != null) indexTraceIdByServiceName.clear();
+    if (indexTraceIdByRemoteServiceName != null) indexTraceIdByRemoteServiceName.clear();
+    if (indexTraceIdBySpanName != null) indexTraceIdBySpanName.clear();
+    if (indexTraceIdByAnnotation != null) indexTraceIdByAnnotation.clear();
+  }
 
   CassandraSpanConsumer(CassandraStorage storage) {
     Session session = storage.session();
@@ -146,9 +157,9 @@ final class CassandraSpanConsumer implements SpanConsumer {
 
     // Using set or other deduplication strategies helps avoid redundant writes.
     Set<String> insertServiceNames = new LinkedHashSet<>();
-    Set<Entry<String, String>> insertRemoteServiceNames = new LinkedHashSet<>();
-    Set<Entry<String, String>> insertSpanNames = new LinkedHashSet<>();
-    Set<Entry<String, String>> insertAutocompleteTags = new LinkedHashSet<>();
+    Set<Map.Entry<String, String>> insertRemoteServiceNames = new LinkedHashSet<>();
+    Set<Map.Entry<String, String>> insertSpanNames = new LinkedHashSet<>();
+    Set<Map.Entry<String, String>> insertAutocompleteTags = new LinkedHashSet<>();
     TraceIdIndexer indexTraceIdByServiceNames = indexTraceIdByServiceName.newIndexer();
     TraceIdIndexer indexTraceIdByRemoteServiceNames = indexTraceIdByRemoteServiceName != null
       ? indexTraceIdByRemoteServiceName.newIndexer()
@@ -192,7 +203,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
       }
 
       if (insertAutocompleteValue != null) {
-        for (Entry<String, String> entry : span.tags().entrySet()) {
+        for (Map.Entry<String, String> entry : span.tags().entrySet()) {
           if (autocompleteKeys.contains(entry.getKey())) insertAutocompleteTags.add(entry);
         }
       }
@@ -226,13 +237,13 @@ final class CassandraSpanConsumer implements SpanConsumer {
     for (String insert : insertServiceNames) {
       insertServiceName.maybeAdd(insert, calls);
     }
-    for (Entry<String, String> insert : insertRemoteServiceNames) {
+    for (Map.Entry<String, String> insert : insertRemoteServiceNames) {
       insertRemoteServiceName.maybeAdd(insert, calls);
     }
-    for (Entry<String, String> insert : insertSpanNames) {
+    for (Map.Entry<String, String> insert : insertSpanNames) {
       insertSpanName.maybeAdd(insert, calls);
     }
-    for (Entry<String, String> insert : insertAutocompleteTags) {
+    for (Map.Entry<String, String> insert : insertAutocompleteTags) {
       insertAutocompleteValue.maybeAdd(insert, calls);
     }
     for (IndexTraceId.Input insert : indexTraceIdByServiceNames) {

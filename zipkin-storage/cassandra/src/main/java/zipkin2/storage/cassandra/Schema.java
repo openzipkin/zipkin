@@ -133,11 +133,11 @@ final class Schema {
       // refresh metadata since we've installed the schema
       result = ensureKeyspaceMetadata(session, keyspace);
     }
-    if (!hasUpgrade1_autocompleteTags(result)) {
+    if (searchEnabled && !hasUpgrade1_autocompleteTags(result)) {
       LOG.info("Upgrading schema {}", UPGRADE_1);
       applyCqlFile(keyspace, session, UPGRADE_1);
     }
-    if (!hasUpgrade2_remoteService(result)) {
+    if (searchEnabled && !hasUpgrade2_remoteService(result)) {
       LOG.info("Upgrading schema {}", UPGRADE_2);
       applyCqlFile(keyspace, session, UPGRADE_2);
     }

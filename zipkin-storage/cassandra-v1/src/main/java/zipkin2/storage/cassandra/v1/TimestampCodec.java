@@ -27,7 +27,7 @@ final class TimestampCodec {
    * avoid allocating java.util.Date
    */
   static ByteBuffer serialize(long timestamp) {
-    return TypeCodec.bigint().serialize(timestamp / 1000L, PROTOCOL_VERSION);
+    return TypeCodec.bigint().serializeNoBoxing(timestamp / 1000L, PROTOCOL_VERSION);
   }
 
   /**
@@ -35,6 +35,6 @@ final class TimestampCodec {
    * converts to microseconds.
    */
   static long deserialize(Row row, int i) {
-    return 1000L * TypeCodec.bigint().deserialize(row.getBytesUnsafe(i), PROTOCOL_VERSION);
+    return 1000L * TypeCodec.bigint().deserializeNoBoxing(row.getBytesUnsafe(i), PROTOCOL_VERSION);
   }
 }

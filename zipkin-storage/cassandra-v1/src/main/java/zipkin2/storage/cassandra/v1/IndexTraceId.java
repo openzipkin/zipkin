@@ -19,7 +19,7 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.google.auto.value.AutoValue;
-import java.util.Set;
+import java.util.List;
 import java.util.stream.IntStream;
 import zipkin2.internal.DelayLimiter;
 import zipkin2.storage.QueryRequest;
@@ -29,7 +29,7 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.ttl;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Inserts index rows into a Cassandra table. This skips entries that don't improve results based on
@@ -47,7 +47,7 @@ final class IndexTraceId extends DeduplicatingInsert<IndexTraceId.Input> {
    * <p>See https://github.com/openzipkin/zipkin/issues/623 for further explanation
    */
   static final int BUCKET_COUNT = 10;
-  static final Set<Integer> BUCKETS = IntStream.range(0, BUCKET_COUNT).boxed().collect(toSet());
+  static final List<Integer> BUCKETS = IntStream.range(0, BUCKET_COUNT).boxed().collect(toList());
 
   @AutoValue
   abstract static class Input {
