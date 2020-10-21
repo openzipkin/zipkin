@@ -37,7 +37,9 @@ final class SelectTraceIdTimestampFromServiceNames
   }
 
   @Override String selectStatement(String table, String partitionKeyColumn) {
-    return super.selectStatement(table, partitionKeyColumn)
+    return "SELECT trace_id,ts"
+      + " FROM " + table
+      + " WHERE " + partitionKeyColumn + " IN ?"
       + " AND bucket IN ?";
   }
 
