@@ -142,7 +142,7 @@ A value of 0 will disable the timeout completely. Defaults to 11s.
 * `QUERY_NAMES_MAX_AGE`: Controls the value of the `max-age` header zipkin-server responds with on
  http requests for autocompleted values in the UI (service names for example). Defaults to 300 seconds.
 * `QUERY_LOOKBACK`: How many milliseconds queries can look back from endTs; Defaults to 24 hours (two daily buckets: one for today and one for yesterday)
-* `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra`, `elasticsearch`
+* `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra3`, `elasticsearch`
 * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 * `AUTOCOMPLETE_KEYS`: list of span tag keys which will be returned by the `/api/v2/autocompleteTags` endpoint; Tag keys should be comma separated e.g. "instance_id,user_id,env"
 * `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr)
@@ -222,8 +222,8 @@ $ MEM_MAX_SPANS=1000000 java -Xmx1G -jar zipkin.jar
 ```
 
 ### Cassandra Storage
-Zipkin's [Cassandra storage component](../zipkin-storage/cassandra)
-supports version 3.11+ and applies when `STORAGE_TYPE` is set to `cassandra3`:
+Zipkin's [Cassandra storage component](../zipkin-storage/cassandra) supports Cassandra 3.11.3+
+and applies when `STORAGE_TYPE` is set to `cassandra3`:
 
     * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "zipkin2"
     * `CASSANDRA_CONTACT_POINTS`: Comma separated list of host addresses part of Cassandra cluster. You can also specify a custom port with 'host:port'. Defaults to localhost on port 9042.
@@ -356,19 +356,6 @@ Example usage:
 
 ```bash
 $ STORAGE_TYPE=mysql MYSQL_USER=root java -jar zipkin.jar
-```
-
-#### Cassandra Storage
-Zipkin's [Legacy (v1) Cassandra storage component](../zipkin-storage/cassandra-v1)
-supports version 2.2+ and applies when `STORAGE_TYPE` is set to `cassandra`:
-
-The environment variables are the same as `STORAGE_TYPE=cassandra3`,
-except the default keyspace name is "zipkin".
-
-Example usage:
-
-```bash
-$ STORAGE_TYPE=cassandra java -jar zipkin.jar
 ```
 
 ### Throttled Storage (Experimental)

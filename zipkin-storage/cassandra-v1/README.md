@@ -1,4 +1,4 @@
-# storage-cassandra
+# This is deprecated and will be removed in v2.23. Use [zipkin-storage-cassandra](../cassandra) instead.
 
 This is a CQL-based Cassandra storage component, built upon the [Zipkin v1 thrift model](https://github.com/openzipkin/zipkin-api/tree/master/thrift).
 This uses Cassandra 2.2+ features, but is tested against the latest patch of Cassandra 3.11.
