@@ -254,6 +254,9 @@ logging:
   pattern:
     level: "%clr(%5p) %clr([%X{traceId}/%X{spanId}]){yellow}"
   level:
+    # Hush MySQL related logs
+    org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor: 'WARN'
+    com.zaxxer.hikari.HikariDataSource: 'WARN'
     # Don't print driver version in console output
     com.datastax.oss.driver.internal.core.DefaultMavenCoordinates: 'WARN'
     # We exclude Geo codec and Graph extensions to keep size down
