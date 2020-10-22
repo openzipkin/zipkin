@@ -14,6 +14,8 @@
 package zipkin2.server.internal.cassandra;
 
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -41,6 +43,7 @@ import zipkin2.storage.cassandra.v1.SessionFactory;
 @ConditionalOnMissingBean(StorageComponent.class)
 @Import(ZipkinCassandraStorageConfiguration.TracingSessionFactoryEnhancer.class)
 public class ZipkinCassandraStorageConfiguration {
+  static final Logger LOG = LoggerFactory.getLogger(ZipkinCassandraStorageConfiguration.class);
 
   @Bean SessionFactory sessionFactory() {
     return new SessionFactory.Default();
@@ -49,14 +52,18 @@ public class ZipkinCassandraStorageConfiguration {
   @Bean
   @ConditionalOnMissingBean
   StorageComponent storage(
-      ZipkinCassandraStorageProperties properties,
-      SessionFactory sessionFactory,
-      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
-      @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
-      @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys,
-      @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
-      @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
-   return properties.toBuilder()
+    ZipkinCassandraStorageProperties properties,
+    SessionFactory sessionFactory,
+    @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
+    @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
+    @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys,
+    @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
+    @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
+    LOG.warn(
+      "\"STORAGE_TYPE=cassandra\" is deprecated and will be removed in Zipkin v2.23.\n"
+        + "Please change to \"STORAGE_TYPE=cassandra3\", noting this requires Cassandra v3.11.3+ with SASI enabled.\n"
+        + "Contact https://gitter.im/openzipkin/zipkin for more information.");
+    return properties.toBuilder()
       .strictTraceId(strictTraceId)
       .searchEnabled(searchEnabled)
       .autocompleteKeys(autocompleteKeys)

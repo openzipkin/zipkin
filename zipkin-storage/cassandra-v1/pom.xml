@@ -26,7 +26,7 @@
   </parent>
 
   <artifactId>zipkin-storage-cassandra-v1</artifactId>
-  <name>Storage: Cassandra (v1)</name>
+  <name>Storage: Cassandra (Deprecated)</name>
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>

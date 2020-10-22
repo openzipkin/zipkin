@@ -43,8 +43,10 @@ import zipkin2.storage.cassandra.v1.Schema.Metadata;
  * This feature is implemented by {@link DeduplicatingInsert}.
  *
  * <p>Schema is installed by default from "/cassandra-schema.cql"
+ *
+ * @deprecated use {@link zipkin2.storage.cassandra.CassandraStorage} instead
  */
-public class CassandraStorage extends StorageComponent { // not final for mocking
+@Deprecated public class CassandraStorage extends StorageComponent { // not final for mocking
 
   public static Builder newBuilder() {
     return new Builder();

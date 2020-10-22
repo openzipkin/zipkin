@@ -1,4 +1,4 @@
-# storage-cassandra
+# zipkin-storage-cassandra
 
 This is a CQL-based Cassandra storage component, built upon the [Zipkin v2 api and model](https://zipkin.io/zipkin-api/#/default/post_spans).
 This uses Cassandra 3.11.3+ features, but is tested against the latest patch of Cassandra 3.11.

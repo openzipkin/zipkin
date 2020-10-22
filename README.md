@@ -173,18 +173,6 @@ This store does not require a [job to aggregate](https://github.com/openzipkin/z
 However, running the job will improve performance of dependencies
 queries.
 
-#### Cassandra
-The [Cassandra v1](zipkin-storage/cassandra-v1) component uses Cassandra
-2.2+ features, but is tested against the latest patch of Cassandra 3.11.
-
-The CQL was written in 2015, based on the original Cassandra schema from
-Twitter, and since been extended. Spans are stored as opaque thrifts,
-which means you cannot query fields in cqlsh. The schema was designed
-for scale, including manually implemented indexes to make querying
-larger data more performant.
-
-Note: This store requires a [job to aggregate](https://github.com/openzipkin/zipkin-dependencies) dependency links.
-
 ## Running the server from source
 The [Zipkin server](zipkin-server) receives spans via HTTP POST and respond to queries
 from its UI. It can also run collectors, such as RabbitMQ or Kafka.

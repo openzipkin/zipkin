@@ -97,10 +97,6 @@ class ServerIntegratedBenchmark {
     runBenchmark(elasticsearch);
   }
 
-  @Test void cassandra() throws Exception {
-    runBenchmark(createCassandra("cassandra"));
-  }
-
   @Test void cassandra3() throws Exception {
     runBenchmark(createCassandra("cassandra3"));
   }
