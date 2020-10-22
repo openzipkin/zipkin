@@ -108,7 +108,7 @@ public class ZipkinSelfTracingConfiguration {
       // Reduce the impact on untraced downstream http services such as Elasticsearch
       .propagationFactory(B3Propagation.newFactoryBuilder()
         .injectFormat(brave.Span.Kind.CLIENT, B3Propagation.Format.SINGLE)
-        .injectFormat(brave.Span.Kind.CONSUMER, B3Propagation.Format.SINGLE)
+        .injectFormat(brave.Span.Kind.CONSUMER, B3Propagation.Format.SINGLE_NO_PARENT)
         .build())
       .addSpanHandler(zipkinSpanHandler)
       .build();
