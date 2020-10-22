@@ -34,7 +34,7 @@ services:
       # Point the zipkin at the storage backend
       - MYSQL_HOST=mysql
       # Uncomment to enable self-tracing
-      - SELF_TRACING_ENABLED=true
+      # - SELF_TRACING_ENABLED=true
       # Uncomment to enable debug logging
       # - JAVA_OPTS=-Dlogging.level.zipkin2=DEBUG
     ports:
