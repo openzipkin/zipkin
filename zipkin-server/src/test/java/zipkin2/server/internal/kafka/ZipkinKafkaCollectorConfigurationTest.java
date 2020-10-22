@@ -13,6 +13,7 @@
  */
 package zipkin2.server.internal.kafka;
 
+import java.util.function.Function;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -65,7 +66,8 @@ public class ZipkinKafkaCollectorConfigurationTest {
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinKafkaCollectorConfiguration.class,
-      InMemoryConfiguration.class);
+      InMemoryConfiguration.class,
+      Function.class);
     context.refresh();
 
     assertThat(context.getBean(KafkaCollector.class)).isNotNull();
