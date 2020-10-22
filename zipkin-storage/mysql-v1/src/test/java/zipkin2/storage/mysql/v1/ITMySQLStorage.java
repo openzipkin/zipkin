@@ -46,6 +46,14 @@ class ITMySQLStorage {
       return backend.computeStorageBuilder();
     }
 
+    @Override @Test @Disabled("v1 format is lossy in conversion when rows as upsert")
+    protected void getTrace_differentiatesDebugFromShared(TestInfo testInfo) {
+    }
+
+    @Override @Test @Disabled("v1 format is lossy in conversion when rows as upsert")
+    protected void getTraces_differentiatesDebugFromShared(TestInfo testInfo) {
+    }
+
     @Override protected boolean returnsRawSpans() {
       return false;
     }
@@ -63,6 +71,10 @@ class ITMySQLStorage {
   class ITSpanStore extends zipkin2.storage.ITSpanStore<MySQLStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend.computeStorageBuilder();
+    }
+
+    @Override @Test @Disabled("v1 format is lossy in conversion when rows as upsert")
+    protected void getTraces_differentiatesDebugFromShared(TestInfo testInfo) {
     }
 
     @Override protected boolean returnsRawSpans() {

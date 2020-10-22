@@ -13,7 +13,6 @@
  */
 package zipkin2.elasticsearch.integration;
 
-import java.io.IOException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
