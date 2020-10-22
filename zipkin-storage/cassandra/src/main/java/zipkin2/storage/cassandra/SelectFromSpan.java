@@ -52,7 +52,7 @@ final class SelectFromSpan extends ResultSetFutureCall<AsyncResultSet> {
     Factory(CqlSession session, boolean strictTraceId, int maxTraceCols) {
       this.session = session;
       this.preparedStatement = session.prepare(
-        "SELECT trace_id_high,trace_id,parent_id,id,kind,span,ts,duration,l_ep,r_ep,annotations,tags,shared,debug"
+        "SELECT trace_id_high,trace_id,parent_id,id,kind,span,ts,duration,l_ep,r_ep,annotations,tags,debug,shared"
           + " FROM " + TABLE_SPAN
           + " WHERE trace_id IN ?"
           + " LIMIT ?");
@@ -195,15 +195,12 @@ final class SelectFromSpan extends ResultSetFutureCall<AsyncResultSet> {
             // EmptyCatch ignored
           }
         }
-        if (!row.isNull("l_ep")) {
-          builder.localEndpoint(row.get("l_ep", Endpoint.class));
-        }
-        if (!row.isNull("r_ep")) {
-          builder.remoteEndpoint(row.get("r_ep", Endpoint.class));
-        }
 
+        if (!row.isNull("l_ep")) builder.localEndpoint(row.get("l_ep", Endpoint.class));
+        if (!row.isNull("r_ep")) builder.remoteEndpoint(row.get("r_ep", Endpoint.class));
+
+        if (!row.isNull("debug")) builder.debug(row.getBoolean("debug"));
         if (!row.isNull("shared")) builder.shared(row.getBoolean("shared"));
-        if (!row.isNull("debug")) builder.shared(row.getBoolean("debug"));
 
         for (Annotation annotation : row.getList("annotations", Annotation.class)) {
           builder.addAnnotation(annotation.timestamp(), annotation.value());

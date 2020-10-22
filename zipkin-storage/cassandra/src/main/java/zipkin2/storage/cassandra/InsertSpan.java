@@ -61,9 +61,9 @@ final class InsertSpan extends ResultSetFutureCall<Void> {
 
     @Nullable abstract String annotation_query();
 
-    abstract boolean shared();
-
     abstract boolean debug();
+
+    abstract boolean shared();
   }
 
   static final class Factory {
@@ -74,12 +74,12 @@ final class InsertSpan extends ResultSetFutureCall<Void> {
     Factory(CqlSession session, boolean strictTraceId, boolean searchEnabled) {
       this.session = session;
       String insertQuery = "INSERT INTO " + TABLE_SPAN
-        + " (trace_id,trace_id_high,ts_uuid,parent_id,id,kind,span,ts,duration,l_ep,r_ep,annotations,tags,shared,debug)"
-        + " VALUES (:trace_id,:trace_id_high,:ts_uuid,:parent_id,:id,:kind,:span,:ts,:duration,:l_ep,:r_ep,:annotations,:tags,:shared,:debug)";
+        + " (trace_id,trace_id_high,ts_uuid,parent_id,id,kind,span,ts,duration,l_ep,r_ep,annotations,tags,debug,shared)"
+        + " VALUES (:trace_id,:trace_id_high,:ts_uuid,:parent_id,:id,:kind,:span,:ts,:duration,:l_ep,:r_ep,:annotations,:tags,:debug,:shared)";
 
       if (searchEnabled) {
-        insertQuery = insertQuery.replace(",debug)", ",debug, l_service, annotation_query)");
-        insertQuery = insertQuery.replace(",:debug)", ",:debug, :l_service, :annotation_query)");
+        insertQuery = insertQuery.replace(",shared)", ",shared, l_service, annotation_query)");
+        insertQuery = insertQuery.replace(",:shared)", ",:shared, :l_service, :annotation_query)");
       }
 
       this.preparedStatement = session.prepare(insertQuery);
@@ -165,8 +165,8 @@ final class InsertSpan extends ResultSetFutureCall<Void> {
       bound.setList("annotations", input.annotations(), Annotation.class);
     }
     if (!input.tags().isEmpty()) bound.setMap("tags", input.tags(), String.class, String.class);
-    if (input.shared()) bound.setBoolean("shared", true);
     if (input.debug()) bound.setBoolean("debug", true);
+    if (input.shared()) bound.setBoolean("shared", true);
 
     if (factory.searchEnabled) {
       if (null != input.l_ep()) bound.setString("l_service", input.l_ep().serviceName());
