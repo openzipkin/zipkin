@@ -27,7 +27,9 @@ KAFKA_CONFIG=./config/server.properties
 grep -qF -- "$ADVERTISED_LISTENERS" $KAFKA_CONFIG || echo "$ADVERTISED_LISTENERS" >> $KAFKA_CONFIG
 
 echo Starting ZooKeeper
-bin/kafka-run-class.sh \
+exec java -cp 'libs/*' ${ZOOKEEPER_JAVA_OPTS} \
+  -Djava.io.tmpdir=/tmp \
+  -Dzookeeper.jmx.log4j.disable=true \
   -Dlog4j.configuration=file:./config/log4j.properties \
   org.apache.zookeeper.server.quorum.QuorumPeerMain ./config/zookeeper.properties &
 
@@ -35,6 +37,4 @@ bin/kafka-run-class.sh \
 until echo ruok | nc 127.0.0.1 2181 > /dev/null; do sleep 1; done
 
 echo Starting Kafka
-exec bin/kafka-run-class.sh -name kafkaServer \
-  -Dlog4j.configuration=file:./config/log4j.properties \
-  kafka.Kafka ./config/server.properties
+exec bin/kafka-run-class.sh kafka.Kafka ./config/server.properties "$@"
