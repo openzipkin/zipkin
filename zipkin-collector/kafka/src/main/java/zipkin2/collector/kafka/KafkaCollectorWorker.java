@@ -83,7 +83,7 @@ final class KafkaCollectorWorker implements Runnable {
             assignedPartitions.set(Collections.unmodifiableList(new ArrayList<>(partitions)));
           }
         });
-      LOG.info("Kafka consumer starting polling loop.");
+      LOG.debug("Kafka consumer starting polling loop.");
       while (running.get()) {
         final ConsumerRecords<byte[], byte[]> consumerRecords = kafkaConsumer.poll(Duration.of(1000, ChronoUnit.MILLIS));
         LOG.debug("Kafka polling returned batch of {} messages.", consumerRecords.count());
@@ -117,7 +117,7 @@ final class KafkaCollectorWorker implements Runnable {
       LOG.warn("Unexpected error in polling loop spans", e);
       throw e;
     } finally {
-      LOG.info("Kafka consumer polling loop stopped. Kafka consumer closed.");
+      LOG.debug("Kafka consumer polling loop stopped. Kafka consumer closed.");
     }
   }
 

@@ -53,14 +53,13 @@ $ docker-compose -f docker-compose-mysql.yml up
 
 ## Kafka
 
-The docker-compose configuration can be extended to host a test [Kafka broker](../collector/kafka/README.md)
-and activate the [Kafka collector](../../zipkin-collector/kafka) using the `docker-compose-kafka.yml`
-file. That file employs [docker-compose overrides](https://docs.docker.com/compose/extends/#multiple-compose-files)
-to add a Kafka+ZooKeeper container and relevant settings.
+You can collect traces from [Kafka](../collector/kafka/README.md) in addition to HTTP, using the
+`docker-compose-kafka.yml` file. This configuration starts `zipkin` and `zipkin-kafka` in their
+own containers.
 
 To add Kafka configuration, run:
 ```bash
-$ docker-compose -f docker-compose.yml -f docker-compose-kafka.yml up
+$ docker-compose -f docker-compose-kafka.yml up
 ```
 
 Then configure the [Kafka sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/kafka11/src/main/java/zipkin2/reporter/kafka11/KafkaSender.java) using a `bootstrapServers` value of `host.docker.internal:9092` if your application is inside the same docker network or `localhost:19092` if not, but running on the same host.
