@@ -33,5 +33,9 @@ if [ -z "${MODULE_OPTS+x}" ]; then
   exec java ${JAVA_OPTS} -cp '.:BOOT-INF/lib/*:BOOT-INF/classes' zipkin.server.ZipkinServer "$@"
 else
   JAVA_OPTS=${JAVA_OPTS:-"-Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError"}
-  exec java ${MODULE_OPTS} ${JAVA_OPTS} -cp . org.springframework.boot.loader.PropertiesLauncher "$@"
+
+  # Disable Log4j2 JMX extensions when running the full build
+  exec java ${MODULE_OPTS} ${JAVA_OPTS} -cp . \
+  -Dlog4j2.disable.jmx=true \
+  org.springframework.boot.loader.PropertiesLauncher "$@"
 fi

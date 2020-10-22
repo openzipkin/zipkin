@@ -19,53 +19,6 @@
 set -eux
 
 echo "*** Installing Kafka and dependencies"
-APACHE_MIRROR=$(wget -qO- https://www.apache.org/dyn/closer.cgi\?as_json\=1 | sed -n '/preferred/s/.*"\(.*\)"/\1/gp')
-
-# Download scripts and config for Kafka and ZooKeeper, but not for Connect
-wget -qO- $APACHE_MIRROR/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz | tar xz \
-  --wildcards --strip=1 --exclude=connect* */bin/zookeeper-* */bin/kafka-* */config
-
-# Remove bash as our images don't have it, and it isn't required
-sed -i 's~#!/bin/bash~#!/bin/sh~g' bin/*sh
-# Remove bash syntax relating to irrelevant CYGWIN (prevents console errors)
-sed -i -e 's/$(uname -a) =~ "CYGWIN"/0/g' -e  's/.*\(\( CYGWIN \)\).*//g' bin/*
-# Remove bash shopt commands (kafka-start-class uses nullglob, but it is non-critical to avoid it)
-sed -i 's/.*shopt.*//g' bin/*sh
-
-# Hush logging for both Kafka and ZooKeeper
-sed -i 's~INFO~WARN~g' config/log4j.properties
-
-# NOTE: Two unavoidable log WARN messages remain:
-# 1. Either no config or no quorum defined in config, running  in standalone mode (org.apache.zookeeper.server.quorum.QuorumPeerMain)
-#   * https://github.com/apache/zookeeper/blob/e91455c1e3c50405666cd8afad71d99dceb7b340/zookeeper-server/src/main/java/org/apache/zookeeper/server/quorum/QuorumPeerMain.java#L138-L140
-# 2. No meta.properties file under dir /kafka/./data/kafka/meta.properties (kafka.server.BrokerMetadataCheckpoint)
-#   * meta.properties file is generated when broker joins the cluster, using an auto-generated cluster id:
-
-# Make sure you use relative paths in references like this, so that installation
-# is decoupled from runtime
-mkdir -p data/kafka data/zookeeper logs
-
-# Set explicit, basic configuration
-cat > config/zookeeper.properties <<-'EOF'
-dataDir=./data/zookeeper
-clientPort=2181
-maxClientCnxns=0
-admin.enableServer=false
-# allow ruok command for testing ZK health
-4lw.commands.whitelist=srvr,ruok
-EOF
-
-cat > config/server.properties <<-'EOF'
-broker.id=0
-zookeeper.connect=127.0.0.1:2181
-replica.socket.timeout.ms=1500
-# log.dirs is about Kafka's data not Log4J
-log.dirs=./data/kafka
-auto.create.topics.enable=true
-offsets.topic.replication.factor=1
-listeners=PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:19092
-listener.security.protocol.map=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-EOF
 
 # Dist includes large dependencies needed by streams and connect: retain only broker and ZK.
 # We can do this because broker is independent from both kafka-streams and connect modules.
@@ -96,5 +49,59 @@ cat > pom.xml <<-'EOF'
 </project>
 EOF
 mvn -q --batch-mode dependency:copy-dependencies -DoutputDirectory=libs && rm pom.xml
+
+# Make sure you use relative paths in references like this, so that installation
+# is decoupled from runtime
+mkdir -p bin config data/kafka data/zookeeper
+
+# Make a basic log4j config which only logs warnings (to stderr)
+#
+# NOTE: Two unavoidable log WARN messages remain:
+# 1. Either no config or no quorum defined in config, running  in standalone mode (org.apache.zookeeper.server.quorum.QuorumPeerMain)
+#   * https://github.com/apache/zookeeper/blob/e91455c1e3c50405666cd8afad71d99dceb7b340/zookeeper-server/src/main/java/org/apache/zookeeper/server/quorum/QuorumPeerMain.java#L138-L140
+# 2. No meta.properties file under dir /kafka/./data/kafka/meta.properties (kafka.server.BrokerMetadataCheckpoint)
+#   * meta.properties file is generated when broker joins the cluster, using an auto-generated cluster id:
+cat > config/log4j.properties <<-'EOF'
+log4j.rootLogger=WARN, stderr
+
+log4j.appender.stderr=org.apache.log4j.ConsoleAppender
+log4j.appender.stderr.layout=org.apache.log4j.PatternLayout
+log4j.appender.stderr.layout.ConversionPattern=[%d] %p %m (%c)%n
+log4j.appender.stderr.Target=System.err
+EOF
+
+# Set explicit, basic configuration
+cat > config/zookeeper.properties <<-'EOF'
+dataDir=./data/zookeeper
+clientPort=2181
+maxClientCnxns=0
+admin.enableServer=false
+# allow ruok command for testing ZK health
+4lw.commands.whitelist=srvr,ruok
+admin.enableServer=false
+EOF
+
+cat > config/server.properties <<-'EOF'
+broker.id=0
+zookeeper.connect=127.0.0.1:2181
+replica.socket.timeout.ms=1500
+# log.dirs is about Kafka's data not Log4J
+log.dirs=./data/kafka
+auto.create.topics.enable=true
+offsets.topic.replication.factor=1
+listeners=PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:19092
+listener.security.protocol.map=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+EOF
+
+# Make a basic script for launching Kafka commands
+cat > bin/kafka-run-class.sh <<-'EOF'
+#!/bin/sh
+set -eu
+exec java -cp 'libs/*' ${JAVA_OPTS} \
+  -Djava.io.tmpdir=/tmp \
+  -Dlog4j.configuration=file:./config/log4j.properties \
+  "$@"
+EOF
+chmod 755 bin/kafka-run-class.sh
 
 echo "*** Image build complete"
