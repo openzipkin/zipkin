@@ -27,6 +27,7 @@ import zipkin2.CheckResult;
 import zipkin2.Span;
 import zipkin2.internal.Trace;
 
+import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
@@ -137,6 +138,7 @@ public abstract class ITStorage<T extends StorageComponent> {
   protected void assertGetTracesReturns(QueryRequest request, List<Span>... traces)
     throws IOException {
     assertThat(sortTraces(store().getTraces(request).execute()))
+      .usingRecursiveFieldByFieldElementComparator()
       .containsAll(sortTraces(asList(traces)));
   }
 
@@ -146,6 +148,7 @@ public abstract class ITStorage<T extends StorageComponent> {
 
   protected void assertGetTraceReturns(String traceId, List<Span> trace) throws IOException {
     assertThat(sortTrace(storage.traces().getTrace(traceId).execute()))
+      .usingRecursiveFieldByFieldElementComparator()
       .containsAll(sortTrace(trace));
   }
 
@@ -160,6 +163,7 @@ public abstract class ITStorage<T extends StorageComponent> {
   protected void assertGetTracesReturns(List<String> traceIds, List<Span>... traces)
     throws IOException {
     assertThat(sortTraces(storage.traces().getTraces(traceIds).execute()))
+      .usingRecursiveFieldByFieldElementComparator()
       .containsAll(sortTraces(asList(traces)));
   }
 
@@ -176,6 +180,7 @@ public abstract class ITStorage<T extends StorageComponent> {
     assertThat(countReturned)
       .withFailMessage("Expected <%s> traces for request <%s>, but received <%s>",
         traceCount, request, countReturned)
+      .usingRecursiveComparison()
       .isEqualTo(traceCount);
   }
 
@@ -222,6 +227,8 @@ public abstract class ITStorage<T extends StorageComponent> {
       if (traceId != 0) return traceId;
       int id = l.id().compareTo(r.id());
       if (id != 0) return id;
+      int shared = Boolean.compare(TRUE.equals(l.shared()), TRUE.equals(r.shared()));
+      if (shared != 0) return shared;
 
       if (l.name() != null && r.name() != null) {
         int name = l.name().compareTo(r.name());

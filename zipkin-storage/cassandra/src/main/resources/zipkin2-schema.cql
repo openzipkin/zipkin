@@ -28,8 +28,8 @@ CREATE TABLE IF NOT EXISTS zipkin2.span (
     r_ep                Endpoint,
     annotations         list<frozen<annotation>>,
     tags                map<text,text>,
-    shared              boolean,
     debug               boolean,
+    shared              boolean,
     PRIMARY KEY (trace_id, ts_uuid, id)
 )
     WITH CLUSTERING ORDER BY (ts_uuid DESC)

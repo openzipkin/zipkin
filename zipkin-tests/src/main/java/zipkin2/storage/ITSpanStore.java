@@ -33,6 +33,7 @@ import zipkin2.TestObjects;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static zipkin2.Span.Kind.CLIENT;
+import static zipkin2.Span.Kind.SERVER;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.TestObjects.appendSuffix;
@@ -546,6 +547,22 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       asList(spanWithoutTimestamp, span));
   }
 
+  /** Prevents subtle bugs which can result in mixed-length traces from linking. */
+  @Test protected void getTraces_differentiatesDebugFromShared(TestInfo testInfo) throws Exception {
+    String testSuffix = testSuffix(testInfo);
+    Span clientSpan = newClientSpan(testSuffix).toBuilder()
+      .debug(true)
+      .build();
+    Span serverSpan = clientSpan.toBuilder().kind(SERVER)
+      .debug(null).shared(true)
+      .build();
+
+    accept(clientSpan, serverSpan);
+
+    // assertGetTracesReturns does recursive comparison
+    assertGetTracesReturns(requestBuilder().build(), asList(clientSpan, serverSpan));
+  }
+
   @Test protected void getTraces_annotation(TestInfo testInfo) throws Exception {
     String testSuffix = testSuffix(testInfo);
     Span clientSpan = newClientSpan(testSuffix).toBuilder()
@@ -645,7 +662,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .build();
 
     Span trace1Server = Span.newBuilder().traceId(trace1.traceId()).name("1").id(1)
-      .kind(Span.Kind.SERVER)
+      .kind(SERVER)
       .shared(true)
       .localEndpoint(backend)
       .timestamp((TODAY + 2) * 1000L)
@@ -664,7 +681,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     Span trace2Server = Span.newBuilder().traceId(trace2.traceId()).name("2").id(2)
       .shared(true)
-      .kind(Span.Kind.SERVER)
+      .kind(SERVER)
       .localEndpoint(frontend)
       .timestamp((TODAY + 12) * 1000L)
       .duration(1000L).build();
