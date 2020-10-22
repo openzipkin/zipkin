@@ -13,9 +13,12 @@
  */
 package zipkin2.server.internal.kafka;
 
-import brave.Tracing;
 import brave.kafka.clients.KafkaTracing;
+import java.util.Properties;
+import java.util.function.Function;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -41,23 +44,29 @@ import java.util.Optional;
 public class ZipkinKafkaCollectorConfiguration { // makes simple type name unique for /actuator/conditions
   static final String QUALIFIER = "zipkinKafka";
 
-  @Bean(initMethod = "start") @ConditionalOnSelfTracing KafkaCollector kafka(
+  @Bean(initMethod = "start") KafkaCollector kafka(
       ZipkinKafkaCollectorProperties properties,
       CollectorSampler sampler,
       CollectorMetrics metrics,
       StorageComponent storage,
-      Optional<Tracing> maybeTracing) {
+      Function<Properties, Consumer<byte[], byte[]>> consumerSupplier) {
     final KafkaCollector.Builder builder = properties.toBuilder()
       .sampler(sampler)
       .metrics(metrics)
-      .storage(storage);
-    if (maybeTracing.isPresent()) {
-      final KafkaTracing kafkaTracing = KafkaTracing.newBuilder(maybeTracing.get())
-        .remoteServiceName("zipkin-kafka")
-        .build();
-      builder.consumerSupplier(props -> kafkaTracing.consumer(new KafkaConsumer<>(props)));
-    }
+      .storage(storage)
+      .consumerSupplier(consumerSupplier);
     return builder.build();
+  }
+
+
+  @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing
+  Function<Properties, Consumer<byte[], byte[]>> consumerSupplier(
+    Optional<KafkaTracing> maybeKafkaTracing
+  ) {
+    return maybeKafkaTracing
+      .<Function<Properties, Consumer<byte[], byte[]>>>
+        map(kafkaTracing -> props -> kafkaTracing.consumer(new KafkaConsumer<>(props)))
+      .orElseGet(() -> KafkaConsumer::new);
   }
 
   /**
