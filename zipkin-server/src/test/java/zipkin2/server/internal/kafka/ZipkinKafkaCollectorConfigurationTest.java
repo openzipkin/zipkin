@@ -13,17 +13,22 @@
  */
 package zipkin2.server.internal.kafka;
 
-import java.util.function.Function;
+import java.util.function.Consumer;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import zipkin2.collector.kafka.KafkaCollector;
 import zipkin2.server.internal.InMemoryConfiguration;
+import zipkin2.server.internal.brave.ZipkinSelfTracingConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -67,7 +72,8 @@ public class ZipkinKafkaCollectorConfigurationTest {
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinKafkaCollectorConfiguration.class,
       InMemoryConfiguration.class,
-      Function.class);
+      ZipkinSelfTracingConfiguration.class,
+      KafkaTracingCustomization.class);
     context.refresh();
 
     assertThat(context.getBean(KafkaCollector.class)).isNotNull();
@@ -85,5 +91,16 @@ public class ZipkinKafkaCollectorConfigurationTest {
 
     thrown.expect(NoSuchBeanDefinitionException.class);
     context.getBean(KafkaCollector.class);
+  }
+
+  @Configuration
+  static class KafkaTracingCustomization {
+
+    @Bean @Qualifier("zipkinKafka") public Consumer<KafkaCollector.Builder> one() {
+      return builderConsumer;
+    }
+
+    Consumer<KafkaCollector.Builder> builderConsumer =
+      builder -> builder.consumerSupplier(KafkaConsumer::new);
   }
 }

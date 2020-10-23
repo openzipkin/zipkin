@@ -14,6 +14,7 @@
 package zipkin2.server.internal.kafka;
 
 import brave.kafka.clients.KafkaTracing;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -32,8 +33,6 @@ import zipkin2.collector.kafka.KafkaCollector;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
 
-import java.util.Optional;
-
 /**
  * This collector consumes a topic, decodes spans from thrift messages and stores them subject to
  * sampling policy.
@@ -45,28 +44,29 @@ public class ZipkinKafkaCollectorConfiguration { // makes simple type name uniqu
   static final String QUALIFIER = "zipkinKafka";
 
   @Bean(initMethod = "start") KafkaCollector kafka(
-      ZipkinKafkaCollectorProperties properties,
-      CollectorSampler sampler,
-      CollectorMetrics metrics,
-      StorageComponent storage,
-      Function<Properties, Consumer<byte[], byte[]>> consumerSupplier) {
+    ZipkinKafkaCollectorProperties properties,
+    CollectorSampler sampler,
+    CollectorMetrics metrics,
+    StorageComponent storage,
+    java.util.function.Consumer<KafkaCollector.Builder> kafkaTracing) {
     final KafkaCollector.Builder builder = properties.toBuilder()
       .sampler(sampler)
       .metrics(metrics)
-      .storage(storage)
-      .consumerSupplier(consumerSupplier);
+      .storage(storage);
+    kafkaTracing.accept(builder);
     return builder.build();
   }
 
-
   @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing
-  Function<Properties, Consumer<byte[], byte[]>> consumerSupplier(
+  java.util.function.Consumer<KafkaCollector.Builder> consumerSupplier(
     Optional<KafkaTracing> maybeKafkaTracing
   ) {
-    return maybeKafkaTracing
-      .<Function<Properties, Consumer<byte[], byte[]>>>
-        map(kafkaTracing -> props -> kafkaTracing.consumer(new KafkaConsumer<>(props)))
-      .orElseGet(() -> KafkaConsumer::new);
+    return builder ->
+      builder.consumerSupplier(
+        maybeKafkaTracing
+          .<Function<Properties, Consumer<byte[], byte[]>>>
+            map(kafkaTracing -> props -> kafkaTracing.consumer(new KafkaConsumer<>(props)))
+          .orElseGet(() -> KafkaConsumer::new));
   }
 
   /**
@@ -92,7 +92,7 @@ public class ZipkinKafkaCollectorConfiguration { // makes simple type name uniqu
       return s == null || s.isEmpty();
     }
 
-    private static boolean notFalse(String s){
+    private static boolean notFalse(String s) {
       return s == null || !s.equals("false");
     }
   }
