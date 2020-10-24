@@ -36,7 +36,7 @@ COPY --from=scratch /zipkin-schemas/* ./zipkin-schemas/
 COPY --from=scratch /install/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
-FROM openzipkin/java:${java_version}-jre as zipkin-cassandra
+FROM openzipkin/java:${java_version} as zipkin-cassandra
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=scratch /docker-bin/* /usr/local/bin/

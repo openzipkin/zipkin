@@ -30,7 +30,7 @@ ALPINE_VERSION=${ALPINE_VERSION:-3.12}
 # When publishing jars, we build with JDK 11 to ensure we can write 1.6 zipkin.jar for Brave.
 # However, when creating Docker images, there's no such requirement.
 # Hence, we use one version to keep the layer count manageable and centralized here.
-JAVA_VERSION=${JAVA_VERSION:-15.0.0-15.27.17}
+JAVA_VERSION=${JAVA_VERSION:-15.0.1-15.28.13}
 
 case ${TARGET} in
   zipkin )
@@ -51,7 +51,7 @@ case ${TARGET} in
   zipkin-cassandra )
     DOCKERFILE_PATH=docker/storage/cassandra/Dockerfile
     # Until Cassandra v4, we are stuck on JRE 8 for Cassandra
-    JAVA_VERSION=1.8.0_252-b09
+    JAVA_VERSION=8u272-8.50.0.21-jre-headless
     ;;
   zipkin-elasticsearch6 )
     DOCKERFILE_PATH=docker/storage/elasticsearch6/Dockerfile
