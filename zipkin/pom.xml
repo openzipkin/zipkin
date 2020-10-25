@@ -129,7 +129,7 @@
                     <!-- JDK 12+ can no longer generate Java 1.6 bytecode, so we require JDK 11.
                          https://www.oracle.com/java/technologies/javase/12-relnote-issues.html -->
                     <requireJavaVersion>
-                      <version>[1.8,12)</version>
+                      <version>[11,12)</version>
                     </requireJavaVersion>
                   </rules>
                 </configuration>

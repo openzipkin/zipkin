@@ -44,7 +44,7 @@ before_install:
 
 # Override default travis to use the maven wrapper
 # * Use the "release" profile as that ensures the core jar ends up JRE 1.6 compatible
-install: ./mvnw install -DskipTests=true -Dlicense.skip=true -Dmaven.javadoc.skip=true -B -V -Prelease
+install: ./mvnw -T1C install -DskipTests=true -Dlicense.skip=true -Dmaven.javadoc.skip=true -B -V -Prelease
 script: ./travis/publish.sh
 
 branches:
