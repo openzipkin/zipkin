@@ -147,6 +147,21 @@ javadoc_to_gh_pages() {
   git push origin gh-pages
 }
 
+push_docker_master() {
+  for target in $(docker/bin/targets-to-build); do
+    image=openzipkin/${target}
+    echo Building ${image}
+    docker/build_image ${target} master
+    docker tag "${image}:master" "ghcr.io/${image}:master"
+    docker push "ghcr.io/${image}:master"
+  done
+
+  echo Building zipkin-builder
+  docker/build_image zipkin-builder latest
+  docker tag openzipkin/zipkin-builder ghcr.io/openzipkin/zipkin-builder
+  docker push ghcr.io/openzipkin/zipkin-builder
+}
+
 run_docker_hub_build() {
   project_version="$(print_project_version)"
   echo "Starting Docker Hub build for ${project_version}"
@@ -186,6 +201,8 @@ elif is_travis_branch_master; then
     run_docker_hub_build
     ./mvnw --batch-mode -s ./.settings.xml -nsu -N io.zipkin.centralsync-maven-plugin:centralsync-maven-plugin:sync
     javadoc_to_gh_pages
+  else
+    build_docker_master
   fi
 
 # If we are on a release tag, the following will update any version references and push a version tag for deployment.
