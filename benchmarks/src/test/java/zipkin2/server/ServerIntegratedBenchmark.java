@@ -20,10 +20,10 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,6 +39,8 @@ import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.lifecycle.Startables;
 import org.testcontainers.utility.MountableFile;
+
+import static org.testcontainers.utility.DockerImageName.parse;
 
 /**
  * This benchmark runs zipkin-server, storage backends, an example application, prometheus, grafana,
@@ -85,13 +87,14 @@ class ServerIntegratedBenchmark {
   }
 
   @Test void elasticsearch() throws Exception {
-    GenericContainer<?> elasticsearch = new GenericContainer<>("openzipkin/zipkin-elasticsearch7")
-      .withNetwork(Network.SHARED)
-      .withNetworkAliases("elasticsearch")
-      .withLabel("name", "elasticsearch")
-      .withLabel("storageType", "elasticsearch")
-      .withExposedPorts(9200)
-      .waitingFor(new HttpWaitStrategy().forPath("/_cluster/health"));
+    GenericContainer<?> elasticsearch =
+      new GenericContainer<>(parse("openzipkin/zipkin-elasticsearch7:latest"))
+        .withNetwork(Network.SHARED)
+        .withNetworkAliases("elasticsearch")
+        .withLabel("name", "elasticsearch")
+        .withLabel("storageType", "elasticsearch")
+        .withExposedPorts(9200)
+        .waitingFor(Wait.forHealthcheck());
     containers.add(elasticsearch);
 
     runBenchmark(elasticsearch);
@@ -102,24 +105,26 @@ class ServerIntegratedBenchmark {
   }
 
   private GenericContainer<?> createCassandra(String storageType) {
-    GenericContainer<?> cassandra = new GenericContainer<>("openzipkin/zipkin-cassandra")
-      .withNetwork(Network.SHARED)
-      .withNetworkAliases("cassandra")
-      .withLabel("name", "cassandra")
-      .withLabel("storageType", storageType)
-      .withExposedPorts(9042)
-      .waitingFor(Wait.forLogMessage(".*Starting listening for CQL clients.*", 1));
+    GenericContainer<?> cassandra =
+      new GenericContainer<>(parse("openzipkin/zipkin-cassandra:latest"))
+        .withNetwork(Network.SHARED)
+        .withNetworkAliases("cassandra")
+        .withLabel("name", "cassandra")
+        .withLabel("storageType", storageType)
+        .withExposedPorts(9042)
+        .waitingFor(Wait.forHealthcheck());
     containers.add(cassandra);
     return cassandra;
   }
 
   @Test void mysql() throws Exception {
-    GenericContainer<?> mysql = new GenericContainer<>("openzipkin/zipkin-mysql")
+    GenericContainer<?> mysql = new GenericContainer<>(parse("openzipkin/zipkin-mysql:latest"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("mysql")
       .withLabel("name", "mysql")
       .withLabel("storageType", "mysql")
-      .withExposedPorts(3306);
+      .withExposedPorts(3306)
+      .waitingFor(Wait.forHealthcheck());
     containers.add(mysql);
 
     runBenchmark(mysql);
@@ -129,11 +134,12 @@ class ServerIntegratedBenchmark {
   // send to, we can reuse our benchmark logic here to check it. Note, this benchmark always uses
   // a docker image and ignores RELEASED_ZIPKIN_SERVER.
   @Test void xrayUdp() throws Exception {
-    GenericContainer<?> zipkin = new GenericContainer<>("openzipkin/zipkin-aws")
+    GenericContainer<?> zipkin = new GenericContainer<>(parse("openzipkin/zipkin-aws:latest"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("zipkin")
       .withEnv("STORAGE_TYPE", "xray")
-      .withExposedPorts(9411);
+      .withExposedPorts(9411)
+      .waitingFor(Wait.forHealthcheck());
     containers.add(zipkin);
 
     runBenchmark(null, zipkin);
@@ -145,23 +151,22 @@ class ServerIntegratedBenchmark {
 
   void runBenchmark(@Nullable GenericContainer<?> storage, GenericContainer<?> zipkin)
     throws Exception {
-    GenericContainer<?> backend = new GenericContainer<>("openzipkin/example-sleuth-webmvc")
+    GenericContainer<?> backend = new GenericContainer<>(parse("openzipkin/example-brave:armeria"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("backend")
       .withCommand("backend")
       .withExposedPorts(9000)
-      .waitingFor(Wait.forHttp("/actuator/health"));
-    containers.add(backend);
+      .waitingFor(Wait.forHealthcheck());
 
-    GenericContainer<?> frontend = new GenericContainer<>("openzipkin/example-sleuth-webmvc")
+    GenericContainer<?> frontend = new GenericContainer<>(parse("openzipkin/example-brave:armeria"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("frontend")
       .withCommand("frontend")
       .withExposedPorts(8081)
-      .waitingFor(Wait.forHttp("/actuator/health"));
+      .waitingFor(Wait.forHealthcheck());
     containers.add(frontend);
 
-    GenericContainer<?> prometheus = new GenericContainer<>("prom/prometheus")
+    GenericContainer<?> prometheus = new GenericContainer<>(parse("prom/prometheus:latest"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("prometheus")
       .withExposedPorts(9090)
@@ -169,7 +174,7 @@ class ServerIntegratedBenchmark {
         MountableFile.forClasspathResource("prometheus.yml"), "/etc/prometheus/prometheus.yml");
     containers.add(prometheus);
 
-    GenericContainer<?> grafana = new GenericContainer<>("grafana/grafana")
+    GenericContainer<?> grafana = new GenericContainer<>(parse("grafana/grafana:latest"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("grafana")
       .withExposedPorts(3000)
@@ -177,33 +182,27 @@ class ServerIntegratedBenchmark {
       .withEnv("GF_AUTH_ANONYMOUS_ORG_ROLE", "Admin");
     containers.add(grafana);
 
-    GenericContainer<?> grafanaDashboards = new GenericContainer<>("appropriate/curl")
+    GenericContainer<?> grafanaDashboards = new GenericContainer<>(parse("appropriate/curl:latest"))
       .withNetwork(Network.SHARED)
       .withCommand("/create.sh")
       .withCopyFileToContainer(
         MountableFile.forClasspathResource("create-datasource-and-dashboard.sh"), "/create.sh");
     containers.add(grafanaDashboards);
 
-    GenericContainer<?> wrk = new GenericContainer<>("skandyla/wrk")
+    GenericContainer<?> wrk = new GenericContainer<>(parse("skandyla/wrk:latest"))
       .withNetwork(Network.SHARED)
       .withCommand("-t4 -c128 -d100s http://frontend:8081 --latency");
     containers.add(wrk);
 
     grafanaDashboards.dependsOn(grafana);
     wrk.dependsOn(frontend, backend, prometheus, grafanaDashboards, zipkin);
-    if (storage != null) {
-      wrk.dependsOn(storage);
-    }
+    if (storage != null) wrk.dependsOn(storage);
 
     Startables.deepStart(Stream.of(wrk)).join();
 
     System.out.println("Benchmark started.");
-    if (zipkin != null) {
-      printContainerMapping(zipkin);
-    }
-    if (storage != null) {{
-      printContainerMapping(storage);
-    }}
+    if (zipkin != null) printContainerMapping(zipkin);
+    if (storage != null) printContainerMapping(storage);
     printContainerMapping(backend);
     printContainerMapping(frontend);
     printContainerMapping(prometheus);
@@ -251,7 +250,7 @@ class ServerIntegratedBenchmark {
 
   GenericContainer<?> createZipkinContainer(@Nullable GenericContainer<?> storage)
     throws Exception {
-    Map<String, String> env = new HashMap<>();
+    Map<String, String> env = new LinkedHashMap<>();
     if (storage != null) {
       String name = storage.getLabels().get("name");
       String host = name;
@@ -281,7 +280,7 @@ class ServerIntegratedBenchmark {
 
     final GenericContainer<?> zipkin;
     if (RELEASED_ZIPKIN_VERSION == null) {
-      zipkin = new GenericContainer<>("gcr.io/distroless/java:11-debug");
+      zipkin = new GenericContainer<>(parse("openzipkin/zipkin-builder:latest"));
       List<String> classpath = new ArrayList<>();
       for (String item : System.getProperty("java.class.path").split(File.pathSeparator)) {
         Path path = Paths.get(item);
@@ -312,7 +311,7 @@ class ServerIntegratedBenchmark {
       // Don't fail on classpath problem from missing lens, as we don't use it.
       env.put("ZIPKIN_UI_ENABLED", "false");
     } else {
-      zipkin = new GenericContainer<>("openzipkin/zipkin:" + RELEASED_ZIPKIN_VERSION);
+      zipkin = new GenericContainer<>(parse("openzipkin/zipkin:" + RELEASED_ZIPKIN_VERSION));
     }
 
     zipkin
@@ -330,8 +329,7 @@ class ServerIntegratedBenchmark {
       "Container %s ports exposed at %s",
       container.getDockerImageName(),
       container.getExposedPorts().stream()
-        .map(port -> new AbstractMap.SimpleImmutableEntry<>(
-          port,
+        .map(port -> new SimpleImmutableEntry<>(port,
           "http://" + container.getContainerIpAddress() + ":" + container.getMappedPort(port)))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
   }
