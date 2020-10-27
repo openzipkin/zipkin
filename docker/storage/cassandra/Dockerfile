@@ -25,7 +25,7 @@ COPY docker/storage/cassandra/install.sh /install/
 COPY docker/storage/cassandra/docker-bin/* /docker-bin/
 
 # Until Cassandra supports recent JDKs, we can't re-use our builder
-FROM openzipkin/java:${java_version} as install
+FROM ghcr.io/openzipkin/java:${java_version} as install
 
 # Use latest stable release here.
 ENV CASSANDRA_VERSION=3.11.8
@@ -36,7 +36,7 @@ COPY --from=scratch /zipkin-schemas/* ./zipkin-schemas/
 COPY --from=scratch /install/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
-FROM openzipkin/java:${java_version} as zipkin-cassandra
+FROM ghcr.io/openzipkin/java:${java_version} as zipkin-cassandra
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=scratch /docker-bin/* /usr/local/bin/
