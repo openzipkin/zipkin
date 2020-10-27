@@ -202,7 +202,7 @@ elif is_travis_branch_master; then
     ./mvnw --batch-mode -s ./.settings.xml -nsu -N io.zipkin.centralsync-maven-plugin:centralsync-maven-plugin:sync
     javadoc_to_gh_pages
   else
-    build_docker_master
+    push_docker_master
   fi
 
 # If we are on a release tag, the following will update any version references and push a version tag for deployment.
