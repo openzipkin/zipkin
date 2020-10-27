@@ -20,6 +20,11 @@
 # substitutions like: ${DOCKER_TAG//,/ }
 set -eux
 
+if [ "${DOCKER_TAG}" = "master" ]; then
+  echo Travis builds master, not Docker Hub
+  exit 1
+fi
+
 # Docker Hub's default build command seems to not handle .dockerignore correctly. Doing a simple
 # build command ourselves works fine.
 

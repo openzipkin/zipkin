@@ -25,7 +25,7 @@ COPY . /code/
 # zipkin-builder - An image that caches build repositories (.m2, .npm) to speed up subsequent builds.
 #####
 
-FROM openzipkin/zipkin-builder as install
+FROM ghcr.io/openzipkin/zipkin-builder as install
 
 WORKDIR /install
 
@@ -37,16 +37,6 @@ ARG release_version
 ENV RELEASE_VERSION=$release_version
 COPY docker/bin/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
-
-# docker/hooks/post_push will republish what is otherwise built in docker/build/Dockerfile
-# This is a copy/paste from builder/Dockerfile:
-#
-# zipkin-builder is JDK + artifact caches because DockerHub doesn't support another way to update
-# cache between builds.
-FROM ghcr.io/openzipkin/java:${java_version} as zipkin-builder
-
-COPY --from=install /root/.m2 /root/.m2
-COPY --from=install /root/.npm /root/.npm
 
 #####
 # zipkin-ui - An image containing the Zipkin web frontend only, served by NGINX

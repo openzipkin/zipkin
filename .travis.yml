@@ -35,6 +35,8 @@ before_install:
 
   # Disable testcontainers checks
   - echo checks.disable=true > ~/.testcontainers.properties
+  # Log in to Docker Hub for releasing the image
+  - echo "$GH_TOKEN"| docker login ghcr.io -u "$GH_USER" --password-stdin
   # allocate commits to CI, not the owner of the deploy key
   - git config user.name "zipkinci"
   - git config user.email "zipkinci+zipkin-dev@googlegroups.com"
@@ -70,8 +72,10 @@ env:
     - secure: "HvCQa4ZC7dexW8Iddbwtox4NY4yvoZtyYtkwlRG5Jh/h7MY1rFwghpqv42WunOnq+hgpVUWCJPM2sM1WY+JQQXSRFFfkUxSnVGfyqIRW3oHf6uK4Sw4rtX+Q/nthliu5QNqReMcg0+rr/UD2Nxat4QZqtnlVm2MQJNu8oxcm0hw="
     # Ex. travis encrypt BINTRAY_KEY=xxx-https://bintray.com/profile/edit-xxx
     - secure: "JC8sJHol2tGQT8QK00L8YQZjeo8gUnGS3x+kuYwF4UknJrJbz4+UU4uz2VDQJNdomjROngO6qLZrZmHOuV9l2LswZ7atlvMdEA16lxwKUQKK9xq4Qs5RxdZsz+zJwmEW5QcocjM1bRAQv+y4MPY9rHmoWEjtFQzfEovBpwFjafM="
+    # Ex. travis encrypt GH_USER=your_github_account
+    - secure: "DOR/FJHQ5O9zUKd3NMfPxs9qbKewd8BngJprLOKHY7X2ytxEHt+nYC0oReJYafNDCSkmB6TqFoFqUCOVHq3MV1+JyB7AE4Wnv5uSBuXc6PPLhFAbvk8t4K93ZcP7dtQ2fMivXow9Biwifsb86hxE2cbugAPzK0u4P/K0I+jR83w="
     # Ex. travis encrypt GH_TOKEN=XXX-https://github.com/settings/tokens-XXX
-    - secure: "MHpcpzQD/IVIDYtqK8DTJZ8qRsOUjUQhMqgLRCUtgOJUT/viM4QyrTZ1Yy+RkMsk5yO1+0wzteUuKJdni6Qo9PGBKU6arNPovf3/6vBZIeGPzFSeW+Mv9f83xLtvmneactNUBshJVr9jERycBy0/CRRWZqHwlWxXm9AfIZWzIDA="
+    - secure: "iXguaqYanWISgCtzyvEh7qj5JzTkCQfAzzuCpmEouSfUtkLMjn89p1wz+MMoSYsyswoeyZ+U19vyYCUkFv61XuskYXwa/2h2cVB7PGCu9Wevmjiog6LekfaRFzrdwHbvTEe0l2b7MfGmblzc/OB49phNjhTMqTcGI2dkR/O9qgQ="
     # Ex. travis encrypt SONATYPE_USER=your_sonatype_account
     - secure: "RF2kzoNPeQO6As/2VcNAxb8HDptXLf3dejJBiZHNNTSYTDWeAIjGQeW0edu908+OQwuhC1y94oXWADzuaAgLTg32YU8rwU0esNjTp4e2QL7EsELVzoTUPJrvoG2DasF8wOXd+Vr2nPEIZiuUonrFQR75Bb7OWq1FQjtXemfVksI="
     # Ex. travis encrypt SONATYPE_PASSWORD=your_sonatype_password
