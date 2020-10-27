@@ -24,7 +24,7 @@ COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /zipkin-schemas/
 COPY docker/storage/mysql/install.sh /install/
 COPY docker/storage/mysql/docker-bin/* /docker-bin/
 
-FROM alpine:${alpine_version} as install
+FROM ghcr.io/openzipkin/java:${java_version}-jre as install
 
 WORKDIR /install
 
