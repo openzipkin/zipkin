@@ -43,7 +43,7 @@ RUN /tmp/install.sh && rm /tmp/install.sh
 #
 # zipkin-builder is JDK + artifact caches because DockerHub doesn't support another way to update
 # cache between builds.
-FROM openzipkin/java:${java_version} as zipkin-builder
+FROM ghcr.io/openzipkin/java:${java_version} as zipkin-builder
 
 COPY --from=install /root/.m2 /root/.m2
 COPY --from=install /root/.npm /root/.npm
@@ -52,7 +52,8 @@ COPY --from=install /root/.npm /root/.npm
 # zipkin-ui - An image containing the Zipkin web frontend only, served by NGINX
 #####
 
-FROM nginx:1.18-alpine as zipkin-ui
+# Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
+FROM quay.io/app-sre/nginx:1.19-alpine as zipkin-ui
 LABEL MAINTAINER OpenZipkin "http://zipkin.io/"
 
 ENV ZIPKIN_BASE_URL=http://zipkin:9411
@@ -72,7 +73,7 @@ RUN mkdir -p /var/tmp/nginx && chown -R nginx:nginx /var/tmp/nginx
 EXPOSE 80
 
 # Almost everything is common between the slim and normal build
-FROM openzipkin/java:${java_version}-jre as base-server
+FROM ghcr.io/openzipkin/java:${java_version}-jre as base-server
 
 # All content including binaries and logs write under WORKDIR
 ARG USER=zipkin

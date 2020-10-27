@@ -21,7 +21,7 @@ FROM scratch as scratch
 
 COPY . /code/
 
-FROM openzipkin/java:${java_version} as built
+FROM ghcr.io/openzipkin/java:${java_version} as built
 
 # Copy Maven source tree into the Docker context
 COPY --from=scratch /code /code
@@ -34,7 +34,7 @@ RUN mvn -T1C -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zip
 
 # zipkin-builder is JDK + artifact caches because DockerHub doesn't support another way to update
 # cache between builds.
-FROM openzipkin/java:${java_version} as zipkin-builder
+FROM ghcr.io/openzipkin/java:${java_version} as zipkin-builder
 
 COPY --from=built /root/.m2 /root/.m2
 COPY --from=built /root/.npm /root/.npm

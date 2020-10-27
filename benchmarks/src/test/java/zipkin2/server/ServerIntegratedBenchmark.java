@@ -151,14 +151,14 @@ class ServerIntegratedBenchmark {
 
   void runBenchmark(@Nullable GenericContainer<?> storage, GenericContainer<?> zipkin)
     throws Exception {
-    GenericContainer<?> backend = new GenericContainer<>(parse("openzipkin/example-brave:armeria"))
+    GenericContainer<?> backend = new GenericContainer<>(parse("ghcr.io/openzipkin/brave-example:armeria"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("backend")
       .withCommand("backend")
       .withExposedPorts(9000)
       .waitingFor(Wait.forHealthcheck());
 
-    GenericContainer<?> frontend = new GenericContainer<>(parse("openzipkin/example-brave:armeria"))
+    GenericContainer<?> frontend = new GenericContainer<>(parse("ghcr.io/openzipkin/brave-example:armeria"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("frontend")
       .withCommand("frontend")

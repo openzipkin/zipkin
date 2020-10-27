@@ -12,7 +12,8 @@
 # the License.
 #
 
-ARG alpine_version
+# We don't use Java in this image, but we switch to a base layer that is managed by OpenZipkin
+ARG java_version
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -31,8 +32,8 @@ COPY --from=scratch /zipkin-schemas/* ./zipkin-schemas/
 COPY --from=scratch /install/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
-# Use a small base image at runtime
-FROM alpine:${alpine_version} as zipkin-mysql
+# Re-use the base layer other images use
+FROM ghcr.io/openzipkin/java:${java_version}-jre as zipkin-mysql
 
 # Add the mysql binary and handle installation edge cases
 RUN apk add --no-cache mysql && \
