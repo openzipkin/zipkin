@@ -23,10 +23,6 @@ TARGET=${1:-zipkin}
 TAG=${2:-test}
 RELEASE_VERSION=${RELEASE_VERSION:-master}
 
-# Try to re-use the same base Alpine Linux version as we do in
-# https://github.com/openzipkin/docker-java/blob/master/Dockerfile
-ALPINE_VERSION=${ALPINE_VERSION:-3.12}
-
 # When publishing jars, we build with JDK 11 to ensure we can write 1.6 zipkin.jar for Brave.
 # However, when creating Docker images, there's no such requirement.
 # Hence, we use one version to keep the layer count manageable and centralized here.
@@ -69,8 +65,7 @@ esac
 
 # Build the image
 IMAGE=openzipkin/${TARGET}:${TAG}
-echo Building image ${IMAGE}
-docker build -f "${DOCKERFILE_PATH}" -t ${IMAGE} \
-    --build-arg java_version=${JAVA_VERSION} --build-arg alpine_version=${ALPINE_VERSION} \
-    --build-arg release_version="${RELEASE_VERSION}" \
-    --target ${TARGET} .
+echo "Building image ${IMAGE} with java_version ${JAVA_VERSION}"
+docker build -f "${DOCKERFILE_PATH}" -t "${IMAGE}" \
+    --build-arg "java_version=${JAVA_VERSION}" --build-arg release_version="${RELEASE_VERSION}" \
+    --target "${TARGET}" .
