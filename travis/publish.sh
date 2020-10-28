@@ -172,12 +172,12 @@ if ! is_pull_request && build_started_by_tag; then
 fi
 
 # During a release upload, don't run tests as they can flake or overrun the max time allowed by Travis.
-# skip license on travis due to #1512
 if is_release_commit; then
   true
 else
+  # skip license on travis due to #1512
   # Ensure no tests rely on the actuator library
-  ./mvnw verify -nsu -DskipActuator
+  ./mvnw verify -nsu -Dlicense.skip=true -DskipActuator
 fi
 
 # If we are on a pull request, our only job is to run tests, which happened above via ./mvnw install
