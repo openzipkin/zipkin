@@ -19,34 +19,30 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
-import zipkin2.internal.DelayLimiter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.Mockito.mock;
 
 public class DeduplicatingInsertTest {
-  List<String> values = new ArrayList<>();
-  AtomicReference<String> failValue = new AtomicReference<>();
+  @Test void dedupesSameCalls() throws Exception {
+    TestFactory testFactory = new TestFactory();
 
-  DeduplicatingInsert.Factory<String> callFactory = new Factory();
-
-  @Test public void dedupesSameCalls() throws Exception {
     List<Call<Void>> calls = new ArrayList<>();
-    callFactory.maybeAdd("foo", calls);
-    callFactory.maybeAdd("bar", calls);
-    callFactory.maybeAdd("foo", calls);
-    callFactory.maybeAdd("bar", calls);
-    callFactory.maybeAdd("bar", calls);
+    testFactory.maybeAdd("foo", calls);
+    testFactory.maybeAdd("bar", calls);
+    testFactory.maybeAdd("foo", calls);
+    testFactory.maybeAdd("bar", calls);
+    testFactory.maybeAdd("bar", calls);
     assertThat(calls).hasSize(2);
 
     for (Call<Void> call : calls) {
       call.execute();
     }
-    assertThat(values).containsExactly("foo", "bar");
+    assertThat(testFactory.values).containsExactly("foo", "bar");
   }
 
   Callback<Void> assertFailOnError = new Callback<Void>() {
@@ -58,23 +54,27 @@ public class DeduplicatingInsertTest {
     }
   };
 
-  @Test public void enqueuesInOrder() {
+  @Test void enqueuesInOrder() {
+    TestFactory testFactory = new TestFactory();
+
     List<Call<Void>> calls = new ArrayList<>();
-    callFactory.maybeAdd("foo", calls);
-    callFactory.maybeAdd("bar", calls);
+    testFactory.maybeAdd("foo", calls);
+    testFactory.maybeAdd("bar", calls);
 
     for (Call<Void> call : calls) {
       call.enqueue(assertFailOnError);
     }
-    assertThat(values).containsExactly("foo", "bar");
+    assertThat(testFactory.values).containsExactly("foo", "bar");
   }
 
-  @Test public void exceptionsInvalidate_enqueue() {
-    List<Call<Void>> calls = new ArrayList<>();
-    callFactory.maybeAdd("foo", calls);
-    callFactory.maybeAdd("bar", calls);
+  @Test void exceptionsInvalidate_enqueue() {
+    TestFactory testFactory = new TestFactory();
 
-    failValue.set("foo");
+    List<Call<Void>> calls = new ArrayList<>();
+    testFactory.maybeAdd("foo", calls);
+    testFactory.maybeAdd("bar", calls);
+
+    testFactory.failValue.set("foo");
 
     try {
       calls.get(0).enqueue(assertFailOnError);
@@ -83,22 +83,24 @@ public class DeduplicatingInsertTest {
     }
 
     calls.get(1).enqueue(assertFailOnError);
-    assertThat(values).containsExactly("bar");
+    assertThat(testFactory.values).containsExactly("bar");
 
     calls.clear();
-    callFactory.maybeAdd("foo", calls);
+    testFactory.maybeAdd("foo", calls);
     assertThat(calls).isNotEmpty(); // invalidates on exception
 
     calls.get(0).enqueue(assertFailOnError);
-    assertThat(values).containsExactly("bar", "foo");
+    assertThat(testFactory.values).containsExactly("bar", "foo");
   }
 
-  @Test public void exceptionsInvalidate_execute() throws Exception {
-    List<Call<Void>> calls = new ArrayList<>();
-    callFactory.maybeAdd("foo", calls);
-    callFactory.maybeAdd("bar", calls);
+  @Test void exceptionsInvalidate_execute() throws Exception {
+    TestFactory testFactory = new TestFactory();
 
-    failValue.set("foo");
+    List<Call<Void>> calls = new ArrayList<>();
+    testFactory.maybeAdd("foo", calls);
+    testFactory.maybeAdd("bar", calls);
+
+    testFactory.failValue.set("foo");
 
     try {
       calls.get(0).execute();
@@ -107,45 +109,50 @@ public class DeduplicatingInsertTest {
     }
 
     calls.get(1).execute();
-    assertThat(values).containsExactly("bar");
+    assertThat(testFactory.values).containsExactly("bar");
 
     calls.clear();
-    callFactory.maybeAdd("foo", calls);
+    testFactory.maybeAdd("foo", calls);
     assertThat(calls).isNotEmpty(); // invalidates on exception
 
     calls.get(0).execute();
-    assertThat(values).containsExactly("bar", "foo");
+    assertThat(testFactory.values).containsExactly("bar", "foo");
   }
 
-  final class Factory extends DeduplicatingInsert.Factory<String> {
-    Factory() {
+  static final class TestFactory extends DeduplicatingInsert.Factory<String> {
+    List<String> values = new ArrayList<>();
+    AtomicReference<String> failValue = new AtomicReference<>();
+
+    TestFactory() {
       super(1000, 1000);
     }
 
     @Override protected Call<Void> newCall(String string) {
-      return new TestDeduplicatingInsert(delayLimiter, string);
+      return new TestDeduplicatingInsert(this, string);
     }
   }
 
-  final class TestDeduplicatingInsert extends DeduplicatingInsert<String> {
+  static final class TestDeduplicatingInsert extends DeduplicatingInsert<String> {
+    final TestFactory factory;
 
-    TestDeduplicatingInsert(DelayLimiter<String> delayLimiter, String input) {
-      super(delayLimiter, input);
+    TestDeduplicatingInsert(TestFactory factory, String input) {
+      super(factory.delayLimiter, input);
+      this.factory = factory;
     }
 
     @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
-      if (input.equals(failValue.get())) {
-        failValue.set(null);
+      if (input.equals(factory.failValue.get())) {
+        factory.failValue.set(null);
         CompletableFuture<AsyncResultSet> result = new CompletableFuture<>();
         result.completeExceptionally(new AssertionError());
         return result;
       }
-      values.add(input);
+      factory.values.add(input);
       return CompletableFuture.completedFuture(mock(AsyncResultSet.class));
     }
 
     @Override public Call<Void> clone() {
-      return new TestDeduplicatingInsert(delayLimiter, input);
+      return new TestDeduplicatingInsert(factory, input);
     }
   }
 }
