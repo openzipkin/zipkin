@@ -14,7 +14,6 @@
 #
 
 set -euo pipefail
-set -v
 
 build_started_by_tag() {
   if [ "${TRAVIS_TAG}" == "" ]; then
