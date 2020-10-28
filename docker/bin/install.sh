@@ -15,9 +15,11 @@
 
 set -eux
 
-# This script decides based on $RELEASE_VERSION whether to build or download the binaries we need.
-if [ "$RELEASE_VERSION" = "master" ]
-then
+# This script decides based on $RELEASE_FROM_CONTEXT and $RELEASE_VERSION whether to reuse, build,
+# or download the binaries we need.
+if [ "$RELEASE_FROM_CONTEXT" = "true" ]; then
+  echo "*** Reusing binaries in the Docker context..."
+elif [ "$RELEASE_VERSION" = "master" ]; then
   echo "*** Building from source..."
   # Use the same command as we suggest in zipkin-server/README.md
   #  * Uses mvn not ./mvnw to reduce layer size: we control the Maven version in Docker

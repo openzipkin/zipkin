@@ -1,3 +1,4 @@
+# https://docs.docker.com/engine/reference/builder/#dockerignore-file
 **/.*
 !.dockerignore
 !.mvn
@@ -21,3 +22,7 @@
 **/Dockerfile
 docker/hooks/**
 travis/**
+
+# Allow re-use of built artifacts when building docker from master or a release tag
+!/zipkin-exec.jar
+!/zipkin-slim.jar
