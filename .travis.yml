@@ -60,12 +60,13 @@ jobs:
       install: ./mvnw install -DskipTests=true -Dlicense.skip=true -Dmaven.javadoc.skip=true -B -V -Prelease
       script: ./travis/publish.sh
     # Only on master when not a release tag. See https://github.com/travis-ci/travis-conditions/
-    - if: (branch = master) and (env(TRAVIS_BRANCH) = master)
-      name: Republish zipkin-builder Docker image
+    - name: Republish zipkin-builder Docker image
       script:
-        - docker/build_image zipkin-builder latest
-        - docker tag openzipkin/zipkin-builder ghcr.io/openzipkin/zipkin-builder
-        - docker push ghcr.io/openzipkin/zipkin-builder
+        - |
+          docker/build_image zipkin-builder latest
+          docker tag openzipkin/zipkin-builder ghcr.io/openzipkin/zipkin-builder
+          docker push ghcr.io/openzipkin/zipkin-builder
+      if: 'type IN (push) and branch = master'
 
 branches:
   except:
