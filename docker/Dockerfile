@@ -35,6 +35,9 @@ COPY --from=scratch /code /code
 # This will either be "master" or a real version ex. "2.4.5"
 ARG release_version
 ENV RELEASE_VERSION=$release_version
+# When true, main images reuse zipkin-exec.jar and zipkin-slim.jar in the context root
+ARG release_from_context=false
+ENV RELEASE_FROM_CONTEXT=$release_from_context
 COPY docker/bin/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 

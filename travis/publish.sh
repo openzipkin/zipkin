@@ -147,10 +147,13 @@ javadoc_to_gh_pages() {
 }
 
 push_docker_master() {
+  # Stage artifacts just built to re-use in the zipkin, zipkin-slim and zipkin-ui images
+  cp zipkin-server/target/zipkin-server-*-exec.jar zipkin-exec.jar
+  cp zipkin-server/target/zipkin-server-*-slim.jar zipkin-slim.jar
   for target in $(docker/bin/targets-to-build); do
     image=openzipkin/${target}
     echo Building ${image}
-    docker/build_image ${target} master
+    RELEASE_FROM_CONTEXT=true docker/build_image ${target} master
     docker tag "${image}:master" "ghcr.io/${image}:master"
     docker push "ghcr.io/${image}:master"
   done

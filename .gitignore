@@ -13,10 +13,8 @@ _site/
 .idea
 *.iml
 *.swp
-# .travis.yml installs things
-/apache-cassandra-*
-/elasticsearch-*
-/kafka_*
+# quickstart or temporary copies of zipkin's jar
+*.jar
 # temporary directory used by travis/publish.sh for building gh-pages
 /javadoc-builddir
 .DS_Store
