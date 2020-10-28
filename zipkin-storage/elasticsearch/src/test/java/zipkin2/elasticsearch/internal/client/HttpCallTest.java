@@ -218,7 +218,8 @@ class HttpCallTest {
 
     assertThatThrownBy(() -> http.newCall(REQUEST, NULL, "test").execute())
       .isInstanceOf(RejectedExecutionException.class)
-      .hasMessageContaining("OPENSSL_internal");
+      // depending on JDK this is "OPENSSL_internal" or "not an SSL/TLS record"
+      .hasMessageContaining("SSL");
   }
 
   @Test void unprocessedRequest() {
