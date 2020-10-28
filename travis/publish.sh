@@ -14,7 +14,6 @@
 #
 
 set -euo pipefail
-set -v
 
 build_started_by_tag() {
   if [ "${TRAVIS_TAG}" == "" ]; then
@@ -155,11 +154,6 @@ push_docker_master() {
     docker tag "${image}:master" "ghcr.io/${image}:master"
     docker push "ghcr.io/${image}:master"
   done
-
-  echo Building zipkin-builder
-  docker/build_image zipkin-builder latest
-  docker tag openzipkin/zipkin-builder ghcr.io/openzipkin/zipkin-builder
-  docker push ghcr.io/openzipkin/zipkin-builder
 }
 
 run_docker_hub_build() {
@@ -178,12 +172,12 @@ if ! is_pull_request && build_started_by_tag; then
 fi
 
 # During a release upload, don't run tests as they can flake or overrun the max time allowed by Travis.
-# skip license on travis due to #1512
 if is_release_commit; then
   true
 else
+  # skip license on travis due to #1512
   # Ensure no tests rely on the actuator library
-  MYSQL_USER=root ./mvnw verify -nsu -DskipActuator
+  ./mvnw verify -nsu -Dlicense.skip=true -DskipActuator
 fi
 
 # If we are on a pull request, our only job is to run tests, which happened above via ./mvnw install

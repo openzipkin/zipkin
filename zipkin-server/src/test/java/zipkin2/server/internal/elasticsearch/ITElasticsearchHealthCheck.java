@@ -19,7 +19,7 @@ import com.linecorp.armeria.server.healthcheck.HealthCheckService;
 import com.linecorp.armeria.server.healthcheck.SettableHealthChecker;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
 import java.util.concurrent.TimeUnit;
-import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLException;
 import org.awaitility.core.ConditionFactory;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -119,7 +119,8 @@ public class ITElasticsearchHealthCheck {
       CheckResult result = storage.check();
       assertThat(result.ok()).isFalse();
       // Test this is not wrapped in a rejection exception, as health check is not throttled
-      assertThat(result.error()).isInstanceOf(SSLHandshakeException.class);
+      // Depending on JDK this is SSLHandshakeException or NotSslRecordException
+      assertThat(result.error()).isInstanceOf(SSLException.class);
     }
   }
 

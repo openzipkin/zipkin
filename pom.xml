@@ -782,6 +782,7 @@
           <plugin>
             <groupId>com.mycila</groupId>
             <artifactId>license-maven-plugin</artifactId>
+            <version>${license-maven-plugin.version}</version>
             <executions>
               <execution>
                 <phase>none</phase>
