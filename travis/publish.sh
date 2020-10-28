@@ -178,7 +178,7 @@ if is_release_commit; then
   true
 else
   # Ensure no tests rely on the actuator library
-  MYSQL_USER=root ./mvnw verify -nsu -DskipActuator
+  ./mvnw verify -nsu -DskipActuator
 fi
 
 # If we are on a pull request, our only job is to run tests, which happened above via ./mvnw install
