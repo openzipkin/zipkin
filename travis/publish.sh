@@ -155,11 +155,6 @@ push_docker_master() {
     docker tag "${image}:master" "ghcr.io/${image}:master"
     docker push "ghcr.io/${image}:master"
   done
-
-  echo Building zipkin-builder
-  docker/build_image zipkin-builder latest
-  docker tag openzipkin/zipkin-builder ghcr.io/openzipkin/zipkin-builder
-  docker push ghcr.io/openzipkin/zipkin-builder
 }
 
 run_docker_hub_build() {
