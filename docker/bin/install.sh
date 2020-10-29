@@ -19,6 +19,8 @@ set -eux
 # or download the binaries we need.
 if [ "$RELEASE_FROM_CONTEXT" = "true" ]; then
   echo "*** Reusing binaries in the Docker context..."
+  cp /code/zipkin-exec.jar zipkin-exec.jar
+  cp /code/zipkin-slim.jar zipkin-slim.jar
 elif [ "$RELEASE_VERSION" = "master" ]; then
   echo "*** Building from source..."
   # Use the same command as we suggest in zipkin-server/README.md
