@@ -28,9 +28,8 @@ COPY --from=scratch /code /code
 
 WORKDIR /code
 
-# Use the same command as we suggest in zipkin-server/README.md to hydrate the Maven and NPM cache
-#  * Uses mvn not ./mvnw to reduce layer size: we control the Maven version independently in Docker
-RUN mvn -T1C -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server package
+# Run our script to hydrate the Maven and NPM cache
+RUN /code/build-bin/go_offline
 
 # zipkin-builder is JDK + artifact caches because DockerHub doesn't support another way to update
 # cache between builds.

@@ -147,9 +147,6 @@ javadoc_to_gh_pages() {
 }
 
 push_docker_master() {
-  # Stage artifacts just built to re-use in the zipkin, zipkin-slim and zipkin-ui images
-  cp zipkin-server/target/zipkin-server-*-exec.jar zipkin-exec.jar
-  cp zipkin-server/target/zipkin-server-*-slim.jar zipkin-slim.jar
   for target in $(docker/bin/targets-to-build); do
     image=openzipkin/${target}
     echo Building ${image}
@@ -178,9 +175,11 @@ fi
 if is_release_commit; then
   true
 else
-  # skip license on travis due to #1512
-  # Ensure no tests rely on the actuator library
-  ./mvnw verify -nsu -Dlicense.skip=true -DskipActuator
+  # "clean package" ensures we produce binaries in this stage. We don't need to install them.
+  # -Prelease ensures the core jar ends up JRE 1.6 compatible
+  # -Dlicense.skip=true skips license on Travis due to #1512
+  # -DskipActuatorensures no tests rely on the actuator library
+  ./mvnw clean package -Prelease -nsu -Dlicense.skip=true -DskipActuator
 fi
 
 # If we are on a pull request, our only job is to run tests, which happened above via ./mvnw install
@@ -190,6 +189,12 @@ if is_pull_request; then
 # If we are on master, we will deploy the latest snapshot or release version
 #   - If a release commit fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
 elif is_travis_branch_master; then
+  # Eagerly stage and verify we produced binaries re-used in a potential Docker build
+  cp zipkin-server/target/zipkin-server-*-exec.jar zipkin-exec.jar
+  cp zipkin-server/target/zipkin-server-*-slim.jar zipkin-slim.jar
+  test -f zipkin-exec.jar
+  test -f zipkin-slim.jar
+
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests deploy
 
   # If the deployment succeeded, sync it to Maven Central and build the Docker image.

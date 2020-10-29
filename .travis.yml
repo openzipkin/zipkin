@@ -57,7 +57,7 @@ jobs:
     - name: default
       # Override default travis to use the maven wrapper
       # * Use the "release" profile as that ensures the core jar ends up JRE 1.6 compatible
-      install: ./mvnw install -DskipTests=true -Dlicense.skip=true -Dmaven.javadoc.skip=true -B -V -Prelease
+      install: ./build-bin/go_offline
       script: ./travis/publish.sh
     # Only on master when not a release tag. See https://github.com/travis-ci/travis-conditions/
     - name: Republish zipkin-builder Docker image
@@ -85,20 +85,32 @@ notifications:
     on_success: change
     on_failure: always
 
+
+# Secure variables needed for release and publication
+#
+# When Travis, add to https://travis-ci.org/github/openzipkin/${REPO}/settings
+#
+# GH_TOKEN=XXX-https://github.com/settings/tokens-XXX
+#   - makes release commits and tags, also writes to GHCR if Docker
+#   - needs repo:status, public_repo and if Docker write:packages, delete:packages
+#   - referenced in .settings.xml
+#   - store like this: echo "https://$GH_TOKEN:@github.com" > .git/credentials
+# GH_USER=user_that_created_GH_TOKEN
+# SONATYPE_USER=your_sonatype_account_token
+#   - used to publish to Maven Central via https://oss.sonatype.org/#stagingRepositories
+#   - needs access to io.zipkin via https://issues.sonatype.org/browse/OSSRH-16669
+#   - generate via https://oss.sonatype.org/#profile;User%20Token
+#   - referenced in .settings.xml
+# SONATYPE_PASSWORD=password_to_SONATYPE_USER
+#   - referenced in .settings.xml
+#
+# Legacy variables are listed here:
 env:
   global:
     # Ex. travis encrypt BINTRAY_USER=your_github_account
     - secure: "HvCQa4ZC7dexW8Iddbwtox4NY4yvoZtyYtkwlRG5Jh/h7MY1rFwghpqv42WunOnq+hgpVUWCJPM2sM1WY+JQQXSRFFfkUxSnVGfyqIRW3oHf6uK4Sw4rtX+Q/nthliu5QNqReMcg0+rr/UD2Nxat4QZqtnlVm2MQJNu8oxcm0hw="
     # Ex. travis encrypt BINTRAY_KEY=xxx-https://bintray.com/profile/edit-xxx
     - secure: "JC8sJHol2tGQT8QK00L8YQZjeo8gUnGS3x+kuYwF4UknJrJbz4+UU4uz2VDQJNdomjROngO6qLZrZmHOuV9l2LswZ7atlvMdEA16lxwKUQKK9xq4Qs5RxdZsz+zJwmEW5QcocjM1bRAQv+y4MPY9rHmoWEjtFQzfEovBpwFjafM="
-    # Ex. travis encrypt GH_USER=your_github_account
-    - secure: "DOR/FJHQ5O9zUKd3NMfPxs9qbKewd8BngJprLOKHY7X2ytxEHt+nYC0oReJYafNDCSkmB6TqFoFqUCOVHq3MV1+JyB7AE4Wnv5uSBuXc6PPLhFAbvk8t4K93ZcP7dtQ2fMivXow9Biwifsb86hxE2cbugAPzK0u4P/K0I+jR83w="
-    # Ex. travis encrypt GH_TOKEN=XXX-https://github.com/settings/tokens-XXX
-    - secure: "iXguaqYanWISgCtzyvEh7qj5JzTkCQfAzzuCpmEouSfUtkLMjn89p1wz+MMoSYsyswoeyZ+U19vyYCUkFv61XuskYXwa/2h2cVB7PGCu9Wevmjiog6LekfaRFzrdwHbvTEe0l2b7MfGmblzc/OB49phNjhTMqTcGI2dkR/O9qgQ="
-    # Ex. travis encrypt SONATYPE_USER=your_sonatype_account
-    - secure: "RF2kzoNPeQO6As/2VcNAxb8HDptXLf3dejJBiZHNNTSYTDWeAIjGQeW0edu908+OQwuhC1y94oXWADzuaAgLTg32YU8rwU0esNjTp4e2QL7EsELVzoTUPJrvoG2DasF8wOXd+Vr2nPEIZiuUonrFQR75Bb7OWq1FQjtXemfVksI="
-    # Ex. travis encrypt SONATYPE_PASSWORD=your_sonatype_password
-    - secure: "SJHHBfEu2iTyz1zvdJBi21NvJlBrN2ATZBV6ko2qhotOqc0CgUSAg7i6+7F4R/DjvI42/ufwQTCcy0bYKj+xCb6JXjLa8l28sfprv8thM7eExg9Fq4qWVgQUVX4BSHSYd1kBxod5kj/S+esRiREbbjfNAOhuQZXxjzrsjyRlzWc="
 
     # To trigger Docker image publication, we need the Trigger Url from https://cloud.docker.com/u/openzipkin/repository/docker/openzipkin/zipkin/builds/edit
     # However, this is too big for travis encrypt. Instead, we decompose it into
