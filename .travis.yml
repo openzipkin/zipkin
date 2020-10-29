@@ -28,7 +28,7 @@ services:
 before_install:
   # Ensure Docker buildx is available and can build multi-architecture
   - |
-    # Enable experimental features on the server (multi-arch
+    # Enable experimental features on the server (multi-arch)
     echo '{"experimental":"enabled"}' > sudo tee /etc/docker/daemon.json
     # Enable experimental client features (eg docker buildx)
     mkdir -p $HOME/.docker && echo '{"experimental":"enabled"}' > $HOME/.docker/config.json
@@ -42,7 +42,6 @@ before_install:
     # Enable execution of different multi-architecture containers by QEMU and binfmt_misc
     # See https://github.com/multiarch/qemu-user-static
     docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-    docker buildx create --name builder --use
   - |
     # Use JDK 11, so we can release Java 6 bytecode
     OPENJDK_VERSION=11
@@ -78,11 +77,25 @@ jobs:
       # Override default travis to use the maven wrapper
       # * Use the "release" profile as that ensures the core jar ends up JRE 1.6 compatible
       install: ./build-bin/go_offline
-      script: ./travis/publish.sh
+      script:
+        - ./travis/publish.sh
+        - |
+          # If the above was a master build, it would have produced files we should push to Docker
+          if [[ -f zipkin-exec.jar && -f zipkin-slim.jar ]]; then
+            docker buildx create --name zipkin-master --use
+            for target in $(docker/bin/targets-to-build); do
+              image=openzipkin/${target}
+              echo Building ${image}
+              RELEASE_FROM_CONTEXT=true docker/build_image ${target} master
+              docker tag "${image}:master" "ghcr.io/${image}:master"
+              docker push "ghcr.io/${image}:master"
+            done
+          fi
     # Only on master when not a release tag. See https://github.com/travis-ci/travis-conditions/
     - name: Republish zipkin-builder Docker image
       script:
         - |
+          docker buildx create --name zipkin-builder --use
           docker/build_image zipkin-builder latest
           docker tag openzipkin/zipkin-builder ghcr.io/openzipkin/zipkin-builder
           docker push ghcr.io/openzipkin/zipkin-builder

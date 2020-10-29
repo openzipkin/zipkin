@@ -146,16 +146,6 @@ javadoc_to_gh_pages() {
   git push origin gh-pages
 }
 
-push_docker_master() {
-  for target in $(docker/bin/targets-to-build); do
-    image=openzipkin/${target}
-    echo Building ${image}
-    RELEASE_FROM_CONTEXT=true docker/build_image ${target} master
-    docker tag "${image}:master" "ghcr.io/${image}:master"
-    docker push "ghcr.io/${image}:master"
-  done
-}
-
 run_docker_hub_build() {
   project_version="$(print_project_version)"
   echo "Starting Docker Hub build for ${project_version}"
@@ -189,16 +179,6 @@ if is_pull_request; then
 # If we are on master, we will deploy the latest snapshot or release version
 #   - If a release commit fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
 elif is_travis_branch_master; then
-  # temporary debug
-  pwd
-  find . -name \*exec.jar
-  find . -name \*slim.jar
-  # Eagerly stage and verify we produced binaries re-used in a potential Docker build
-  cp zipkin-server/target/zipkin-server-*-exec.jar zipkin-exec.jar
-  cp zipkin-server/target/zipkin-server-*-slim.jar zipkin-slim.jar
-  test -f zipkin-exec.jar
-  test -f zipkin-slim.jar
-
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests deploy
 
   # If the deployment succeeded, sync it to Maven Central and build the Docker image.
@@ -208,7 +188,9 @@ elif is_travis_branch_master; then
     ./mvnw --batch-mode -s ./.settings.xml -nsu -N io.zipkin.centralsync-maven-plugin:centralsync-maven-plugin:sync
     javadoc_to_gh_pages
   else
-    push_docker_master
+    # Copy the binaries so that they can be externally pushed to Docker
+    cp zipkin-server/target/zipkin-server-*-exec.jar zipkin-exec.jar
+    cp zipkin-server/target/zipkin-server-*-slim.jar zipkin-slim.jar
   fi
 
 # If we are on a release tag, the following will update any version references and push a version tag for deployment.
