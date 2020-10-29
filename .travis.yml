@@ -26,6 +26,13 @@ services:
   - docker
 
 before_install:
+  # Ensure buildx is available
+  - |
+    export DOCKER_CLI_EXPERIMENTAL=enabled
+    echo '{"experimental":true}' | sudo tee /etc/docker/daemon.json
+    sudo service docker restart
+    docker info
+    docker buildx create --name builder --use
   - |
     # Use JDK 11, so we can release Java 6 bytecode
     OPENJDK_VERSION=11
@@ -50,6 +57,9 @@ before_install:
       # setup https authentication credentials, used by ./mvnw release:prepare
       git config credential.helper "store --file=.git/credentials"
       echo "https://$GH_TOKEN:@github.com" > .git/credentials
+
+      # Log in to Docker Hub for releasing the image
+      echo "$GH_TOKEN"| docker login ghcr.io -u "$GH_USER" --password-stdin
     fi
 
 jobs:

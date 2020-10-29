@@ -13,7 +13,7 @@
 # the License.
 #
 
-set -euo pipefail
+set -euxo pipefail
 
 build_started_by_tag() {
   if [ "${TRAVIS_TAG}" == "" ]; then
@@ -189,6 +189,10 @@ if is_pull_request; then
 # If we are on master, we will deploy the latest snapshot or release version
 #   - If a release commit fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
 elif is_travis_branch_master; then
+  # temporary debug
+  pwd
+  find . -name \*exec.jar
+  find . -name \*slim.jar
   # Eagerly stage and verify we produced binaries re-used in a potential Docker build
   cp zipkin-server/target/zipkin-server-*-exec.jar zipkin-exec.jar
   cp zipkin-server/target/zipkin-server-*-slim.jar zipkin-slim.jar
