@@ -26,10 +26,19 @@ services:
   - docker
 
 before_install:
-  # Ensure buildx is available and can build multi-architecture
+  # Ensure Docker buildx is available and can build multi-architecture
   - |
-    echo '{"experimental":true}' | sudo tee /etc/docker/daemon.json
-    sudo service docker restart
+    # Enable experimental features on the server (multi-arch
+    echo '{"experimental":"enabled"}' > sudo tee /etc/docker/daemon.json
+    # Enable experimental client features (eg docker buildx)
+    mkdir -p $HOME/.docker && echo '{"experimental":"enabled"}' > $HOME/.docker/config.json
+  - |
+    # Add buildx plugin
+    BUILDX_VERSION=0.4.2
+    BUILDX_URL=https://github.com/docker/buildx/releases/download/v${BUILDX_VERSION}/buildx-v${BUILDX_VERSION}.linux-${TRAVIS_CPU_ARCH}
+    mkdir -p $HOME/.docker/cli-plugins
+    ( cd $HOME/.docker/cli-plugins && wget -qO- $BUILDX_URL > docker-buildx && chmod 755 docker-buildx)
+  - |
     # Enable execution of different multi-architecture containers by QEMU and binfmt_misc
     # See https://github.com/multiarch/qemu-user-static
     docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
@@ -118,7 +127,6 @@ notifications:
 # Legacy secure variables are listed here:
 env:
   global:
-    - DOCKER_CLI_EXPERIMENTAL=enabled
     # Ex. travis encrypt BINTRAY_USER=your_github_account
     - secure: "HvCQa4ZC7dexW8Iddbwtox4NY4yvoZtyYtkwlRG5Jh/h7MY1rFwghpqv42WunOnq+hgpVUWCJPM2sM1WY+JQQXSRFFfkUxSnVGfyqIRW3oHf6uK4Sw4rtX+Q/nthliu5QNqReMcg0+rr/UD2Nxat4QZqtnlVm2MQJNu8oxcm0hw="
     # Ex. travis encrypt BINTRAY_KEY=xxx-https://bintray.com/profile/edit-xxx
