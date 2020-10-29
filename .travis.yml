@@ -26,12 +26,13 @@ services:
   - docker
 
 before_install:
-  # Ensure buildx is available
+  # Ensure buildx is available and can build multi-architecture
   - |
-    export DOCKER_CLI_EXPERIMENTAL=enabled
     echo '{"experimental":true}' | sudo tee /etc/docker/daemon.json
     sudo service docker restart
-    docker info
+    # Enable execution of different multi-architecture containers by QEMU and binfmt_misc
+    # See https://github.com/multiarch/qemu-user-static
+    docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
     docker buildx create --name builder --use
   - |
     # Use JDK 11, so we can release Java 6 bytecode
@@ -114,9 +115,10 @@ notifications:
 # SONATYPE_PASSWORD=password_to_SONATYPE_USER
 #   - referenced in .settings.xml
 #
-# Legacy variables are listed here:
+# Legacy secure variables are listed here:
 env:
   global:
+    - DOCKER_CLI_EXPERIMENTAL=enabled
     # Ex. travis encrypt BINTRAY_USER=your_github_account
     - secure: "HvCQa4ZC7dexW8Iddbwtox4NY4yvoZtyYtkwlRG5Jh/h7MY1rFwghpqv42WunOnq+hgpVUWCJPM2sM1WY+JQQXSRFFfkUxSnVGfyqIRW3oHf6uK4Sw4rtX+Q/nthliu5QNqReMcg0+rr/UD2Nxat4QZqtnlVm2MQJNu8oxcm0hw="
     # Ex. travis encrypt BINTRAY_KEY=xxx-https://bintray.com/profile/edit-xxx
