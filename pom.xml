@@ -387,6 +387,12 @@
   <build>
     <pluginManagement>
       <plugins>
+        <!-- mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies -->
+        <plugin>
+          <groupId>de.qaware.maven</groupId>
+          <artifactId>go-offline-maven-plugin</artifactId>
+          <version>1.2.7</version>
+        </plugin>
         <!-- mvn -N io.takari:maven:wrapper generates the ./mvnw script -->
         <plugin>
           <groupId>io.takari</groupId>
