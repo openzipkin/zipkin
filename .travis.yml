@@ -97,11 +97,7 @@ jobs:
           fi
     # Only on master when not a release tag. See https://github.com/travis-ci/travis-conditions/
     - name: Republish zipkin-builder Docker image
-      script:
-        - |
-          docker/build_image zipkin-builder latest
-          docker tag openzipkin/zipkin-builder ghcr.io/openzipkin/zipkin-builder
-          docker push ghcr.io/openzipkin/zipkin-builder
+      script: docker/build_image ghcr.io/openzipkin/zipkin-builder:latest push
       if: 'type IN (push) and branch = master'
 
 branches:
