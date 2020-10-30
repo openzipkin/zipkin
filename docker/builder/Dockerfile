@@ -28,6 +28,7 @@ COPY --from=scratch /code /code
 
 WORKDIR /code
 
+RUN /code/build-bin/maybe-install-npm
 # Run our script to hydrate the Maven and NPM cache
 RUN /code/build-bin/go_offline
 

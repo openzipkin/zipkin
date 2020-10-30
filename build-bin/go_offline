@@ -18,10 +18,13 @@ set -ue
 # This script hydrates the Maven and NPM cache to make later processes operate with less chance of
 # network problems.
 
+# Defensively avoid arm64+alpine problems with posix_spawn
+export MAVEN_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
+
 # Prefetch all plugin and build dependencies in normal Maven projects
 MAVEN_COMMAND="mvn -q --batch-mode -nsu"
 set -x
 ${MAVEN_COMMAND} -Prelease de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
 # Prefetch dependencies used by zipkin-ui (NPM and NodeJS binary and dependencies of our build)
-${MAVEN_COMMAND} -pl zipkin-lens com.github.eirslett:frontend-maven-plugin:install-node-and-npm com.github.eirslett:frontend-maven-plugin:npm
+${MAVEN_COMMAND} -pl zipkin-lens generate-resources
 # TODO: restructure integration tests so that they are also pre-fetched or add as dynamic dependency

@@ -664,6 +664,7 @@
                 <targets-to-build>SCRIPT_STYLE</targets-to-build>
                 <build_image>SCRIPT_STYLE</build_image>
                 <go_offline>SCRIPT_STYLE</go_offline>
+                <maybe-install-npm>SCRIPT_STYLE</maybe-install-npm>
                 <start-cassandra>SCRIPT_STYLE</start-cassandra>
                 <start-elasticsearch>SCRIPT_STYLE</start-elasticsearch>
                 <start-kafka-zookeeper>SCRIPT_STYLE</start-kafka-zookeeper>
