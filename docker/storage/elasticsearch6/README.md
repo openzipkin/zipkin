@@ -3,9 +3,9 @@
 The `zipkin-elasticsearch6` testing image runs Elasticsearch 6.x for [Elasticsearch storage](../../../zipkin-storage/elasticsearch)
 integration.
 
-To build `openzipkin/zipkin-elasticsearch6:test`, from the top level of the repository, run:
+To build `openzipkin/zipkin-elasticsearch6:test`, from the top-level of the repository, run:
 ```bash
-$ docker/build_image zipkin-elasticsearch6
+$ docker/build_image openzipkin/zipkin-elasticsearch6:test
 ```
 
 You can use the env variable `JAVA_OPTS` to change settings such as heap size for Elasticsearch.

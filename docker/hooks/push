@@ -26,7 +26,7 @@ if [ "${DOCKER_TAG}" = "master" ]; then
 fi
 
 # This hook is called with the current directory set to the same as the Dockerfile, so we go back
-# to top level.
+# to top-level.
 cd ..
 
 if [ "${DOCKER_REPO}" = "index.docker.io/openzipkin/zipkin" ]; then

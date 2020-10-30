@@ -23,6 +23,10 @@ if [ "$RELEASE_FROM_CONTEXT" = "true" ]; then
   cp /code/zipkin-slim.jar zipkin-slim.jar
 elif [ "$RELEASE_VERSION" = "master" ]; then
   echo "*** Building from source..."
+
+  # Defensively avoid arm64+alpine problems with posix_spawn
+  export MAVEN_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
+
   # Use the same command as we suggest in zipkin-server/README.md
   #  * Uses mvn not ./mvnw to reduce layer size: we control the Maven version in Docker
   (cd /code; mvn -T1C -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server package)
