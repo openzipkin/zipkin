@@ -29,7 +29,8 @@ before_install:
   # Ensure Docker buildx is available and can build multi-architecture
   - |
     # Enable experimental features on the server (multi-arch)
-    echo '{"experimental":"enabled"}' > sudo tee /etc/docker/daemon.json
+    echo '{"experimental":true}' | sudo tee /etc/docker/daemon.json
+    sudo service docker restart
     # Enable experimental client features (eg docker buildx)
     mkdir -p $HOME/.docker && echo '{"experimental":"enabled"}' > $HOME/.docker/config.json
   - |
@@ -38,10 +39,13 @@ before_install:
     BUILDX_URL=https://github.com/docker/buildx/releases/download/v${BUILDX_VERSION}/buildx-v${BUILDX_VERSION}.linux-${TRAVIS_CPU_ARCH}
     mkdir -p $HOME/.docker/cli-plugins
     ( cd $HOME/.docker/cli-plugins && wget -qO- $BUILDX_URL > docker-buildx && chmod 755 docker-buildx)
+    docker version
   - |
     # Enable execution of different multi-architecture containers by QEMU and binfmt_misc
     # See https://github.com/multiarch/qemu-user-static
-    docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    if [ "$(uname -m)" = "x86_64" ]; then
+      docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    fi
     docker buildx create --name builder --use
   - |
     # Use JDK 11, so we can release Java 6 bytecode

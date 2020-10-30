@@ -19,8 +19,10 @@
 # Java image mappings and ensures all metadata needed is taken from pom.xml.
 set -ue
 
-TARGET=${1:-zipkin}
-TAG=${2:-test}
+TAG=${1:-openzipkin/zipkin:test}
+OP=${2:-load}
+
+TARGET=$(echo $TAG|sed -e 's~.*/\(.*\):.*~\1~g')
 # When true, main images reuse zipkin-exec.jar and zipkin-slim.jar in the context root
 RELEASE_FROM_CONTEXT=${RELEASE_FROM_CONTEXT:-false}
 RELEASE_VERSION=${RELEASE_VERSION:-master}
@@ -28,7 +30,30 @@ RELEASE_VERSION=${RELEASE_VERSION:-master}
 # When publishing jars, we build with JDK 11 to ensure we can write 1.6 zipkin.jar for Brave.
 # However, when creating Docker images, there's no such requirement.
 # Hence, we use one version to keep the layer count manageable and centralized here.
-JAVA_VERSION=${JAVA_VERSION:-15.0.1-15.28.13}
+JAVA_VERSION=${JAVA_VERSION:-15.0.1_p9}
+
+# Arch of the running host. This determines which platform we load into Docker
+ARCH=${ARCH:-$(uname -m)}
+case ${ARCH} in
+  x86_64* )
+    ARCH=amd64
+    ;;
+  amd64* )
+    ;;
+  arm64* )
+    ;;
+  aarch64* )
+    ARCH=arm64
+    ;;
+  * )
+    echo ARCH ${ARCH} not yet supported in this script. export manually to amd64 or report issue.
+    exit 1
+esac
+
+# Platform to load into "docker images"
+PLATFORM=${PLATFORM:-linux/${ARCH}}
+# Platforms to eventually push to the registry
+PLATFORMS="linux/amd64,linux/arm64"
 
 case ${TARGET} in
   zipkin )
@@ -49,7 +74,7 @@ case ${TARGET} in
   zipkin-cassandra )
     DOCKERFILE_PATH=docker/storage/cassandra/Dockerfile
     # Until Cassandra v4, we are stuck on JRE 8 for Cassandra
-    JAVA_VERSION=8u272-8.50.0.21-jre-headless
+    JAVA_VERSION=8.252.09
     ;;
   zipkin-elasticsearch6 )
     DOCKERFILE_PATH=docker/storage/elasticsearch6/Dockerfile
@@ -61,15 +86,26 @@ case ${TARGET} in
     DOCKERFILE_PATH=docker/storage/mysql/Dockerfile
     ;;
   * )
-    echo "Invalid TARGET: ${TARGET}"
+    echo "Invalid TAG: ${TAG}, Ex. openzipkin/zipkin:test"
     exit 1
 esac
 
-# Build the image
-IMAGE=openzipkin/${TARGET}:${TAG}
-echo "Building image ${IMAGE} with java_version ${JAVA_VERSION}"
-docker build -f "${DOCKERFILE_PATH}" -t "${IMAGE}" \
-    --build-arg java_version="${JAVA_VERSION}" \
-    --build-arg release_from_context="${RELEASE_FROM_CONTEXT}" \
-    --build-arg release_version="${RELEASE_VERSION}" \
-    --target "${TARGET}" .
+BUILDX="docker buildx build --progress plain \
+--build-arg release_version=${RELEASE_VERSION} --label zipkin-version=${RELEASE_VERSION} \
+--build-arg release_from_context=${RELEASE_FROM_CONTEXT} \
+--build-arg java_version=${JAVA_VERSION}"
+
+case ${OP} in
+  load )
+    # We can only load with one platform/arch https://github.com/docker/buildx/issues/59
+    echo "Building image ${TAG} with platform ${PLATFORM} and Java version ${JAVA_VERSION}"
+    ${BUILDX} --target ${TARGET} --tag ${TAG} --platform=${PLATFORM} -f ${DOCKERFILE_PATH} . --load
+    ;;
+  push )
+    echo "Pushing image ${TAG} with platforms ${PLATFORMS} and Java version ${JAVA_VERSION}"
+    ${BUILDX} --target ${TARGET} --tag ${TAG} --platform=${PLATFORMS} -f ${DOCKERFILE_PATH} . --push
+    ;;
+  * )
+    echo "Invalid OP: ${OP}, Ex. load or push"
+    exit 1
+esac

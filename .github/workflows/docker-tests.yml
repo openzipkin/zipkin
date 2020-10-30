@@ -46,7 +46,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Build Docker image openzipkin/${{ matrix.target }}:test
-        run:  docker/build_image ${{ matrix.target }}
+        run:  docker/build_image openzipkin/${{ matrix.target }}:test
       - name: Verify Docker image openzipkin/${{ matrix.target }}:test
         run: |
           # This just makes sure containers run and the HEALTHCHECK works (for now..)

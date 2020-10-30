@@ -29,7 +29,7 @@ fi
 # build command ourselves works fine.
 
 # This hook is called with the current directory set to the same as the Dockerfile, so we go back
-# to top level.
+# to top-level.
 cd ..
 
 echo "Building images for ${SOURCE_BRANCH}"
