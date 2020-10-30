@@ -48,7 +48,7 @@ tags_0=${DOCKER_TAG//,*/}
 for target in $(docker/bin/targets-to-build); do
   image=openzipkin/${target}
   echo Building ${image}
-  docker/build_image ${target} ${tags_0}
+  docker/build_image ${image}:${tags_0}
   for tag in ${tags}; do
     docker tag "${image}:${tags_0}" "${image}:${tag}"
   done

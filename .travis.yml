@@ -88,11 +88,7 @@ jobs:
           # If the above was a master build, it would have produced files we should push to Docker
           if [[ -f zipkin-exec.jar && -f zipkin-slim.jar ]]; then
             for target in $(docker/bin/targets-to-build); do
-              image=openzipkin/${target}
-              echo Building ${image}
-              RELEASE_FROM_CONTEXT=true docker/build_image ${target} master
-              docker tag "${image}:master" "ghcr.io/${image}:master"
-              docker push "ghcr.io/${image}:master"
+              RELEASE_FROM_CONTEXT=true docker/build_image ghcr.io/openzipkin/${target}:master push
             done
           fi
     # Only on master when not a release tag. See https://github.com/travis-ci/travis-conditions/
