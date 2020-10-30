@@ -14,7 +14,9 @@
     the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -29,10 +31,13 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <!-- Update occasionally based on LTS. Upon update, push a new zipkin-builder image
-         per /docker/builder/README.md -->
-    <node.version>12.18.4</node.version>
-    <frontend-maven-plugin.version>1.10.2</frontend-maven-plugin.version>
+    <npm.skipTests>false</npm.skipTests>
+
+    <!-- Update occasionally based on LTS, but don't overrun what's in Alpine:
+         https://pkgs.alpinelinux.org/packages?name=nodejs-current -->
+    <node.version>14.14.0</node.version>
+    <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
+    <frontend-maven-plugin.version>1.10.3</frontend-maven-plugin.version>
     <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
     <maven-resources-plugin.version>3.2.0</maven-resources-plugin.version>
   </properties>
@@ -42,10 +47,32 @@
   </dependencies>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
+          <version>${exec-maven-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>com.github.eirslett</groupId>
+          <artifactId>frontend-maven-plugin</artifactId>
+          <version>${frontend-maven-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>${maven-clean-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>${maven-resources-plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
     <plugins>
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>${maven-clean-plugin.version}</version>
         <executions>
           <execution>
             <id>remove existing NPM build</id>
@@ -67,7 +94,6 @@
       <plugin>
         <groupId>com.github.eirslett</groupId>
         <artifactId>frontend-maven-plugin</artifactId>
-        <version>${frontend-maven-plugin.version}</version>
         <configuration>
           <installDirectory>target</installDirectory>
           <nodeVersion>v${node.version}</nodeVersion>
@@ -121,6 +147,7 @@
             </goals>
             <phase>test</phase>
             <configuration>
+              <skipTests>${npm.skipTests}</skipTests>
               <arguments>run test</arguments>
             </configuration>
           </execution>
@@ -151,4 +178,142 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <!-- Allows us to use a true value in maven-exec-plugin when skipTests exist only in name -->
+    <profile>
+      <id>normalize skipTests</id>
+      <activation>
+        <property>
+          <name>skipTests</name>
+        </property>
+      </activation>
+      <properties>
+        <npm.skipTests>true</npm.skipTests>
+      </properties>
+    </profile>
+
+    <!-- frontend-maven-plugin requires downloading via a public URL, and suggests exec-maven-plugin
+         otherwise.
+
+         ARM64 is not supported with musl, yet https://github.com/nodejs/node/blob/master/BUILDING.md
+         See issue #3166
+
+         There are problems on alpine+arm64 with posix_spawn. https://github.com/openzipkin/docker-java/issues/34
+         So, always execute exporting MAVEN_OPTS=-Djdk.lang.Process.launchMechanism=vfork -->
+    <profile>
+      <id>exec-maven-plugin</id>
+      <activation>
+        <os>
+          <arch>aarch64</arch>
+        </os>
+        <file>
+          <exists>/etc/alpine-release</exists>
+        </file>
+      </activation>
+      <build>
+        <plugins>
+          <!-- It isn't currently possible to disable frontend-maven-plugin.
+               Instead, we set each execution to none -->
+          <plugin>
+            <groupId>com.github.eirslett</groupId>
+            <artifactId>frontend-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>install node and npm</id>
+                <phase>none</phase>
+              </execution>
+              <execution>
+                <id>npm install</id>
+                <phase>none</phase>
+              </execution>
+              <execution>
+                <id>npm lint</id>
+                <phase>none</phase>
+              </execution>
+              <execution>
+                <id>npm run build</id>
+                <phase>none</phase>
+              </execution>
+              <execution>
+                <id>npm run test</id>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- This duplicates exactly what we did in frontend-maven-plugin -->
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <configuration>
+              <environmentVariables>
+                <!--
+                create-react-app runs tests in watch mode unless this is defined. We define it here for running Maven locally.
+                -->
+                <CI>true</CI>
+              </environmentVariables>
+            </configuration>
+            <executions>
+              <execution>
+                <id>npm install</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>generate-resources</phase>
+                <configuration>
+                  <executable>npm</executable>
+                  <arguments>
+                    <argument>install</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>npm lint</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>compile</phase>
+                <configuration>
+                  <executable>npm</executable>
+                  <arguments>
+                    <argument>run</argument>
+                    <argument>lint</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>npm run build</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>compile</phase>
+                <configuration>
+                  <executable>npm</executable>
+                  <arguments>
+                    <argument>run</argument>
+                    <argument>build</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>npm run test</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>test</phase>
+                <configuration>
+                  <executable>npm</executable>
+                  <skip>${npm.skipTests}</skip>
+                  <arguments>
+                    <argument>run</argument>
+                    <argument>test</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
