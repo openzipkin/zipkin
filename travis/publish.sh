@@ -172,7 +172,8 @@ if is_pull_request; then
   true
 
 # If we are on master, we will deploy the latest snapshot or release version
-#   - If a release commit fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
+#  * If a release commit fails to deploy for a transient reason, drop to staging repository in
+#    Sonatype and try again: https://oss.sonatype.org/#stagingRepositories
 elif is_travis_branch_master; then
   # -Prelease ensures the core jar ends up JRE 1.6 compatible
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests deploy
@@ -181,10 +182,6 @@ elif is_travis_branch_master; then
   ZIPKIN_FROM_MAVEN_BUILD=true docker/bin/push_all $(print_project_version)
 
   if is_release_version; then
-    # If the deployment succeeded, sync it to Maven Central.
-    # Note: this needs to be done once per project, not module, hence -N
-    ./mvnw --batch-mode -s ./.settings.xml -nsu -N io.zipkin.centralsync-maven-plugin:centralsync-maven-plugin:sync
-
     # cleanup the release trigger, but don't fail if it was already there
     git push origin :"release-$(print_project_version)" || true
     javadoc_to_gh_pages
