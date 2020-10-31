@@ -26,27 +26,6 @@ services:
   - docker
 
 before_install:
-  # Ensure Docker buildx is available and can build multi-architecture
-  - |
-    # Enable experimental features on the server (multi-arch)
-    echo '{"experimental":true}' | sudo tee /etc/docker/daemon.json
-    sudo service docker restart
-    # Enable experimental client features (eg docker buildx)
-    mkdir -p $HOME/.docker && echo '{"experimental":"enabled"}' > $HOME/.docker/config.json
-  - |
-    # Add buildx plugin
-    BUILDX_VERSION=0.4.2
-    BUILDX_URL=https://github.com/docker/buildx/releases/download/v${BUILDX_VERSION}/buildx-v${BUILDX_VERSION}.linux-${TRAVIS_CPU_ARCH}
-    mkdir -p $HOME/.docker/cli-plugins
-    ( cd $HOME/.docker/cli-plugins && wget -qO- $BUILDX_URL > docker-buildx && chmod 755 docker-buildx)
-    docker version
-  - |
-    # Enable execution of different multi-architecture containers by QEMU and binfmt_misc
-    # See https://github.com/multiarch/qemu-user-static
-    if [ "$(uname -m)" = "x86_64" ]; then
-      docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-    fi
-    docker buildx create --name builder --use
   - |
     # Use JDK 11, so we can release Java 6 bytecode
     OPENJDK_VERSION=11
@@ -57,6 +36,9 @@ before_install:
     # Quiet Maven invoker logs (Downloading... when running zipkin-server/src/it)
     echo "MAVEN_OPTS='-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'" > ~/.mavenrc
 
+    # Cache as help:evaluate is not quick
+    export POM_VERSION=$(./mvnw help:evaluate -N -Dexpression=project.version -q -DforceStdout)
+
     # Disable testcontainers checks
     echo checks.disable=true > ~/.testcontainers.properties
   - |
@@ -64,6 +46,9 @@ before_install:
     # controlled by branch (typically only master). Check to see if a well-known env is available
     # before attempting to log in.
     if [[ -n "$SONATYPE_USER" ]]; then
+      # re-use this condition to control if we prepare Docker for multi-arch
+      build-bin/setup_multiarch_docker
+
       # allocate commits to CI, not the owner of the deploy key
       git config user.name "zipkinci"
       git config user.email "zipkinci+zipkin-dev@googlegroups.com"
@@ -76,25 +61,8 @@ before_install:
       echo "$GH_TOKEN"| docker login ghcr.io -u "$GH_USER" --password-stdin
     fi
 
-jobs:
-  include:
-    - name: default
-      # Override default travis to use the maven wrapper
-      # * Use the "release" profile as that ensures the core jar ends up JRE 1.6 compatible
-      install: ./build-bin/go_offline
-      script:
-        - ./travis/publish.sh
-        - |
-          # If the above was a master build, it would have produced files we should push to Docker
-          if [[ -f zipkin-exec.jar && -f zipkin-slim.jar ]]; then
-            for target in $(docker/bin/targets-to-build); do
-              RELEASE_FROM_CONTEXT=true docker/build_image ghcr.io/openzipkin/${target}:master push
-            done
-          fi
-    # Only on master when not a release tag. See https://github.com/travis-ci/travis-conditions/
-    - name: Republish zipkin-builder Docker image
-      script: docker/build_image ghcr.io/openzipkin/zipkin-builder:latest push
-      if: 'type IN (push) and branch = master'
+install: ./build-bin/go_offline
+script: ./travis/publish.sh
 
 branches:
   except:

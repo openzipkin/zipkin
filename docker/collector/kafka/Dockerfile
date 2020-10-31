@@ -22,7 +22,7 @@ FROM scratch as scratch
 COPY docker/collector/kafka/install.sh /install/
 COPY docker/collector/kafka/docker-bin/* /docker-bin/
 
-FROM ghcr.io/openzipkin/zipkin-builder as install
+FROM ghcr.io/openzipkin/java:${java_version} as install
 
 # Use latest stable release here. Scala 2.13+ supports JRE 14
 ENV KAFKA_VERSION=2.6.0 SCALA_VERSION=2.13

@@ -24,7 +24,6 @@ COPY zipkin-storage/cassandra-v1/src/main/resources/cassandra-schema.cql /zipkin
 COPY docker/storage/cassandra/install.sh /install/
 COPY docker/storage/cassandra/docker-bin/* /docker-bin/
 
-# Until Cassandra supports recent JDKs, we can't re-use our builder
 FROM ghcr.io/openzipkin/java:${java_version}-jre as install
 
 # Use latest stable release here.

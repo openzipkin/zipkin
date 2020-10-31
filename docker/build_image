@@ -19,48 +19,29 @@
 # Java image mappings and ensures all metadata needed is taken from pom.xml.
 set -ue
 
+if ! test -f docker/Dockerfile; then
+  echo Please execute this script from the repository root
+  exit 1
+fi
+
 TAG=${1:-openzipkin/zipkin:test}
 OP=${2:-load}
 
 TARGET=$(echo $TAG|sed -e 's~.*/\(.*\):.*~\1~g')
-# When true, main images reuse zipkin-exec.jar and zipkin-slim.jar in the context root
-RELEASE_FROM_CONTEXT=${RELEASE_FROM_CONTEXT:-false}
-RELEASE_VERSION=${RELEASE_VERSION:-master}
+# When true and building zipkin zipkin-slim or zipkin-ui, use zipkin-exec.jar and zipkin-slim.jar
+# produced by a Maven build. This is implicitly true when a SNAPSHOT version.
+ZIPKIN_FROM_MAVEN_BUILD=${ZIPKIN_FROM_MAVEN_BUILD:-false}
+POM_VERSION=${POM_VERSION:-$(mvn help:evaluate -N -Dexpression=project.version -q -DforceStdout)}
+ZIPKIN_VERSION=${ZIPKIN_VERSION:-${POM_VERSION}}
 
 # When publishing jars, we build with JDK 11 to ensure we can write 1.6 zipkin.jar for Brave.
 # However, when creating Docker images, there's no such requirement.
 # Hence, we use one version to keep the layer count manageable and centralized here.
 JAVA_VERSION=${JAVA_VERSION:-15.0.1_p9}
 
-# Arch of the running host. This determines which platform we load into Docker
-ARCH=${ARCH:-$(uname -m)}
-case ${ARCH} in
-  x86_64* )
-    ARCH=amd64
-    ;;
-  amd64* )
-    ;;
-  arm64* )
-    ;;
-  aarch64* )
-    ARCH=arm64
-    ;;
-  * )
-    echo ARCH ${ARCH} not yet supported in this script. export manually to amd64 or report issue.
-    exit 1
-esac
-
-# Platform to load into "docker images"
-PLATFORM=${PLATFORM:-linux/${ARCH}}
-# Platforms to eventually push to the registry
-PLATFORMS="linux/amd64,linux/arm64"
-
 case ${TARGET} in
   zipkin )
     DOCKERFILE_PATH=docker/Dockerfile
-    ;;
-  zipkin-builder )
-    DOCKERFILE_PATH=docker/builder/Dockerfile
     ;;
   zipkin-slim )
     DOCKERFILE_PATH=docker/Dockerfile
@@ -90,22 +71,62 @@ case ${TARGET} in
     exit 1
 esac
 
-BUILDX="docker buildx build --progress plain \
---build-arg release_version=${RELEASE_VERSION} --label zipkin-version=${RELEASE_VERSION} \
---build-arg release_from_context=${RELEASE_FROM_CONTEXT} \
---build-arg java_version=${JAVA_VERSION}"
+# We don't currently release from a remote snapshot repository. When the version is snapshot, this
+# is a local build or a pull request. Look to see if the files the build would produce are present.
+# This allows skipping the build when an upstream step or stage has already produced them.
+if [ ${DOCKERFILE_PATH} = docker/Dockerfile ]; then
+  case ${ZIPKIN_VERSION} in
+    *-SNAPSHOT )
+      if [[ -f "zipkin-server/target/zipkin-server-${ZIPKIN_VERSION}-exec.jar" &&
+            -f "zipkin-server/target/zipkin-server-${ZIPKIN_VERSION}-slim.jar" ]]; then
+        echo Re-using Zipkin ${ZIPKIN_VERSION} binaries from a previous build...
+      else
+        if [ ${ZIPKIN_VERSION} != ${POM_VERSION} ]; then
+          echo "To build Zipkin implicitly, set ZIPKIN_VERSION=${POM_VERSION}"
+          exit 1
+        fi
 
-case ${OP} in
-  load )
-    # We can only load with one platform/arch https://github.com/docker/buildx/issues/59
-    echo "Building image ${TAG} with platform ${PLATFORM} and Java version ${JAVA_VERSION}"
-    ${BUILDX} --target ${TARGET} --tag ${TAG} --platform=${PLATFORM} -f ${DOCKERFILE_PATH} . --load
+        echo Building Zipkin ${ZIPKIN_VERSION}...
+        ./mvnw -T1C -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server clean package
+      fi
+      ZIPKIN_FROM_MAVEN_BUILD=true
+      ;;
+  esac
+fi
+
+DOCKER_ARGS="-f ${DOCKERFILE_PATH} --target ${TARGET} --tag ${TAG} \
+--build-arg zipkin_version=${ZIPKIN_VERSION} --label zipkin-version=${ZIPKIN_VERSION} \
+--build-arg zipkin_from_maven_build=${ZIPKIN_FROM_MAVEN_BUILD} \
+--build-arg java_version=${JAVA_VERSION} ."
+
+# Avoid buildx for two reasons:
+#  * It only supports one platform/arch on load https://github.com/docker/buildx/issues/59
+#  * It would pull Docker Hub for moby/buildkit or multiarch/qemu-user-static images, using up quota
+if [ "${OP}" = "load" ]; then
+  echo "Building image ${TAG} with java_version ${JAVA_VERSION}"
+  docker build ${DOCKER_ARGS}
+  exit $?
+fi
+
+if [ "${OP}" != "push" ]; then
+  echo "Invalid OP: ${OP}, Ex. load or push"
+  exit 1
+fi
+
+# Platforms to eventually push to the registry
+PLATFORMS="linux/amd64,linux/arm64"
+
+# This can be less manual in the future, for example checking buildx to see what it can do.
+ARCH=${ARCH:-$(uname -m)}
+case ${ARCH} in
+  x86_64* )
     ;;
-  push )
-    echo "Pushing image ${TAG} with platforms ${PLATFORMS} and Java version ${JAVA_VERSION}"
-    ${BUILDX} --target ${TARGET} --tag ${TAG} --platform=${PLATFORMS} -f ${DOCKERFILE_PATH} . --push
+  amd64* )
     ;;
   * )
-    echo "Invalid OP: ${OP}, Ex. load or push"
+    echo Pushing platforms ${PLATFORMS} with arch ${ARCH} is not yet supported.
     exit 1
 esac
+
+echo "Pushing image ${TAG} with platforms ${PLATFORMS} and Java version ${JAVA_VERSION}"
+docker buildx build --progress plain --platform=${PLATFORMS} ${DOCKER_ARGS} --push

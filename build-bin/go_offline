@@ -18,12 +18,34 @@ set -ue
 # This script hydrates the Maven and NPM cache to make later processes operate with less chance of
 # network problems.
 
-# Defensively avoid arm64+alpine problems with posix_spawn
-export MAVEN_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
-
-# Prefetch all plugin and build dependencies in normal Maven projects
 MAVEN_COMMAND="mvn -q --batch-mode -nsu"
+
+ARCH=$(uname -m)
+case ${ARCH} in
+  arm64* )
+    ARCH=arm64
+    ;;
+  aarch64* )
+    ARCH=arm64
+    ;;
+esac
+
+# ARM64 is not supported with musl, yet https://github.com/nodejs/node/blob/master/BUILDING.md
+# Workaround this by installing node and npm directly. See issue #3166
+if [[ ${ARCH} == "arm64" && -f /etc/alpine-release ]]; then
+  # Get the version of nodejs the build uses. Note: this will take time as it downloads Maven plugins
+  NODE_VERSION=$(mvn help:evaluate -Dexpression=node.version -q -DforceStdout -pl zipkin-lens)
+
+  # Defensively avoid arm64+alpine problems with posix_spawn
+  export MAVEN_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
+
+  set -x
+  # Repos for https://pkgs.alpinelinux.org/packages?name=nodejs-current are already in the base image
+  apk add --update --no-cache nodejs-current=~${NODE_VERSION} npm
+fi
+
 set -x
+# Prefetch all plugin and build dependencies in normal Maven projects
 ${MAVEN_COMMAND} -Prelease de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
 # Prefetch dependencies used by zipkin-ui (NPM and NodeJS binary and dependencies of our build)
 ${MAVEN_COMMAND} -pl zipkin-lens generate-resources

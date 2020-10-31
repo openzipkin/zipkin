@@ -22,7 +22,7 @@ FROM scratch as scratch
 COPY docker/storage/elasticsearch6/config/ /config/
 COPY docker/storage/elasticsearch7/docker-bin/* /docker-bin/
 
-FROM ghcr.io/openzipkin/zipkin-builder as install
+FROM ghcr.io/openzipkin/java:${java_version} as install
 
 ENV ELASTICSEARCH_VERSION 6.8.12
 
