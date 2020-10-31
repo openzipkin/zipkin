@@ -32,7 +32,7 @@ esac
 
 # ARM64 is not supported with musl, yet https://github.com/nodejs/node/blob/master/BUILDING.md
 # Workaround this by installing node and npm directly. See issue #3166
-if [[ ${ARCH} == "arm64" && -f /etc/alpine-release ]]; then
+if [ ${ARCH} = "arm64" ] && [ -f /etc/alpine-release ]; then
   # Get the version of nodejs the build uses. Note: this will take time as it downloads Maven plugins
   NODE_VERSION=$(mvn help:evaluate -Dexpression=node.version -q -DforceStdout -pl zipkin-lens)
 
