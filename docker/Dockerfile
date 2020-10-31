@@ -13,6 +13,7 @@
 #
 
 ARG java_version
+ARG nginx_version
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -37,13 +38,13 @@ ENV ZIPKIN_FROM_MAVEN_BUILD=$zipkin_from_maven_build
 COPY docker/bin/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
-#####
-# zipkin-ui - An image containing the Zipkin web frontend only, served by NGINX
-#####
-
 # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
-FROM quay.io/app-sre/nginx:1.19-alpine as zipkin-ui
-LABEL MAINTAINER OpenZipkin "http://zipkin.io/"
+FROM quay.io/app-sre/nginx:$nginx_version-alpine as zipkin-ui
+
+ARG maintainer="OpenZipkin https://gitter.im/openzipkin/zipkin"
+LABEL maintainer=$maintainer
+LABEL org.opencontainers.image.authors=$maintainer
+LABEL org.opencontainers.image.description="NGINX on Alpine Linux hosting the Zipkin UI with Zipkin API proxy_pass"
 
 ENV ZIPKIN_BASE_URL=http://zipkin:9411
 
@@ -89,17 +90,13 @@ USER ${USER}
 
 EXPOSE 9411
 
-#####
-# zipkin-slim - An image containing the slim distribution of Zipkin server.
-#####
 FROM base-server as zipkin-slim
+LABEL org.opencontainers.image.description="Zipkin slim distribution on OpenJDK and Alpine Linux"
 
 COPY --from=install --chown=${USER} /install/zipkin-slim/ /zipkin/
 
-#####
-# zipkin-server - An image containing the full distribution of Zipkin server.
-#####
 FROM base-server as zipkin
+LABEL org.opencontainers.image.description="Zipkin full distribution on OpenJDK and Alpine Linux"
 
 # 3rd party modules like zipkin-aws will apply profile settings with this
 ENV MODULE_OPTS=

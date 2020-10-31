@@ -16,7 +16,7 @@
 set -eux
 
 echo "*** Installing MySQL"
-apk add --update --no-cache mysql mysql-client
+apk add --update --no-cache mysql=~${MYSQL_VERSION} mysql-client=~${MYSQL_VERSION}
 # Fake auth tools install as 10.4.0 install dies otherwise
 mkdir -p /auth_pam_tool_dir/auth_pam_tool
 

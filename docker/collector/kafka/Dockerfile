@@ -24,8 +24,10 @@ COPY docker/collector/kafka/docker-bin/* /docker-bin/
 
 FROM ghcr.io/openzipkin/java:${java_version} as install
 
-# Use latest stable release here. Scala 2.13+ supports JRE 14
-ENV KAFKA_VERSION=2.6.0 SCALA_VERSION=2.13
+ARG kafka_version
+ENV KAFKA_VERSION=$kafka_version
+ARG scala_version
+ENV SCALA_VERSION=$scala_version
 
 WORKDIR /install
 COPY --from=scratch /install/install.sh /tmp/
@@ -33,6 +35,7 @@ RUN /tmp/install.sh && rm /tmp/install.sh
 
 # Share the same base image to reduce layers used in testing
 FROM ghcr.io/openzipkin/java:${java_version}-jre as zipkin-kafka
+LABEL org.opencontainers.image.description="Kafka and ZooKeeper on OpenJDK and Alpine Linux"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=scratch /docker-bin/* /usr/local/bin/

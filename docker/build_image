@@ -39,6 +39,9 @@ ZIPKIN_VERSION=${ZIPKIN_VERSION:-${POM_VERSION}}
 # Hence, we use one version to keep the layer count manageable and centralized here.
 JAVA_VERSION=${JAVA_VERSION:-15.0.1_p9}
 
+# Use latest from https://quay.io/repository/app-sre/nginx?tab=tags
+NGINX_VERSION=1.19.2
+DOCKER_ARGS=""
 case ${TARGET} in
   zipkin )
     DOCKERFILE_PATH=docker/Dockerfile
@@ -48,23 +51,41 @@ case ${TARGET} in
     ;;
   zipkin-ui )
     DOCKERFILE_PATH=docker/Dockerfile
+    DOCKER_ARGS=" --label nginx-version=${NGINX_VERSION}"
     ;;
   zipkin-kafka )
     DOCKERFILE_PATH=docker/collector/kafka/Dockerfile
+    # Use latest release from: https://kafka.apache.org/downloads
+    KAFKA_VERSION=2.6.0
+    DOCKER_ARGS=" --build-arg kafka_version=${KAFKA_VERSION} --label kafka-version=${KAFKA_VERSION}"
+    # Note: Scala 2.13+ supports JRE 14
+    DOCKER_ARGS="${DOCKER_ARGS} --build-arg scala_version=2.13"
     ;;
   zipkin-cassandra )
     DOCKERFILE_PATH=docker/storage/cassandra/Dockerfile
     # Until Cassandra v4, we are stuck on JRE 8 for Cassandra
     JAVA_VERSION=8.252.09
+    # Use latest stable version: https://cassandra.apache.org/download/
+    CASSANDRA_VERSION=3.11.8
+    DOCKER_ARGS=" --build-arg cassandra_version=${CASSANDRA_VERSION} --label cassandra-version=${CASSANDRA_VERSION}"
     ;;
   zipkin-elasticsearch6 )
     DOCKERFILE_PATH=docker/storage/elasticsearch6/Dockerfile
+    # Use latest 6.x version from https://www.elastic.co/downloads/past-releases#elasticsearch
+    ELASTICSEARCH_VERSION=6.8.13
+    DOCKER_ARGS=" --build-arg elasticsearch_version=${ELASTICSEARCH_VERSION} --label elasticsearch-version=${ELASTICSEARCH_VERSION}"
     ;;
   zipkin-elasticsearch7 )
     DOCKERFILE_PATH=docker/storage/elasticsearch7/Dockerfile
+    # Use latest 7.x version from https://www.elastic.co/downloads/past-releases#elasticsearch
+    ELASTICSEARCH_VERSION=7.9.3
+    DOCKER_ARGS=" --build-arg elasticsearch_version=${ELASTICSEARCH_VERSION} --label elasticsearch-version=${ELASTICSEARCH_VERSION}"
     ;;
   zipkin-mysql )
     DOCKERFILE_PATH=docker/storage/mysql/Dockerfile
+    # Use latest from https://pkgs.alpinelinux.org/packages?name=mysql
+    MYSQL_VERSION=10.5.6
+    DOCKER_ARGS=" --build-arg mysql_version=${MYSQL_VERSION} --label mysql-version=${MYSQL_VERSION}"
     ;;
   * )
     echo "Invalid TAG: ${TAG}, Ex. openzipkin/zipkin:test"
@@ -75,6 +96,9 @@ esac
 # is a local build or a pull request. Look to see if the files the build would produce are present.
 # This allows skipping the build when an upstream step or stage has already produced them.
 if [ ${DOCKERFILE_PATH} = docker/Dockerfile ]; then
+  # Set NGINX build arg always as the default Docker file uses it
+  DOCKER_ARGS="${DOCKER_ARGS} --build-arg nginx_version=${NGINX_VERSION}"
+
   case ${ZIPKIN_VERSION} in
     *-SNAPSHOT )
       if [[ -f "zipkin-server/target/zipkin-server-${ZIPKIN_VERSION}-exec.jar" &&
@@ -94,10 +118,12 @@ if [ ${DOCKERFILE_PATH} = docker/Dockerfile ]; then
   esac
 fi
 
-DOCKER_ARGS="-f ${DOCKERFILE_PATH} --target ${TARGET} --tag ${TAG} \
+DOCKER_ARGS="-f ${DOCKERFILE_PATH} --target ${TARGET} --tag ${TAG} ${DOCKER_ARGS} \
 --build-arg zipkin_version=${ZIPKIN_VERSION} --label zipkin-version=${ZIPKIN_VERSION} \
 --build-arg zipkin_from_maven_build=${ZIPKIN_FROM_MAVEN_BUILD} \
---build-arg java_version=${JAVA_VERSION} ."
+--build-arg java_version=${JAVA_VERSION} \
+--label org.opencontainers.image.source=https://github.com/openzipkin/zipkin \
+--label org.opencontainers.image.version=${ZIPKIN_VERSION} ."
 
 # Avoid buildx for two reasons:
 #  * It only supports one platform/arch on load https://github.com/docker/buildx/issues/59

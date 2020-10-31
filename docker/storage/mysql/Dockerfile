@@ -30,13 +30,18 @@ WORKDIR /install
 
 COPY --from=scratch /zipkin-schemas/* ./zipkin-schemas/
 COPY --from=scratch /install/install.sh /tmp/
+
+ARG mysql_version
+ENV MYSQL_VERSION=$mysql_version
 RUN /tmp/install.sh && rm /tmp/install.sh
 
 # Re-use the base layer other images use
 FROM ghcr.io/openzipkin/java:${java_version}-jre as zipkin-mysql
+LABEL org.opencontainers.image.description="MySQL on Alpine Linux with Zipkin schema pre-installed"
 
+ARG mysql_version
 # Add the mysql binary and handle installation edge cases
-RUN apk add --no-cache mysql && \
+RUN apk add --no-cache mysql=~$mysql_version && \
     # Prevent "Bind on unix socket: No such file or directory"
     mkdir -p /run/mysqld/ && chown -R mysql /run/mysqld/ && \
     # Enable networking

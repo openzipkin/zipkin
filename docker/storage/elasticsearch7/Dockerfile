@@ -24,18 +24,19 @@ COPY docker/storage/elasticsearch7/docker-bin/* /docker-bin/
 
 FROM ghcr.io/openzipkin/java:${java_version} as install
 
-ENV ELASTICSEARCH_VERSION 7.9.2
-
 WORKDIR /install
+
+ARG elasticsearch_version
 
 # Download only the OSS distribution (lacks X-Pack)
 # We don't download bin scripts as we customize for reasons including BusyBox problems
-RUN wget -qO- https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-$ELASTICSEARCH_VERSION-no-jdk-linux-x86_64.tar.gz| tar xz \
+RUN wget -qO- https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-${elasticsearch_version}-no-jdk-linux-x86_64.tar.gz| tar xz \
     --wildcards --strip=1 --exclude=*/bin
 
 COPY --from=scratch /config/ ./config/
 
 FROM ghcr.io/openzipkin/java:${java_version}-jre as zipkin-elasticsearch7
+LABEL org.opencontainers.image.description="Elasticsearch OSS distribution on OpenJDK and Alpine Linux"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=scratch /docker-bin/* /usr/local/bin/

@@ -26,8 +26,8 @@ COPY docker/storage/cassandra/docker-bin/* /docker-bin/
 
 FROM ghcr.io/openzipkin/java:${java_version}-jre as install
 
-# Use latest stable release here.
-ENV CASSANDRA_VERSION=3.11.8
+ARG cassandra_version
+ENV CASSANDRA_VERSION=$cassandra_version
 
 WORKDIR /install
 
@@ -36,6 +36,7 @@ COPY --from=scratch /install/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
 FROM ghcr.io/openzipkin/java:${java_version}-jre as zipkin-cassandra
+LABEL org.opencontainers.image.description="Cassandra on OpenJDK and Alpine Linux with Zipkin keyspaces pre-installed"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=scratch /docker-bin/* /usr/local/bin/
