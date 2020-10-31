@@ -42,5 +42,5 @@ docker version
 
 # Enable execution of different multi-architecture containers by QEMU and binfmt_misc
 # See https://github.com/multiarch/qemu-user-static
-docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+docker run --rm --privileged ghcr.io/openzipkin/multiarch-qemu-user-static --reset -p yes
 docker buildx create --name builder --use
