@@ -60,7 +60,7 @@ java -jar zipkin.jar
 
 Running via Docker:
 ```bash
-# Note: this is mirrored as ghcr.io/openzipkin/zipkin
+# Note: this is mirrored as ghcr.io/openzipkin/zipkin-slim
 docker run -d -p 9411:9411 openzipkin/zipkin-slim
 ```
 
