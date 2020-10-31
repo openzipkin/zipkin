@@ -25,7 +25,9 @@ if ! test -f docker/Dockerfile; then
 fi
 
 TAG=${1:-openzipkin/zipkin:test}
-VERSION=${2:-}
+# Default the version to the pom when unset
+POM_VERSION=${POM_VERSION:-$(mvn help:evaluate -N -Dexpression=project.version -q -DforceStdout)}
+VERSION=${2:-${POM_VERSION}}
 OP=${3:-load}
 
 TARGET=$(echo $TAG|sed -e 's~.*/\(.*\):.*~\1~g')
@@ -104,12 +106,6 @@ esac
 if [ ${DOCKERFILE_PATH} = docker/Dockerfile ]; then
   # Set NGINX build arg always as the default Docker file uses it
   DOCKER_ARGS="${DOCKER_ARGS} --build-arg nginx_version=${NGINX_VERSION}"
-
-  # Default the version to the pom when unset
-  POM_VERSION=${POM_VERSION:-$(mvn help:evaluate -N -Dexpression=project.version -q -DforceStdout)}
-  if [ -z "${VERSION+x}" ]; then
-    VERSION=${POM_VERSION}
-  fi
 
   case "${VERSION}" in
     *-SNAPSHOT )
