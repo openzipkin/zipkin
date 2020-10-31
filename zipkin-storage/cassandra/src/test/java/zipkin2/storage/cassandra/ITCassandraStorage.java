@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.testcontainers.utility.DockerImageName;
 import zipkin2.Span;
 import zipkin2.storage.StorageComponent.Builder;
 
@@ -44,7 +45,7 @@ class ITCassandraStorage {
   );
 
   @RegisterExtension CassandraStorageExtension backend = new CassandraStorageExtension(
-    "openzipkin/zipkin-cassandra:2.21.7");
+    DockerImageName.parse("ghcr.io/openzipkin/zipkin-cassandra:2.22.0"));
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<CassandraStorage> {

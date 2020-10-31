@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -43,11 +44,11 @@ import static zipkin2.storage.cassandra.v1.Tables.TRACES;
 public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCallback {
   static final Logger LOGGER = LoggerFactory.getLogger(CassandraStorageExtension.class);
   static final int CASSANDRA_PORT = 9042;
-  final String image;
+  final DockerImageName image;
   CassandraContainer container;
   CqlSession globalSession;
 
-  CassandraStorageExtension(String image) {
+  CassandraStorageExtension(DockerImageName image) {
     this.image = image;
   }
 
@@ -144,7 +145,7 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
   }
 
   static final class CassandraContainer extends GenericContainer<CassandraContainer> {
-    CassandraContainer(String image) {
+    CassandraContainer(DockerImageName image) {
       super(image);
     }
 

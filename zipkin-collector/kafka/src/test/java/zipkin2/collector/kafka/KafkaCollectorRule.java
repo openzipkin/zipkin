@@ -13,6 +13,9 @@
  */
 package zipkin2.collector.kafka;
 
+import java.util.Collections;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -23,22 +26,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.utility.DockerImageName;
 
-import java.util.Collections;
-import java.util.Properties;
-import java.util.concurrent.ExecutionException;
-
-/** This should be used as a {@link ClassRule} as it takes a very long time to start-up. */
+/**
+ * This should be used as a {@link ClassRule} as it takes a very long time to start-up.
+ */
 class KafkaCollectorRule extends ExternalResource {
   static final Logger LOGGER = LoggerFactory.getLogger(KafkaCollectorRule.class);
-  static final String IMAGE = "openzipkin/zipkin-kafka:2.21.7";
+  static final DockerImageName IMAGE =
+    DockerImageName.parse("ghcr.io/openzipkin/zipkin-kafka:2.22.0");
   static final int KAFKA_PORT = 19092;
   static final String KAFKA_BOOTSTRAP_SERVERS = "localhost:" + KAFKA_PORT;
   static final String KAFKA_TOPIC = "zipkin";
 
   static final class KafkaContainer extends FixedHostPortGenericContainer<KafkaContainer> {
-    KafkaContainer(String image) {
-      super(image);
+    KafkaContainer(DockerImageName image) {
+      super(image.asCanonicalNameString());
       withFixedExposedPort(KAFKA_PORT, KAFKA_PORT);
       this.waitStrategy =
         new LogMessageWaitStrategy().withRegEx(".*INFO \\[KafkaServer id=0\\] started.*");
@@ -58,7 +61,7 @@ class KafkaCollectorRule extends ExternalResource {
       container.start();
     } catch (Throwable e) {
       throw new AssumptionViolatedException(
-          "Couldn't start docker image " + IMAGE + ": " + e.getMessage(), e);
+        "Couldn't start docker image " + IMAGE + ": " + e.getMessage(), e);
     }
 
     prepareTopic(KAFKA_TOPIC, 1);
@@ -77,7 +80,6 @@ class KafkaCollectorRule extends ExternalResource {
         "Topic cannot be created " + topic + ": " + e.getMessage(), e);
     }
   }
-
 
   KafkaCollector.Builder newCollectorBuilder() {
     return KafkaCollector.builder().bootstrapServers(KAFKA_BOOTSTRAP_SERVERS);

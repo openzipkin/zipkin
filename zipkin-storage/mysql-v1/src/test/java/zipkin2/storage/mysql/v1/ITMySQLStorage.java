@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.testcontainers.utility.DockerImageName;
 import zipkin2.DependencyLink;
 import zipkin2.storage.StorageComponent;
 
@@ -38,7 +39,7 @@ import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependenc
 class ITMySQLStorage {
 
   @RegisterExtension MySQLStorageExtension backend = new MySQLStorageExtension(
-    "openzipkin/zipkin-mysql:2.21.7");
+    DockerImageName.parse("ghcr.io/openzipkin/zipkin-mysql:2.22.0"));
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<MySQLStorage> {

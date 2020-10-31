@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.testcontainers.utility.DockerImageName;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static zipkin2.elasticsearch.integration.ElasticsearchStorageExtension.index;
@@ -25,7 +26,7 @@ import static zipkin2.elasticsearch.integration.ElasticsearchStorageExtension.in
 class ITElasticsearchStorageV7 extends ITElasticsearchStorage {
 
   @RegisterExtension ElasticsearchStorageExtension backend = new ElasticsearchStorageExtension(
-    "openzipkin/zipkin-elasticsearch7:2.21.7", null);
+    DockerImageName.parse("ghcr.io/openzipkin/zipkin-elasticsearch7:2.22.0"), null);
 
   @Override ElasticsearchStorageExtension backend() {
     return backend;

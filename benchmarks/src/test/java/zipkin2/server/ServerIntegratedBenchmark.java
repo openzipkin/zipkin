@@ -88,7 +88,7 @@ class ServerIntegratedBenchmark {
 
   @Test void elasticsearch() throws Exception {
     GenericContainer<?> elasticsearch =
-      new GenericContainer<>(parse("openzipkin/zipkin-elasticsearch7:latest"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch7:latest"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("elasticsearch")
         .withLabel("name", "elasticsearch")
@@ -106,7 +106,7 @@ class ServerIntegratedBenchmark {
 
   private GenericContainer<?> createCassandra(String storageType) {
     GenericContainer<?> cassandra =
-      new GenericContainer<>(parse("openzipkin/zipkin-cassandra:latest"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-cassandra:latest"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("cassandra")
         .withLabel("name", "cassandra")
@@ -118,7 +118,7 @@ class ServerIntegratedBenchmark {
   }
 
   @Test void mysql() throws Exception {
-    GenericContainer<?> mysql = new GenericContainer<>(parse("openzipkin/zipkin-mysql:latest"))
+    GenericContainer<?> mysql = new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:latest"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("mysql")
       .withLabel("name", "mysql")
@@ -134,7 +134,7 @@ class ServerIntegratedBenchmark {
   // send to, we can reuse our benchmark logic here to check it. Note, this benchmark always uses
   // a docker image and ignores RELEASED_ZIPKIN_SERVER.
   @Test void xrayUdp() throws Exception {
-    GenericContainer<?> zipkin = new GenericContainer<>(parse("openzipkin/zipkin-aws:latest"))
+    GenericContainer<?> zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-aws:latest"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("zipkin")
       .withEnv("STORAGE_TYPE", "xray")
@@ -280,7 +280,7 @@ class ServerIntegratedBenchmark {
 
     final GenericContainer<?> zipkin;
     if (RELEASED_ZIPKIN_VERSION == null) {
-      zipkin = new GenericContainer<>(parse("openzipkin/zipkin-builder:latest"));
+      zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/java:15.0.1_p9"));
       List<String> classpath = new ArrayList<>();
       for (String item : System.getProperty("java.class.path").split(File.pathSeparator)) {
         Path path = Paths.get(item);
@@ -311,7 +311,7 @@ class ServerIntegratedBenchmark {
       // Don't fail on classpath problem from missing lens, as we don't use it.
       env.put("ZIPKIN_UI_ENABLED", "false");
     } else {
-      zipkin = new GenericContainer<>(parse("openzipkin/zipkin:" + RELEASED_ZIPKIN_VERSION));
+      zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin:" + RELEASED_ZIPKIN_VERSION));
     }
 
     zipkin
