@@ -115,7 +115,7 @@ if [ ${DOCKERFILE_PATH} = docker/Dockerfile ]; then
   esac
 fi
 
-DOCKER_ARGS="-f ${DOCKERFILE_PATH} --target ${TARGET} --tag ${TAG} \
+DOCKER_ARGS="-f ${DOCKERFILE_PATH} --target ${TARGET} --tag ${TAG} ${DOCKER_ARGS} \
 --build-arg zipkin_version=${ZIPKIN_VERSION} --label zipkin-version=${ZIPKIN_VERSION} \
 --build-arg zipkin_from_maven_build=${ZIPKIN_FROM_MAVEN_BUILD} \
 --build-arg java_version=${JAVA_VERSION} \
