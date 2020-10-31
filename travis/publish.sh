@@ -184,6 +184,9 @@ elif is_travis_branch_master; then
     # If the deployment succeeded, sync it to Maven Central.
     # Note: this needs to be done once per project, not module, hence -N
     ./mvnw --batch-mode -s ./.settings.xml -nsu -N io.zipkin.centralsync-maven-plugin:centralsync-maven-plugin:sync
+
+    # cleanup the release trigger, but don't fail if it was already there
+    git push origin :"release-$(print_project_version)" || true
     javadoc_to_gh_pages
   fi
 

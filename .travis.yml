@@ -68,7 +68,11 @@ jobs:
     - name: default
       script: ./travis/publish.sh
     - name: Re-push all Docker images
-      script: docker/bin/push_all $(echo "${TRAVIS_TAG}" | sed 's/^docker-//')
+      script:
+        - |
+          docker/bin/push_all $(echo "${TRAVIS_TAG}" | sed 's/^docker-//')
+          # cleanup the release trigger, but don't fail if it was already there
+          git push origin :"${TRAVIS_TAG}" || true
       if: 'type IN (push) and tag =~ /^docker-/'
 
 branches:
