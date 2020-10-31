@@ -13,6 +13,7 @@
 #
 
 ARG java_version
+ARG nginx_version
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -37,9 +38,9 @@ ENV ZIPKIN_FROM_MAVEN_BUILD=$zipkin_from_maven_build
 COPY docker/bin/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 
-ARG nginx_version=1.19.1
 # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
-FROM quay.io/app-sre/nginx:${nginx_version}-alpine as zipkin-ui
+FROM quay.io/app-sre/nginx:$nginx_version-alpine as zipkin-ui
+
 ARG maintainer="OpenZipkin https://gitter.im/openzipkin/zipkin"
 LABEL maintainer=$maintainer
 LABEL org.opencontainers.image.authors=$maintainer

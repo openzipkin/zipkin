@@ -31,7 +31,7 @@ TARGET=$(echo $TAG|sed -e 's~.*/\(.*\):.*~\1~g')
 # When true and building zipkin zipkin-slim or zipkin-ui, use zipkin-exec.jar and zipkin-slim.jar
 # produced by a Maven build. This is implicitly true when a SNAPSHOT version.
 ZIPKIN_FROM_MAVEN_BUILD=${ZIPKIN_FROM_MAVEN_BUILD:-false}
-POM_VERSION=${POM_VERSION:-$(mvn help:evaluate -N -Dexpression=project-version -q -DforceStdout)}
+POM_VERSION=${POM_VERSION:-$(mvn help:evaluate -N -Dexpression=project.version -q -DforceStdout)}
 ZIPKIN_VERSION=${ZIPKIN_VERSION:-${POM_VERSION}}
 
 # When publishing jars, we build with JDK 11 to ensure we can write 1.6 zipkin.jar for Brave.
@@ -39,7 +39,6 @@ ZIPKIN_VERSION=${ZIPKIN_VERSION:-${POM_VERSION}}
 # Hence, we use one version to keep the layer count manageable and centralized here.
 JAVA_VERSION=${JAVA_VERSION:-15.0.1_p9}
 
-DOCKER_ARGS=""
 case ${TARGET} in
   zipkin )
     DOCKERFILE_PATH=docker/Dockerfile
@@ -49,9 +48,6 @@ case ${TARGET} in
     ;;
   zipkin-ui )
     DOCKERFILE_PATH=docker/Dockerfile
-    # Use latest from https://quay.io/repository/app-sre/nginx?tab=tags
-    NGINX_VERSION=1.19.2
-    DOCKER_ARGS=" --build-arg nginx_version=${NGINX_VERSION} --label nginx-version=${NGINX_VERSION}"
     ;;
   zipkin-kafka )
     DOCKERFILE_PATH=docker/collector/kafka/Dockerfile
@@ -96,6 +92,11 @@ esac
 # is a local build or a pull request. Look to see if the files the build would produce are present.
 # This allows skipping the build when an upstream step or stage has already produced them.
 if [ ${DOCKERFILE_PATH} = docker/Dockerfile ]; then
+  # Set NGINX build arg always as the default Docker file uses it
+  # Use latest from https://quay.io/repository/app-sre/nginx?tab=tags
+  NGINX_VERSION=1.19.2
+  DOCKER_ARGS=" --build-arg nginx_version=${NGINX_VERSION} --label nginx-version=${NGINX_VERSION}"
+
   case ${ZIPKIN_VERSION} in
     *-SNAPSHOT )
       if [[ -f "zipkin-server/target/zipkin-server-${ZIPKIN_VERSION}-exec.jar" &&
