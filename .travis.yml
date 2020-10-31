@@ -72,6 +72,7 @@ jobs:
   include:
     - name: default
       script: ./travis/publish.sh
+      if: 'NOT tag =~ /^docker-/'
     - name: Re-push all Docker images
       script:
         - |
