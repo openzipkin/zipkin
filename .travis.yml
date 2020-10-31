@@ -62,16 +62,19 @@ before_install:
     fi
 
 install: ./build-bin/go_offline
-script: ./travis/publish.sh
+jobs:
+  include:
+    - name: default
+      script: ./travis/publish.sh
+    - name: Re-push all Docker images
+      script: docker/bin/push_all $(echo "${TRAVIS_TAG}" | sed 's/^docker-//')
+      if: 'type IN (push) and tag =~ /^docker-/'
 
 branches:
   except:
     # Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
     # See https://github.com/travis-ci/travis-ci/issues/1532
     - /^[0-9]/
-    # Don't build docker- tags with Travis. Docker Hub will pick up and run the build. docker- tags are used to recreate
-    # docker images without rebuilding Zipkin so we don't need to run here.
-    - /^docker-/
 
 notifications:
   webhooks:
@@ -99,6 +102,10 @@ notifications:
 #   - referenced in .settings.xml
 # SONATYPE_PASSWORD=password_to_SONATYPE_USER
 #   - referenced in .settings.xml
+# DOCKERHUB_USER=typically_dockerzipkindeployer
+#   - only push top-level projects: zipkin zipkin-aws zipkin-dependencies zipkin-gcp to Docker Hub, only on release
+#   - login like this: echo "$DOCKERHUB_PASSWORD"| docker login -u "$DOCKERHUB_USER" --password-stdin
+# DOCKERHUB_PASSWORD=password_to_DOCKERHUB_USER
 #
 # Legacy secure variables are listed here:
 env:
@@ -107,11 +114,3 @@ env:
     - secure: "HvCQa4ZC7dexW8Iddbwtox4NY4yvoZtyYtkwlRG5Jh/h7MY1rFwghpqv42WunOnq+hgpVUWCJPM2sM1WY+JQQXSRFFfkUxSnVGfyqIRW3oHf6uK4Sw4rtX+Q/nthliu5QNqReMcg0+rr/UD2Nxat4QZqtnlVm2MQJNu8oxcm0hw="
     # Ex. travis encrypt BINTRAY_KEY=xxx-https://bintray.com/profile/edit-xxx
     - secure: "JC8sJHol2tGQT8QK00L8YQZjeo8gUnGS3x+kuYwF4UknJrJbz4+UU4uz2VDQJNdomjROngO6qLZrZmHOuV9l2LswZ7atlvMdEA16lxwKUQKK9xq4Qs5RxdZsz+zJwmEW5QcocjM1bRAQv+y4MPY9rHmoWEjtFQzfEovBpwFjafM="
-
-    # To trigger Docker image publication, we need the Trigger Url from https://cloud.docker.com/u/openzipkin/repository/docker/openzipkin/zipkin/builds/edit
-    # However, this is too big for travis encrypt. Instead, we decompose it into
-    # two variables: https://cloud.docker.com/api/build/v1/source/${DOCKER_HUB_SERVICE_UUID}/trigger/${DOCKER_HUB_TRIGGER_UUID}/call/
-    # Ex. travis encrypt DOCKER_HUB_SERVICE_UUID=https://cloud.docker.com/api/build/v1/source/XXX/trigger/...
-    - secure: "iXCKU7rbBqBYZKCmF/VQNE/vFypM07+n4fv/RwwaL9XTrZJEF0TdLQDJzI5ekh/j7sWMlhEtGRvIKokNy3LRk+yTxFGSEOlqtsPv3QVVoO2z63DVEg5noeUteq3FgCKx/Dzj7eSukC13nE4acI7ShGCzzNn2ItYJiVT349YGqYM="
-    # Ex. travis encrypt DOCKER_HUB_TRIGGER_UUID=https://cloud.docker.com/api/build/v1/source/.../trigger/XXX
-    - secure: "HL9NVPuc9SZhWP2CSmv+LLc9y8rERr6alTuSTkURrbmemonmUH5aegVtegoeRus2Lxph4fW5NgIr44goquFNqe9905EAH5/P5E39P4z+tGfBAi3EvsuGn07oXaft96obCocc3TXMQND5bKJL46f0UGnQPiOffpXvM9/92qYYlRE="
