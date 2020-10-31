@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  prepare-docker:
+  prepare-docker-targets:
     name: Build Zipkin and Docker target matrix
     runs-on: ubuntu-latest
     outputs:
@@ -63,10 +63,10 @@ jobs:
         run: echo "::set-output name=matrix::{\"include\":$(.github/workflows/docker/targets-as-json)}"
   build-and-verify-docker:
     name: Build and verify Docker images
-    needs: discover-targets
+    needs: prepare-docker-targets
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{ fromJson(needs.discover-targets.outputs.matrix) }}
+      matrix: ${{ fromJson(needs.prepare-docker-targets.outputs.matrix) }}
     steps:
       # Remove apt repos that are known to break from time to time.
       # See https://github.com/actions/virtual-environments/issues/323
