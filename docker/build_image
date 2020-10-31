@@ -38,6 +38,9 @@ ZIPKIN_FROM_MAVEN_BUILD=${ZIPKIN_FROM_MAVEN_BUILD:-false}
 # Hence, we use one version to keep the layer count manageable and centralized here.
 JAVA_VERSION=${JAVA_VERSION:-15.0.1_p9}
 
+# Platforms to eventually push to the registry
+PLATFORMS="linux/amd64,linux/arm64"
+
 # Use latest from https://quay.io/repository/app-sre/nginx?tab=tags
 NGINX_VERSION=1.19.2
 DOCKER_ARGS=""
@@ -67,6 +70,10 @@ case ${TARGET} in
     # Use latest stable version: https://cassandra.apache.org/download/
     CASSANDRA_VERSION=3.11.8
     DOCKER_ARGS=" --build-arg cassandra_version=${CASSANDRA_VERSION} --label cassandra-version=${CASSANDRA_VERSION}"
+    # Currently crashes on arm64 per: https://issues.apache.org/jira/browse/CASSANDRA-16212#
+    # When this works, we'll also need to fix the install script to use a different port because
+    # buildx will run the two arch builds simultaneously.
+    PLATFORMS="linux/amd64"
     ;;
   zipkin-elasticsearch6 )
     DOCKERFILE_PATH=docker/storage/elasticsearch6/Dockerfile
@@ -146,9 +153,6 @@ if [ "${OP}" != "push" ]; then
   echo "Invalid OP: ${OP}, Ex. load or push"
   exit 1
 fi
-
-# Platforms to eventually push to the registry
-PLATFORMS="linux/amd64,linux/arm64"
 
 # This can be less manual in the future, for example checking buildx to see what it can do.
 ARCH=${ARCH:-$(uname -m)}
