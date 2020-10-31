@@ -54,7 +54,6 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: zipkin-server-jars
-          if: ${{ success() }}
           if-no-files-found: error
           path: |
                 zipkin-server/target/zipkin-server-*-exec.jar
