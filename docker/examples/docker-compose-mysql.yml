@@ -24,7 +24,7 @@ version: '2.4'
 
 services:
   storage:
-    image: openzipkin/zipkin-mysql:${TAG:-latest}
+    image: ghcr.io/ghcr.io/openzipkin/zipkin-mysql:${TAG:-latest}
     container_name: mysql
     # Uncomment to expose the storage port for testing
     # ports:
@@ -36,7 +36,7 @@ services:
       file: docker-compose.yml
       service: zipkin
     # slim doesn't include MySQL support, so switch to the larger image
-    image: openzipkin/zipkin:${TAG:-latest}
+    image: ghcr.io/ghcr.io/openzipkin/zipkin:${TAG:-latest}
     environment:
       - STORAGE_TYPE=mysql
       - MYSQL_HOST=storage

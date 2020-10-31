@@ -26,7 +26,7 @@ services:
   # The zipkin process services the UI, and also exposes a POST endpoint that
   # instrumentation can send trace data to.
   zipkin:
-    image: openzipkin/zipkin-slim:${TAG:-latest}
+    image: ghcr.io/openzipkin/zipkin-slim:${TAG:-latest}
     container_name: zipkin
     # Environment settings are defined here https://github.com/openzipkin/zipkin/blob/master/zipkin-server/README.md#environment-variables
     environment:

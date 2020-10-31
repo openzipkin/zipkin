@@ -22,7 +22,7 @@ version: '2.4'
 
 services:
   zipkin-ui:
-    image: openzipkin/zipkin-ui:${TAG:-latest}
+    image: ghcr.io/ghcr.io/openzipkin/zipkin-ui:${TAG:-latest}
     container_name: zipkin-ui
     environment:
       # Change this if connecting to a different zipkin server

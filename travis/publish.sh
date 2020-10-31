@@ -77,6 +77,16 @@ print_project_version() {
   echo "${POM_VERSION}"
 }
 
+is_release_version() {
+  project_version="$(print_project_version)"
+  if [[ "$project_version" =~ ^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ ]]; then
+    echo "Build started by release commit $project_version. Will synchronize to maven central."
+    return 0
+  else
+    return 1
+  fi
+}
+
 release_version() {
   echo "${TRAVIS_TAG}" | sed 's/^release-//'
 }
@@ -138,12 +148,6 @@ javadoc_to_gh_pages() {
   git push origin gh-pages
 }
 
-run_docker_hub_build() {
-  project_version="$(print_project_version)"
-  echo "Starting Docker Hub build for ${project_version}"
-  curl -X POST -H "Content-Type: application/json" -d "{\"build\": \"true\", \"source_type\": \"Tag\", \"source_name\": \"${project_version}\"}" "https://cloud.docker.com/api/build/v1/source/${DOCKER_HUB_SERVICE_UUID}/trigger/${DOCKER_HUB_TRIGGER_UUID}/call/"
-}
-
 #----------------------
 # MAIN
 #----------------------
@@ -154,13 +158,13 @@ if ! is_pull_request && build_started_by_tag; then
 fi
 
 # During a release upload, don't run tests as they can flake or overrun the max time allowed by Travis.
-if is_release_commit; then
+if is_release_version; then
   true
 else
   # verify runs both tests and integration tests (Docker tests included)
   # -Dlicense.skip=true skips license on Travis due to #1512
   # -DskipActuator ensures no tests rely on the actuator library
-  ./mvnw verify -nsu -Dlicense.skip=true -DskipActuator
+  ./mvnw verify -nsu -Dlicense.skip=true -DskipActuator -DskipITs
 fi
 
 # If we are on a pull request, our only job is to run tests, which happened above via ./mvnw install
@@ -173,16 +177,17 @@ elif is_travis_branch_master; then
   # -Prelease ensures the core jar ends up JRE 1.6 compatible
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests deploy
 
-  # If the deployment succeeded, sync it to Maven Central and build the Docker image.
-  # Note: this needs to be done once per project, not module, hence -N
-  if is_release_commit; then
-    run_docker_hub_build
+  # Regardless of if this is a release build or not, push to corresponding Docker Registries
+  ZIPKIN_FROM_MAVEN_BUILD=true docker/bin/push_all print_project_version
+
+  if is_release_version; then
+    # If the deployment succeeded, sync it to Maven Central.
+    # Note: this needs to be done once per project, not module, hence -N
     ./mvnw --batch-mode -s ./.settings.xml -nsu -N io.zipkin.centralsync-maven-plugin:centralsync-maven-plugin:sync
+
+    # cleanup the release trigger, but don't fail if it was already there
+    git push origin :"release-$(print_project_version)" || true
     javadoc_to_gh_pages
-  else
-    for target in $(docker/bin/targets-to-build); do
-      docker/build_image ghcr.io/openzipkin/${target}:master push
-    done
   fi
 
 # If we are on a release tag, the following will update any version references and push a version tag for deployment.

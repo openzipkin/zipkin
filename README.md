@@ -38,6 +38,7 @@ java -jar zipkin.jar
 
 You can also start Zipkin via Docker.
 ```bash
+# Note: this is mirrored as ghcr.io/openzipkin/zipkin
 docker run -d -p 9411:9411 openzipkin/zipkin
 ```
 
@@ -59,6 +60,7 @@ java -jar zipkin.jar
 
 Running via Docker:
 ```bash
+# Note: this is mirrored as ghcr.io/openzipkin/zipkin
 docker run -d -p 9411:9411 openzipkin/zipkin-slim
 ```
 
@@ -195,8 +197,8 @@ Releases are uploaded to [Bintray](https://bintray.com/openzipkin/maven/zipkin) 
 ### Library Snapshots
 Snapshots are uploaded to [JFrog](https://oss.jfrog.org/artifactory/oss-snapshot-local) after commits to master.
 ### Docker Images
-Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin`.
-See [docker](./docker) for details.
+Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin` and GitHub
+Container Registry as `ghcr.io/openzipkin/zipkin`. See [docker](./docker) for details.
 ### Javadocs
 https://zipkin.io/zipkin contains versioned folders with JavaDocs published on each (non-PR) build, as well
 as releases.

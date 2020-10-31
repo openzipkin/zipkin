@@ -104,6 +104,9 @@ if [ ${DOCKERFILE_PATH} = docker/Dockerfile ]; then
       if [[ -f "zipkin-server/target/zipkin-server-${ZIPKIN_VERSION}-exec.jar" &&
             -f "zipkin-server/target/zipkin-server-${ZIPKIN_VERSION}-slim.jar" ]]; then
         echo Re-using Zipkin ${ZIPKIN_VERSION} binaries from a previous build...
+      elif [ ${ZIPKIN_FROM_MAVEN_BUILD} = true ]; then
+        echo "ZIPKIN_FROM_MAVEN_BUILD=true, but required binaries are not present"
+        exit 1
       else
         if [ ${ZIPKIN_VERSION} != ${POM_VERSION} ]; then
           echo "To build Zipkin implicitly, set ZIPKIN_VERSION=${POM_VERSION}"
