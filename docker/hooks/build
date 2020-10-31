@@ -41,7 +41,9 @@ echo "Building images for ${SOURCE_BRANCH}"
 #                  '1.0.1' and Dockerfiles will use it to fetch the correct version of Zipkin.
 #   docker-1.0.1 - Building a release image, but not a new Zipkin server. This cut command will return
 #                  '1.0.1' and Dockerfiles will use it to fetch the correct version of Zipkin.
-export RELEASE_VERSION="$(echo "${SOURCE_BRANCH}" | cut -d '-' -f 2)"
+ZIPKIN_VERSION="$(echo "${SOURCE_BRANCH}" | cut -d '-' -f 2)"
+export ZIPKIN_VERSION
+
 tags=${DOCKER_TAG//,/ }
 tags_0=${DOCKER_TAG//,*/}
 

@@ -72,21 +72,13 @@ check_release_tag() {
 }
 
 print_project_version() {
-  ./mvnw help:evaluate -N -Dexpression=project.version -q -DforceStdout
-}
-
-is_release_commit() {
-  project_version="$(print_project_version)"
-  if [[ "$project_version" =~ ^[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]+$ ]]; then
-    echo "Build started by release commit $project_version. Will synchronize to maven central."
-    return 0
-  else
-    return 1
-  fi
+  # Cache as help:evaluate is not quick
+  export POM_VERSION=${POM_VERSION:-$(mvn help:evaluate -N -Dexpression=project.version -q -DforceStdout)}
+  echo "${POM_VERSION}"
 }
 
 release_version() {
-    echo "${TRAVIS_TAG}" | sed 's/^release-//'
+  echo "${TRAVIS_TAG}" | sed 's/^release-//'
 }
 
 safe_checkout_master() {
@@ -188,9 +180,9 @@ elif is_travis_branch_master; then
     ./mvnw --batch-mode -s ./.settings.xml -nsu -N io.zipkin.centralsync-maven-plugin:centralsync-maven-plugin:sync
     javadoc_to_gh_pages
   else
-    # Copy the binaries so that they can be externally pushed to Docker
-    cp zipkin-server/target/zipkin-server-*-exec.jar zipkin-exec.jar
-    cp zipkin-server/target/zipkin-server-*-slim.jar zipkin-slim.jar
+    for target in $(docker/bin/targets-to-build); do
+      docker/build_image ghcr.io/openzipkin/${target}:master push
+    done
   fi
 
 # If we are on a release tag, the following will update any version references and push a version tag for deployment.

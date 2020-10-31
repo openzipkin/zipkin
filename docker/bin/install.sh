@@ -15,33 +15,29 @@
 
 set -eux
 
-# This script decides based on $RELEASE_FROM_CONTEXT and $RELEASE_VERSION whether to reuse, build,
-# or download the binaries we need.
-if [ "$RELEASE_FROM_CONTEXT" = "true" ]; then
-  echo "*** Reusing binaries in the Docker context..."
-  cp /code/zipkin-exec.jar zipkin-exec.jar
-  cp /code/zipkin-slim.jar zipkin-slim.jar
-elif [ "$RELEASE_VERSION" = "master" ]; then
-  echo "*** Building from source..."
-
-  # Defensively avoid arm64+alpine problems with posix_spawn
-  export MAVEN_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
-
-  # Use the same command as we suggest in zipkin-server/README.md
-  #  * Uses mvn not ./mvnw to reduce layer size: we control the Maven version in Docker
-  (cd /code; mvn -T1C -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server package)
-  cp /code/zipkin-server/target/zipkin-server-*-exec.jar zipkin-exec.jar
-  cp /code/zipkin-server/target/zipkin-server-*-slim.jar zipkin-slim.jar
+# This script decides based on $ZIPKIN_FROM_MAVEN_BUILD and $ZIPKIN_VERSION whether to reuse or
+# download the binaries we need.
+if [ "$ZIPKIN_FROM_MAVEN_BUILD" = "true" ]; then
+  echo "*** Reusing Zipkin jars in the Docker context..."
+  cp "/code/zipkin-server/target/zipkin-server-${ZIPKIN_VERSION}-exec.jar" zipkin-exec.jar
+  cp "/code/zipkin-server/target/zipkin-server-${ZIPKIN_VERSION}-slim.jar" zipkin-slim.jar
 else
-  echo "*** Downloading from Maven...."
-  for classifier in exec slim; do
-    # This prefers Maven central, but uses our release repository if it isn't yet synced.
-    mvn --batch-mode org.apache.maven.plugins:maven-dependency-plugin:get \
-        -DremoteRepositories=bintray::::https://dl.bintray.com/openzipkin/maven -Dtransitive=false \
-        -Dartifact=io.zipkin:zipkin-server:${RELEASE_VERSION}:jar:${classifier}
-    # Move, don't copy, large archives to prevent zipkin-builder image cache bloat
-    find ~/.m2/repository -name zipkin-server-${RELEASE_VERSION}-${classifier}.jar -exec mv {} zipkin-${classifier}.jar \;
-  done
+  case ${ZIPKIN_VERSION} in
+    *-SNAPSHOT )
+      echo "Building from source within Docker is not supported. \
+            Build via instructions at the bottom of zipkin-server/README.md \
+            and set ZIPKIN_FROM_MAVEN_BUILD=true"
+      exit 1
+      ;;
+    * )
+      echo "*** Downloading from Maven..."
+      for classifier in exec slim; do
+        mvn -q --batch-mode --batch-mode org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
+            -Dtransitive=false -Dartifact=io.zipkin:zipkin-server:${ZIPKIN_VERSION}:jar:${classifier}
+        find ~/.m2/repository -name zipkin-server-${ZIPKIN_VERSION}-${classifier}.jar -exec cp {} zipkin-${classifier}.jar \;
+      done
+      ;;
+    esac
 fi
 
 # sanity check!

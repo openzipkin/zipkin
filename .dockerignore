@@ -22,7 +22,8 @@
 **/Dockerfile
 docker/hooks/**
 travis/**
+.travis.yml
 
 # Allow re-use of built artifacts when building docker from master or a release tag
-!/zipkin-exec.jar
-!/zipkin-slim.jar
+!/zipkin-server/target/zipkin-server-*exec.jar
+!/zipkin-server/target/zipkin-server-*slim.jar
