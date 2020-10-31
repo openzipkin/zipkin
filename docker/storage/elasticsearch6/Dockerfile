@@ -26,6 +26,8 @@ FROM ghcr.io/openzipkin/java:${java_version} as install
 
 WORKDIR /install
 
+ARG elasticsearch_version
+
 # We don't download bin scripts as we customize for reasons including BusyBox problems
 RUN wget -qO- https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-${elasticsearch_version}.tar.gz| tar xz \
     --wildcards --strip=1 --exclude=*/bin

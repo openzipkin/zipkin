@@ -24,9 +24,9 @@ COPY docker/storage/elasticsearch7/docker-bin/* /docker-bin/
 
 FROM ghcr.io/openzipkin/java:${java_version} as install
 
-ARG elasticsearch_version
-
 WORKDIR /install
+
+ARG elasticsearch_version
 
 # Download only the OSS distribution (lacks X-Pack)
 # We don't download bin scripts as we customize for reasons including BusyBox problems
