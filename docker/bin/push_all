@@ -52,5 +52,5 @@ echo "Will push the following tags:${TAGS}\n"
 
 for tag in $(echo ${TAGS}|xargs); do
   echo "Pushing tag ${tag}..."
-  docker/build_image "${tag}" push
+  docker/build_image "${tag}" ${VERSION} push
 done
