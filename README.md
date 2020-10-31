@@ -193,9 +193,10 @@ Server artifacts are under the maven group id `io.zipkin`
 Library artifacts are under the maven group id `io.zipkin.zipkin2`
 
 ### Library Releases
-Releases are uploaded to [Bintray](https://bintray.com/openzipkin/maven/zipkin) and synchronized to [Maven Central](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.zipkin%22)
+Releases are at [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.zipkin%22)
 ### Library Snapshots
-Snapshots are uploaded to [JFrog](https://oss.jfrog.org/artifactory/oss-snapshot-local) after commits to master.
+Snapshots are uploaded to [Sonatype](https://oss.sonatype.org/content/repositories/snapshots) after
+commits to master.
 ### Docker Images
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin` and GitHub
 Container Registry as `ghcr.io/openzipkin/zipkin`. See [docker](./docker) for details.
