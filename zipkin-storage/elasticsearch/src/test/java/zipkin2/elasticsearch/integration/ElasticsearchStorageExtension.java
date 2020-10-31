@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.utility.DockerImageName;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.ElasticsearchStorage.Builder;
@@ -39,11 +40,11 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
   static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchStorageExtension.class);
 
   static final int ELASTICSEARCH_PORT = 9200;
-  final String image;
+  final DockerImageName image;
   final Integer priority;
   GenericContainer<?> container;
 
-  ElasticsearchStorageExtension(String image, Integer priority) {
+  ElasticsearchStorageExtension(DockerImageName image, Integer priority) {
     this.image = image;
 
     // This is so that both legacy and composable templates can be tested with this class
@@ -65,7 +66,7 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
             .waitingFor(new HttpWaitStrategy().forPath("/"));
         container.start();
         if (Boolean.parseBoolean(System.getenv("ES_DEBUG"))) {
-          container.followOutput(new Slf4jLogConsumer(LoggerFactory.getLogger(image)));
+          container.followOutput(new Slf4jLogConsumer(LoggerFactory.getLogger(image.toString())));
         }
         LOGGER.info("Starting docker image " + image);
       } catch (RuntimeException e) {

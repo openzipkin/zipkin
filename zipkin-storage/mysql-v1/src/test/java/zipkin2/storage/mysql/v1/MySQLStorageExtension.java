@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.utility.DockerImageName;
 import zipkin2.CheckResult;
 
 import static org.junit.Assume.assumeTrue;
@@ -28,11 +29,11 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class MySQLStorageExtension implements BeforeAllCallback, AfterAllCallback {
   static final Logger LOGGER = LoggerFactory.getLogger(MySQLStorageExtension.class);
 
-  final String image;
+  final DockerImageName image;
 
   ZipkinMySQLContainer container;
 
-  MySQLStorageExtension(String image) {
+  MySQLStorageExtension(DockerImageName image) {
     this.image = image;
   }
 
