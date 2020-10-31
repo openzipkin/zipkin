@@ -74,7 +74,7 @@ esac
 # We don't currently release from a remote snapshot repository. When the version is snapshot, this
 # is a local build or a pull request. Look to see if the files the build would produce are present.
 # This allows skipping the build when an upstream step or stage has already produced them.
-if [ ${DOCKERFILE_PATH} == docker/Dockerfile ]; then
+if [ ${DOCKERFILE_PATH} = docker/Dockerfile ]; then
   case ${ZIPKIN_VERSION} in
     *-SNAPSHOT )
       if [[ -f "zipkin-server/target/zipkin-server-${ZIPKIN_VERSION}-exec.jar" &&
