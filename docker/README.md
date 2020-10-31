@@ -4,7 +4,9 @@ This directory contains assets used to build and release Zipkin's Docker images.
 ## Production images
 The only Zipkin production images built here:
 * openzipkin/zipkin: The core server image that hosts the Zipkin UI, Api and Collector features.
+  * Mirrored as ghcr.io/openzipkin/zipkin
 * openzipkin/zipkin-slim: The stripped server image that hosts the Zipkin UI and Api features, but only supports in-memory or Elasticsearch storage with HTTP or gRPC span collectors.
+  * Mirrored as ghcr.io/openzipkin/zipkin-slim
 
 ## Testing images
 

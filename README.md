@@ -38,6 +38,7 @@ java -jar zipkin.jar
 
 You can also start Zipkin via Docker.
 ```bash
+# Note: this is mirrored as ghcr.io/openzipkin/zipkin
 docker run -d -p 9411:9411 openzipkin/zipkin
 ```
 
@@ -59,6 +60,7 @@ java -jar zipkin.jar
 
 Running via Docker:
 ```bash
+# Note: this is mirrored as ghcr.io/openzipkin/zipkin
 docker run -d -p 9411:9411 openzipkin/zipkin-slim
 ```
 

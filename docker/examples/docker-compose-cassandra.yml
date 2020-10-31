@@ -22,7 +22,7 @@ version: '2.4'
 
 services:
   storage:
-    image: openzipkin/zipkin-cassandra:${TAG:-latest}
+    image: ghcr.io/ghcr.io/openzipkin/zipkin-cassandra:${TAG:-latest}
     # Uncomment to use DSE instead (minimum version 5.1)
     # image: datastax/dse-server:5.1.20
     # environment:
@@ -38,7 +38,7 @@ services:
       file: docker-compose.yml
       service: zipkin
     # slim doesn't include Cassandra support, so switch to the larger image
-    image: openzipkin/zipkin:${TAG:-latest}
+    image: ghcr.io/ghcr.io/openzipkin/zipkin:${TAG:-latest}
     environment:
       - STORAGE_TYPE=cassandra3
       # When using the test docker image, or have schema pre-installed, you don't need to ensure it
