@@ -57,8 +57,9 @@ before_install:
       git config credential.helper "store --file=.git/credentials"
       echo "https://$GH_TOKEN:@github.com" > .git/credentials
 
-      # Log in to Docker Hub for releasing the image
+      # Log in to GitHub Container Registry and Docker Hub for releasing images
       echo "$GH_TOKEN"| docker login ghcr.io -u "$GH_USER" --password-stdin
+      echo "$DOCKERHUB_PASSWORD"| docker login -u "$DOCKERHUB_USER" --password-stdin
     fi
 
 install: ./build-bin/go_offline
