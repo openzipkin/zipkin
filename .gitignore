@@ -14,13 +14,10 @@ _site/
 *.iml
 *.swp
 # quickstart or temporary copies of zipkin's jar
-*.jar
+/*.jar
 # temporary directory used by travis/publish.sh for building gh-pages
 /javadoc-builddir
 .DS_Store
-
-# Maven Wrapper
-.mvn/wrapper/maven-wrapper.jar
 
 # This project does not use Gradle but some developers may use it to e.g., setup a Node environment.
 # It doesn't hurt to just exclude it here.
