@@ -164,7 +164,7 @@ else
   # verify runs both tests and integration tests (Docker tests included)
   # -Dlicense.skip=true skips license on Travis due to #1512
   # -DskipActuator ensures no tests rely on the actuator library
-  ./mvnw verify -nsu -Dlicense.skip=true -DskipActuator -DskipITs
+  ./mvnw verify -nsu -Dlicense.skip=true -DskipActuator
 fi
 
 # If we are on a pull request, our only job is to run tests, which happened above via ./mvnw install
