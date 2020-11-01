@@ -39,7 +39,7 @@ import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependenc
 class ITMySQLStorage {
 
   @RegisterExtension MySQLStorageExtension backend = new MySQLStorageExtension(
-    DockerImageName.parse("ghcr.io/openzipkin/zipkin-mysql:2.22.0"));
+    DockerImageName.parse("ghcr.io/openzipkin/zipkin-mysql:2.22.1"));
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<MySQLStorage> {

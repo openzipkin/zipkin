@@ -24,7 +24,11 @@ base layer `openzipkin/zipkin`, and setting up schema where relevant.
 ## Getting started
 
 Zipkin has no dependencies, for example you can run an in-memory zipkin server like so:
-`docker run -d -p 9411:9411 openzipkin/zipkin-slim`
+
+```bash
+# Note: this is mirrored as ghcr.io/openzipkin/zipkin-slim
+$ docker run -d -p 9411:9411 openzipkin/zipkin-slim
+```
 
 See the ui at (docker ip):9411
 
