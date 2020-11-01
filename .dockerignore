@@ -3,7 +3,6 @@
 !.dockerignore
 !.mvn
 # Builds don't run license check, but need git-commit-id in the server console
-#  * When releasing docker/builder, use a shallow clone to avoid >70MB!
 !.git
 !docker/zipkin/**
 !**/.eslintrc*
