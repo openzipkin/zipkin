@@ -34,7 +34,7 @@ import org.testcontainers.utility.DockerImageName;
 class KafkaCollectorRule extends ExternalResource {
   static final Logger LOGGER = LoggerFactory.getLogger(KafkaCollectorRule.class);
   static final DockerImageName IMAGE =
-    DockerImageName.parse("ghcr.io/openzipkin/zipkin-kafka:2.22.0");
+    DockerImageName.parse("ghcr.io/openzipkin/zipkin-kafka:2.22.1");
   static final int KAFKA_PORT = 19092;
   static final String KAFKA_BOOTSTRAP_SERVERS = "localhost:" + KAFKA_PORT;
   static final String KAFKA_TOPIC = "zipkin";

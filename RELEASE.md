@@ -1,7 +1,6 @@
 # OpenZipkin Release Process
 
-This repo uses semantic versions with a twist: we update minors on api-breaks until we hit 1.0. Please keep this
-in mind when choosing version numbers.
+This repo uses semantic versions. Please keep this in mind when choosing version numbers.
 
 1. **Alert others you are releasing**
 

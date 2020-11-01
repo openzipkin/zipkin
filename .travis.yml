@@ -94,7 +94,6 @@ notifications:
     on_success: change
     on_failure: always
 
-
 # Secure variables needed for release and publication
 #
 # When Travis, add to https://travis-ci.org/github/openzipkin/${REPO}/settings
@@ -105,6 +104,7 @@ notifications:
 #   - referenced in .settings.xml
 #   - store like this: echo "https://$GH_TOKEN:@github.com" > .git/credentials
 # GH_USER=user_that_created_GH_TOKEN
+#   - login like this: echo "$GH_TOKEN"| docker login ghcr.io -u "$GH_USER" --password-stdin
 # GPG_SIGNING_KEY=$(gpg -a --export-secret-keys zipkin-admin@googlegroups.com |base64)
 #   - used to sign jars in release commands
 #   - sent to keyserver.ubuntu.com

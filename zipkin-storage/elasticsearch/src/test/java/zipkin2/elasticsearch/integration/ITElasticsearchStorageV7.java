@@ -26,7 +26,7 @@ import static zipkin2.elasticsearch.integration.ElasticsearchStorageExtension.in
 class ITElasticsearchStorageV7 extends ITElasticsearchStorage {
 
   @RegisterExtension ElasticsearchStorageExtension backend = new ElasticsearchStorageExtension(
-    DockerImageName.parse("ghcr.io/openzipkin/zipkin-elasticsearch7:2.22.0"), null);
+    DockerImageName.parse("ghcr.io/openzipkin/zipkin-elasticsearch7:2.22.1"), null);
 
   @Override ElasticsearchStorageExtension backend() {
     return backend;

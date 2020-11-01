@@ -29,7 +29,7 @@ WORKDIR /install
 # Conditions aren't supported in Dockerfile instructions, so we copy source even if it isn't used.
 COPY --from=scratch /code /code
 
-# This will either be "master" or a real version ex. "2.4.5"
+# This will either be a snapshot like 2.4.5-SNAPSHOT or a real version ex. "2.4.5"
 ARG release_version
 ENV RELEASE_VERSION=$release_version
 # When true, main images reuse zipkin-exec.jar and zipkin-slim.jar in the context root
