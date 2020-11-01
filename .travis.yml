@@ -76,10 +76,8 @@ jobs:
     - name: Re-push all Docker images
       script:
         - |
-          set -euxo pipefail
           docker/bin/push_all $(echo "${TRAVIS_TAG}" | sed 's/^docker-//') &&
-          # cleanup the release trigger, but don't fail if it was already there
-          git push origin :"${TRAVIS_TAG}" || true
+          git push origin :"${TRAVIS_TAG}"
       if: 'type IN (push) and tag =~ /^docker-/'
 
 branches:
