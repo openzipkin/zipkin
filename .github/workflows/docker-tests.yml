@@ -19,7 +19,6 @@ jobs:
       # Remove apt repos that are known to break from time to time.
       # See https://github.com/actions/virtual-environments/issues/323
       - name: Remove broken apt repos [Ubuntu]
-        if: matrix.os == 'ubuntu-latest'
         run: |
           for apt_file in `grep -lr microsoft /etc/apt/sources.list.d/`; do sudo rm $apt_file; done
       # Setup latest JDK. We do this to ensure users don't need to use the same version as our
@@ -38,14 +37,6 @@ jobs:
         with:
           path: ~/.m2/repository
           key: m2-repository-${{ hashFiles('**/pom.xml') }}
-      - name: Cache Maven Wrapper
-        uses: actions/cache@v1
-        with:
-          path: .mvn/wrapper
-          key: mvn-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
-      - name: Show version
-        run: ./mvnw -version
-        shell: bash
       - name: Execute Server Build
         run: ./mvnw -T1C -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server clean package
         shell: bash
@@ -92,8 +83,9 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: zipkin-server-jars
+          path: zipkin-server/target/
       - name: Build Docker image openzipkin/${{ matrix.target }}:test
-        run:  docker/build_image openzipkin/${{ matrix.target }}:test
+        run:  RELEASE_FROM_MAVEN_BUILD=true docker/build_image openzipkin/${{ matrix.target }}:test
       - name: Verify Docker image openzipkin/${{ matrix.target }}:test
         run: |
           # This just makes sure containers run and the HEALTHCHECK works (for now..)
