@@ -33,7 +33,7 @@ OP=${3:-load}
 TARGET=$(echo $TAG|sed -e 's~.*/\(.*\):.*~\1~g')
 # When true and building zipkin zipkin-slim or zipkin-ui, use zipkin-exec.jar and zipkin-slim.jar
 # produced by a Maven build. This is implicitly true when a SNAPSHOT version.
-ZIPKIN_FROM_MAVEN_BUILD=${ZIPKIN_FROM_MAVEN_BUILD:-false}
+RELEASE_FROM_MAVEN_BUILD=${RELEASE_FROM_MAVEN_BUILD:-false}
 
 # When publishing jars, we build with JDK 11 to ensure we can write 1.6 zipkin.jar for Brave.
 # However, when creating Docker images, there's no such requirement.
@@ -112,8 +112,8 @@ if [ ${DOCKERFILE_PATH} = docker/Dockerfile ]; then
       if [ -f "zipkin-server/target/zipkin-server-${VERSION}-exec.jar" ] &&
          [ -f "zipkin-server/target/zipkin-server-${VERSION}-slim.jar" ]; then
         echo Re-using Zipkin ${VERSION} binaries from a previous build...
-      elif [ ${ZIPKIN_FROM_MAVEN_BUILD} = true ]; then
-        echo "ZIPKIN_FROM_MAVEN_BUILD=true, but required binaries are not present"
+      elif [ ${RELEASE_FROM_MAVEN_BUILD} = true ]; then
+        echo "RELEASE_FROM_MAVEN_BUILD=true, but required binaries are not present"
         exit 1
       else
         if [ ${VERSION} != ${POM_VERSION} ]; then
@@ -124,14 +124,14 @@ if [ ${DOCKERFILE_PATH} = docker/Dockerfile ]; then
         echo Building Zipkin ${VERSION}...
         ./mvnw -T1C -q --batch-mode -DskipTests -Dlicense.skip=true --also-make -pl zipkin-server clean package
       fi
-      ZIPKIN_FROM_MAVEN_BUILD=true
+      RELEASE_FROM_MAVEN_BUILD=true
       ;;
   esac
 fi
 
 DOCKER_ARGS="-f ${DOCKERFILE_PATH} --target ${TARGET} --tag ${TAG} ${DOCKER_ARGS} \
---build-arg zipkin_version=${VERSION} --label zipkin-version=${VERSION} \
---build-arg zipkin_from_maven_build=${ZIPKIN_FROM_MAVEN_BUILD} \
+--build-arg release_version=${VERSION} --label zipkin-version=${VERSION} \
+--build-arg release_from_maven_build=${RELEASE_FROM_MAVEN_BUILD} \
 --build-arg java_version=${JAVA_VERSION} \
 --label org.opencontainers.image.source=https://github.com/openzipkin/zipkin \
 --label org.opencontainers.image.version=${VERSION} ."

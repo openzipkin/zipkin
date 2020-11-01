@@ -50,7 +50,7 @@ import static org.testcontainers.utility.DockerImageName.parse;
  *
  * <ul>
  *   <li>
- *     ZIPKIN_VERSION - specify to a released zipkin server. If unspecified, will use the current code,
+ *     RELEASE_VERSION - specify to a released zipkin server. If unspecified, will use the current code,
  *     i.e., the code currently displayed in your IDE.
  *   </li>
  *   <li>
@@ -68,7 +68,7 @@ class ServerIntegratedBenchmark {
 
   static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-  @Nullable static final String RELEASED_ZIPKIN_VERSION = System.getenv("ZIPKIN_VERSION");
+  @Nullable static final String RELEASE_VERSION = System.getenv("RELEASE_VERSION");
 
   static final boolean WAIT_AFTER_BENCHMARK = "true".equals(System.getenv("ZIPKIN_BENCHMARK_WAIT"));
 
@@ -279,7 +279,7 @@ class ServerIntegratedBenchmark {
     }
 
     final GenericContainer<?> zipkin;
-    if (RELEASED_ZIPKIN_VERSION == null) {
+    if (RELEASE_VERSION == null) {
       zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/java:15.0.1_p9"));
       List<String> classpath = new ArrayList<>();
       for (String item : System.getProperty("java.class.path").split(File.pathSeparator)) {
@@ -311,7 +311,7 @@ class ServerIntegratedBenchmark {
       // Don't fail on classpath problem from missing lens, as we don't use it.
       env.put("ZIPKIN_UI_ENABLED", "false");
     } else {
-      zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin:" + RELEASED_ZIPKIN_VERSION));
+      zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin:" + RELEASE_VERSION));
     }
 
     zipkin

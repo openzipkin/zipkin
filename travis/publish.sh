@@ -179,7 +179,7 @@ elif is_travis_branch_master; then
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests deploy
 
   # Regardless of if this is a release build or not, push to corresponding Docker Registries
-  ZIPKIN_FROM_MAVEN_BUILD=true docker/bin/push_all $(print_project_version)
+  RELEASE_FROM_MAVEN_BUILD=true docker/bin/push_all $(print_project_version)
 
   if is_release_version; then
     # cleanup the release trigger, but don't fail if it was already there

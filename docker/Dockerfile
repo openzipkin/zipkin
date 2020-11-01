@@ -30,13 +30,12 @@ WORKDIR /install
 COPY --from=scratch /code /code
 
 # This will either be "master" or a real version ex. "2.4.5"
-ARG zipkin_version
-ENV ZIPKIN_VERSION=$zipkin_version
+ARG release_version
+ENV RELEASE_VERSION=$release_version
 # When true, main images reuse zipkin-exec.jar and zipkin-slim.jar in the context root
-ARG zipkin_from_maven_build=false
-ENV ZIPKIN_FROM_MAVEN_BUILD=$zipkin_from_maven_build
-COPY docker/bin/install.sh /tmp/
-RUN /tmp/install.sh && rm /tmp/install.sh
+ARG release_from_maven_build=false
+ENV RELEASE_FROM_MAVEN_BUILD=$release_from_maven_build
+RUN /code/docker/bin/install.sh
 
 # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
 FROM quay.io/app-sre/nginx:$nginx_version-alpine as zipkin-ui
