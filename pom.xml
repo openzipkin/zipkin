@@ -101,6 +101,7 @@
     <maven-release-plugin.version>3.0.0-M1</maven-release-plugin.version>
     <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
+    <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
@@ -394,6 +395,7 @@
           <artifactId>go-offline-maven-plugin</artifactId>
           <version>1.2.7</version>
         </plugin>
+
         <!-- mvn -N io.takari:maven:wrapper generates the ./mvnw script -->
         <plugin>
           <groupId>io.takari</groupId>
@@ -498,6 +500,12 @@
               </configuration>
             </execution>
           </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.sonatype.plugins</groupId>
+          <artifactId>nexus-staging-maven-plugin</artifactId>
+          <version>${nexus-staging-maven-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -653,7 +661,7 @@
                 <build>SCRIPT_STYLE</build>
                 <push>SCRIPT_STYLE</push>
                 <docker-healthcheck>SCRIPT_STYLE</docker-healthcheck>
-                <block-on-health>SCRIPT_STYLE</block-on-health>
+                <block_on_health>SCRIPT_STYLE</block_on_health>
                 <targets-to-build>SCRIPT_STYLE</targets-to-build>
                 <build_image>SCRIPT_STYLE</build_image>
                 <go_offline>SCRIPT_STYLE</go_offline>
@@ -782,7 +790,6 @@
           <plugin>
             <groupId>org.sonatype.plugins</groupId>
             <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.8</version>
             <extensions>true</extensions>
             <configuration>
               <serverId>ossrh</serverId>

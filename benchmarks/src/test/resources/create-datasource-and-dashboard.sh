@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2015-2019 The OpenZipkin Authors
+# Copyright 2015-2020 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -13,10 +13,9 @@
 # the License.
 #
 
-
 set -xeuo pipefail
 
-if ! curl --retry 5 --retry-connrefused --retry-delay 0 -sf http://grafana:3000/api/dashboards/name/prom; then
+if ! curl --retry 5 --retry-connrefused --retry-delay 0 -sf http://grafana:3000/api/datasources/name/prom; then
     curl -sf -X POST -H "Content-Type: application/json" \
          --data-binary '{"name":"prom","type":"prometheus","url":"http://prometheus:9090","access":"proxy","isDefault":true}' \
          http://grafana:3000/api/datasources

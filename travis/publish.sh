@@ -176,10 +176,10 @@ if is_pull_request; then
 #    Sonatype and try again: https://oss.sonatype.org/#stagingRepositories
 elif is_travis_branch_master; then
   # -Prelease ensures the core jar ends up JRE 1.6 compatible
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests deploy
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests -Dlicense.skip=true deploy
 
   # Regardless of if this is a release build or not, push to corresponding Docker Registries
-  RELEASE_FROM_MAVEN_BUILD=true docker/bin/push_all $(print_project_version)
+  RELEASE_FROM_MAVEN_BUILD=true docker/bin/push_all_images $(print_project_version)
 
   if is_release_version; then
     # cleanup the release trigger, but don't fail if it was already there
@@ -190,6 +190,6 @@ elif is_travis_branch_master; then
 # If we are on a release tag, the following will update any version references and push a version tag for deployment.
 elif build_started_by_tag; then
   safe_checkout_master
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion="$(release_version)" -Darguments="-DskipTests" release:prepare
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion="$(release_version)" -Darguments="-DskipTests -Dlicense.skip=true" release:prepare
 fi
 

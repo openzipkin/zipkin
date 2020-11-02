@@ -23,7 +23,9 @@ version: '2.4'
 
 services:
   prometheus:
-    image: prom/prometheus
+    # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
+    # Use latest from https://quay.io/repository/prometheus/prometheus?tab=tags
+    image: quay.io/prometheus/prometheus:v2.22.0
     container_name: prometheus
     ports:
       - 9090:9090
@@ -33,7 +35,9 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
   grafana:
-    image: grafana/grafana
+    # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
+    # Use latest from https://quay.io/repository/app-sre/grafana?tab=tags
+    image: quay.io/app-sre/grafana:7.3.1
     container_name: grafana
     ports:
       - 3000:3000
@@ -44,10 +48,14 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
 
   setup_grafana_datasource:
-    image: appropriate/curl
+    # This is an arbitrary small image that has curl installed
+    # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
+    # Use latest from https://quay.io/repository/quay.io/rackspace/curl?tab=tags
+    image: quay.io/rackspace/curl:7.70.0
     container_name: setup_grafana_datasource
     depends_on:
       - grafana
     volumes:
-      - ./prometheus/create-datasource-and-dashboard.sh:/create.sh:ro
-    command: /create.sh
+      - ./prometheus/create-datasource-and-dashboard.sh:/tmp/create.sh:ro
+    working_dir: /tmp
+    entrypoint: /tmp/create.sh

@@ -31,7 +31,7 @@ POM_VERSION=${POM_VERSION:-$(mvn help:evaluate -N -Dexpression=project.version -
 RELEASE_VERSION=${2:-${POM_VERSION}}
 OP=${3:-load}
 
-TARGET=$(echo $TAG|sed -e 's~.*/\(.*\):.*~\1~g')
+DOCKER_TARGET=$(echo $TAG|sed -e 's~.*/\(.*\):.*~\1~g')
 # When true and building zipkin zipkin-slim or zipkin-ui, use zipkin-exec.jar and zipkin-slim.jar
 # produced by a Maven build. This is implicitly true when a SNAPSHOT version.
 RELEASE_FROM_MAVEN_BUILD=${RELEASE_FROM_MAVEN_BUILD:-false}
@@ -44,10 +44,11 @@ JAVA_VERSION=${JAVA_VERSION:-15.0.1_p9}
 # Platforms to eventually push to the registry
 PLATFORMS="linux/amd64,linux/arm64"
 
+# Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
 # Use latest from https://quay.io/repository/app-sre/nginx?tab=tags
 NGINX_VERSION=1.19.2
 DOCKER_ARGS=""
-case ${TARGET} in
+case ${DOCKER_TARGET} in
   zipkin )
     DOCKERFILE_PATH=docker/Dockerfile
     ;;
@@ -130,7 +131,7 @@ if [ ${DOCKERFILE_PATH} = docker/Dockerfile ]; then
   esac
 fi
 
-DOCKER_ARGS="-f ${DOCKERFILE_PATH} --target ${TARGET} --tag ${TAG} ${DOCKER_ARGS} \
+DOCKER_ARGS="-f ${DOCKERFILE_PATH} --target ${DOCKER_TARGET} --tag ${TAG} ${DOCKER_ARGS} \
 --build-arg release_version=${RELEASE_VERSION} --label zipkin-version=${RELEASE_VERSION} \
 --build-arg release_from_maven_build=${RELEASE_FROM_MAVEN_BUILD} \
 --build-arg java_version=${JAVA_VERSION} \
