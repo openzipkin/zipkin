@@ -118,13 +118,14 @@ class ServerIntegratedBenchmark {
   }
 
   @Test void mysql() throws Exception {
-    GenericContainer<?> mysql = new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:latest"))
-      .withNetwork(Network.SHARED)
-      .withNetworkAliases("mysql")
-      .withLabel("name", "mysql")
-      .withLabel("storageType", "mysql")
-      .withExposedPorts(3306)
-      .waitingFor(Wait.forHealthcheck());
+    GenericContainer<?> mysql =
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:latest"))
+        .withNetwork(Network.SHARED)
+        .withNetworkAliases("mysql")
+        .withLabel("name", "mysql")
+        .withLabel("storageType", "mysql")
+        .withExposedPorts(3306)
+        .waitingFor(Wait.forHealthcheck());
     containers.add(mysql);
 
     runBenchmark(mysql);
@@ -134,12 +135,13 @@ class ServerIntegratedBenchmark {
   // send to, we can reuse our benchmark logic here to check it. Note, this benchmark always uses
   // a docker image and ignores RELEASED_ZIPKIN_SERVER.
   @Test void xrayUdp() throws Exception {
-    GenericContainer<?> zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-aws:latest"))
-      .withNetwork(Network.SHARED)
-      .withNetworkAliases("zipkin")
-      .withEnv("STORAGE_TYPE", "xray")
-      .withExposedPorts(9411)
-      .waitingFor(Wait.forHealthcheck());
+    GenericContainer<?> zipkin =
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-aws:latest"))
+        .withNetwork(Network.SHARED)
+        .withNetworkAliases("zipkin")
+        .withEnv("STORAGE_TYPE", "xray")
+        .withExposedPorts(9411)
+        .waitingFor(Wait.forHealthcheck());
     containers.add(zipkin);
 
     runBenchmark(null, zipkin);
@@ -151,30 +153,37 @@ class ServerIntegratedBenchmark {
 
   void runBenchmark(@Nullable GenericContainer<?> storage, GenericContainer<?> zipkin)
     throws Exception {
-    GenericContainer<?> backend = new GenericContainer<>(parse("ghcr.io/openzipkin/brave-example:armeria"))
-      .withNetwork(Network.SHARED)
-      .withNetworkAliases("backend")
-      .withCommand("backend")
-      .withExposedPorts(9000)
-      .waitingFor(Wait.forHealthcheck());
+    GenericContainer<?> backend =
+      new GenericContainer<>(parse("ghcr.io/openzipkin/brave-example:armeria"))
+        .withNetwork(Network.SHARED)
+        .withNetworkAliases("backend")
+        .withCommand("backend")
+        .withExposedPorts(9000)
+        .waitingFor(Wait.forHealthcheck());
 
-    GenericContainer<?> frontend = new GenericContainer<>(parse("ghcr.io/openzipkin/brave-example:armeria"))
-      .withNetwork(Network.SHARED)
-      .withNetworkAliases("frontend")
-      .withCommand("frontend")
-      .withExposedPorts(8081)
-      .waitingFor(Wait.forHealthcheck());
+    GenericContainer<?> frontend =
+      new GenericContainer<>(parse("ghcr.io/openzipkin/brave-example:armeria"))
+        .withNetwork(Network.SHARED)
+        .withNetworkAliases("frontend")
+        .withCommand("frontend")
+        .withExposedPorts(8081)
+        .waitingFor(Wait.forHealthcheck());
     containers.add(frontend);
 
-    GenericContainer<?> prometheus = new GenericContainer<>(parse("prom/prometheus:latest"))
-      .withNetwork(Network.SHARED)
-      .withNetworkAliases("prometheus")
-      .withExposedPorts(9090)
-      .withCopyFileToContainer(
-        MountableFile.forClasspathResource("prometheus.yml"), "/etc/prometheus/prometheus.yml");
+    // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
+    // Use same version as in docker/examples/docker-compose-prometheus.yml
+    GenericContainer<?> prometheus =
+      new GenericContainer<>(parse("quay.io/prometheus/prometheus:v2.22.0"))
+        .withNetwork(Network.SHARED)
+        .withNetworkAliases("prometheus")
+        .withExposedPorts(9090)
+        .withCopyFileToContainer(
+          MountableFile.forClasspathResource("prometheus.yml"), "/etc/prometheus/prometheus.yml");
     containers.add(prometheus);
 
-    GenericContainer<?> grafana = new GenericContainer<>(parse("grafana/grafana:latest"))
+    // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
+    // Use same version as in docker/examples/docker-compose-prometheus.yml
+    GenericContainer<?> grafana = new GenericContainer<>(parse("quay.io/app-sre/grafana:7.3.1"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("grafana")
       .withExposedPorts(3000)
@@ -182,14 +191,21 @@ class ServerIntegratedBenchmark {
       .withEnv("GF_AUTH_ANONYMOUS_ORG_ROLE", "Admin");
     containers.add(grafana);
 
-    GenericContainer<?> grafanaDashboards = new GenericContainer<>(parse("appropriate/curl:latest"))
-      .withNetwork(Network.SHARED)
-      .withCommand("/create.sh")
-      .withCopyFileToContainer(
-        MountableFile.forClasspathResource("create-datasource-and-dashboard.sh"), "/create.sh");
+    // This is an arbitrary small image that has curl installed
+    // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
+    // Use same version as in docker/examples/docker-compose-prometheus.yml
+    GenericContainer<?> grafanaDashboards =
+      new GenericContainer<>(parse("quay.io/rackspace/curl:7.70.0"))
+        .withNetwork(Network.SHARED)
+        .withWorkingDirectory("/tmp")
+        .withCommand("/tmp/create.sh")
+        .withCopyFileToContainer(
+          MountableFile.forClasspathResource("create-datasource-and-dashboard.sh"),
+          "/tmp/create.sh");
     containers.add(grafanaDashboards);
 
-    GenericContainer<?> wrk = new GenericContainer<>(parse("skandyla/wrk:latest"))
+    // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
+    GenericContainer<?> wrk = new GenericContainer<>(parse("quay.io/dim/wrk:stable"))
       .withNetwork(Network.SHARED)
       .withCommand("-t4 -c128 -d100s http://frontend:8081 --latency");
     containers.add(wrk);

@@ -194,12 +194,15 @@ Library artifacts are under the maven group id `io.zipkin.zipkin2`
 
 ### Library Releases
 Releases are at [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.zipkin%22)
+
 ### Library Snapshots
 Snapshots are uploaded to [Sonatype](https://oss.sonatype.org/content/repositories/snapshots) after
 commits to master.
+
 ### Docker Images
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin` and GitHub
 Container Registry as `ghcr.io/openzipkin/zipkin`. See [docker](./docker) for details.
+
 ### Javadocs
 https://zipkin.io/zipkin contains versioned folders with JavaDocs published on each (non-PR) build, as well
 as releases.

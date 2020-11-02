@@ -653,7 +653,7 @@
                 <build>SCRIPT_STYLE</build>
                 <push>SCRIPT_STYLE</push>
                 <docker-healthcheck>SCRIPT_STYLE</docker-healthcheck>
-                <block-on-health>SCRIPT_STYLE</block-on-health>
+                <block_on_health>SCRIPT_STYLE</block_on_health>
                 <targets-to-build>SCRIPT_STYLE</targets-to-build>
                 <build_image>SCRIPT_STYLE</build_image>
                 <go_offline>SCRIPT_STYLE</go_offline>

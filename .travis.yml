@@ -7,10 +7,6 @@ os: linux             # required for arch different than amd64
 dist: focal           # newest available distribution
 
 language: java
-# Intentionally don't use "jdk" key as it is coupled to jdk.java.net availability.
-addons:
-  apt:
-    update: true
 
 # Don't do a shallow clone to allow license plugin to correctly read git history.
 git:
@@ -27,6 +23,7 @@ services:
 
 before_install:
   - |
+    # Intentionally don't use "jdk" Travis apt key as it is coupled to jdk.java.net availability.
     # Use JDK 11, so we can release Java 6 bytecode
     OPENJDK_VERSION=11
     sudo apt-get -y install openjdk-${OPENJDK_VERSION}-jdk
@@ -76,7 +73,7 @@ jobs:
     - name: Re-push all Docker images
       script:
         - |
-          docker/bin/push_all $(echo "${TRAVIS_TAG}" | sed 's/^docker-//') &&
+          docker/bin/push_all_images $(echo "${TRAVIS_TAG}" | sed 's/^docker-//') &&
           git push origin :"${TRAVIS_TAG}"
       if: 'type IN (push) and tag =~ /^docker-/'
 

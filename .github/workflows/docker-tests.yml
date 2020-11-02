@@ -95,4 +95,4 @@ jobs:
           else
             docker run --name sut -d openzipkin/${{ matrix.target }}:test
           fi
-          docker/bin/block-on-health sut || (docker logs sut && exit 1)
+          docker/bin/block_on_health sut || (docker logs sut && exit 1)
