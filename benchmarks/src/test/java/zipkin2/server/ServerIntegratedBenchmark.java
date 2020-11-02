@@ -33,8 +33,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.lifecycle.Startables;
@@ -65,6 +68,7 @@ import static org.testcontainers.utility.DockerImageName.parse;
  */
 @Disabled  // Run manually
 class ServerIntegratedBenchmark {
+  static final Logger LOG = LoggerFactory.getLogger(ServerIntegratedBenchmark.class);
 
   static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -198,15 +202,17 @@ class ServerIntegratedBenchmark {
       new GenericContainer<>(parse("quay.io/rackspace/curl:7.70.0"))
         .withNetwork(Network.SHARED)
         .withWorkingDirectory("/tmp")
-        .withCommand("/tmp/create.sh")
+        .withLogConsumer(new Slf4jLogConsumer(LOG))
+        .withCreateContainerCmdModifier(it -> it.withEntrypoint("/tmp/create.sh"))
         .withCopyFileToContainer(
-          MountableFile.forClasspathResource("create-datasource-and-dashboard.sh"),
+          MountableFile.forClasspathResource("create-datasource-and-dashboard.sh", 555),
           "/tmp/create.sh");
     containers.add(grafanaDashboards);
 
     // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     GenericContainer<?> wrk = new GenericContainer<>(parse("quay.io/dim/wrk:stable"))
       .withNetwork(Network.SHARED)
+      .withCreateContainerCmdModifier(it -> it.withEntrypoint("wrk"))
       .withCommand("-t4 -c128 -d100s http://frontend:8081 --latency");
     containers.add(wrk);
 
