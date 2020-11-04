@@ -819,18 +819,6 @@
             </executions>
           </plugin>
 
-          <!-- disable license plugin since it should have already checked things and #1512 -->
-          <plugin>
-            <groupId>com.mycila</groupId>
-            <artifactId>license-maven-plugin</artifactId>
-            <version>${license-maven-plugin.version}</version>
-            <executions>
-              <execution>
-                <phase>none</phase>
-              </execution>
-            </executions>
-          </plugin>
-
           <!-- Creates source jar -->
           <plugin>
             <artifactId>maven-source-plugin</artifactId>
