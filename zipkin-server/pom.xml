@@ -35,8 +35,7 @@
 
     <!-- Sometimes we need to override Armeria's Brave version -->
     <brave.version>5.13.0</brave.version>
-    <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire
-    </proto.generatedSourceDirectory>
+    <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
 
   <dependencyManagement>
@@ -269,12 +268,12 @@
       <artifactId>brave-context-slf4j</artifactId>
       <optional>true</optional>
     </dependency>
-    <!--    <dependency>-->
-    <!--      <groupId>io.zipkin.brave.cassandra</groupId>-->
-    <!--      <artifactId>brave-instrumentation-cassandra-driver</artifactId>-->
-    <!--      <version>0.10.3</version>-->
-    <!--      <optional>true</optional>-->
-    <!--    </dependency>-->
+<!--    <dependency>-->
+<!--      <groupId>io.zipkin.brave.cassandra</groupId>-->
+<!--      <artifactId>brave-instrumentation-cassandra-driver</artifactId>-->
+<!--      <version>0.10.3</version>-->
+<!--      <optional>true</optional>-->
+<!--    </dependency>-->
 
     <!-- Test dependencies -->
     <!-- to test the experimental grpc endpoint with the square/wire library -->
@@ -555,16 +554,16 @@
 
                 <!-- Unnecessary micrometer deps -->
                 <!-- TODO: https://github.com/micrometer-metrics/micrometer/issues/1599 -->
-                <!--                <dependency>-->
-                <!--                  &lt;!&ndash; only used by TimeWindowPercentileHistogram &ndash;&gt;-->
-                <!--                  <groupId>org.hdrhistogram</groupId>-->
-                <!--                  <artifactId>HdrHistogram</artifactId>-->
-                <!--                </dependency>-->
-                <!--                <dependency>-->
-                <!--                  &lt;!&ndash; we don't use pause detector &ndash;&gt;-->
-                <!--                  <groupId>org.latencyutils</groupId>-->
-                <!--                  <artifactId>LatencyUtils</artifactId>-->
-                <!--                </dependency>-->
+<!--                <dependency>-->
+<!--                  &lt;!&ndash; only used by TimeWindowPercentileHistogram &ndash;&gt;-->
+<!--                  <groupId>org.hdrhistogram</groupId>-->
+<!--                  <artifactId>HdrHistogram</artifactId>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                  &lt;!&ndash; we don't use pause detector &ndash;&gt;-->
+<!--                  <groupId>org.latencyutils</groupId>-->
+<!--                  <artifactId>LatencyUtils</artifactId>-->
+<!--                </dependency>-->
 
                 <!-- storage and collectors which have 3rd party deps -->
                 <dependency>
