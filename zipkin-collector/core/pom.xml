@@ -36,6 +36,7 @@
       <artifactId>slf4j-api</artifactId>
       <version>${slf4j.version}</version>
     </dependency>
+    <!-- TODO: abandoned dependency -->
     <dependency>
       <groupId>uk.org.lidalia</groupId>
       <artifactId>slf4j-test</artifactId>

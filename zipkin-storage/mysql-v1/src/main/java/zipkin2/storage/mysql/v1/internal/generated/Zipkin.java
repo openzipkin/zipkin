@@ -22,7 +22,7 @@ import zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Zipkin extends SchemaImpl {
 
-    private static final long serialVersionUID = 909292766;
+    private static final long serialVersionUID = 1L;
 
     /**
      * The reference instance of <code>zipkin</code>

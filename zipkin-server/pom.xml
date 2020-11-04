@@ -34,7 +34,7 @@
     <main.signature.artifact>java18</main.signature.artifact>
 
     <!-- Sometimes we need to override Armeria's Brave version -->
-    <brave.version>5.12.7</brave.version>
+    <brave.version>5.13.0</brave.version>
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
 
@@ -318,6 +318,7 @@
       <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>
+    <!-- TODO: port everything to jupiter -->
     <dependency>
       <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-junit4</artifactId>
@@ -325,10 +326,36 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- Don't use spring-boot-starter-test as it complicates the dependency tree and causes heavier
+         downloads. We only need the spring-provided libraries -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-test</artifactId>
+      <artifactId>spring-boot-test-autoconfigure</artifactId>
       <version>${spring-boot.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-test</artifactId>
+      <version>${spring-boot.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <version>${spring.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -387,40 +414,6 @@
           <version>${project.version}</version>
         </dependency>
       </dependencies>
-    </profile>
-    <profile>
-      <id>integration</id>
-      <activation>
-        <property>
-          <name>!skipTests</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-invoker-plugin</artifactId>
-            <version>${maven-invoker-plugin.version}</version>
-            <configuration>
-              <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
-              <settingsFile>src/it/settings.xml</settingsFile>
-              <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
-              <postBuildHookScript>verify</postBuildHookScript>
-              <addTestClassPath>true</addTestClassPath>
-              <skipInvocation>${skipTests}</skipInvocation>
-              <streamLogs>true</streamLogs>
-            </configuration>
-            <executions>
-              <execution>
-                <id>integration-test</id>
-                <goals>
-                  <goal>install</goal>
-                  <goal>run</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
   </profiles>
 

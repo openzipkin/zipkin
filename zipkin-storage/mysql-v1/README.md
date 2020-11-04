@@ -11,16 +11,14 @@ See the [schema DDL](src/main/resources/mysql.sql).
 operate against a given Datasource.
 
 ## Testing this component
-This module conditionally runs integration tests against a local MySQL instance.
+This module conditionally runs integration tests against a Docker managed MySQL container.
 
-You minimally need to export the variable `MYSQL_USER` to run tests.
 Ex.
 ```
-$ MYSQL_USER=root ./mvnw clean install -pl :zipkin-storage-mysql-v1
+$ ./mvnw clean verify -pl :zipkin-storage-mysql-v1
 ```
 
-If you run tests via Maven or otherwise without specifying `MYSQL_USER`,
-you'll notice tests are silently skipped.
+If you run tests via Maven or otherwise without Docker, you'll notice tests are silently skipped.
 ```
 Results :
 

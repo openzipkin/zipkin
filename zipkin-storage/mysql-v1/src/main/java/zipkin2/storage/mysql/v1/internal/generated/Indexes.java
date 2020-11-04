@@ -6,6 +6,7 @@ package zipkin2.storage.mysql.v1.internal.generated;
 
 import org.jooq.Index;
 import org.jooq.OrderField;
+import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
 
 import zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations;
@@ -13,7 +14,7 @@ import zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans;
 
 
 /**
- * A class modelling indexes of tables of the <code>zipkin</code> schema.
+ * A class modelling indexes of tables in zipkin.
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Indexes {
@@ -22,51 +23,15 @@ public class Indexes {
     // INDEX definitions
     // -------------------------------------------------------------------------
 
-    public static final Index ZIPKIN_ANNOTATIONS_A_KEY = Indexes0.ZIPKIN_ANNOTATIONS_A_KEY;
-    public static final Index ZIPKIN_ANNOTATIONS_A_KEY_2 = Indexes0.ZIPKIN_ANNOTATIONS_A_KEY_2;
-    public static final Index ZIPKIN_ANNOTATIONS_A_TYPE = Indexes0.ZIPKIN_ANNOTATIONS_A_TYPE;
-    public static final Index ZIPKIN_ANNOTATIONS_A_TYPE_2 = Indexes0.ZIPKIN_ANNOTATIONS_A_TYPE_2;
-    public static final Index ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME = Indexes0.ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME;
-    public static final Index ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME_2 = Indexes0.ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME_2;
-    public static final Index ZIPKIN_ANNOTATIONS_TRACE_ID = Indexes0.ZIPKIN_ANNOTATIONS_TRACE_ID;
-    public static final Index ZIPKIN_ANNOTATIONS_TRACE_ID_2 = Indexes0.ZIPKIN_ANNOTATIONS_TRACE_ID_2;
-    public static final Index ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_2 = Indexes0.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_2;
-    public static final Index ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_3 = Indexes0.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_3;
-    public static final Index ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_5 = Indexes0.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_5;
-    public static final Index ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_6 = Indexes0.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_6;
-    public static final Index ZIPKIN_SPANS_NAME = Indexes0.ZIPKIN_SPANS_NAME;
-    public static final Index ZIPKIN_SPANS_NAME_2 = Indexes0.ZIPKIN_SPANS_NAME_2;
-    public static final Index ZIPKIN_SPANS_REMOTE_SERVICE_NAME = Indexes0.ZIPKIN_SPANS_REMOTE_SERVICE_NAME;
-    public static final Index ZIPKIN_SPANS_REMOTE_SERVICE_NAME_2 = Indexes0.ZIPKIN_SPANS_REMOTE_SERVICE_NAME_2;
-    public static final Index ZIPKIN_SPANS_START_TS = Indexes0.ZIPKIN_SPANS_START_TS;
-    public static final Index ZIPKIN_SPANS_START_TS_2 = Indexes0.ZIPKIN_SPANS_START_TS_2;
-    public static final Index ZIPKIN_SPANS_TRACE_ID_HIGH = Indexes0.ZIPKIN_SPANS_TRACE_ID_HIGH;
-    public static final Index ZIPKIN_SPANS_TRACE_ID_HIGH_2 = Indexes0.ZIPKIN_SPANS_TRACE_ID_HIGH_2;
-
-    // -------------------------------------------------------------------------
-    // [#1459] distribute members to avoid static initialisers > 64kb
-    // -------------------------------------------------------------------------
-
-    private static class Indexes0 {
-        public static Index ZIPKIN_ANNOTATIONS_A_KEY = Internal.createIndex("a_key", ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_KEY }, false);
-        public static Index ZIPKIN_ANNOTATIONS_A_KEY_2 = Internal.createIndex("a_key_2", ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_KEY }, false);
-        public static Index ZIPKIN_ANNOTATIONS_A_TYPE = Internal.createIndex("a_type", ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_TYPE }, false);
-        public static Index ZIPKIN_ANNOTATIONS_A_TYPE_2 = Internal.createIndex("a_type_2", ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_TYPE }, false);
-        public static Index ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME = Internal.createIndex("endpoint_service_name", ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME }, false);
-        public static Index ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME_2 = Internal.createIndex("endpoint_service_name_2", ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME }, false);
-        public static Index ZIPKIN_ANNOTATIONS_TRACE_ID = Internal.createIndex("trace_id", ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.SPAN_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_KEY }, false);
-        public static Index ZIPKIN_ANNOTATIONS_TRACE_ID_2 = Internal.createIndex("trace_id_2", ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.SPAN_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_KEY }, false);
-        public static Index ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_2 = Internal.createIndex("trace_id_high_2", ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.SPAN_ID }, false);
-        public static Index ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_3 = Internal.createIndex("trace_id_high_3", ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID }, false);
-        public static Index ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_5 = Internal.createIndex("trace_id_high_5", ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.SPAN_ID }, false);
-        public static Index ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_6 = Internal.createIndex("trace_id_high_6", ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID }, false);
-        public static Index ZIPKIN_SPANS_NAME = Internal.createIndex("name", ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.NAME }, false);
-        public static Index ZIPKIN_SPANS_NAME_2 = Internal.createIndex("name_2", ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.NAME }, false);
-        public static Index ZIPKIN_SPANS_REMOTE_SERVICE_NAME = Internal.createIndex("remote_service_name", ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.REMOTE_SERVICE_NAME }, false);
-        public static Index ZIPKIN_SPANS_REMOTE_SERVICE_NAME_2 = Internal.createIndex("remote_service_name_2", ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.REMOTE_SERVICE_NAME }, false);
-        public static Index ZIPKIN_SPANS_START_TS = Internal.createIndex("start_ts", ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.START_TS }, false);
-        public static Index ZIPKIN_SPANS_START_TS_2 = Internal.createIndex("start_ts_2", ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.START_TS }, false);
-        public static Index ZIPKIN_SPANS_TRACE_ID_HIGH = Internal.createIndex("trace_id_high", ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.TRACE_ID_HIGH, ZipkinSpans.ZIPKIN_SPANS.TRACE_ID }, false);
-        public static Index ZIPKIN_SPANS_TRACE_ID_HIGH_2 = Internal.createIndex("trace_id_high_2", ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.TRACE_ID_HIGH, ZipkinSpans.ZIPKIN_SPANS.TRACE_ID }, false);
-    }
+    public static final Index ZIPKIN_ANNOTATIONS_A_KEY = Internal.createIndex(DSL.name("a_key"), ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_KEY }, false);
+    public static final Index ZIPKIN_ANNOTATIONS_A_TYPE = Internal.createIndex(DSL.name("a_type"), ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_TYPE }, false);
+    public static final Index ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME = Internal.createIndex(DSL.name("endpoint_service_name"), ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME }, false);
+    public static final Index ZIPKIN_SPANS_NAME = Internal.createIndex(DSL.name("name"), ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.NAME }, false);
+    public static final Index ZIPKIN_SPANS_REMOTE_SERVICE_NAME = Internal.createIndex(DSL.name("remote_service_name"), ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.REMOTE_SERVICE_NAME }, false);
+    public static final Index ZIPKIN_SPANS_START_TS = Internal.createIndex(DSL.name("start_ts"), ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.START_TS }, false);
+    public static final Index ZIPKIN_ANNOTATIONS_TRACE_ID = Internal.createIndex(DSL.name("trace_id"), ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.SPAN_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_KEY }, false);
+    public static final Index ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH = Internal.createIndex(DSL.name("trace_id_high"), ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.SPAN_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_KEY, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_TIMESTAMP }, true);
+    public static final Index ZIPKIN_SPANS_TRACE_ID_HIGH = Internal.createIndex(DSL.name("trace_id_high"), ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.TRACE_ID_HIGH, ZipkinSpans.ZIPKIN_SPANS.TRACE_ID }, false);
+    public static final Index ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_2 = Internal.createIndex(DSL.name("trace_id_high_2"), ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.SPAN_ID }, false);
+    public static final Index ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_3 = Internal.createIndex(DSL.name("trace_id_high_3"), ZipkinAnnotations.ZIPKIN_ANNOTATIONS, new OrderField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID }, false);
 }
