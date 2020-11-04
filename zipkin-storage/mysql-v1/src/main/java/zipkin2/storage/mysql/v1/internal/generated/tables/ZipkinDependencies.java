@@ -18,6 +18,7 @@ import org.jooq.TableField;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
 import zipkin2.storage.mysql.v1.internal.generated.Keys;
@@ -30,7 +31,7 @@ import zipkin2.storage.mysql.v1.internal.generated.Zipkin;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinDependencies extends TableImpl<Record> {
 
-    private static final long serialVersionUID = -489002376;
+    private static final long serialVersionUID = 1L;
 
     /**
      * The reference instance of <code>zipkin.zipkin_dependencies</code>
@@ -48,33 +49,34 @@ public class ZipkinDependencies extends TableImpl<Record> {
     /**
      * The column <code>zipkin.zipkin_dependencies.day</code>.
      */
-    public final TableField<Record, LocalDate> DAY = createField(DSL.name("day"), org.jooq.impl.SQLDataType.LOCALDATE.nullable(false), this, "");
+    public final TableField<Record, LocalDate> DAY = createField(DSL.name("day"), SQLDataType.LOCALDATE.nullable(false), this, "");
 
     /**
      * The column <code>zipkin.zipkin_dependencies.parent</code>.
      */
-    public final TableField<Record, String> PARENT = createField(DSL.name("parent"), org.jooq.impl.SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<Record, String> PARENT = createField(DSL.name("parent"), SQLDataType.VARCHAR(255).nullable(false), this, "");
 
     /**
      * The column <code>zipkin.zipkin_dependencies.child</code>.
      */
-    public final TableField<Record, String> CHILD = createField(DSL.name("child"), org.jooq.impl.SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<Record, String> CHILD = createField(DSL.name("child"), SQLDataType.VARCHAR(255).nullable(false), this, "");
 
     /**
      * The column <code>zipkin.zipkin_dependencies.call_count</code>.
      */
-    public final TableField<Record, Long> CALL_COUNT = createField(DSL.name("call_count"), org.jooq.impl.SQLDataType.BIGINT.defaultValue(org.jooq.impl.DSL.inline("NULL", org.jooq.impl.SQLDataType.BIGINT)), this, "");
+    public final TableField<Record, Long> CALL_COUNT = createField(DSL.name("call_count"), SQLDataType.BIGINT, this, "");
 
     /**
      * The column <code>zipkin.zipkin_dependencies.error_count</code>.
      */
-    public final TableField<Record, Long> ERROR_COUNT = createField(DSL.name("error_count"), org.jooq.impl.SQLDataType.BIGINT.defaultValue(org.jooq.impl.DSL.inline("NULL", org.jooq.impl.SQLDataType.BIGINT)), this, "");
+    public final TableField<Record, Long> ERROR_COUNT = createField(DSL.name("error_count"), SQLDataType.BIGINT, this, "");
 
-    /**
-     * Create a <code>zipkin.zipkin_dependencies</code> table reference
-     */
-    public ZipkinDependencies() {
-        this(DSL.name("zipkin_dependencies"), null);
+    private ZipkinDependencies(Name alias, Table<Record> aliased) {
+        this(alias, aliased, null);
+    }
+
+    private ZipkinDependencies(Name alias, Table<Record> aliased, Field<?>[] parameters) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
     }
 
     /**
@@ -91,12 +93,11 @@ public class ZipkinDependencies extends TableImpl<Record> {
         this(alias, ZIPKIN_DEPENDENCIES);
     }
 
-    private ZipkinDependencies(Name alias, Table<Record> aliased) {
-        this(alias, aliased, null);
-    }
-
-    private ZipkinDependencies(Name alias, Table<Record> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    /**
+     * Create a <code>zipkin.zipkin_dependencies</code> table reference
+     */
+    public ZipkinDependencies() {
+        this(DSL.name("zipkin_dependencies"), null);
     }
 
     public <O extends Record> ZipkinDependencies(Table<O> child, ForeignKey<O, Record> key) {

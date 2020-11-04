@@ -10,7 +10,7 @@ import zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans;
 
 
 /**
- * Convenience access to all tables in zipkin
+ * Convenience access to all tables in zipkin.
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Tables {

@@ -18,6 +18,7 @@ import org.jooq.TableField;
 import org.jooq.TableOptions;
 import org.jooq.UniqueKey;
 import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
 import zipkin2.storage.mysql.v1.internal.generated.Indexes;
@@ -31,7 +32,7 @@ import zipkin2.storage.mysql.v1.internal.generated.Zipkin;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinSpans extends TableImpl<Record> {
 
-    private static final long serialVersionUID = 1230670605;
+    private static final long serialVersionUID = 1L;
 
     /**
      * The reference instance of <code>zipkin.zipkin_spans</code>
@@ -49,53 +50,54 @@ public class ZipkinSpans extends TableImpl<Record> {
     /**
      * The column <code>zipkin.zipkin_spans.trace_id_high</code>. If non zero, this means the trace uses 128 bit traceIds instead of 64 bit
      */
-    public final TableField<Record, Long> TRACE_ID_HIGH = createField(DSL.name("trace_id_high"), org.jooq.impl.SQLDataType.BIGINT.nullable(false).defaultValue(org.jooq.impl.DSL.inline("0", org.jooq.impl.SQLDataType.BIGINT)), this, "If non zero, this means the trace uses 128 bit traceIds instead of 64 bit");
+    public final TableField<Record, Long> TRACE_ID_HIGH = createField(DSL.name("trace_id_high"), SQLDataType.BIGINT.nullable(false).defaultValue(DSL.inline("0", SQLDataType.BIGINT)), this, "If non zero, this means the trace uses 128 bit traceIds instead of 64 bit");
 
     /**
      * The column <code>zipkin.zipkin_spans.trace_id</code>.
      */
-    public final TableField<Record, Long> TRACE_ID = createField(DSL.name("trace_id"), org.jooq.impl.SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<Record, Long> TRACE_ID = createField(DSL.name("trace_id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
      * The column <code>zipkin.zipkin_spans.id</code>.
      */
-    public final TableField<Record, Long> ID = createField(DSL.name("id"), org.jooq.impl.SQLDataType.BIGINT.nullable(false), this, "");
+    public final TableField<Record, Long> ID = createField(DSL.name("id"), SQLDataType.BIGINT.nullable(false), this, "");
 
     /**
      * The column <code>zipkin.zipkin_spans.name</code>.
      */
-    public final TableField<Record, String> NAME = createField(DSL.name("name"), org.jooq.impl.SQLDataType.VARCHAR(255).nullable(false), this, "");
+    public final TableField<Record, String> NAME = createField(DSL.name("name"), SQLDataType.VARCHAR(255).nullable(false), this, "");
 
     /**
      * The column <code>zipkin.zipkin_spans.remote_service_name</code>.
      */
-    public final TableField<Record, String> REMOTE_SERVICE_NAME = createField(DSL.name("remote_service_name"), org.jooq.impl.SQLDataType.VARCHAR(255).defaultValue(org.jooq.impl.DSL.inline("NULL", org.jooq.impl.SQLDataType.VARCHAR)), this, "");
+    public final TableField<Record, String> REMOTE_SERVICE_NAME = createField(DSL.name("remote_service_name"), SQLDataType.VARCHAR(255), this, "");
 
     /**
      * The column <code>zipkin.zipkin_spans.parent_id</code>.
      */
-    public final TableField<Record, Long> PARENT_ID = createField(DSL.name("parent_id"), org.jooq.impl.SQLDataType.BIGINT.defaultValue(org.jooq.impl.DSL.inline("NULL", org.jooq.impl.SQLDataType.BIGINT)), this, "");
+    public final TableField<Record, Long> PARENT_ID = createField(DSL.name("parent_id"), SQLDataType.BIGINT, this, "");
 
     /**
      * The column <code>zipkin.zipkin_spans.debug</code>.
      */
-    public final TableField<Record, Boolean> DEBUG = createField(DSL.name("debug"), org.jooq.impl.SQLDataType.BIT.defaultValue(org.jooq.impl.DSL.inline("NULL", org.jooq.impl.SQLDataType.BIT)), this, "");
+    public final TableField<Record, Boolean> DEBUG = createField(DSL.name("debug"), SQLDataType.BIT, this, "");
 
     /**
      * The column <code>zipkin.zipkin_spans.start_ts</code>. Span.timestamp(): epoch micros used for endTs query and to implement TTL
      */
-    public final TableField<Record, Long> START_TS = createField(DSL.name("start_ts"), org.jooq.impl.SQLDataType.BIGINT.defaultValue(org.jooq.impl.DSL.inline("NULL", org.jooq.impl.SQLDataType.BIGINT)), this, "Span.timestamp(): epoch micros used for endTs query and to implement TTL");
+    public final TableField<Record, Long> START_TS = createField(DSL.name("start_ts"), SQLDataType.BIGINT, this, "Span.timestamp(): epoch micros used for endTs query and to implement TTL");
 
     /**
      * The column <code>zipkin.zipkin_spans.duration</code>. Span.duration(): micros used for minDuration and maxDuration query
      */
-    public final TableField<Record, Long> DURATION = createField(DSL.name("duration"), org.jooq.impl.SQLDataType.BIGINT.defaultValue(org.jooq.impl.DSL.inline("NULL", org.jooq.impl.SQLDataType.BIGINT)), this, "Span.duration(): micros used for minDuration and maxDuration query");
+    public final TableField<Record, Long> DURATION = createField(DSL.name("duration"), SQLDataType.BIGINT, this, "Span.duration(): micros used for minDuration and maxDuration query");
 
-    /**
-     * Create a <code>zipkin.zipkin_spans</code> table reference
-     */
-    public ZipkinSpans() {
-        this(DSL.name("zipkin_spans"), null);
+    private ZipkinSpans(Name alias, Table<Record> aliased) {
+        this(alias, aliased, null);
+    }
+
+    private ZipkinSpans(Name alias, Table<Record> aliased, Field<?>[] parameters) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
     }
 
     /**
@@ -112,12 +114,11 @@ public class ZipkinSpans extends TableImpl<Record> {
         this(alias, ZIPKIN_SPANS);
     }
 
-    private ZipkinSpans(Name alias, Table<Record> aliased) {
-        this(alias, aliased, null);
-    }
-
-    private ZipkinSpans(Name alias, Table<Record> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    /**
+     * Create a <code>zipkin.zipkin_spans</code> table reference
+     */
+    public ZipkinSpans() {
+        this(DSL.name("zipkin_spans"), null);
     }
 
     public <O extends Record> ZipkinSpans(Table<O> child, ForeignKey<O, Record> key) {
@@ -131,7 +132,7 @@ public class ZipkinSpans extends TableImpl<Record> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.ZIPKIN_SPANS_NAME, Indexes.ZIPKIN_SPANS_NAME_2, Indexes.ZIPKIN_SPANS_REMOTE_SERVICE_NAME, Indexes.ZIPKIN_SPANS_REMOTE_SERVICE_NAME_2, Indexes.ZIPKIN_SPANS_START_TS, Indexes.ZIPKIN_SPANS_START_TS_2, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH_2);
+        return Arrays.<Index>asList(Indexes.ZIPKIN_SPANS_NAME, Indexes.ZIPKIN_SPANS_REMOTE_SERVICE_NAME, Indexes.ZIPKIN_SPANS_START_TS, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH);
     }
 
     @Override

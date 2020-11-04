@@ -29,7 +29,7 @@
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
 
-    <jooq.version>3.13.5</jooq.version>
+    <jooq.version>3.14.1</jooq.version>
 
     <!-- jOOQ doesn't add the Generated annotation, so we have to explicitly disable rules -->
     <errorprone.args>-Xep:InconsistentCapitalization:OFF</errorprone.args>
