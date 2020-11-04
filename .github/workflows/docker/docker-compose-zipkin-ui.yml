@@ -1,12 +1,16 @@
+# This file is in the ./docker directory as otherwise it is mistaken for a GitHub Workflow
+
 # uses 2.4 so we can use condition: service_healthy
 version: "2.4"
 services:
   # Use last build of Zipkin instead of adding a matrix build dependency
   zipkin:
-    image: openzipkin/zipkin-slim:master
+    # Use a ghcr.io/ to prevent build outages due to Docker Hub pull quotas
+    image: ghcr.io/openzipkin/zipkin-slim:master
     container_name: zipkin
   # Use fixed service and container name 'sut; so our test script can copy/pasta
   sut:
+    # This is the image just built. It is not in a remote repository.
     image: openzipkin/zipkin-ui:test
     container_name: sut
     depends_on:
