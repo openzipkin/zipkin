@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"zipkin2"},{"l":"zipkin2.codec"},{"l":"zipkin2.codec.jmh_generated"},{"l":"zipkin2.collector"},{"l":"zipkin2.collector.jmh_generated"},{"l":"zipkin2.jmh_generated"},{"l":"zipkin2.proto3"}]
