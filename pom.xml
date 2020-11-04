@@ -63,7 +63,11 @@
 
     <java-driver.version>4.9.0</java-driver.version>
     <micrometer.version>1.6.0</micrometer.version>
+
+    <!-- update together -->
     <spring-boot.version>2.3.5.RELEASE</spring-boot.version>
+    <spring.version>5.2.10.RELEASE</spring.version>
+
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
 

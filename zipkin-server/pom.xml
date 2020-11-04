@@ -318,6 +318,7 @@
       <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>
+    <!-- TODO: port everything to jupiter -->
     <dependency>
       <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-junit4</artifactId>
@@ -325,6 +326,8 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- Don't use spring-boot-starter-test as it complicates the dependency tree and causes heavier
+         downloads. We only need the spring-provided libraries -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-test-autoconfigure</artifactId>
@@ -352,8 +355,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-test</artifactId>
-      <!-- update with spring boot version -->
-      <version>5.2.10.RELEASE</version>
+      <version>${spring.version}</version>
       <scope>test</scope>
     </dependency>
 
