@@ -44,20 +44,11 @@
       <version>${kafka.version}</version>
     </dependency>
 
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>testcontainers</artifactId>
-      <scope>test</scope>
-    </dependency>
     <!-- For AdminClient -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
+      <version>${jackson.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

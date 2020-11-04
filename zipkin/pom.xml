@@ -53,9 +53,11 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- Internal classes used in SpanBytesDecoder.JSON_V[12] -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
+      <version>${gson.version}</version>
       <!-- this dependency is shaded out -->
       <optional>true</optional>
     </dependency>

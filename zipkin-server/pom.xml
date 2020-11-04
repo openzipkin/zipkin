@@ -14,7 +14,9 @@
     the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -39,12 +41,21 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-bom</artifactId>
+        <version>${netty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <dependency>
         <groupId>io.zipkin.brave</groupId>
         <artifactId>brave-bom</artifactId>
         <version>${brave.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+
       <!-- Don't bring in brave's transitive dep on zipkin -->
       <dependency>
         <groupId>io.zipkin.brave</groupId>
@@ -57,14 +68,40 @@
           </exclusion>
         </exclusions>
       </dependency>
+
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${jackson.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
   <dependencies>
+    <!-- Makes sure spring doesn't eagerly bind tomcat or slf4j -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter</artifactId>
       <version>${spring-boot.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+      <version>${spring-boot.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- Use log4j 2 as default logging implementation -->
@@ -79,6 +116,16 @@
       <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-spring-boot2-autoconfigure</artifactId>
       <version>${armeria.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>${armeria.groupId}</groupId>
+          <artifactId>armeria-logback</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>javax.validation</groupId>
+          <artifactId>validation-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>${armeria.groupId}</groupId>
@@ -124,16 +171,19 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>jul-to-slf4j</artifactId>
+      <version>${slf4j.version}</version>
     </dependency>
 
     <!-- the "exec" jar will exclude this -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -165,11 +215,13 @@
     <dependency>
       <groupId>org.mariadb.jdbc</groupId>
       <artifactId>mariadb-java-client</artifactId>
+      <version>${mariadb-java-client.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
+      <version>${HikariCP.version}</version>
       <optional>true</optional>
     </dependency>
 
@@ -228,12 +280,14 @@
     <dependency>
       <groupId>io.zipkin.proto3</groupId>
       <artifactId>zipkin-proto3</artifactId>
+      <version>${zipkin-proto3.version}</version>
       <scope>test</scope>
     </dependency>
     <!-- Our json codec is shaded, but Intellij doesn't understand that when running tests. -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
+      <version>${gson.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -288,6 +342,7 @@
     <dependency>
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
+      <version>${awaitility.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -295,11 +350,6 @@
       <groupId>com.jayway.jsonpath</groupId>
       <artifactId>json-path</artifactId>
       <version>2.4.0</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
