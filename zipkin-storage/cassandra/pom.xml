@@ -35,14 +35,28 @@
     <errorprone.args>-Xep:CheckReturnValue:OFF -Xep:AutoValueImmutableFields:OFF</errorprone.args>
   </properties>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-bom</artifactId>
+        <version>${netty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value-annotations</artifactId>
+      <version>${auto-value.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value</artifactId>
+      <version>${auto-value.version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -63,31 +77,6 @@
         <!-- We retain reactivestreams even though we don't use it because
              Mockito dies trying to mock CqlSession without it. -->
       </exclusions>
-    </dependency>
-
-    <!-- To test nuance of load balancing behavior -->
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>${mockito.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-core</artifactId>
-      <version>${hamcrest.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>testcontainers</artifactId>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
