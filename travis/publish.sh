@@ -175,7 +175,8 @@ if is_pull_request; then
 #    Sonatype and try again: https://oss.sonatype.org/#stagingRepositories
 elif is_travis_branch_master; then
   # -Prelease ensures the core jar ends up JRE 1.6 compatible
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests deploy
+  # -DskipBenchmarks ensures benchmarks don't end up in javadocs or in Maven Centra
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests -DskipBenchmarks deploy
 
   # Regardless of if this is a release build or not, push to corresponding Docker Registries
   RELEASE_FROM_MAVEN_BUILD=true docker/bin/push_all_images $(print_project_version)

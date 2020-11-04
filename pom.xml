@@ -26,7 +26,6 @@
     <module>zipkin</module>
     <module>zipkin-tests</module>
     <module>zipkin-junit</module>
-    <module>benchmarks</module>
     <module>zipkin-storage</module>
     <module>zipkin-collector</module>
     <module>zipkin-server</module>
@@ -477,6 +476,18 @@
         <module>zipkin-lens</module>
       </modules>
     </profile>
+    <!-- -DskipBenchmarks ensures benchmarks don't end up in javadocs or in Maven Central -->
+    <profile>
+      <id>include-benchmarks</id>
+      <activation>
+        <property>
+          <name>!skipBenchmarks</name>
+        </property>
+      </activation>
+      <modules>
+        <module>benchmarks</module>
+      </modules>
+    </profile>
     <profile>
       <id>license-check</id>
       <activation>
@@ -640,6 +651,10 @@
             <configuration>
               <serverId>ossrh</serverId>
               <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              <!-- Zipkin release is about ~100M mostly from the two server distributions. Default
+                   will timeout after 5 minutes, which can trigger fairly easily with this size. -->
+              <stagingProgressPauseDurationSeconds>20</stagingProgressPauseDurationSeconds>
+              <stagingProgressTimeoutMinutes>20</stagingProgressTimeoutMinutes>
               <autoReleaseAfterClose>true</autoReleaseAfterClose>
             </configuration>
           </plugin>
