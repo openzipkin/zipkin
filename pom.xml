@@ -60,6 +60,9 @@
 
     <java-driver.version>4.9.0</java-driver.version>
     <micrometer.version>1.6.0</micrometer.version>
+    
+    <!-- Used for Generated annotations -->
+    <javax-annotation-api.version>1.3.1</javax-annotation-api.version>
 
     <!-- update together -->
     <spring-boot.version>2.3.5.RELEASE</spring-boot.version>
