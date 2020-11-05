@@ -8,7 +8,8 @@ on:
 jobs:
   prepare-docker-targets:
     name: Build Zipkin and Docker target matrix
-    runs-on: ubuntu-latest
+    # Use focal as that's the same as we use in Travis
+    runs-on: ubuntu-20.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -21,12 +22,11 @@ jobs:
       - name: Remove broken apt repos [Ubuntu]
         run: |
           for apt_file in `grep -lr microsoft /etc/apt/sources.list.d/`; do sudo rm $apt_file; done
-      # Setup latest JDK. We do this to ensure users don't need to use the same version as our
-      # release process. Release uses JDK 11, the last version that can target 1.6 bytecode.
       - name: Setup java
         uses: actions/setup-java@v1
         with:
-          java-version: 15
+          # Use same JDK as Travis. This check will finish much quicker (bc it doesn't run tests)
+          java-version: 11
       - name: Cache NPM Packages
         uses: actions/cache@v1
         with:
@@ -56,27 +56,11 @@ jobs:
   build-and-verify-docker:
     name: Build and verify Docker images
     needs: prepare-docker-targets
-    runs-on: ubuntu-latest
+    # Use focal as that's the same as we use in Travis
+    runs-on: ubuntu-20.04
     strategy:
       matrix: ${{ fromJson(needs.prepare-docker-targets.outputs.matrix) }}
     steps:
-      # Remove apt repos that are known to break from time to time.
-      # See https://github.com/actions/virtual-environments/issues/323
-      - name: Remove broken apt repos
-        run: |
-          for apt_file in `grep -lr microsoft /etc/apt/sources.list.d/`; do sudo rm $apt_file; done
-      - name: Install Docker
-        uses: docker-practice/actions-setup-docker@master
-        with:
-          docker_version: 19.03
-          # Avoid pulling image from Docker Hub as it would consume pull quota
-          docker_buildx: false
-      - name: Cache docker
-        uses: actions/cache@v1
-        with:
-          path: ~/.docker
-          key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
-          restore-keys: ${{ runner.os }}-docker
       - name: Checkout Repository
         uses: actions/checkout@v2
         with:
