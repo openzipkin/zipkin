@@ -57,7 +57,7 @@ before_install:
 
       # Log in to GitHub Container Registry and Docker Hub for releasing images
       echo "$GH_TOKEN"| docker login ghcr.io -u "$GH_USER" --password-stdin
-      echo "$DOCKERHUB_PASSWORD"| docker login -u "$DOCKERHUB_USER" --password-stdin
+      echo "$DOCKERHUB_TOKEN"| docker login -u "$DOCKERHUB_USER" --password-stdin
 
       # ensure GPG commands work non-interactively
       export GPG_TTY=$(tty)
@@ -118,5 +118,6 @@ notifications:
 #   - referenced in .settings.xml
 # DOCKERHUB_USER=typically_dockerzipkindeployer
 #   - only push top-level projects: zipkin zipkin-aws zipkin-dependencies zipkin-gcp to Docker Hub, only on release
-#   - login like this: echo "$DOCKERHUB_PASSWORD"| docker login -u "$DOCKERHUB_USER" --password-stdin
-# DOCKERHUB_PASSWORD=password_to_DOCKERHUB_USER
+#   - login like this: echo "$DOCKERHUB_TOKEN"| docker login -u "$DOCKERHUB_USER" --password-stdin
+# DOCKERHUB_TOKEN=access_token_for_DOCKERHUB_USER
+#   -  Access Token from here https://hub.docker.com/settings/security

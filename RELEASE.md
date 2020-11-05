@@ -83,7 +83,8 @@ VERSION=xx-version-to-release-xx
 
 # once this works, deploy and synchronize to maven central
 git checkout $VERSION
-./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests deploy
+# -DskipBenchmarks ensures benchmarks don't end up in javadocs or in Maven Central
+./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests -DskipBenchmarks deploy
 
 # if all the above worked, clean up stuff and push the local changes.
 ./mvnw release:clean
