@@ -1,4 +1,5 @@
 {
+  "1 Result": "1 Resultado",
   "Address": "Dirección",
   "Annotations": "Anotaciones",
   "Archive Trace": "Archivar Traza",
@@ -42,6 +43,5 @@
   "Zipkin Home": "Zipkin Inicio",
   "hide annotations": "ocultar anotaciones",
   "show all annotations": "mostrar todas las anotaciones",
-  "{0} Results": "{0} Resultados",
-  "1 Result": "1 Resultado"
+  "{0} Results": "{0} Resultados"
 }
