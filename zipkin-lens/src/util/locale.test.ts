@@ -70,6 +70,4 @@ describe('getting locale', () => {
     setLocale('ja-jp');
     expect(getLocale()).toEqual('ja-jp');
   });
-
-
 });
