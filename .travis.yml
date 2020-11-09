@@ -1,7 +1,6 @@
 # Run `travis lint` when changing this file to avoid breaking the build.
 
 # See https://docs.travis-ci.com/user/reference/overview/#for-a-particular-travisyml-configuration
-arch: amd64 # Not arm64 for multi-platform Docker builds (qemu is amd64->arm64, not vice versa)
 os: linux   # required for arch different than amd64
 dist: focal # newest available distribution
 
@@ -23,6 +22,9 @@ services:
 
 # Re-use JDK 11 from focal release instead of delaying build with installation
 before_install:
+  - if [ "${TRAVIS_CPU_ARCH}" == "arm64" ]; then
+     sudo apt-get install -y maven;
+    fi
   - |
     # Cache as help:evaluate is not quick
     export POM_VERSION=$(./mvnw help:evaluate -N -Dexpression=project.version -q -DforceStdout)
@@ -72,9 +74,19 @@ install: ./build-bin/go_offline
 jobs:
   include:
     - name: default
+      arch: amd64 # Not arm64 for multi-platform Docker builds (qemu is amd64->arm64, not vice versa)
       script: ./travis/publish.sh
       if: 'NOT tag =~ /^docker-/'
+    - name: default
+      arch: arm64
+      script:
+        - |
+          # verify runs both tests and integration tests (Docker tests included)
+          # -DskipActuator ensures no tests rely on the actuator library
+          ./mvnw verify -nsu -DskipActuator
+      if: 'NOT tag =~ /^docker-/'
     - name: Re-push all Docker images
+      arch: amd64 # Not arm64 for multi-platform Docker builds (qemu is amd64->arm64, not vice versa)
       script:
         - |
           docker/bin/push_all_images $(echo "${TRAVIS_TAG}" | sed 's/^docker-//') &&
