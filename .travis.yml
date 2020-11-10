@@ -1,6 +1,7 @@
 # Run `travis lint` when changing this file to avoid breaking the build.
 
 # See https://docs.travis-ci.com/user/reference/overview/#for-a-particular-travisyml-configuration
+virt: lxd   # LXD containers where possible as they boot much faster than full VMs
 os: linux   # required for arch different than amd64
 dist: focal # newest available distribution
 
@@ -22,9 +23,6 @@ services:
 
 # Re-use JDK 11 from focal release instead of delaying build with installation
 before_install:
-  - if [ "${TRAVIS_CPU_ARCH}" == "arm64" ]; then
-     sudo apt-get install -y maven;
-    fi
   - |
     # Cache as help:evaluate is not quick
     export POM_VERSION=$(./mvnw help:evaluate -N -Dexpression=project.version -q -DforceStdout)
@@ -45,7 +43,7 @@ before_install:
     # * change ryuk to ghcr.io until: https://github.com/testcontainers/moby-ryuk/issues/15 and 16
     echo ryuk.container.image=ghcr.io/openzipkin/testcontainers-ryuk:latest >> ~/.testcontainers.properties
   - |
-    # Credentials entered into https://travis-ci.org/github/openzipkin/${REPO}/settings are access
+    # Credentials entered into https://travis-ci.com/github/openzipkin/${REPO}/settings are access
     # controlled by branch (typically only master). Check to see if a well-known env is available
     # before attempting to log in.
     if [[ -n "$SONATYPE_USER" ]]; then
@@ -73,18 +71,23 @@ before_install:
 install: ./build-bin/go_offline
 jobs:
   include:
-    - name: default
+    # TODO: Refactor ./travis/publish.sh into two stages: test and deploy
+    - stage: test
+      name: "Run unit and integration tests including Docker [amd64]. Deploys when a master push"
       arch: amd64 # Not arm64 for multi-platform Docker builds (qemu is amd64->arm64, not vice versa)
       script: ./travis/publish.sh
       if: 'NOT tag =~ /^docker-/'
-    - name: default
-      arch: arm64
-      script:
-        - |
-          # verify runs both tests and integration tests (Docker tests included)
-          # -DskipActuator ensures no tests rely on the actuator library
-          ./mvnw verify -nsu -DskipActuator
-      if: 'NOT tag =~ /^docker-/'
+    - stage: test
+      name: "Run unit and integration tests including Docker [arm64]"
+      arch: arm64 # Not arm64-graviton2 as it cycles on boot for a long time before running [2020-11-02]
+      # We run tests on non-tagged pushes to master that aren't commit made by the release plugin
+      # We also run tests on pull requests targeted at the master branch.
+      if: |
+        branch = master AND tag IS blank AND \
+        commit_message !~ /maven-release-plugin/ AND \
+        type IN (push, pull_request)
+      # -DskipActuator ensures no tests rely on the actuator library
+      script: ./mvnw verify -nsu -DskipActuator || travis_terminate 1
     - name: Re-push all Docker images
       arch: amd64 # Not arm64 for multi-platform Docker builds (qemu is amd64->arm64, not vice versa)
       script:
@@ -109,7 +112,7 @@ notifications:
 
 # Secure variables needed for release and publication
 #
-# When Travis, add to https://travis-ci.org/github/openzipkin/${REPO}/settings
+# When Travis, add to https://travis-ci.com/github/openzipkin/${REPO}/settings
 #
 # GH_TOKEN=XXX-https://github.com/settings/tokens-XXX
 #   - makes release commits and tags, also writes to GHCR if Docker
