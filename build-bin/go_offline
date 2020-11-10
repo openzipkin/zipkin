@@ -18,7 +18,7 @@ set -ue
 # This script hydrates the Maven and NPM cache to make later processes operate with less chance of
 # network problems.
 
-MAVEN_COMMAND="mvn -q --batch-mode -nsu"
+MAVEN_COMMAND="./mvnw -q --batch-mode -nsu"
 
 ARCH=$(uname -m)
 case ${ARCH} in
