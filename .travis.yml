@@ -1,7 +1,6 @@
 # Run `travis lint` when changing this file to avoid breaking the build.
 
 # See https://docs.travis-ci.com/user/reference/overview/#for-a-particular-travisyml-configuration
-virt: lxd   # LXD containers where possible as they boot much faster than full VMs
 os: linux   # required for arch different than amd64
 dist: focal # newest available distribution
 
@@ -79,7 +78,9 @@ jobs:
       if: 'NOT tag =~ /^docker-/'
     - stage: test
       name: "Run unit and integration tests including Docker [arm64]"
-      arch: arm64 # Not arm64-graviton2 as it cycles on boot for a long time before running [2020-11-02]
+      arch: arm64-graviton2 # Runs in AWS cloud and significantly faster than arm64
+      virt: lxd   # LXD containers where possible as they boot much faster than full VMs
+      group: edge
       # We run tests on non-tagged pushes to master that aren't commit made by the release plugin
       # We also run tests on pull requests targeted at the master branch.
       if: |
