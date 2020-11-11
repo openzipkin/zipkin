@@ -135,6 +135,9 @@ while [ "$timeout" -gt 0 ] && ! cql -e 'SHOW VERSION' > /dev/null 2>&1; do
     timeout=$(($timeout - 1))
 done
 
+# Sleep to settle in order to avoid flakes in CI
+sleep 2
+
 echo "*** Importing Scheme"
 cat zipkin-schemas/cassandra-schema.cql | cql --debug
 cat zipkin-schemas/zipkin2-schema.cql | cql --debug
