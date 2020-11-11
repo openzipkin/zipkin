@@ -113,12 +113,15 @@ java -cp 'libs/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc \
   -Dcassandra.storagedir=${PWD} \
   -Dcassandra.triggers_dir=${PWD}/triggers \
   -Dcassandra.config=file:${PWD}/conf/cassandra.yaml \
+  -Dlog4j.configuration=file:${PWD}/conf/log4j.properties \
   org.apache.cassandra.service.CassandraDaemon > temp_cassandra.out 2>&1 &
 TEMP_CASSANDRA_PID=$!
 
 function is_cassandra_alive() {
   if ! kill -0 ${TEMP_CASSANDRA_PID}; then
     cat temp_cassandra.out
+    maybe_crash_file=hs_err_pid${TEMP_CASSANDRA_PID}.log
+    test -f $maybe_crash_file && cat $maybe_crash_file
     return 1
   fi
   return 0
