@@ -20,7 +20,7 @@ services:
   #
   # For more details, see https://github.com/openzipkin/docker-zipkin-dependencies
   dependencies:
-    image: ghcr.io/ghcr.io/openzipkin/zipkin-dependencies
+    image: ghcr.io/openzipkin/zipkin-dependencies
     container_name: dependencies
     entrypoint: crond -f
     # environment:
