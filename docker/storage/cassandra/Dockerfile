@@ -32,6 +32,7 @@ ENV CASSANDRA_VERSION=$cassandra_version
 WORKDIR /install
 
 COPY --from=scratch /zipkin-schemas/* ./zipkin-schemas/
+COPY --from=scratch /docker-bin/start-cassandra .
 COPY --from=scratch /install/install.sh /tmp/
 RUN /tmp/install.sh && rm /tmp/install.sh
 

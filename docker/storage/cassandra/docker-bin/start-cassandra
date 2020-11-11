@@ -22,20 +22,21 @@ set -eu
 # Apply one-time deferred configuration that relies on ENV variables
 #
 # If the schema has been removed due to mounting, restore from our backup. see: install
-if [ ! -d "data/zipkin2" ]; then
+if [ -d data-backup ] && [ ! -d data/zipkin2 ]; then
   cp -rf data-backup/* data/
 fi
 
 IP="$(hostname -i || echo '127.0.0.1')"
-sed -i "/listen_address: 127.0.0.1/clisten_address: $IP" conf/cassandra.yaml
-sed -i "/rpc_address: 127.0.0.1/crpc_address: $IP" conf/cassandra.yaml
-sed -i "/          - seeds: \"127.0.0.1\"/c\          - seeds: $IP" conf/cassandra.yaml
+sed -i "s/listen_address:.*/listen_address: $IP/" conf/cassandra.yaml
+sed -i "s/rpc_address:.*/rpc_address: $IP/" conf/cassandra.yaml
+sed -i "s/          - seeds: \".*\"/          - seeds: \"$IP\"/" conf/cassandra.yaml
 
 echo Starting Cassandra
 exec java -cp 'libs/*' ${JAVA_OPTS} \
   -Djava.io.tmpdir=/tmp \
   -Dcassandra-foreground=yes \
-  -Dcassandra.storagedir=${PWD}/data \
+  -Dcassandra.storagedir=${PWD} \
+  -Dcassandra.triggers_dir=${PWD}/triggers \
   -Dcassandra.config=file:${PWD}/conf/cassandra.yaml \
   -Dlog4j.configuration=file:${PWD}/conf/log4j.properties \
   org.apache.cassandra.service.CassandraDaemon "$@"

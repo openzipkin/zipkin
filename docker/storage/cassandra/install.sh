@@ -60,7 +60,7 @@ rm pom.xml
 
 # Make sure you use relative paths in references like this, so that installation
 # is decoupled from runtime
-mkdir -p conf data commitlog saved_caches hints
+mkdir -p conf data commitlog saved_caches hints triggers
 
 # Make a basic log4j conf which only logs warnings (to stderr)
 cat > conf/log4j.properties <<-'EOF'
@@ -114,15 +114,9 @@ case ${ARCH} in
     ;;
 esac
 
-echo "*** Starting Cassandra"
-TEMP_JAVA_OPTS="-Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError"
-java -cp 'libs/*' ${TEMP_JAVA_OPTS} \
-  -Dcassandra.storage_port=${TEMP_STORAGE_PORT} \
-  -Dcassandra.native_transport_port=${TEMP_NATIVE_TRANSPORT_PORT} \
-  -Dcassandra.storagedir=${PWD} \
-  -Dcassandra.config=file:${PWD}/conf/cassandra.yaml \
-  -Dlog4j.configuration=file:${PWD}/conf/log4j.properties \
-  org.apache.cassandra.service.CassandraDaemon &
+JAVA_OPTS="-Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError \
+-Dcassandra.storage_port=${TEMP_STORAGE_PORT} \
+-Dcassandra.native_transport_port=${TEMP_NATIVE_TRANSPORT_PORT}" ./start-cassandra &
 CASSANDRA_PID=$!
 
 echo "*** Installing cqlsh"
@@ -148,11 +142,12 @@ cat zipkin-schemas/zipkin2-schema-indexes.cql | cql --debug
 
 echo "*** Stopping Cassandra"
 kill ${CASSANDRA_PID}
+rm start-cassandra
 
 # Take a backup so that we can safely mount an empty volume over the data directory and maintain the schema
 cp -R data/ data-backup/
 
 echo "*** Cleaning Up"
-rm -rf zipkin-schemas/ data/* commitlog/* saved_caches/* hints/*
+rm -rf zipkin-schemas/
 
 echo "*** Image build complete"
