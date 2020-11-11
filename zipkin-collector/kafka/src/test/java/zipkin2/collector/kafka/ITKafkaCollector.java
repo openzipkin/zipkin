@@ -13,6 +13,14 @@
  */
 package zipkin2.collector.kafka;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -34,15 +42,6 @@ import zipkin2.collector.InMemoryCollectorMetrics;
 import zipkin2.storage.ForwardingStorageComponent;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
@@ -76,7 +75,7 @@ public class ITKafkaCollector {
   @Before
   public void setup() {
     final Properties config = new Properties();
-    config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaCollectorRule.KAFKA_BOOTSTRAP_SERVERS);
+    config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.bootstrapServers());
     producer = new KafkaProducer<>(config, new ByteArraySerializer(), new ByteArraySerializer());
   }
 
@@ -117,10 +116,11 @@ public class ITKafkaCollector {
    * If the Kafka broker(s) specified in the connection string are not available, the Kafka consumer
    * library will attempt to reconnect indefinitely. The Kafka consumer will not throw an exception
    * and does not expose the status of its connection to the Kafka broker(s) in its API.
-   *
+   * <p>
    * An AdminClient API instance has been added to the connector to validate that connection with
    * Kafka is available in every health check. This AdminClient reuses Consumer's properties to
-   * Connect to the cluster, and request a Cluster description to validate communication with Kafka.
+   * Connect to the cluster, and request a Cluster description to validate communication with
+   * Kafka.
    */
   @Test
   public void reconnectsIndefinitelyAndReportsUnhealthyWhenKafkaUnavailable() throws Exception {
@@ -314,7 +314,7 @@ public class ITKafkaCollector {
 
       assertThat(collector).hasToString(
         String.format("KafkaCollector{bootstrapServers=%s, topic=%s}",
-          KafkaCollectorRule.KAFKA_BOOTSTRAP_SERVERS, "muah")
+          kafka.bootstrapServers(), "muah")
       );
     }
   }

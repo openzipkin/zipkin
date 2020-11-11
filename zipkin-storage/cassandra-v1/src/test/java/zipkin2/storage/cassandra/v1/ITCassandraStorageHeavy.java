@@ -50,7 +50,7 @@ import static zipkin2.storage.cassandra.v1.InternalForTests.writeDependencyLinks
 class ITCassandraStorageHeavy {
 
   @RegisterExtension CassandraStorageExtension backend = new CassandraStorageExtension(
-    DockerImageName.parse("ghcr.io/openzipkin/zipkin-cassandra:2.22.1"));
+    DockerImageName.parse("ghcr.io/openzipkin/zipkin-cassandra:2.22.2"));
 
   @Nested
   class ITSpanStoreHeavy extends zipkin2.storage.ITSpanStoreHeavy<CassandraStorage> {

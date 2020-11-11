@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.ElasticsearchStorage;
@@ -41,14 +41,10 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
 
   static final int ELASTICSEARCH_PORT = 9200;
   final DockerImageName image;
-  final Integer priority;
   GenericContainer<?> container;
 
-  ElasticsearchStorageExtension(DockerImageName image, Integer priority) {
+  ElasticsearchStorageExtension(DockerImageName image) {
     this.image = image;
-
-    // This is so that both legacy and composable templates can be tested with this class
-    this.priority = priority;
   }
 
   @Override public void beforeAll(ExtensionContext context) {
@@ -60,10 +56,9 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
     if (!"true".equals(System.getProperty("docker.skip"))) {
       try {
         LOGGER.info("Starting docker image " + image);
-        container =
-          new GenericContainer<>(image)
-            .withExposedPorts(ELASTICSEARCH_PORT)
-            .waitingFor(new HttpWaitStrategy().forPath("/"));
+        container = new GenericContainer<>(image)
+          .withExposedPorts(ELASTICSEARCH_PORT)
+          .waitingFor(Wait.forHealthcheck());
         container.start();
         if (Boolean.parseBoolean(System.getenv("ES_DEBUG"))) {
           container.followOutput(new Slf4jLogConsumer(LoggerFactory.getLogger(image.toString())));
@@ -138,10 +133,7 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
       }));
     });
     WebClient client = builder.build();
-    return ElasticsearchStorage.newBuilder(() -> client)
-      .index("zipkin-test")
-      .flushOnWrites(true)
-      .templatePriority(priority);
+    return ElasticsearchStorage.newBuilder(() -> client).index("zipkin-test").flushOnWrites(true);
   }
 
   String baseUrl() {

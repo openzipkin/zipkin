@@ -18,6 +18,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.jdbc.ContainerLessJdbcDelegate;
 import org.testcontainers.utility.DockerImageName;
 
@@ -30,6 +31,7 @@ final class ZipkinMySQLContainer extends GenericContainer<ZipkinMySQLContainer> 
   ZipkinMySQLContainer(DockerImageName image) {
     super(image);
     withExposedPorts(3306);
+    waitStrategy = Wait.forHealthcheck();
   }
 
   MariaDbDataSource getDataSource() {
