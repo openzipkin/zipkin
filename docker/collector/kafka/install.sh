@@ -37,8 +37,8 @@ cat > pom.xml <<-'EOF'
   <dependencies>
     <dependency>
       <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_${SCALA_VERSION}</artifactId>
-      <version>${KAFKA_VERSION}</version>
+      <artifactId>kafka_${scala.version}</artifactId>
+      <version>${kafka.version}</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -48,7 +48,10 @@ cat > pom.xml <<-'EOF'
   </dependencies>
 </project>
 EOF
-mvn -q --batch-mode dependency:copy-dependencies -DoutputDirectory=libs && rm pom.xml
+mvn -q --batch-mode -DoutputDirectory=libs \
+    -Dscala.version=${SCALA_VERSION} -Dkafka.version=${KAFKA_VERSION} \
+    dependency:copy-dependencies
+rm pom.xml
 
 # Make sure you use relative paths in references like this, so that installation
 # is decoupled from runtime

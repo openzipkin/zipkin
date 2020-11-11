@@ -22,7 +22,7 @@ version: '2.4'
 
 services:
   storage:
-    image: ghcr.io/ghcr.io/openzipkin/zipkin-elasticsearch7:${TAG:-latest}
+    image: ghcr.io/openzipkin/zipkin-elasticsearch7:${TAG:-latest}
     container_name: elasticsearch
     # Uncomment to expose the storage port for testing
     # ports:
