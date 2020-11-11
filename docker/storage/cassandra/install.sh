@@ -62,25 +62,6 @@ rm pom.xml
 # is decoupled from runtime
 mkdir -p conf data commitlog saved_caches hints triggers
 
-# Make a basic log4j conf which only logs warnings (to stderr)
-cat > conf/log4j.properties <<-'EOF'
-log4j.rootLogger=WARN, stderr
-
-log4j.appender.stderr=org.apache.log4j.ConsoleAppender
-log4j.appender.stderr.layout=org.apache.log4j.PatternLayout
-log4j.appender.stderr.layout.ConversionPattern=[%d] %p %m (%c)%n
-log4j.appender.stderr.Target=System.err
-
-# Ignore that we are using log4j as we aren't starting JMX anyway
-log4j.logger.org.apache.cassandra.utils.logging=ERROR
-# Ignore that we cannot increase RLIMIT_MEMLOCK or run Cassandra as root
-log4j.logger.org.apache.cassandra.utils.NativeLibrary=ERROR
-# Ignore that we disabled JMX and haven't installed jemalloc (not available on Alpine)
-log4j.logger.org.apache.cassandra.service.StartupChecks=OFF
-# Ignore warnings about less than 64GB disk
-log4j.logger.org.apache.cassandra.config.DatabaseDescriptor=ERROR
-EOF
-
 # Generate basic required configuration from default values
 cat > conf/cassandra.yaml <<-'EOF'
 partitioner: org.apache.cassandra.dht.Murmur3Partitioner
@@ -114,10 +95,36 @@ case ${ARCH} in
     ;;
 esac
 
-JAVA_OPTS="-Xms128m -Xmx128m -XX:+ExitOnOutOfMemoryError \
--Dcassandra.storage_port=${TEMP_STORAGE_PORT} \
--Dcassandra.native_transport_port=${TEMP_NATIVE_TRANSPORT_PORT}" ./start-cassandra &
-CASSANDRA_PID=$!
+# Keep INFO logs as if this fails in CI, we'll get more insight. These aren't displayed unless we
+# have a crash.
+cat > conf/log4j.properties <<-'EOF'
+log4j.rootLogger=INFO, stderr
+
+log4j.appender.stderr=org.apache.log4j.ConsoleAppender
+log4j.appender.stderr.layout=org.apache.log4j.PatternLayout
+log4j.appender.stderr.layout.ConversionPattern=[%d] %p %m (%c)%n
+log4j.appender.stderr.Target=System.err
+EOF
+
+# Run cassandra on a different port temporarily in order to setup the schema.
+java -cp 'libs/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc \
+  -Dcassandra.storage_port=${TEMP_STORAGE_PORT} \
+  -Dcassandra.native_transport_port=${TEMP_NATIVE_TRANSPORT_PORT} \
+  -Dcassandra.storagedir=${PWD} \
+  -Dcassandra.triggers_dir=${PWD}/triggers \
+  -Dcassandra.config=file:${PWD}/conf/cassandra.yaml \
+  org.apache.cassandra.service.CassandraDaemon > temp_cassandra.out 2>&1 &
+TEMP_CASSANDRA_PID=$!
+
+function is_cassandra_alive() {
+  if ! kill -0 ${TEMP_CASSANDRA_PID}; then
+    cat temp_cassandra.out
+    return 1
+  fi
+  return 0
+}
+
+is_cassandra_alive || exit 1
 
 echo "*** Installing cqlsh"
 apk add --update --no-cache python2 py2-setuptools
@@ -131,6 +138,7 @@ function cql() {
 timeout=180
 echo "Will wait up to ${timeout} seconds for Cassandra to come up before installing Schema"
 while [ "$timeout" -gt 0 ] && ! cql -e 'SHOW VERSION' > /dev/null 2>&1; do
+    is_cassandra_alive || exit 1
     sleep 1
     timeout=$(($timeout - 1))
 done
@@ -141,13 +149,31 @@ cat zipkin-schemas/zipkin2-schema.cql | cql --debug
 cat zipkin-schemas/zipkin2-schema-indexes.cql | cql --debug
 
 echo "*** Stopping Cassandra"
-kill ${CASSANDRA_PID}
-rm start-cassandra
+kill ${TEMP_CASSANDRA_PID}
+
+# The image will use a less chatty Log4J conf which only logs warnings (to stderr).
+cat > conf/log4j.properties <<-'EOF'
+log4j.rootLogger=WARN, stderr
+
+log4j.appender.stderr=org.apache.log4j.ConsoleAppender
+log4j.appender.stderr.layout=org.apache.log4j.PatternLayout
+log4j.appender.stderr.layout.ConversionPattern=[%d] %p %m (%c)%n
+log4j.appender.stderr.Target=System.err
+
+# Ignore that we are using log4j as we aren't starting JMX anyway
+log4j.logger.org.apache.cassandra.utils.logging=ERROR
+# Ignore that we cannot increase RLIMIT_MEMLOCK or run Cassandra as root
+log4j.logger.org.apache.cassandra.utils.NativeLibrary=ERROR
+# Ignore that we disabled JMX and haven't installed jemalloc (not available on Alpine)
+log4j.logger.org.apache.cassandra.service.StartupChecks=OFF
+# Ignore warnings about less than 64GB disk
+log4j.logger.org.apache.cassandra.config.DatabaseDescriptor=ERROR
+EOF
 
 # Take a backup so that we can safely mount an empty volume over the data directory and maintain the schema
 cp -R data/ data-backup/
 
 echo "*** Cleaning Up"
-rm -rf zipkin-schemas/
+rm -rf zipkin-schemas/ temp_cassandra.out
 
 echo "*** Image build complete"

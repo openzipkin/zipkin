@@ -22,7 +22,7 @@ set -eu
 # Apply one-time deferred configuration that relies on ENV variables
 #
 # If the schema has been removed due to mounting, restore from our backup. see: install
-if [ -d data-backup ] && [ ! -d data/zipkin2 ]; then
+if [ ! -d data/zipkin2 ]; then
   cp -rf data-backup/* data/
 fi
 
