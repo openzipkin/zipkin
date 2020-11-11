@@ -114,7 +114,7 @@ case ${ARCH} in
     ;;
 esac
 
-JAVA_OPTS="-Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError \
+JAVA_OPTS="-Xms128m -Xmx128m -XX:+ExitOnOutOfMemoryError \
 -Dcassandra.storage_port=${TEMP_STORAGE_PORT} \
 -Dcassandra.native_transport_port=${TEMP_NATIVE_TRANSPORT_PORT}" ./start-cassandra &
 CASSANDRA_PID=$!
@@ -134,9 +134,6 @@ while [ "$timeout" -gt 0 ] && ! cql -e 'SHOW VERSION' > /dev/null 2>&1; do
     sleep 1
     timeout=$(($timeout - 1))
 done
-
-# Sleep to settle in order to avoid flakes in CI
-sleep 2
 
 echo "*** Importing Scheme"
 cat zipkin-schemas/cassandra-schema.cql | cql --debug
