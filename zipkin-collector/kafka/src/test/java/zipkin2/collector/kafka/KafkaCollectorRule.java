@@ -25,6 +25,7 @@ import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.InternetProtocol;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
@@ -37,7 +38,17 @@ class KafkaCollectorRule extends ExternalResource {
     DockerImageName.parse("ghcr.io/openzipkin/zipkin-kafka:2.22.2");
   static final int KAFKA_PORT = 19092;
   static final String KAFKA_TOPIC = "zipkin";
-  GenericContainer<?> container;
+  KafkaContainer container;
+
+  static final class KafkaContainer extends GenericContainer<KafkaContainer> {
+    KafkaContainer(DockerImageName image) {
+      super(image);
+      // 19092 is for connections from the Docker host and needs to be used as a fixed port.
+      // TODO: someone who knows Kafka well, make ^^ comment better!
+      addFixedExposedPort(KAFKA_PORT, KAFKA_PORT, InternetProtocol.TCP);
+      this.waitStrategy = Wait.forHealthcheck();
+    }
+  }
 
   @Override protected void before() {
     if ("true".equals(System.getProperty("docker.skip"))) {
@@ -46,9 +57,7 @@ class KafkaCollectorRule extends ExternalResource {
 
     try {
       LOGGER.info("Starting docker image " + IMAGE);
-      container = new GenericContainer<>(IMAGE)
-        .withExposedPorts(KAFKA_PORT)
-        .waitingFor(Wait.forHealthcheck());
+      container = new KafkaContainer(IMAGE);
       container.start();
     } catch (Throwable e) {
       throw new AssumptionViolatedException(
