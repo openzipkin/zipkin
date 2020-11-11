@@ -79,8 +79,8 @@ jobs:
     - stage: test
       name: "Run unit and integration tests including Docker [arm64]"
       arch: arm64-graviton2 # Runs in AWS cloud and significantly faster than arm64
-      virt: lxd   # LXD containers where possible as they boot much faster than full VMs
-      group: edge
+      virt: lxd             # LXD containers where possible as they boot faster than full VMs
+      group: edge           # Needed for graviton2: https://blog.travis-ci.com/2020-09-11-arm-on-aws
       # We run tests on non-tagged pushes to master that aren't commit made by the release plugin
       # We also run tests on pull requests targeted at the master branch.
       if: |

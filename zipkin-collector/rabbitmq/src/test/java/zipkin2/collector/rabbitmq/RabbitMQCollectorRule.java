@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Container.ExecResult;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.DockerImageName;
 import zipkin2.CheckResult;
 
 import static java.util.Arrays.asList;
@@ -31,20 +32,11 @@ import static zipkin2.Call.propagateIfFatal;
 class RabbitMQCollectorRule extends ExternalResource {
   static final Logger LOGGER = LoggerFactory.getLogger(RabbitMQCollectorRule.class);
   // Use a ghcr.io mirror to prevent build outages due to Docker Hub pull quotas
-  static final String IMAGE = "ghcr.io/openzipkin/rabbitmq-management-alpine:latest";
+  static final DockerImageName IMAGE =
+    DockerImageName.parse("ghcr.io/openzipkin/rabbitmq-management-alpine:latest");
   static final String QUEUE = "zipkin-test1";
   static final int RABBIT_PORT = 5672;
-
-  static final class RabbitMQContainer extends GenericContainer<RabbitMQContainer> {
-    RabbitMQContainer(String image) {
-      super(image);
-      addExposedPorts(RABBIT_PORT);
-      this.waitStrategy = Wait.forLogMessage(".*Server startup complete.*", 1)
-          .withStartupTimeout(Duration.ofSeconds(60));
-    }
-  }
-
-  RabbitMQContainer container;
+  GenericContainer<?> container;
 
   @Override protected void before() {
     if ("true".equals(System.getProperty("docker.skip"))) {
@@ -53,11 +45,14 @@ class RabbitMQCollectorRule extends ExternalResource {
 
     try {
       LOGGER.info("Starting docker image " + IMAGE);
-      container = new RabbitMQContainer(IMAGE);
+      container = new GenericContainer<>(IMAGE)
+        .withExposedPorts(RABBIT_PORT)
+        .waitingFor(Wait.forLogMessage(".*Server startup complete.*", 1)
+          .withStartupTimeout(Duration.ofSeconds(60)));
       container.start();
     } catch (Throwable e) {
       throw new AssumptionViolatedException(
-          "Couldn't start docker image " + IMAGE + ": " + e.getMessage(), e);
+        "Couldn't start docker image " + IMAGE + ": " + e.getMessage(), e);
     }
 
     declareQueue(QUEUE);
@@ -76,8 +71,8 @@ class RabbitMQCollectorRule extends ExternalResource {
 
     if (!check.ok()) {
       throw new AssumptionViolatedException(
-          "Couldn't connect to docker container " + container + ": " +
-              check.error().getMessage(), check.error());
+        "Couldn't connect to docker container " + container + ": " +
+          check.error().getMessage(), check.error());
     }
 
     return result;
@@ -85,7 +80,7 @@ class RabbitMQCollectorRule extends ExternalResource {
 
   RabbitMQCollector.Builder newCollectorBuilder() {
     return RabbitMQCollector.builder().queue(QUEUE).addresses(
-        asList(container.getContainerIpAddress() + ":" + container.getMappedPort(RABBIT_PORT)));
+      asList(container.getContainerIpAddress() + ":" + container.getMappedPort(RABBIT_PORT)));
   }
 
   void declareQueue(String queue) {
@@ -95,7 +90,7 @@ class RabbitMQCollectorRule extends ExternalResource {
     } catch (Throwable e) {
       propagateIfFatal(e);
       throw new AssumptionViolatedException(
-          "Couldn't declare queue " + queue + ": " + e.getMessage(), e);
+        "Couldn't declare queue " + queue + ": " + e.getMessage(), e);
     }
     if (result.getExitCode() != 0) {
       throw new AssumptionViolatedException("Couldn't declare queue " + queue + ": " + result);

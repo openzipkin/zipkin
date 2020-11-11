@@ -24,8 +24,9 @@ import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.FixedHostPortGenericContainer;
-import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.InternetProtocol;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -34,21 +35,20 @@ import org.testcontainers.utility.DockerImageName;
 class KafkaCollectorRule extends ExternalResource {
   static final Logger LOGGER = LoggerFactory.getLogger(KafkaCollectorRule.class);
   static final DockerImageName IMAGE =
-    DockerImageName.parse("ghcr.io/openzipkin/zipkin-kafka:2.22.1");
+    DockerImageName.parse("ghcr.io/openzipkin/zipkin-kafka:2.22.2");
   static final int KAFKA_PORT = 19092;
-  static final String KAFKA_BOOTSTRAP_SERVERS = "localhost:" + KAFKA_PORT;
   static final String KAFKA_TOPIC = "zipkin";
+  KafkaContainer container;
 
-  static final class KafkaContainer extends FixedHostPortGenericContainer<KafkaContainer> {
+  static final class KafkaContainer extends GenericContainer<KafkaContainer> {
     KafkaContainer(DockerImageName image) {
-      super(image.asCanonicalNameString());
-      withFixedExposedPort(KAFKA_PORT, KAFKA_PORT);
-      this.waitStrategy =
-        new LogMessageWaitStrategy().withRegEx(".*INFO \\[KafkaServer id=0\\] started.*");
+      super(image);
+      // 19092 is for connections from the Docker host and needs to be used as a fixed port.
+      // TODO: someone who knows Kafka well, make ^^ comment better!
+      addFixedExposedPort(KAFKA_PORT, KAFKA_PORT, InternetProtocol.TCP);
+      this.waitStrategy = Wait.forHealthcheck();
     }
   }
-
-  KafkaContainer container;
 
   @Override protected void before() {
     if ("true".equals(System.getProperty("docker.skip"))) {
@@ -69,7 +69,7 @@ class KafkaCollectorRule extends ExternalResource {
 
   void prepareTopic(final String topic, final int partitions) {
     final Properties config = new Properties();
-    config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_BOOTSTRAP_SERVERS);
+    config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers());
     AdminClient adminClient = AdminClient.create(config);
     try {
       adminClient.createTopics(
@@ -81,8 +81,16 @@ class KafkaCollectorRule extends ExternalResource {
     }
   }
 
+  String bootstrapServers() {
+    if (container != null && container.isRunning()) {
+      return container.getContainerIpAddress() + ":" + container.getMappedPort(KAFKA_PORT);
+    } else {
+      return "127.0.0.1:" + KAFKA_PORT;
+    }
+  }
+
   KafkaCollector.Builder newCollectorBuilder() {
-    return KafkaCollector.builder().bootstrapServers(KAFKA_BOOTSTRAP_SERVERS);
+    return KafkaCollector.builder().bootstrapServers(bootstrapServers());
   }
 
   @Override protected void after() {
