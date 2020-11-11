@@ -13,7 +13,7 @@
 # the License.
 #
 
-# ENTRYPOINT script that starts ZooKeeper and then Kafka
+# ENTRYPOINT script that starts Cassandra
 #
 # This intentionally locates config using the current working directory, in order to consolidate
 # Dockerfile instructions to WORKDIR
@@ -22,26 +22,20 @@ set -eu
 # Apply one-time deferred configuration that relies on ENV variables
 #
 # If the schema has been removed due to mounting, restore from our backup. see: install
-if [ ! -d "data/data/zipkin2" ]; then
-    cp -rf data-backup/* data/
+if [ ! -d "data/zipkin2" ]; then
+  cp -rf data-backup/* data/
 fi
 
-_ip_address() {
-	# scrape the first non-localhost IP address of the container
-	ip address | awk '
-		$1 == "inet" && $NF != "lo" {
-			gsub(/\/.+$/, "", $2)
-			print $2
-			exit
-		}
-	'
-}
-
-IP="$(_ip_address)"
-sed -i "/listen_address: localhost/clisten_address: $IP" conf/cassandra.yaml
-sed -i '/rpc_address: localhost/crpc_address: 0.0.0.0' conf/cassandra.yaml
-sed -i "/# broadcast_address: 1.2.3.4/cbroadcast_address: $IP" conf/cassandra.yaml
-sed -i "/# broadcast_rpc_address: 1.2.3.4/cbroadcast_rpc_address: $IP" conf/cassandra.yaml
+IP="$(hostname -i || echo '127.0.0.1')"
+sed -i "/listen_address: 127.0.0.1/clisten_address: $IP" conf/cassandra.yaml
+sed -i "/rpc_address: 127.0.0.1/crpc_address: $IP" conf/cassandra.yaml
 sed -i "/          - seeds: \"127.0.0.1\"/c\          - seeds: $IP" conf/cassandra.yaml
 
-exec bin/cassandra -f
+echo Starting Cassandra
+exec java -cp 'libs/*' ${JAVA_OPTS} \
+  -Djava.io.tmpdir=/tmp \
+  -Dcassandra-foreground=yes \
+  -Dcassandra.storagedir=${PWD}/data \
+  -Dcassandra.config=file:${PWD}/conf/cassandra.yaml \
+  -Dlog4j.configuration=file:${PWD}/conf/log4j.properties \
+  org.apache.cassandra.service.CassandraDaemon "$@"

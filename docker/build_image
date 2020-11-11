@@ -70,14 +70,10 @@ case ${DOCKER_TARGET} in
   zipkin-cassandra )
     DOCKERFILE_PATH=docker/storage/cassandra/Dockerfile
     # Until Cassandra v4, we are stuck on JRE 8 for Cassandra
-    JAVA_VERSION=8.252.09
+    JAVA_VERSION=8.272.10
     # Use latest stable version: https://cassandra.apache.org/download/
     CASSANDRA_VERSION=3.11.9
     DOCKER_ARGS=" --build-arg cassandra_version=${CASSANDRA_VERSION} --label cassandra-version=${CASSANDRA_VERSION}"
-    # Currently crashes on arm64 per: https://issues.apache.org/jira/browse/CASSANDRA-16212
-    # When this works, we'll also need to fix the install script to use a different port because
-    # buildx will run the two arch builds simultaneously.
-    PLATFORMS="linux/amd64"
     ;;
   zipkin-elasticsearch6 )
     DOCKERFILE_PATH=docker/storage/elasticsearch6/Dockerfile

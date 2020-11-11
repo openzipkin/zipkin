@@ -24,7 +24,7 @@ COPY zipkin-storage/cassandra-v1/src/main/resources/cassandra-schema.cql /zipkin
 COPY docker/storage/cassandra/install.sh /install/
 COPY docker/storage/cassandra/docker-bin/* /docker-bin/
 
-FROM ghcr.io/openzipkin/java:${java_version}-jre as install
+FROM ghcr.io/openzipkin/java:${java_version} as install
 
 ARG cassandra_version
 ENV CASSANDRA_VERSION=$cassandra_version
@@ -56,9 +56,6 @@ USER ${USER}
 COPY --from=install --chown=${USER} /install .
 
 # Set variables Cassandra's start script wants
-#
-# Integration test currently use a single container for all suites, without cleaning up keyspaces
-# per method. For this reason, we use a higher heap size than 256m, which would be otherwise fine.
-ENV JVM_OPTS="-Xms512m -Xmx512m -XX:+ExitOnOutOfMemoryError -Djava.net.preferIPv4Stack=true"
+ENV JAVA_OPTS="-Xms256m -Xmx256m -XX:+ExitOnOutOfMemoryError -Djava.net.preferIPv4Stack=true"
 
 EXPOSE 9042
