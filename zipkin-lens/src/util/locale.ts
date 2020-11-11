@@ -15,6 +15,7 @@
 import { setupI18n } from '@lingui/core';
 import { messages as enMessages } from '../translations/en/messages';
 import { messages as esMessages } from '../translations/es/messages';
+import { messages as frMessages } from '../translations/fr/messages';
 import { messages as zhCnMessages } from '../translations/zh-cn/messages';
 
 const localeStorageKey = 'localeOverride';
@@ -22,6 +23,7 @@ const localeStorageKey = 'localeOverride';
 const allMessages = {
   en: enMessages,
   es: esMessages,
+  fr: frMessages,
   'zh-cn': zhCnMessages,
 };
 
@@ -59,6 +61,7 @@ export const i18n = setupI18n({
   localeData: {
     en: {},
     es: {},
+    fr: {},
     zh: {},
   },
 });

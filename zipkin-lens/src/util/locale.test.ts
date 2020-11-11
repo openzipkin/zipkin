@@ -40,6 +40,16 @@ describe('getting locale', () => {
     expect(getLocale()).toEqual('es');
   });
 
+  it('browser language fr-BE sets locale fr', () => {
+    setLanguageForTest('fr-BE');
+    expect(getLocale()).toEqual('fr');
+  });
+
+  it('browser language fr sets locale fr', () => {
+    setLanguageForTest('fr');
+    expect(getLocale()).toEqual('fr');
+  });
+
   it('browser language zh-CN sets locale zh-cn', () => {
     setLanguageForTest('zh-CN');
     expect(getLocale()).toEqual('zh-cn');

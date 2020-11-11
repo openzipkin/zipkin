@@ -1,4 +1,5 @@
 {
+  "1 Result": "1 条结果",
   "Address": "地址",
   "Annotations": "Annotations",
   "Archive Trace": "存档Trace",
@@ -42,6 +43,5 @@
   "Zipkin Home": "Zipkin Home",
   "hide annotations": "隐藏annotations",
   "show all annotations": "显示全部annotations",
-  "{0} Results": "{0} 条结果",
-  "1 Result": "1 条结果"
+  "{0} Results": "{0} 条结果"
 }

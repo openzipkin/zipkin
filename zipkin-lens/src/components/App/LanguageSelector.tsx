@@ -33,6 +33,10 @@ export const LANGUAGES = [
     name: 'Español',
   },
   {
+    locale: 'fr',
+    name: 'Français',
+  },
+  {
     locale: 'zh-cn',
     name: '中文 (简体)',
   },

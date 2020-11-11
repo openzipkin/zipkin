@@ -31,6 +31,7 @@ describe('<LanguageSelector />', () => {
     const { getByTestId } = render(<LanguageSelector />);
     expect(getByTestId('language-list-item-en')).toBeInTheDocument();
     expect(getByTestId('language-list-item-es')).toBeInTheDocument();
+    expect(getByTestId('language-list-item-fr')).toBeInTheDocument();
     expect(getByTestId('language-list-item-zh-cn')).toBeInTheDocument();
     expect(getLocale()).toEqual('en');
   });
