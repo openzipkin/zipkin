@@ -43,7 +43,16 @@ cat > pom.xml <<-'EOF'
           <groupId>ch.qos.logback</groupId>
           <artifactId>*</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>net.java.dev.jna</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+      <version>5.6.0</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
