@@ -1,107 +1,154 @@
-# Run `travis lint` when changing this file to avoid breaking the build.
-
 # See https://docs.travis-ci.com/user/reference/overview/#for-a-particular-travisyml-configuration
+arch: amd64 # Not arm64 for multi-platform Docker builds (qemu is amd64->arm64, not vice versa)
 os: linux   # required for arch different than amd64
 dist: focal # newest available distribution
+language: java # Re-use JDK 11 from focal release instead of delaying build with installation
+services: docker
 
 # license-maven-plugin needs the full history to generate copyright year range. Ex. 2013-2020
 # Don't do a shallow clone, as it interferes with this.
 git:
   depth: false
 
-language: java
-
 cache:
   directories:
-  # zipkin-lens gets dependencies via NPM
-  - $HOME/.npm
-  - $HOME/.m2
+    # zipkin-lens gets dependencies via NPM
+    - $HOME/.npm
+    - $HOME/.m2
 
-services:
-  - docker
+# Prevent test build of a documentation-only change.
+#
+# if: conditions are preferred as they obviate job creation. However, they can only use
+# pre-defined env variables or globals that can be evaluated statically. The other way to skip
+# is to exit early. We do that here to prevent overhead of running tests that only include Markdown
+# (documentation) updates.
+_terminate_if_only_docs: &terminate_if_only_docs |
+  if [ -n "${TRAVIS_COMMIT_RANGE}" ] && ! git diff --name-only "${TRAVIS_COMMIT_RANGE}" -- | grep -qv '\.md$'; then
+    echo "Stopping job as changes only affect documentation (ex. README.md)"
+    travis_terminate 0
+  fi
 
-# Re-use JDK 11 from focal release instead of delaying build with installation
-before_install:
+install:
   - |
-    # Cache as help:evaluate is not quick
-    export POM_VERSION=$(./mvnw help:evaluate -N -Dexpression=project.version -q -DforceStdout)
-  - |
-    # Defend against build outages caused by Docker Hub (docker.io) pull rate limits
-
-    # We don't use any docker.io images, but add a Google's mirror in case something implicitly does
+    # Add Google's mirror as our base image is from Docker Hub, which has a pull limit.
     # * See https://cloud.google.com/container-registry/docs/pulling-cached-images
     echo '{ "registry-mirrors": ["https://mirror.gcr.io"] }' | sudo tee /etc/docker/daemon.json
     sudo service docker restart
-    # * Ensure buildx and related features are disabled
-    mkdir -p ${HOME}/.docker && echo '{"experimental":"disabled"}' > ${HOME}/.docker/config.json
 
     # Change testcontainers configuration so that it doesn't pull from docker.io
     # * See https://www.testcontainers.org/supported_docker_environment/image_registry_rate_limiting/
     # * checks.disable=true - saves time and a docker.io pull of alpine
     echo checks.disable=true >> ~/.testcontainers.properties
+
     # * change ryuk to ghcr.io until: https://github.com/testcontainers/moby-ryuk/issues/15 and 16
     echo ryuk.container.image=ghcr.io/openzipkin/testcontainers-ryuk:latest >> ~/.testcontainers.properties
-  - |
-    # Credentials entered into https://travis-ci.com/github/openzipkin/${REPO}/settings are access
-    # controlled by branch (typically only master). Check to see if a well-known env is available
-    # before attempting to log in.
-    if [[ -n "$SONATYPE_USER" ]]; then
-      # re-use this condition to control if we prepare Docker for multi-arch
-      build-bin/setup_multiarch_docker
+  - ./build-bin/go_offline
 
-      # allocate commits to CI, not the owner of the deploy key
-      git config user.name "zipkinci"
-      git config user.email "zipkinci+zipkin-dev@googlegroups.com"
+# Reads the following ENV:
+#  * RELEASE_VERSION - ex 2.22.2 or 2.22.3-SNAPSHOT
+#  * RELEASE_FROM_MAVEN_BUILD - true if the version was just built
+_docker_push: &docker_push |
+  # re-use this condition to control if we prepare Docker for multi-arch
+  build-bin/setup_multiarch_docker || travis_terminate 1
 
-      # setup https authentication credentials, used by ./mvnw release:prepare
-      git config credential.helper "store --file=.git/credentials"
-      echo "https://$GH_TOKEN:@github.com" > .git/credentials
+  # Log in to GitHub Container Registry and Docker Hub for releasing images
+  echo "$GH_TOKEN"| docker login ghcr.io -u "$GH_USER" --password-stdin || travis_terminate 1
+  echo "$DOCKERHUB_TOKEN"| docker login -u "$DOCKERHUB_USER" --password-stdin || travis_terminate 1
 
-      # Log in to GitHub Container Registry and Docker Hub for releasing images
-      echo "$GH_TOKEN"| docker login ghcr.io -u "$GH_USER" --password-stdin
-      echo "$DOCKERHUB_TOKEN"| docker login -u "$DOCKERHUB_USER" --password-stdin
+  docker/bin/push_all_images ${RELEASE_VERSION} || travis_terminate 1
 
+_deploy_script: &deploy_script
+  script:
+    # Setup GPG to sign the artifacts uploaded to Sonatype
+    - |
       # ensure GPG commands work non-interactively
       export GPG_TTY=$(tty)
       # import signing key used for jar files
-      echo ${GPG_SIGNING_KEY} | base64 --decode | gpg --batch --passphrase ${GPG_PASSPHRASE} --import
-    fi
+      echo ${GPG_SIGNING_KEY} | base64 --decode | gpg --batch --passphrase ${GPG_PASSPHRASE} --import || travis_terminate 1
+    # Perform the deployment: travis_wait ensures upload delays don't kill the deployment
+    # -DskipBenchmarks ensures benchmarks don't end up in javadocs or in Maven Central
+    - travis_wait ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests -DskipBenchmarks deploy
+    # Export Docker variables
+    - |
+      export POM_VERSION=${POM_VERSION:-$(mvn help:evaluate -N -Dexpression=project.version -q -DforceStdout)}
+      export RELEASE_FROM_MAVEN_BUILD=true
+      export RELEASE_VERSION=${POM_VERSION}
+    - *docker_push
 
-install: ./build-bin/go_offline
 jobs:
   include:
-    # TODO: Refactor ./travis/publish.sh into two stages: test and deploy
     - stage: test
-      name: "Run unit and integration tests including Docker [amd64]. Deploys when a master push"
-      arch: amd64 # Not arm64 for multi-platform Docker builds (qemu is amd64->arm64, not vice versa)
-      script: ./travis/publish.sh
-      if: 'NOT tag =~ /^docker-/'
-    - stage: test
-      name: "Run unit and integration tests including Docker [arm64]"
       arch: arm64-graviton2 # Runs in AWS cloud and significantly faster than arm64
       virt: lxd             # LXD containers where possible as they boot faster than full VMs
       group: edge           # Needed for graviton2: https://blog.travis-ci.com/2020-09-11-arm-on-aws
-      # We run tests on non-tagged pushes to master that aren't commit made by the release plugin
+      # We run tests on non-tagged pushes to master that aren't a commit made by the release plugin
       # We also run tests on pull requests targeted at the master branch.
       if: |
-        branch = master AND tag IS blank AND \
-        commit_message !~ /maven-release-plugin/ AND \
+        branch = master AND tag IS blank AND commit_message !~ maven-release-plugin AND \
         type IN (push, pull_request)
+      name: "Run unit and integration tests"
+      before_install: *terminate_if_only_docs
       # -DskipActuator ensures no tests rely on the actuator library
       script: ./mvnw verify -nsu -DskipActuator || travis_terminate 1
-    - name: Re-push all Docker images
-      arch: amd64 # Not arm64 for multi-platform Docker builds (qemu is amd64->arm64, not vice versa)
+    - stage: deploy
+      # If we are on master, deploy a SNAPSHOT (unless this is a commit made by the release plugin)
+      if: |
+        branch = master AND tag IS blank AND commit_message !~ maven-release-plugin AND \
+        type = push AND env(SONATYPE_USER) IS present
+      name: "Deploy a SNAPSHOT to Sonatype"
+      before_install: *terminate_if_only_docs
+      <<: *deploy_script
+    - stage: deploy
+      # If we are on a version tag, deploy it to Sonatype (automatically releases to Maven Central)
+      if: |
+        tag =~ ^[0-9]+\.[0-9]+\.[0-9]+ AND \
+        type = push AND env(SONATYPE_USER) IS present
+      name: "Deploy a release to Sonatype"
+      <<: *deploy_script
+    # Create a release version when a release trigger and credentials needed for git are available
+    - stage: create release
+      if: |
+        tag =~ ^release-[0-9]+\.[0-9]+\.[0-9]+ AND \
+        type = push AND env(GH_TOKEN) IS present
+      name: "Create release version"
       script:
+        # Configure git as release implies pushing commits and tags
         - |
-          docker/bin/push_all_images $(echo "${TRAVIS_TAG}" | sed 's/^docker-//') &&
-          git push origin :"${TRAVIS_TAG}"
-      if: 'type IN (push) and tag =~ /^docker-/'
+          # Allocate commits to CI, not the owner of the deploy key
+          git config user.name "zipkinci"
+          git config user.email "zipkinci+zipkin-dev@googlegroups.com"
 
-# Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
-# See https://github.com/travis-ci/travis-ci/issues/1532
-branches:
-  except:
-    - /^[0-9]/
+          # Setup https authentication credentials, used by ./mvnw release:prepare
+          git config credential.helper "store --file=.git/credentials"
+          echo "https://$GH_TOKEN:@github.com" > .git/credentials || travis_terminate 1
+        # Checkout master, as we release from master, not a tag ref
+        - git checkout -B master || travis_terminate 1
+        # Ensure no one pushed commits since this release tag as it would fail later commands
+        - |
+          git fetch origin master:origin/master || travis_terminate 1
+          commit_local_master=$(git show --pretty='format:%H' master) || travis_terminate 1
+          commit_remote_master=$(git show --pretty='format:%H' origin/master) || travis_terminate 1
+          if [ "$commit_local_master" != "$commit_remote_master" ]; then
+            echo "Master on remote 'origin' has commits since the version under release, aborting"
+            travis_terminate 1
+          fi
+        # Get the release version from the trigger tag, then delete it.
+        - |
+          release_version=$(echo "${TRAVIS_TAG}" | sed 's/^release-//') || travis_terminate 1
+          git push origin :"${TRAVIS_TAG}"
+        # Prepare and push release commits and the version tag (N.N.N), which triggers deployment.
+        - ./mvnw --batch-mode -nsu -DreleaseVersion=${release_version} -Darguments=-DskipTests release:prepare || travis_terminate 1
+        # Commit Javadocs here since it uses GH credentials and we are already logged in
+        - ./build-bin/javadoc_to_gh_pages ${release_version}
+    - stage: push docker
+      if: |
+        tag =~ ^docker-[0-9]+\.[0-9]+\.[0-9]+ AND \
+        type = push AND env(GH_TOKEN) IS present
+      name: Re-push all Docker images
+      script:
+        - export RELEASE_VERSION=$(echo "${TRAVIS_TAG}" | sed 's/^docker-//') || travis_terminate 1
+        - *docker_push
+        - git push origin :"${TRAVIS_TAG}"
 
 notifications:
   webhooks:
