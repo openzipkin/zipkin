@@ -43,7 +43,8 @@ is a good way to validate that your unencrypted credentials are authorized.
 
 Here's an example of a snapshot deploy with specified credentials.
 ```bash
-$ export GPG_TTY=$(tty) && GPG_PASSPHRASE=whackamole SONATYPE_USER=adrianmole SONATYPE_PASSWORD=ed6f20bde9123bbb2312b221 TRAVIS_PULL_REQUEST=false TRAVIS_TAG= TRAVIS_BRANCH=master travis/publish.sh
+# -DskipBenchmarks ensures benchmarks don't end up in javadocs or in Maven Central
+$ export GPG_TTY=$(tty) && GPG_PASSPHRASE=whackamole SONATYPE_USER=adrianmole SONATYPE_PASSWORD=ed6f20bde9123bbb2312b221 ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests  -DskipBenchmarks deploy
 ```
 
 ## First release of the year
