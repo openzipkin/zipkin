@@ -20,12 +20,13 @@ jobs:
       matrix: ${{ steps.set-docker-matrix.outputs.matrix }}
     strategy:
       matrix:
-        - name: ubuntu
-          os: ubuntu-20.04 # aka focal, because this is what we use in Travis
-        - name: macos
-          os: macos-latest
-        - name: windows
-          os: windows-latest
+        include:
+          - name: ubuntu
+            os: ubuntu-20.04 # aka focal, because this is what we use in Travis
+          - name: macos
+            os: macos-latest
+          - name: windows
+            os: windows-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
