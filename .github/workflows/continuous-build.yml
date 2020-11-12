@@ -12,6 +12,8 @@ on:
       - master
     paths-ignore:
       - '**/*.md'
+env:
+  ubuntu_os: ubuntu-20.04 # aka focal, because this is what we use in Travis
 
 jobs:
   build-server:
@@ -22,7 +24,7 @@ jobs:
     strategy:
       matrix:
         - name: ubuntu
-          os: &ubuntu_os ubuntu-20.04 # aka focal, because this is what we use in Travis
+          os: ${{ env.ubuntu_os }}
         - name: macos
           os: macos-latest
         - name: windows
@@ -76,7 +78,7 @@ jobs:
   build-and-verify-docker:
     name: Build and verify Docker images
     needs: build-server
-    runs-on: *ubuntu_os
+    runs-on: ${{ env.ubuntu_os }}
     strategy:
       matrix: ${{ fromJson(needs.build-server.outputs.matrix) }}
     steps:
