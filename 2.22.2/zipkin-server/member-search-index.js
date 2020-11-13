@@ -1,0 +1,1 @@
+memberSearchIndex = [{"p":"zipkin.server","c":"ZipkinServer","l":"main(String[])","url":"main(java.lang.String[])"},{"p":"zipkin.server","c":"ZipkinServer","l":"ZipkinServer()","url":"%3Cinit%3E()"}]

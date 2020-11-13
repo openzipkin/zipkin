@@ -1,7 +1,3 @@
 zipkin2
 zipkin2.codec
-zipkin2.codec.jmh_generated
 zipkin2.collector
-zipkin2.collector.jmh_generated
-zipkin2.jmh_generated
-zipkin2.proto3
