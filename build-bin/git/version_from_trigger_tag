@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# Copyright 2015-2020 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+set -ue
+
+# This script echos a `N.M.L` version tag based on..
+#  * arg1: XXXXX- prefix
+#  * arg2: XXXXX-N.M.L git trigger tag
+#
+# The script exits 1 if the prefix doesn't match. On success, the tag is deleted if it exists.
+#
+# Note: In CI, `build-bin/git/login_git` must be called before invoking this.
+
+trigger_tag_prefix=${1?required. Ex docker- to match docker-1.2.3}
+trigger_tag=${2?trigger_tag is required. Ex ${trigger_tag_prefix}1.2.3}
+
+# Checking sed output to determine success as exit code handling in sed or awk is awkward
+version=$(echo "${trigger_tag}" | sed -En "s/^${trigger_tag_prefix}([0-9]+\.[0-9]+\.[0-9]+)$/\1/p")
+
+if [ -z "$version" ]; then
+  >&2 echo invalid trigger tag: ${trigger_tag}
+  exit 1;
+fi
+
+# try to cleanup the trigger tag if it exists, but don't fail if it doesn't
+git tag -d ${trigger_tag} 2>&- >&- || true
+git push origin :${trigger_tag} 2>&- >&- || true
+
+echo $version

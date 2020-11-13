@@ -15,7 +15,7 @@ _site/
 *.swp
 # quickstart or temporary copies of zipkin's jar
 /*.jar
-# temporary directory used by travis/publish.sh for building gh-pages
+# temporary directory used by build-bin/javadoc_to_gh_pages for building gh-pages
 /javadoc-builddir
 .DS_Store
 

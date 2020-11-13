@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Copyright 2015-2020 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+set -ue
+
+# Defends against build outages caused by Docker Hub (docker.io) pull rate limits.
+#
+# It should not login to anything, as that should be done in `configure_docker_push`
+
+# The below sets up testcontainers configuration, which will be ignored if it isn't used. Even if
+# this is Docker related, it is coupled to integration tests configuration invoked with Maven.
+# * See https://www.testcontainers.org/supported_docker_environment/image_registry_rate_limiting/
+# * checks.disable=true - saves time and a docker.io pull of alpine
+echo checks.disable=true >> ~/.testcontainers.properties
+# * change ryuk to ghcr.io until: https://github.com/testcontainers/moby-ryuk/issues/15 and 16
+echo ryuk.container.image=ghcr.io/openzipkin/testcontainers-ryuk:latest >> ~/.testcontainers.properties
+
+# We don't use any docker.io images, but add a Google's mirror in case something implicitly does
+# * See https://cloud.google.com/container-registry/docs/pulling-cached-images
+echo '{ "registry-mirrors": ["https://mirror.gcr.io"] }' | sudo tee /etc/docker/daemon.json
+sudo service docker restart
+
+# * Ensure buildx and related features are disabled
+mkdir -p ${HOME}/.docker && echo '{"experimental":"disabled"}' > ${HOME}/.docker/config.json

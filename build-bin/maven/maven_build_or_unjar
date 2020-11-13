@@ -1,0 +1,62 @@
+#!/bin/sh
+#
+# Copyright 2015-2020 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+set -ue
+
+# Like `maven_unjar`, except when the version ends in SNAPSHOT and the artifact isn't in the $PWD,
+# it is built on-demand using `mvn package`. MAVEN_PROJECT_BASEDIR is used when the version arg or
+# artifact is missing.
+#
+# Note: Be careful building on-demand within Docker, as it can cause high bandwidth usage, pulling
+# dependencies for the project without the benefit of caching
+
+group_id=${1?group_id is required}
+artifact_id=${2?artifact_id is required}
+version=${3?version is required}
+classifier=${4:-}
+
+pom="${MAVEN_PROJECT_BASEDIR:-.}/pom.xml"
+
+# Use implicit version when master, if we can..
+if [ "${version}" = "master" ] && [ -f "${pom}" ]; then
+  version=$(sed -En 's/.*<version>(.*)<\/version>.*/\1/p' ${pom}| head -1)
+fi
+
+# rebuild the args with the version set.
+args="${group_id} ${artifact_id} ${version} ${classifier}"
+
+# Fail on unset variables, but don't quit on rc!=0, so we can log what happened
+set -u +e
+
+$(dirname "$0")/maven_unjar $args
+unjar_rc=$?
+
+if [ "${unjar_rc}" = "0" ] || [ -z "${pom:-}" ]; then
+  exit 0;
+fi
+
+case ${version} in
+  *-SNAPSHOT )
+    ;;
+  * )
+    exit ${unjar_rc}
+    ;;
+esac
+
+set -ue
+
+echo "*** Building snapshot from source..."
+$(dirname "$0")/maven_build
+$(dirname "$0")/maven_unjar $args

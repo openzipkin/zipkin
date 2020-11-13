@@ -19,9 +19,15 @@
 **/*.md
 
 **/Dockerfile
-travis/**
-.travis.yml
+
+# Install scripts run within Docker
+build-bin/**
+!build-bin/maven/maven_build
+!build-bin/maven/maven_build_or_unjar
+!build-bin/maven/maven_opts
+!build-bin/maven/maven_unjar
 
 # Allow re-use of built artifacts when building docker from master or a release tag
 !/zipkin-server/target/zipkin-server-*exec.jar
 !/zipkin-server/target/zipkin-server-*slim.jar
+!/zipkin-lens/target/zipkin-lens-*.jar

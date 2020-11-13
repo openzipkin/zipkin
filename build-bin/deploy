@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -ue
+
+# This script deploys a master or release version.
+#
+# See [README.md] for an explanation of this and how CI should use it.
+
+version=${1:-master}
+
+# Use implicit version when master, if we can..
+if [ "${version}" = "master" ]; then
+  version=$(sed -En 's/.*<version>(.*)<\/version>.*/\1/p' pom.xml| head -1)
+fi
+
+build-bin/maven/maven_deploy
+export RELEASE_FROM_MAVEN_BUILD=true
+build-bin/docker_push ${version}
+
+# openzipkin/zipkin publishes Javadoc to https://zipkin.io/zipkin/ on release
+case ${version} in
+  *-SNAPSHOT )
+    ;;
+  * )
+    javadoc_to_gh_pages ${version}
+    ;;
+esac

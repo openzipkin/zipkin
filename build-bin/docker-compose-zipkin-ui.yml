@@ -1,0 +1,16 @@
+# uses 2.4 so we can use condition: service_healthy
+version: "2.4"
+
+services:
+  zipkin:
+    # This relies on the zipkin image just built
+    image: openzipkin/zipkin-slim:test
+    container_name: zipkin
+  # Use fixed service and container name 'sut; so our test script can copy/pasta
+  sut:
+    # This is the image just built. It is not in a remote repository.
+    image: openzipkin/zipkin-ui:test
+    container_name: sut
+    depends_on:
+      zipkin:
+        condition: service_healthy

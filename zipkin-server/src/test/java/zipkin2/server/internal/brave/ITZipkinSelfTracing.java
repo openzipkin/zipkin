@@ -44,7 +44,7 @@ import static zipkin2.TestObjects.TODAY;
 import static zipkin2.server.internal.ITZipkinServer.url;
 
 /**
- * This class is flaky for as yet unknown reasons. For example, in Travis, sometimes assertions fail
+ * This class is flaky for as yet unknown reasons. For example, in CI, sometimes assertions fail
  * due to incomplete traces. Hence, it includes more assertion customization than normal.
  */
 @SpringBootTest(

@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# Copyright 2015-2020 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+# This script pushes images to GitHub Container Registry (ghcr.io).
+#
+# When a release, and DOCKER_RELEASE_REPOS is unset they also push to Docker Hub (docker.io).
+#
+# Note: In CI, `configure_docker_push` must be called before invoking this.
+set -ue
+
+docker_image=${1?docker_image is required, notably without a tag. Ex openzipkin/zipkin}
+version=${2:-master}
+
+case ${version} in
+  master )
+    is_release=false
+    ;;
+  *-SNAPSHOT )
+    is_release=false
+    ;;
+  * )
+    is_release=true
+    ;;
+esac
+
+if [ "${is_release}" = "true" ]; then
+  docker_tags=${DOCKER_TAGS:-}
+  if [ -z "${docker_tags}" ]; then
+    major_tag=$(echo "${version}" | cut -f1 -d. -s)
+    minor_tag=$(echo "${version}" | cut -f1-2 -d. -s)
+    subminor_tag="${version}"
+    docker_tags="$subminor_tag $minor_tag $major_tag latest"
+  fi
+  docker_repos=${DOCKER_RELEASE_REPOS:-ghcr.io docker.io}
+else
+  docker_tags=master
+  docker_repos=ghcr.io
+fi
+
+tags=""
+for repo in ${docker_repos}; do
+  tags="${tags}\n"
+  for tag in ${docker_tags}; do
+    tags="${tags} ${repo}/${docker_image}:${tag}"
+  done
+done
+
+# plaforms to eventually push to the registry
+docker_platforms=${DOCKER_PLATFORMS:-linux/amd64,linux/arm64}
+
+echo "Will push the following tags with platform ${docker_platforms}:${tags}\n"
+
+docker_args=$($(dirname "$0")/docker_args ${version})
+
+docker_push="docker buildx build --progress plain --platform=${docker_platforms} ${docker_args} . --push"
+
+for tag in $(echo ${tags}|xargs); do
+  echo "Pushing tag ${tag}..."
+  ${docker_push} --tag ${tag}
+done
