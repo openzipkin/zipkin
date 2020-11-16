@@ -328,7 +328,7 @@ The above properties allow the most common SSL setup to work out of box. If you 
 customization, please make a comment in [this issue](https://github.com/openzipkin/zipkin/issues/2774).
 
 #### Automatic Index Creation
-Zipkin will automatically create new indices as needed. Elasticsearch by default allows automatic creation of said indices (see https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html#index-creation). When in doubt, verify that `action.auto_create_index: false` is configured in the cluster settings.
+Zipkin will automatically create new indices as needed. Elasticsearch by default allows automatic creation of said indices (see https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html#index-creation), though your local install may have been configured to disallow it. You can verify this in the cluster settings: `action.auto_create_index: false`.
 
 ### Legacy (v1) storage components
 The following components are no longer encouraged, but exist to help aid
