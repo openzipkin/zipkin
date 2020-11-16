@@ -252,7 +252,7 @@ spring:
       - org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration
 logging:
   pattern:
-    level: "%clr(%5p) %clr([%X{traceId}/%X{spanId}]){yellow}"
+    level: "%clr{%5p} %clr{[%X{traceId}/%X{spanId}]}{yellow}"
   level:
     # Hush MySQL related logs
     org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor: 'WARN'
