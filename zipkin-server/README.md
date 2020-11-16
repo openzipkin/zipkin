@@ -327,6 +327,9 @@ the Armeria client used to connect to Elasticsearch.
 The above properties allow the most common SSL setup to work out of box. If you need more
 customization, please make a comment in [this issue](https://github.com/openzipkin/zipkin/issues/2774).
 
+#### Automatic Index Creation
+Zipkin will automatically create new indices as needed. Elasticsearch by default [allows](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html#index-creation) automatic creation of said indices, though your local install may have been configured to disallow it. You can verify this in the cluster settings: `action.auto_create_index: false`.
+
 ### Legacy (v1) storage components
 The following components are no longer encouraged, but exist to help aid
 transition to supported ones. These are indicated as "v1" as they use
