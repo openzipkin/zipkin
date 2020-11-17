@@ -42,7 +42,7 @@ RELEASE_FROM_MAVEN_BUILD=${RELEASE_FROM_MAVEN_BUILD:-false}
 JAVA_VERSION=${JAVA_VERSION:-15.0.1_p9}
 
 # Platforms to eventually push to the registry
-PLATFORMS="linux/amd64,linux/arm64"
+PLATFORMS="linux/amd64,linux/arm64,linux/s390x"
 
 # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
 # Use latest from https://quay.io/repository/app-sre/nginx?tab=tags
