@@ -41,29 +41,3 @@ jobs:
           restore-keys: ${{ runner.os }}-docker
       - name: Test
         run: build-bin/configure_test && build-bin/test
-  docker_test_image:
-    runs-on: ubuntu-20.04  # newest available distribution, aka focal
-    strategy:
-      matrix:
-        include:  # include all, but zipkin-ui which is built in the job "test"
-          - name: zipkin-cassandra
-          - name: zipkin-elasticsearch6
-          - name: zipkin-elasticsearch7
-          - name: zipkin-kafka
-          - name: zipkin-mysql
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
-      - name: Cache Docker
-        uses: actions/cache@v2
-        with:
-          path: ~/.docker
-          key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
-          restore-keys: ${{ runner.os }}-docker
-      - name: Building and verifying openzipkin/${{ matrix.name }}:test
-        run: |
-          build-bin/docker/configure_docker &&
-          DOCKER_FILE=docker/test-images/${{ matrix.name }}/Dockerfile build-bin/docker/docker_build openzipkin/${{ matrix.name }}:test &&
-          build-bin/docker/docker_test_image openzipkin/${{ matrix.name }}
