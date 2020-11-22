@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
@@ -67,6 +68,7 @@ public class DeduplicatingInsertTest {
     assertThat(testFactory.values).containsExactly("foo", "bar");
   }
 
+  @Disabled("Flakey: https://github.com/openzipkin/zipkin/issues/3255")
   @Test void exceptionsInvalidate_enqueue() {
     TestFactory testFactory = new TestFactory();
 
