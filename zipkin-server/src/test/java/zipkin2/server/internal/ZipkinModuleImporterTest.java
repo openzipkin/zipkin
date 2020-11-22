@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -36,17 +36,6 @@ public class ZipkinModuleImporterTest {
   @Test public void configuresModule() {
     TestPropertyValues.of(
       "zipkin.internal.module.module1=" + Module1.class.getName()
-    ).applyTo(context);
-
-    zipkinModuleImporter.initialize(context);
-
-    context.refresh();
-    context.getBean(Module1.class);
-  }
-
-  @Test public void configuresModuleWithHyphen() {
-    TestPropertyValues.of(
-      "zipkin.internal.module.module-hyphen=" + Module1.class.getName()
     ).applyTo(context);
 
     zipkinModuleImporter.initialize(context);
