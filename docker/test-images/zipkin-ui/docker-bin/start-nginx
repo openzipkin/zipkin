@@ -13,5 +13,7 @@
 # the License.
 #
 
-envsubst '\$ZIPKIN_BASE_URL' < /etc/nginx/conf.d/zipkin.conf.template > /etc/nginx/nginx.conf
-exec nginx
+sed "s~proxy_pass http://localhost:9411~proxy_pass ${ZIPKIN_BASE_URL}~g" \
+ /etc/nginx/conf.d/zipkin.conf.template > /etc/nginx/nginx.conf
+
+exec nginx "$@"

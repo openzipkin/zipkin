@@ -11,6 +11,8 @@ services:
     # This is the image just built. It is not in a remote repository.
     image: openzipkin/zipkin-ui:test
     container_name: sut
+    environment:
+      - ZIPKIN_BASE_URL=http://zipkin:9411
     depends_on:
       zipkin:
         condition: service_healthy
