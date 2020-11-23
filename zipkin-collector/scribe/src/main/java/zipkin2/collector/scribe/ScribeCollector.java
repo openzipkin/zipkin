@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -77,8 +77,8 @@ public final class ScribeCollector extends CollectorComponent {
   final NettyScribeServer server;
 
   ScribeCollector(Builder builder) {
-    server = new NettyScribeServer(builder.port, new ScribeSpanConsumer(
-      builder.delegate.build(), builder.metrics, builder.category));
+    server = new NettyScribeServer(builder.port,
+      new ScribeSpanConsumer(builder.delegate.build(), builder.metrics, builder.category));
   }
 
   /** Will throw an exception if the {@link Builder#port(int) port} is already in use. */
@@ -94,8 +94,13 @@ public final class ScribeCollector extends CollectorComponent {
     return CheckResult.OK;
   }
 
+  /** Returns zero until {@link #start()} was called. */
+  public int port() {
+    return server.port();
+  }
+
   @Override public final String toString() {
-    return "ScribeCollector{port=" + server.port + ", category=" + server.scribe.category + "}";
+    return "ScribeCollector{port=" + port() + ", category=" + server.scribe.category + "}";
   }
 
   @Override public void close() {
