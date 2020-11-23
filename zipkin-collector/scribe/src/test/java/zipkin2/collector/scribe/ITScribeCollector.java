@@ -22,9 +22,9 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.TestObjects;
@@ -43,14 +43,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-public class ITScribeCollector {
+class ITScribeCollector {
+  static Collector collector;
+  static CollectorMetrics metrics;
+  static NettyScribeServer server;
 
-  private static Collector collector;
-  private static CollectorMetrics metrics;
-
-  private static NettyScribeServer server;
-
-  @BeforeClass public static void startServer() {
+  @BeforeAll static void startServer() {
     collector = mock(Collector.class);
     doAnswer(invocation -> {
       Callback<Void> callback = invocation.getArgument(1);
@@ -64,11 +62,11 @@ public class ITScribeCollector {
     server.start();
   }
 
-  @AfterClass public static void stopServer() {
+  @AfterAll static void stopServer() {
     server.close();
   }
 
-  @Test public void normal() throws Exception {
+  @Test void normal() throws Exception {
     // Java version of this sample code
     // https://github.com/facebookarchive/scribe/wiki/Logging-Messages
     TTransport transport = new TFramedTransport(new TSocket("localhost", server.port()));
@@ -95,7 +93,7 @@ public class ITScribeCollector {
     verify(metrics, times(2)).incrementMessages();
   }
 
-  private static LogEntry logEntry(Span span) {
+  static LogEntry logEntry(Span span) {
     return new LogEntry()
       .setCategory("zipkin")
       .setMessage(Base64.getMimeEncoder().encodeToString(SpanBytesEncoder.THRIFT.encode(span)));
