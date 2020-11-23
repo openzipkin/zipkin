@@ -187,10 +187,10 @@
 
     <!-- Optional, but packaged in the supported distribution -->
 
-    <!-- Cassandra and Cassandra 3 backends -->
+    <!-- Cassandra backend -->
     <dependency>
       <groupId>${project.groupId}.zipkin2</groupId>
-      <artifactId>zipkin-storage-cassandra-v1</artifactId>
+      <artifactId>zipkin-storage-cassandra</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
@@ -566,10 +566,6 @@
 <!--                </dependency>-->
 
                 <!-- storage and collectors which have 3rd party deps -->
-                <dependency>
-                  <groupId>${project.groupId}.zipkin2</groupId>
-                  <artifactId>zipkin-storage-cassandra-v1</artifactId>
-                </dependency>
                 <dependency>
                   <groupId>${project.groupId}.zipkin2</groupId>
                   <artifactId>zipkin-storage-cassandra</artifactId>
