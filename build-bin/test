@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -ue
+
+# This script runs the tests of the project.
+#
+# See [README.md] for an explanation of this and how CI should use it.
+
+# -DskipActuator ensures no tests rely on the actuator library
+./mvnw verify -nsu -DskipActuator "$@"
+./mvnw -nsu verify

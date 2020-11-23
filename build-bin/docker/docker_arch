@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# Copyright 2015-2020 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+# This script gets a normalized name for the architecture as used in Docker. This will be a subset
+# of ones supported by buildx: https://github.com/docker/buildx/releases. This is a subset because
+# for us to support a platform implies also supporting things like running NPM on it, so it should
+# be an explicit act to add a platform.
+
+set -ue
+
+# Normalize arch to what's available
+arch=${ARCH:-$(uname -m)}
+case ${arch} in
+  amd64* )
+    arch=amd64
+    ;;
+  x86_64* )
+    arch=amd64
+    ;;
+  arm64* )
+    arch=arm64
+    ;;
+  aarch64* )
+    arch=arm64
+    ;;
+  * )
+    >&2 echo "Unsupported arch: ${arch}"
+    exit 1;
+esac
+
+echo ${arch}

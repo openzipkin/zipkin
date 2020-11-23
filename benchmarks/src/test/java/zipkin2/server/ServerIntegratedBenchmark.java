@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.lifecycle.Startables;
 import org.testcontainers.utility.MountableFile;
@@ -341,7 +340,7 @@ class ServerIntegratedBenchmark {
       .withNetworkAliases("zipkin")
       .withExposedPorts(9411)
       .withEnv(env)
-      .waitingFor(new HttpWaitStrategy().forPath("/health"));
+      .waitingFor(Wait.forHealthcheck());
     containers.add(zipkin);
     return zipkin;
   }

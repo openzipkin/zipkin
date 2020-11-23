@@ -40,7 +40,7 @@ Tests run: 62, Failures: 0, Errors: 0, Skipped: 48
 
 This behaviour is intentional: We don't want to burden developers with
 installing and running all storage options to test unrelated change.
-That said, all integration tests run on pull request via Travis.
+That said, all integration tests run on pull request.
 
 ## Tuning
 This component is tuned to help reduce the size of indexes needed to perform query operations. The most important aspects are described below. See [CassandraStorage](src/main/java/zipkin/storage/cassandra/CassandraStorage.java) for details.

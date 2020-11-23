@@ -1,0 +1,19 @@
+# uses 2.4 so we can use condition: service_healthy
+version: "2.4"
+
+services:
+  zipkin:
+    # Use last build of Zipkin instead of adding a matrix build dependency
+    image: ghcr.io/openzipkin/zipkin-slim:master
+    container_name: zipkin
+  # Use fixed service and container name 'sut; so our test script can copy/pasta
+  sut:
+    # This is the image just built. It is not in a remote repository.
+    image: openzipkin/zipkin-ui:test
+    container_name: sut
+    environment:
+      # This is the default value, set explicitly here for visibility
+      ZIPKIN_BASE_URL: http://zipkin:9411
+    depends_on:
+      zipkin:
+        condition: service_healthy

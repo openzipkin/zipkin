@@ -14,12 +14,12 @@ We also provide a number images that are not for production, rather to simplify 
 integration tests. We designed these to be small and start easily. We did this by re-using the same
 base layer `openzipkin/zipkin`, and setting up schema where relevant.
 
-* [openzipkin/zipkin-cassandra](storage/cassandra/README.md) - runs Cassandra initialized with Zipkin's schema
-* [openzipkin/zipkin-elasticsearch6](storage/elasticsearch6/README.md) - runs Elasticsearch 6.x
-* [openzipkin/zipkin-elasticsearch7](storage/elasticsearch7/README.md) - runs Elasticsearch 7.x
-* [openzipkin/zipkin-kafka](collector/kafka/README.md) - runs both Kafka+ZooKeeper
-* [openzipkin/zipkin-mysql](storage/mysql/README.md) - runs MySQL initialized with Zipkin's schema
-* [openzipkin/zipkin-ui](lens/README.md) - serves the (Lens) UI directly with NGINX
+* [ghcr.io/openzipkin/zipkin-cassandra](test-images/zipkin-cassandra/README.md) - runs Cassandra initialized with Zipkin's schema
+* [ghcr.io/openzipkin/zipkin-elasticsearch6](test-images/zipkin-elasticsearch6/README.md) - runs Elasticsearch 6.x
+* [ghcr.io/openzipkin/zipkin-elasticsearch7](test-images/zipkin-elasticsearch7/README.md) - runs Elasticsearch 7.x
+* [ghcr.io/openzipkin/zipkin-kafka](test-images/zipkin-kafka/README.md) - runs both Kafka+ZooKeeper
+* [ghcr.io/openzipkin/zipkin-mysql](test-images/zipkin-mysql/README.md) - runs MySQL initialized with Zipkin's schema
+* [ghcr.io/openzipkin/zipkin-ui](test-images/zipkin-ui/README.md) - serves the (Lens) UI directly with NGINX
 
 ## Getting started
 
@@ -105,16 +105,10 @@ If using an external MySQL server or image, ensure schema and other parameters m
 
 To build `openzipkin/zipkin:test`, from the top-level of the repository, run:
 ```bash
-$ docker/build_image openzipkin/zipkin:test
+$ build-bin/docker/docker_build openzipkin/zipkin:test
 ```
 
 If you want the slim distribution (openzipkin/zipkin-slim:test), run:
 ```bash
-$ docker/build_image openzipkin/zipkin-slim:test
+$ DOCKER_TARGET=zipkin-slim build-bin/docker/docker_build openzipkin/zipkin-slim:test
 ```
-
-If you want the NGINX UI proxy (openzipkin/zipkin-ui:test), run:
-```bash
-$ docker/build_image openzipkin/zipkin-ui:test
-```
-

@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -ue
+
+# This script sets up anything needed for `./test`. This should not login to anything, as that
+# should be done in `configure_deploy`.
+#
+# See [README.md] for an explanation of this and how CI should use it.
+
+build-bin/docker/configure_docker
+
+# When arch isn't amd64 zipkin-lens needs offline install
+build-bin/maybe_install_npm
+build-bin/maven_go_offline

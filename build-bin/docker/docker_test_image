@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# Copyright 2015-2020 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+set -ue
+
+# test a an image by awaiting its HEALTHCHECK
+
+docker_image=${1?docker_image is required, notably without a tag. Ex openzipkin/zipkin}
+
+# This just makes sure containers run and the HEALTHCHECK works (for now..)
+compose_file=build-bin/docker-compose-$(echo ${docker_image}| cut -f2 -d/).yml
+
+if test -f "${compose_file}"; then
+  docker-compose -f "${compose_file}" up -d --quiet-pull
+else
+  docker run --name sut -d ${docker_image}:test
+fi
+
+if build-bin/docker/docker_block_on_health sut; then
+  health_rc=0
+else
+  health_rc=1
+  docker logs sut
+fi
+
+if test -f "${compose_file}"; then
+  docker-compose -f "${compose_file}" down
+else
+  docker kill sut && docker rm sut
+fi
+
+exit $health_rc
+

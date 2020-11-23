@@ -1,8 +1,9 @@
-[![Gitter chat](https://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin)
-[![Build Status](https://travis-ci.com/openzipkin/zipkin.svg?branch=master)](https://travis-ci.com/openzipkin/zipkin)
+# zipkin
+
+[![Gitter chat](http://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin)
+[![Build Status](https://github.com/openzipkin/zipkin/workflows/test/badge.svg)](https://github.com/openzipkin/zipkin/actions?query=workflow%3Atest)
 [![Maven Central](https://img.shields.io/maven-central/v/io.zipkin/zipkin-server.svg)](https://search.maven.org/search?q=g:io.zipkin%20AND%20a:zipkin-server)
 
-# zipkin
 [Zipkin](https://zipkin.io) is a distributed tracing system. It helps gather
 timing data needed to troubleshoot latency problems in service architectures.
 Features include both the collection and lookup of this data.
@@ -193,7 +194,7 @@ Server artifacts are under the maven group id `io.zipkin`
 Library artifacts are under the maven group id `io.zipkin.zipkin2`
 
 ### Library Releases
-Releases are at [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.zipkin%22)
+Releases are at [Sonatype](https://oss.sonatype.org/content/repositories/releases) and [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.zipkin%22)
 
 ### Library Snapshots
 Snapshots are uploaded to [Sonatype](https://oss.sonatype.org/content/repositories/snapshots) after

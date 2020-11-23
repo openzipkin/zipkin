@@ -17,7 +17,7 @@ then click the "Find Traces" button.
 
 ## Elasticsearch
 
-You can store traces in [Elasticsearch](../storage/elasticsearch7/README.md) instead of memory,
+You can store traces in [Elasticsearch](../test-images/zipkin-elasticsearch7/README.md) instead of memory,
 using the `docker-compose-elasticsearch.yml` file. This configuration starts `zipkin`,
 `zipkin-elasticsearch` and `zipkin-dependencies` (cron job) in their own containers.
 
@@ -29,7 +29,7 @@ $ docker-compose -f docker-compose-elasticsearch.yml up
 
 ## Cassandra
 
-You can store traces in [Cassandra](../storage/cassandra/README.md) instead of memory, using the
+You can store traces in [Cassandra](../test-images/zipkin-cassandra/README.md) instead of memory, using the
 `docker-compose-cassandra.yml` file. This configuration starts `zipkin`, `zipkin-cassandra` and
 `zipkin-dependencies` (cron job) in their own containers.
 
@@ -41,7 +41,7 @@ $ docker-compose -f docker-compose-cassandra.yml up
 
 ## MySQL
 
-You can store traces in [MySQL](../storage/mysql/README.md) instead of memory, using the
+You can store traces in [MySQL](../test-images/zipkin-mysql/README.md) instead of memory, using the
 `docker-compose-cassandra.yml` file. This configuration starts `zipkin`, `zipkin-mysql` and
 `zipkin-dependencies` (cron job) in their own containers.
 
@@ -53,7 +53,7 @@ $ docker-compose -f docker-compose-mysql.yml up
 
 ## Kafka
 
-You can collect traces from [Kafka](../collector/kafka/README.md) in addition to HTTP, using the
+You can collect traces from [Kafka](../test-images/zipkin-kafka/README.md) in addition to HTTP, using the
 `docker-compose-kafka.yml` file. This configuration starts `zipkin` and `zipkin-kafka` in their
 own containers.
 
@@ -89,7 +89,7 @@ Afterwards, you can view traces that went through the backend via http://127.0.0
 
 ## UI
 
-The docker-compose configuration can be extended to host the [UI](../lens/README.md) on port 80
+The docker-compose configuration can be extended to host the [UI](../test-images/zipkin-ui/README.md) on port 80
 using the `docker-compose-ui.yml` file. That file employs
 [docker-compose overrides](https://docs.docker.com/compose/extends/#multiple-compose-files)
 to add an NGINX container and relevant settings.

@@ -1,0 +1,40 @@
+# yamllint --format github .github/workflows/create_release.yml
+---
+name: create_release
+
+# We create a release version on a trigger tag, regardless of if the commit is documentation-only.
+#
+# See https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+on:
+  push:
+    tags: 'release-[0-9]+.[0-9]+.[0-9]+**'  # Ex. release-1.2.3
+
+jobs:
+  create_release:
+    runs-on: ubuntu-20.04  # newest available distribution, aka focal
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          # Prevent use of implicit GitHub Actions read-only token GITHUB_TOKEN. We don't deploy on
+          # the tag N.M.L event, but we still need to deploy the maven-release-plugin master commit.
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 1  # only need the base commit as license check isn't run
+      - name: Cache local Maven repository
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+      - name: Create Release
+        env:
+          # GH_USER=<user that created GH_TOKEN>
+          GH_USER: ${{ secrets.GH_USER }}
+          # GH_TOKEN=<hex token value>
+          #   - makes release commits and tags
+          #   - needs repo:status, public_repo
+          #   - referenced in .settings.xml
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |  # GITHUB_REF will be refs/tags/release-N.M.L
+          build-bin/git/login_git &&
+          build-bin/maven/maven_release $(echo ${GITHUB_REF} | cut -d/ -f 3)

@@ -27,7 +27,7 @@ Tests run: 49, Failures: 0, Errors: 0, Skipped: 48
 
 This behaviour is intentional: We don't want to burden developers with
 installing and running all storage options to test unrelated change.
-That said, all integration tests run on pull request via Travis.
+That said, all integration tests run on pull request.
 
 ## Exploring Zipkin Data
 

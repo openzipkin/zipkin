@@ -1,0 +1,87 @@
+#!/bin/sh
+#
+# Copyright 2015-2020 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+set -eu
+
+# This script gets one jar from Maven, most typically an exec or module jar, extracting its contents
+# to a directory corresponding to the artifact_id parameter.
+#
+# Ex. ./maven_unjar io.zipkin zipkin-server 2.22.2 slim
+#
+# This searches ${MAVEN_PROJECT_BASEDIR} when set instead of resolving remotely.
+#
+# Note: If you are running this within Docker, ensure you have .dockerignore setup properly to pass
+# the artifact you are looking for.
+#
+# Ex.
+# !./module/target/zipkin-module-storage-kafka-*-module.jar
+
+group_id=${1?group_id is required}
+artifact_id=${2?artifact_id is required}
+version=${3?version is required}
+classifier=${4:-}
+
+if [ -n "${classifier}" ]; then
+  qualified_jar=${artifact_id}-${version}-${classifier}.jar
+else
+  qualified_jar=${artifact_id}-${version}.jar
+fi
+
+case ${version} in
+  *-SNAPSHOT )
+    is_release=false
+    ;;
+  * )
+    is_release=true
+    ;;
+esac
+
+local_repo=$HOME/.m2/repository
+local_repo_path=${local_repo}/$(echo ${group_id}|tr '.' '/')/${artifact_id}/${version}/${qualified_jar}
+
+if test -f ${local_repo_path}; then
+  echo "*** Reusing ${qualified_jar} from Maven local repository..."
+  cp ${local_repo_path} ${artifact_id}.jar
+elif [ -n "${MAVEN_PROJECT_BASEDIR:-}" ]; then
+  echo "*** Searching for ${qualified_jar} in ${MAVEN_PROJECT_BASEDIR}"
+  find ${MAVEN_PROJECT_BASEDIR} -name ${qualified_jar} -exec cp {} ${artifact_id}.jar \;
+fi
+
+if ! test -f ${artifact_id}.jar && [ ${is_release} = "true" ]; then
+  mvn_get="mvn -q --batch-mode org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
+  -Dtransitive=false -DgroupId=${group_id} -DartifactId=${artifact_id} -Dversion=${version}"
+
+  if [ -n "${classifier}" ]; then
+    mvn_get="${mvn_get} -Dclassifier=${classifier}"
+  fi
+
+  echo "*** Resolving ${qualified_jar} from Maven default repositories..."
+  ${mvn_get} || true
+
+  # Don't add load to Sonatype releases repository except when central sync is delayed
+  if ! test -f ${local_repo_path}; then
+    echo "*** Resolving ${qualified_jar} from Maven Sonatype releases repository..."
+    ${mvn_get} -DremoteRepositories=https://oss.sonatype.org/content/repositories/releases
+  fi
+
+  cp ${local_repo_path} ${artifact_id}.jar
+fi
+
+if ! test -f ${artifact_id}.jar; then
+  >&2 echo "*** Failed to build or get ${qualified_jar}"
+  exit 1
+fi
+
+(mkdir ${artifact_id} && cd ${artifact_id} && jar -xf ../${artifact_id}.jar) && rm ${artifact_id}.jar

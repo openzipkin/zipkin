@@ -25,7 +25,7 @@ PORT=${QUERY_PORT:-9411}
 # Use b3:0 to ensure health checks aren't traced
 HEALTH_OUT=$(wget -qO- http://${IP}:${PORT}/health --header=b3:0 2>&1)
 HEALTH_RC=$?
-if [ "$HEALTH_RC" == "0" ]; then
+if [ "$HEALTH_RC" = "0" ]; then
   exit 0
 fi
 

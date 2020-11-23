@@ -1,0 +1,68 @@
+#!/bin/sh
+#
+# Copyright 2015-2020 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+# This script checks each variable value, so it isn't important to fail on unbound (set -u)
+set -e
+
+# This builds common docker arguments used by docker_build and docker_push.
+
+docker_file=${DOCKER_FILE:-docker/Dockerfile}
+if ! test -f ${docker_file}; then
+  >&2 echo "${docker_file} doesn't exist"
+  exit 1
+fi
+
+# Add default labels for the day and the SHA we're building from
+docker_args="-f ${docker_file} \
+--label org.opencontainers.image.created=$(date +%Y-%m-%d) \
+--label org.opencontainers.image.revision=$(git rev-parse --short HEAD)"
+
+version=${1:-}
+if [ -n "${version}" ]; then
+  docker_args="${docker_args} --build-arg version=${version}"
+fi
+
+# When true, the artifact searched with `build-bin/maven/unjar` is in the context root
+# Ensure .dockerignore allows the artifacts intended.
+if [ "${RELEASE_FROM_MAVEN_BUILD}" = "true" ]; then
+  docker_args="${docker_args} --build-arg release_from_maven_build=true"
+fi
+
+# When non-empty the target to build.
+if [ -n "${DOCKER_TARGET}" ]; then
+  docker_args="${docker_args} --target ${DOCKER_TARGET}"
+fi
+
+# When non-empty, becomes the build-arg alpine_version. Ex. "3.12.1"
+# Used to align base layers from https://github.com/orgs/openzipkin/packages/container/package/alpine
+if [ -n "${ALPINE_VERSION}" ]; then
+  docker_args="${docker_args} --build-arg alpine_version=${ALPINE_VERSION}"
+fi
+
+# When non-empty, becomes the build-arg java_version. Ex. "15.0.1_p9"
+# Used to align base layers from https://github.com/orgs/openzipkin/packages/container/package/java
+if [ -n "${JAVA_VERSION}" ]; then
+  docker_args="${docker_args} --build-arg java_major_version=$(echo ${JAVA_VERSION}| cut -f1 -d .)"
+  docker_args="${docker_args} --build-arg java_version=${JAVA_VERSION}"
+fi
+
+# When non-empty, becomes the build-arg maven_classifier. Ex. "module" or "exec"
+# Used as the classifier arg to ./build-bin/maven/maven_unjar. Allows building two images with the
+# same Dockerfile, varying on classifier, like openzipkin/zipkin vs openzipkin/zipkin-slim
+if [ -n "${MAVEN_CLASSIFIER}" ]; then
+  docker_args="${docker_args} --build-arg maven_classifier=${MAVEN_CLASSIFIER}"
+fi
+
+echo ${docker_args}

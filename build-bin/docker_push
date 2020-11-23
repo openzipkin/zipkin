@@ -1,0 +1,23 @@
+#!/bin/sh
+
+set -ue
+
+# Pushes docker as part of `deploy` or from a trigger tag
+
+version=${1:-master}
+
+# handle trigger pattern like /^docker-[0-9]+\.[0-9]+\.[0-9]+$/
+case ${version} in
+  docker-* )
+    version=$(build-bin/git/version_from_trigger_tag docker- ${version})
+    ;;
+esac
+
+build-bin/docker/docker_push openzipkin/zipkin ${version}
+DOCKER_TARGET=zipkin-slim build-bin/docker/docker_push openzipkin/zipkin-slim ${version}
+
+# testing images only push to ghcro.io
+export DOCKER_RELEASE_REPOS=ghcr.io
+for name in $(ls docker/test-images/*/Dockerfile|cut -f3 -d/); do
+  DOCKER_FILE=docker/test-images/${name}/Dockerfile build-bin/docker/docker_push openzipkin/${name} ${version}
+done

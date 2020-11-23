@@ -15,18 +15,24 @@
 
 set -ue
 
-# This script creates JavaDoc for a version and pushes an update to gh-pages
-version=$1
+# This script creates JavaDoc for a version and pushes an update to gh-pages. This fails if there
+# are no javadoc jars in the current directory.
+#
+# This leaves the git context on gh-pages when done. For this reason, it is better to run this at
+# the end of deployment.
+version=${1?version is required. Ex 2.22.2}
+
 rm -rf javadoc-builddir
-builddir="javadoc-builddir/$version"
+builddir="javadoc-builddir/${version}"
 
-git checkout $version
-
-# Need to use compile in order for sibling modules to see each-other
-./mvnw -Prelease clean compile javadoc:javadoc
+javadoc_jars=$(find . -name "*${version}-javadoc.jar")
+if [ -z "${javadoc_jars}"]; then
+  >&2 echo Incorrect state. javadoc jars should have been built before invoking this.
+  exit 1
+fi
 
 # Collect javadoc for all modules
-for jar in $(find . -name "*${version}-javadoc.jar"); do
+for jar in ${javadoc_jars}; do
   module="$(echo "$jar" | sed "s~.*/\(.*\)-${version}-javadoc.jar~\1~")"
   this_builddir="$builddir/$module"
   if [ -d "$this_builddir" ]; then
@@ -44,12 +50,12 @@ done
 # Update gh-pages
 git fetch origin gh-pages:gh-pages
 git checkout gh-pages
-rm -rf "$version"
-mv "javadoc-builddir/$version" ./
+rm -rf "${version}"
+mv "javadoc-builddir/${version}" ./
 rm -rf "javadoc-builddir"
 
 # Update simple version-level index
-if ! grep "$version" index.html 2>/dev/null; then
+if ! grep "${version}" index.html 2>/dev/null; then
   echo "<li><a href=\"${version}/index.html\">${version}</a></li>" >> index.html
 fi
 
@@ -57,7 +63,7 @@ fi
 sort -rV index.html > index.html.sorted
 mv index.html.sorted index.html
 
-git add "$version"
+git add "${version}"
 git add index.html
-git commit -m "Automatically updated javadocs for $version"
+git commit -m "Automatically updated javadocs for ${version}"
 git push origin gh-pages
