@@ -35,6 +35,13 @@ jobs:
           #   - create via https://github.com/settings/tokens
           #   - needs repo:status, public_repo, write:packages, delete:packages
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          # DOCKERHUB_USER=<typically dockerzipkindeployer>
+          #   - only push top-level projects: zipkin zipkin-aws zipkin-dependencies zipkin-gcp to Docker Hub, only on release
+          #   - login like this: echo "$DOCKERHUB_TOKEN"| docker login -u "$DOCKERHUB_USER" --password-stdin
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+          # DOCKERHUB_TOKEN=<access token for DOCKERHUB_USER>
+          #   -  Access Token from here https://hub.docker.com/settings/security
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Docker Push
         # GITHUB_REF will be refs/tags/docker-N.M.L
         run: build-bin/docker_push $(echo ${GITHUB_REF} | cut -d/ -f 3)

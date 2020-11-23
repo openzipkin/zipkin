@@ -59,6 +59,13 @@ jobs:
           # SONATYPE_PASSWORD=<password to sonatype account token>
           #   - referenced in .settings.xml
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          # DOCKERHUB_USER=<typically dockerzipkindeployer>
+          #   - only push top-level projects: zipkin zipkin-aws zipkin-dependencies zipkin-gcp to Docker Hub, only on release
+          #   - login like this: echo "$DOCKERHUB_TOKEN"| docker login -u "$DOCKERHUB_USER" --password-stdin
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+          # DOCKERHUB_TOKEN=<access token for DOCKERHUB_USER>
+          #   -  Access Token from here https://hub.docker.com/settings/security
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |  # GITHUB_REF will be refs/heads/master or refs/tags/N.M.L
           build-bin/configure_deploy &&
           build-bin/deploy $(echo ${GITHUB_REF} | cut -d/ -f 3)
