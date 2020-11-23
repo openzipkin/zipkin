@@ -23,7 +23,6 @@ ARG java_version=8.272.10
 FROM scratch as scratch
 
 COPY zipkin-storage/cassandra/src/main/resources/*.cql /zipkin-schemas/
-COPY zipkin-storage/cassandra-v1/src/main/resources/cassandra-schema.cql /zipkin-schemas/
 COPY docker/test-images/zipkin-cassandra/install.sh /install/
 COPY docker/test-images/zipkin-cassandra/docker-bin/* /docker-bin/
 

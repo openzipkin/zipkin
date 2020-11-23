@@ -142,18 +142,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}.zipkin2</groupId>
-      <artifactId>zipkin-storage-cassandra-v1</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>com.datastax.oss</groupId>
-          <artifactId>java-driver-core</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>com.datastax.oss</groupId>
       <artifactId>java-driver-core</artifactId>
       <version>${java-driver.version}</version>
