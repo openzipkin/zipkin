@@ -33,11 +33,37 @@ jobs:
         with:
           path: ~/.npm
           key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
+      - name: Test without Docker
+        run: build-bin/maven_go_offline && build-bin/test -Ddocker.skip=true
+  test_docker:
+    runs-on: ubuntu-20.04  # newest available distribution, aka focal
+    strategy:
+      matrix:
+        include:
+          - name: zipkin-collector-kafka
+          - name: zipkin-collector-rabbitmq
+          - name: zipkin-storage-cassandra
+          - name: zipkin-storage-elasticsearch
+          - name: zipkin-storage-mysql-v1
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1  # -Dlicense.skip=true so we don't need a full clone
+      - name: Cache local Maven repository
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
       - name: Cache Docker
         uses: actions/cache@v2
         with:
           path: ~/.docker
           key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
           restore-keys: ${{ runner.os }}-docker
-      - name: Test
-        run: build-bin/configure_test && build-bin/test
+      - name: Test with Docker
+        run: |
+          build-bin/maven/maven_go_offline &&
+          build-bin/docker/configure_docker &&
+          build-bin/test -pl :${{ matrix.name }} --am -Dlicense.skip=true

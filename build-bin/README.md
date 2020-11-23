@@ -9,6 +9,7 @@ On [../zipkin-lens]:
 
 On test:
 * [test], used by [../.github/workflows/test.yml] runs Maven unit and integration tests.
+  * Its "test" job skips docker, as they are run in parallel in "test_docker"
 * [../.github/workflows/readme_test.yml] tests build commands in [../zipkin-server] and [../docker]
 * zipkin, zipkin-lens and zipkin-slim Docker builds use `RELEASE_FROM_MAVEN_BUILD=true`
   * this avoids invoking Maven builds from within Docker, which are costly and fragile
