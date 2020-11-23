@@ -59,6 +59,19 @@ zipkin:
       enabled: ${COLLECTOR_SCRIBE_ENABLED:${SCRIBE_ENABLED:false}}
       category: ${SCRIBE_CATEGORY:zipkin}
       port: ${COLLECTOR_PORT:9410}
+
+  discovery:
+    eureka:
+      enabled: ${DISCOVERY_EUREKA_ENABLED:true}
+      # URL of the Eureka v2 endpoint. e.g. http://eureka:8761/eureka/v2
+      service-url: ${EUREKA_SERVICE_URL:}
+      # The appName property of the instance
+      app-name: ${EUREKA_APP_NAME:zipkin}
+      # The instanceId property of the instance
+      instance-id: ${EUREKA_INSTANCE_ID:}
+      # The hostName property of the instance
+      hostname: ${EUREKA_HOSTNAME:}
+
   query:
     enabled: ${QUERY_ENABLED:true}
     # Timeout for requests to the query API
@@ -209,6 +222,7 @@ server:
     min-response-size: 2048
 
 armeria:
+  healthCheckPath: /health
   ports:
     - port: ${server.port}
       protocols:

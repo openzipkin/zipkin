@@ -1,4 +1,4 @@
-#!/bin/sh -ue
+#!/bin/sh
 #
 # Copyright 2015-2024 The OpenZipkin Authors
 #
@@ -13,8 +13,7 @@
 # the License.
 #
 
+# ENTRYPOINT script that starts Eureka
+set -eu
 
-build-bin/maven/maven_go_offline
-export MAVEN_OPTS="$(build-bin/maven/maven_opts)"
-# Prefetch dependencies used by zipkin-ui (NPM and NodeJS binary and dependencies of our build)
-./mvnw -q --batch-mode -nsu -pl zipkin-lens generate-resources
+exec java -cp 'classes:lib/*' ${JAVA_OPTS} zipkin.test.EurekaServer "$@"

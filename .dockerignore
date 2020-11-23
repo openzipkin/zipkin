@@ -23,6 +23,10 @@
 !docker/test-images/zipkin-elasticsearch8/config/
 !docker/test-images/zipkin-elasticsearch8/start-elasticsearch
 
+!docker/test-images/zipkin-eureka/src/
+!docker/test-images/zipkin-eureka/pom.xml
+!docker/test-images/zipkin-eureka/start-eureka
+
 !docker/test-images/zipkin-kafka/install.sh
 !docker/test-images/zipkin-kafka/start-kafka-zookeeper
 

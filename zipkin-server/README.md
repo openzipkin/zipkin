@@ -496,7 +496,6 @@ $ RABBIT_ADDRESSES=localhost java -jar zipkin.jar
 You can enable a gRPC span collector endpoint by setting `COLLECTOR_GRPC_ENABLED=true`. The
 `zipkin.proto3.SpanService/Report` endpoint will run on the same port as normal HTTP (9411).
 
-
 Example usage:
 
 ```bash
@@ -504,6 +503,28 @@ $ COLLECTOR_GRPC_ENABLED=true java -jar zipkin.jar
 ```
 
 As this service is experimental, it is not recommended to run this in production environments.
+
+## Service Registration
+
+### Eureka
+
+Zipkin can register itself in [Eureka](https://github.com/Netflix/eureka), allowing traced services
+to discover its listen address and health state. This is enabled when `EUREKA_SERVICE_URL` is set to
+a valid v2 endpoint of the [Eureka REST API](https://github.com/Netflix/eureka/wiki/Eureka-REST-operations).
+
+| Variable                   | Instance field | Description                                                                                    |
+|----------------------------|----------------|------------------------------------------------------------------------------------------------|
+| `DISCOVERY_EUREKA_ENABLED` | N/A            | `false` disables Eureka registration. Defaults to `true`.                                      |
+| `EUREKA_SERVICE_URL`       | N/A            | v2 endpoint of Eureka, e.g. https://eureka-prod/eureka/v2. No default                          |
+| `EUREKA_APP_NAME`          | .app           | The application this instance registers to. Defaults to `zipkin`                               |
+| `EUREKA_HOSTNAME`          | .hostName      | The hostname used with `${QUERY_PORT}` to build the instance `vipAddress`. Defaults to detect. |
+| `EUREKA_INSTANCE_ID`       | .instanceId    | Defaults to `${EUREKA_HOSTNAME}:${EUREKA_APP_NAME}:${QUERY_PORT}`.                             |
+
+Example usage:
+
+```bash
+$ EUREKA_SERVICE_URL=http://localhost:8761/eureka/v2 java -jar zipkin.jar
+```
 
 ## Self-Tracing
 Self tracing exists to help troubleshoot performance of the zipkin-server. Production deployments

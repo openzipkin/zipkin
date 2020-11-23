@@ -12,22 +12,28 @@
 # the License.
 #
 
-# uses 2.4 so we can use condition: service_healthy
-version: "2.4"
+# This file uses the version 2 docker-compose file format, described here:
+# https://docs.docker.com/compose/compose-file/#version-2
+#
+# It extends the default configuration from docker-compose.yml to register
+# zipkin into a test eureka server.
+
+version: '2.4'
 
 services:
+  eureka:
+    image: ghcr.io/openzipkin/zipkin-eureka:${TAG:-latest}
+    container_name: eureka
+    # Uncomment to expose the eureka port for testing
+    #    ports:
+    #      - 8761:8761
+
   zipkin:
-    # Use last build of Zipkin instead of adding a matrix build dependency
-    image: ghcr.io/openzipkin/zipkin-slim:master
-    container_name: zipkin
-  # Use fixed service and container name 'sut; so our test script can copy/pasta
-  sut:
-    # This is the image just built. It is not in a remote repository.
-    image: openzipkin/zipkin-ui:test
-    container_name: sut
+    extends:
+      file: docker-compose.yml
+      service: zipkin
     environment:
-      # This is the default value, set explicitly here for visibility
-      ZIPKIN_BASE_URL: http://zipkin:9411
+      - EUREKA_SERVICE_URL=http://eureka:8761/eureka/v2
     depends_on:
-      zipkin:
+      eureka:
         condition: service_healthy

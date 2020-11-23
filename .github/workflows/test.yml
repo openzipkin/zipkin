@@ -89,6 +89,7 @@ jobs:
           - name: zipkin-storage-cassandra
           - name: zipkin-storage-elasticsearch
           - name: zipkin-storage-mysql-v1
+          - name: zipkin-server
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4

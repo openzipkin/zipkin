@@ -1,4 +1,3 @@
-#!/bin/sh -ue
 #
 # Copyright 2015-2024 The OpenZipkin Authors
 #
@@ -13,8 +12,25 @@
 # the License.
 #
 
-
-build-bin/maven/maven_go_offline
-export MAVEN_OPTS="$(build-bin/maven/maven_opts)"
-# Prefetch dependencies used by zipkin-ui (NPM and NodeJS binary and dependencies of our build)
-./mvnw -q --batch-mode -nsu -pl zipkin-lens generate-resources
+eureka:
+  client:
+    registerWithEureka: false
+    fetchRegistry: false
+server:
+  port: 8761
+spring:
+  jmx:
+    # reduce startup time by excluding unexposed JMX service
+    enabled: false
+  main:
+    banner-mode: "off"
+  profiles:
+    active: "default"
+logging:
+  level:
+    # reduce chattiness
+    root: 'WARN'
+    # hush initialization warnings from BeanPostProcessorChecker
+    org.springframework.context.support: 'OFF'
+    # show startup completion
+    zipkin.test.EurekaServer: 'INFO'

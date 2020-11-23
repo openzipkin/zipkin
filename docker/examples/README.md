@@ -118,6 +118,17 @@ $ docker-compose -f docker-compose-rabbitmq.yml up
 Then configure the [RabbitMQ sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/amqp-client/src/main/java/zipkin2/reporter/amqp/RabbitMQSender.java)
 using a `host` value of `localhost` or a non-local hostname if in docker.
 
+## Eureka
+
+You can register Zipkin for service discovery in [Eureka](../test-images/zipkin-eureka/README.md)
+using the `docker-compose-eureka.yml` file. This configuration starts `zipkin` and `zipkin-eureka`
+in their own containers.
+
+To register Zipkin in Eureka, run:
+```bash
+$ docker-compose -f docker-compose-eureka.yml up
+```
+
 ## Example
 
 The docker-compose configuration can be extended to host an [example application](https://github.com/openzipkin/brave-example)
