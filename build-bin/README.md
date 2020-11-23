@@ -3,10 +3,7 @@
 This is a Maven+Docker project, which uses standard conventions for test and deploy with some
 exceptions.
 
-Besides production Docker images, this project includes [../docker/test-images].
-* [docker_push] pushes test-images, but only to ghcr.io
-
-[../zipkin-lens] is a node.js project, which has some additional concerns
+On [../zipkin-lens]:
 * [maybe_install_npm] is used to build on an unsupported node.js architecture.
 * [maven_go_offline] additionally seeds the NPM cache
 
@@ -14,10 +11,13 @@ On test:
 * [test], used by [../.github/workflows/test.yml] runs Maven unit and integration tests.
 * [../.github/workflows/readme_test.yml] tests build commands in [../zipkin-server] and [../docker]
 * zipkin, zipkin-lens and zipkin-slim Docker builds use `RELEASE_FROM_MAVEN_BUILD=true`
-* this avoids invoking Maven builds from within Docker, which are costly and fragile
+  * this avoids invoking Maven builds from within Docker, which are costly and fragile
 
 On deploy:
+* [deploy], used by [../.github/workflows/deploy.yml] publishes jars and Docker images.
 * [javadoc_to_gh_pages] pushes Javadoc to the gh-pages branch on N.M.L branch, but not master.
+* Besides production Docker images, this project includes [../docker/test-images].
+  * [docker_push] pushes test-images, but only to ghcr.io
 
 [//]: # (Below here should be standard for all projects)
 

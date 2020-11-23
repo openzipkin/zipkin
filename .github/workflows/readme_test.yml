@@ -81,7 +81,7 @@ jobs:
           path: zipkin-lens/target/zipkin-lens-*-SNAPSHOT.jar
 
   docker:
-    name: ${{ readme }}
+    name: ${{ matrix.readme }}
     needs: zipkin-server
     runs-on: ubuntu-20.04  # newest available distribution, aka focal
     strategy:
