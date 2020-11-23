@@ -8,4 +8,3 @@ set -ue
 
 # -DskipActuator ensures no tests rely on the actuator library
 ./mvnw verify -nsu -DskipActuator "$@"
-./mvnw -nsu verify

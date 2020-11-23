@@ -31,7 +31,6 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.Timeout;
 import zipkin2.Call;
 import zipkin2.Callback;
@@ -54,7 +53,6 @@ public class ITKafkaCollector {
   @ClassRule public static KafkaCollectorRule kafka = new KafkaCollectorRule();
 
   @Rule public Timeout globalTimeout = Timeout.seconds(30);
-  @Rule public ExpectedException thrown = ExpectedException.none();
 
   List<Span> spans = Arrays.asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
 
