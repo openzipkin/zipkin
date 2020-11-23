@@ -77,36 +77,8 @@ jobs:
           path: zipkin-lens/target/zipkin-lens-*-SNAPSHOT.jar
 
   docker:
-    name: ${{ matrix.readme }}
     needs: zipkin-server
     runs-on: ubuntu-20.04  # newest available distribution, aka focal
-    strategy:
-      matrix:
-        include:
-          - name: zipkin
-            readme: docker/README.md
-            env: DOCKER_TARGET=zipkin
-          - name: zipkin-cassandra
-            readme: docker/test-images/zipkin-cassandra/README.md
-            env: DOCKER_FILE=docker/test-images/zipkin-cassandra/Dockerfile
-          - name: zipkin-elasticsearch6
-            readme: docker/test-images/zipkin-elasticsearch6/README.md
-            env: DOCKER_FILE=docker/test-images/zipkin-elasticsearch6/Dockerfile
-          - name: zipkin-elasticsearch7
-            readme: docker/test-images/zipkin-elasticsearch7/README.md
-            env: DOCKER_FILE=docker/test-images/zipkin-elasticsearch7/Dockerfile
-          - name: zipkin-kafka
-            readme: docker/test-images/zipkin-kafka/README.md
-            env: DOCKER_FILE=docker/test-images/zipkin-kafka/Dockerfile
-          - name: zipkin-mysql
-            readme: docker/test-images/zipkin-mysql/README.md
-            env: DOCKER_FILE=docker/test-images/zipkin-mysql/Dockerfile
-          - name: zipkin-slim
-            readme: docker/README.md
-            env: DOCKER_TARGET=zipkin-slim
-          - name: zipkin-ui
-            readme: docker/test-images/zipkin-ui/README.md
-            env: DOCKER_FILE=docker/test-images/zipkin-ui/Dockerfile
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -126,10 +98,59 @@ jobs:
           path: ~/.docker
           key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
           restore-keys: ${{ runner.os }}-docker
-      - name: Building and verifying openzipkin/${{ matrix.name }}:test
+      - name: docker/README.md - openzipkin/zipkin
         run: |
-          build-bin/docker/configure_docker &&
-          ${{ matrix.env }} build-bin/docker/docker_build openzipkin/${{ matrix.name }}:test &&
-          build-bin/docker/docker_test_image openzipkin/${{ matrix.name }}
+          build-bin/docker/docker_build openzipkin/zipkin:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin
         env:
+          RELEASE_FROM_MAVEN_BUILD: true
+      - name: docker/README.md - openzipkin/zipkin-slim
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-slim:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-slim
+        env:
+          DOCKER_TARGET: zipkin-slim
+          RELEASE_FROM_MAVEN_BUILD: true
+      - name: docker/test-images/zipkin-cassandra/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-cassandra:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-cassandra
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-cassandra/Dockerfile
+      - name: docker/test-images/zipkin-elasticsearch6/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-elasticsearch6:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-elasticsearch6
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-elasticsearch6/Dockerfile
+      - name: docker/test-images/zipkin-elasticsearch7/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-elasticsearch7:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-elasticsearch7
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-elasticsearch7/Dockerfile
+      - name: docker/test-images/zipkin-kafka/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-kafka:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-kafka
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-kafka/Dockerfile
+      - name: docker/test-images/zipkin-mysql/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-mysql:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-mysql
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-mysql/Dockerfile
+      - name: docker/test-images/zipkin-mysql/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-mysql:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-mysql
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-mysql/Dockerfile
+      - name: docker/test-images/zipkin-ui/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-ui:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-ui
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-ui/Dockerfile
           RELEASE_FROM_MAVEN_BUILD: true
