@@ -15,10 +15,9 @@
 
 set -ue
 
-export MAVEN_OPTS="$(build-bin/maven/maven_opts)"
+build-bin/maven/maven_go_offline
 
-# Use a go-offline that properly works with multi-module builds
-./mvnw -q --batch-mode -nsu -Prelease de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
+export MAVEN_OPTS="$(build-bin/maven/maven_opts)"
 
 # Prefetch dependencies used by zipkin-ui (NPM and NodeJS binary and dependencies of our build)
 ./mvnw -q --batch-mode -nsu -pl zipkin-lens generate-resources
