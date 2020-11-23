@@ -6,12 +6,8 @@ name: readme_test
 #
 # This doesn't literally scrape the README.md, so we don't test documentation-only commits.
 on:
-  # We run tests on non-tagged pushes to master that aren't a commit made by the release plugin
-  push:
-    tags: ''
-    branches: master
-    paths-ignore: '**/*.md'
-  # We also run tests on pull requests targeted at the master branch.
+  # We run tests on only on pull requests targeted at the master branch.
+  # * This skips master pushes as it is rare things not done in PRs break, and conserves resources
   pull_request:
     branches: master
     paths-ignore: '**/*.md'
