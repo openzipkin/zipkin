@@ -20,6 +20,7 @@ This repo uses semantic versions. Please keep this in mind when choosing version
    The `N.M.L` tag triggers [`build-bin/deploy`](build-bin/deploy), which does the following:
      * Publishes jars to https://oss.sonatype.org/content/repositories/releases [`build-bin/maven/maven_deploy`](build-bin/maven/maven_deploy)
        * Later, the same jars synchronize to Maven Central
+     * Publishes Javadoc to https://zipkin.io/brave into a versioned subdirectory
      * Pushes images to Docker registries [`build-bin/docker_push`](build-bin/docker_push)
 
    Notes:

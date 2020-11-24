@@ -17,6 +17,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-20.04  # newest available distribution, aka focal
+    if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -37,6 +38,7 @@ jobs:
         run: build-bin/maven_go_offline && build-bin/test -Ddocker.skip=true
   test_docker:
     runs-on: ubuntu-20.04  # newest available distribution, aka focal
+    if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
     strategy:
       matrix:
         include:

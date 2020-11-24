@@ -17,11 +17,11 @@ build-bin/maven/maven_deploy
 export RELEASE_FROM_MAVEN_BUILD=true
 build-bin/docker_push ${version}
 
-# openzipkin/zipkin publishes Javadoc to https://zipkin.io/zipkin/ on release
+# openzipkin/zipkin publishes Javadoc to gh-pages (https://zipkin.io/zipkin/) on release
 case ${version} in
   *-SNAPSHOT )
     ;;
   * )
-    javadoc_to_gh_pages ${version}
+    build-bin/javadoc_to_gh_pages ${version}
     ;;
 esac
