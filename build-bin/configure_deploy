@@ -5,7 +5,6 @@ set -ue
 # This script sets up anything needed for `./deploy`. Do not assume `configure_test` was called.
 #
 # See [README.md] for an explanation of this and how CI should use it.
-
 build-bin/docker/configure_docker_push
 build-bin/gpg/configure_gpg
 
