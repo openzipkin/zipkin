@@ -65,7 +65,7 @@ jobs:
           key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
           restore-keys: ${{ runner.os }}-docker
       - name: Test with Docker
-        run: |
+        run: |  # configure_test seeds NPM cache, which isn't needed for these tests
           build-bin/maven/maven_go_offline &&
           build-bin/docker/configure_docker &&
           build-bin/test -pl :${{ matrix.name }} --am -Dlicense.skip=true

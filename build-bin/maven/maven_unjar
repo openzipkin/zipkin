@@ -26,7 +26,7 @@ set -eu
 # the artifact you are looking for.
 #
 # Ex.
-# !./module/target/zipkin-module-storage-kafka-*-module.jar
+# !./module/target/zipkin-module-*-module.jar
 
 group_id=${1?group_id is required}
 artifact_id=${2?artifact_id is required}
@@ -60,7 +60,8 @@ elif [ -n "${MAVEN_PROJECT_BASEDIR:-}" ]; then
 fi
 
 if ! test -f ${artifact_id}.jar && [ ${is_release} = "true" ]; then
-  mvn_get="mvn -q --batch-mode org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
+  mvn_get="mvn -q --batch-mode -Denforcer.fail=false \
+  org.apache.maven.plugins:maven-dependency-plugin:3.1.2:get \
   -Dtransitive=false -DgroupId=${group_id} -DartifactId=${artifact_id} -Dversion=${version}"
 
   if [ -n "${classifier}" ]; then
