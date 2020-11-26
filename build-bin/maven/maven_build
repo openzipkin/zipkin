@@ -18,4 +18,4 @@ set -ue
 export MAVEN_OPTS="$($(dirname "$0")/maven_opts)"
 
 (if [ "${MAVEN_PROJECT_BASEDIR:-.}" != "." ]; then cd ${MAVEN_PROJECT_BASEDIR}; fi && \
-mvn -T1C -q --batch-mode -DskipTests package)
+mvn -T1C -q --batch-mode -DskipTests package "$@")
