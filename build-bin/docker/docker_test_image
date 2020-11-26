@@ -20,7 +20,7 @@ set -ue
 docker_image=${1?docker_image is required, notably without a tag. Ex openzipkin/zipkin}
 
 # This just makes sure containers run and the HEALTHCHECK works (for now..)
-compose_file=${2:-$(build-bin/docker-compose-$(echo ${docker_image}| cut -f2 -d/)).yml}
+compose_file=${2:-build-bin/docker-compose-$(echo ${docker_image}| cut -f2 -d/).yml}
 
 if test -f "${compose_file}"; then
   docker-compose -f "${compose_file}" up -d --quiet-pull
