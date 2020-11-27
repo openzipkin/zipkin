@@ -35,8 +35,7 @@ else
   JAVA_OPTS=${JAVA_OPTS:-"-Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError"}
 
   # Disable Log4j2 JMX extensions when running the full build
-  # -cp 'classes:lib/*' allows layers to patch the image without packaging or overwriting jars
-  exec java -cp ${MODULE_OPTS} 'classes:lib/*' ${JAVA_OPTS} \
+  exec java ${MODULE_OPTS} ${JAVA_OPTS} -cp . \
   -Dlog4j2.disable.jmx=true \
   org.springframework.boot.loader.PropertiesLauncher "$@"
 fi

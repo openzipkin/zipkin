@@ -56,17 +56,14 @@ FROM ghcr.io/openzipkin/java:${java_version}-jre as base-server
 ARG USER=zipkin
 WORKDIR /${USER}
 
-COPY --from=install /code/docker/bin/ /tmp/docker-bin/
-RUN \
 # Ensure the process doesn't run as root
-adduser -g '' -h ${PWD} -D ${USER} && \
-# Create directories for the Java classpath
-mkdir classes lib && \
-# Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
-mv /tmp/docker-bin/docker-healthcheck /usr/local/bin/ && \
-mv /tmp/docker-bin/start-zipkin /usr/local/bin/ && \
-rm -rf /tmp/docker-bin
+RUN adduser -g '' -h ${PWD} -D ${USER}
 
+# Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
+COPY --from=install /code/docker/bin/ /tmp/docker-bin/
+RUN mv /tmp/docker-bin/docker-healthcheck /usr/local/bin/ && \
+    mv /tmp/docker-bin/start-zipkin /usr/local/bin/ && \
+    rm -rf /tmp/docker-bin
 # We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts.
 #
 # If in production, you have a 30s startup, please report to https://gitter.im/openzipkin/zipkin
