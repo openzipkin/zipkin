@@ -20,6 +20,9 @@ set -eux
 
 echo "*** Installing Cassandra"
 
+# Create directories for the Java classpath
+mkdir classes lib
+
 cat > pom.xml <<-'EOF'
 <project>
   <modelVersion>4.0.0</modelVersion>
@@ -84,7 +87,7 @@ cat > pom.xml <<-'EOF'
   </dependencies>
 </project>
 EOF
-mvn -q --batch-mode -DoutputDirectory=libs \
+mvn -q --batch-mode -DoutputDirectory=lib \
     -Dcassandra.version=${CASSANDRA_VERSION} \
     org.apache.maven.plugins:maven-dependency-plugin:3.1.2:copy-dependencies
 rm pom.xml
@@ -132,15 +135,14 @@ esac
 # Keep INFO logs as if this fails in CI, we'll get more insight. These aren't displayed unless we
 # have a crash.
 cat > conf/log4j.properties <<-'EOF'
-log4j.rootLogger=INFO, stderr
+log4j.rootLogger=INFO, stdout
 
-log4j.appender.stderr=org.apache.log4j.ConsoleAppender
-log4j.appender.stderr.layout=org.apache.log4j.PatternLayout
-log4j.appender.stderr.layout.ConversionPattern=[%d] %p %m (%c)%n
-log4j.appender.stderr.Target=System.err
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=[%d] %p %m (%c)%n
+log4j.appender.stdout.Target=System.out
 EOF
 
-java_opts="-Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc"
 cat zipkin-schemas/zipkin2-schema.cql zipkin-schemas/zipkin2-schema-indexes.cql > schema
 case ${CASSANDRA_VERSION} in
   3.11* )
@@ -150,28 +152,27 @@ case ${CASSANDRA_VERSION} in
     # read_repair_chance options were removed and make Cassandra crash starting in v4
     # See https://cassandra.apache.org/doc/latest/operating/read_repair.html#background-read-repair
     sed -i '/read_repair_chance/d' schema
-    # Normal exports and opens, except RMI which we don't include in our JRE image
-    # See https://github.com/apache/cassandra/blob/cassandra-4.0-beta3/conf/jvm11-server.options
-    java_opts="${java_opts} \
-      -Djdk.attach.allowAttachSelf=true \
-      --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
-      --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
-      --add-exports java.base/sun.nio.ch=ALL-UNNAMED \
-      --add-exports java.sql/java.sql=ALL-UNNAMED \
-      --add-opens java.base/java.lang.module=ALL-UNNAMED \
-      --add-opens java.base/jdk.internal.loader=ALL-UNNAMED \
-      --add-opens java.base/jdk.internal.ref=ALL-UNNAMED \
-      --add-opens java.base/jdk.internal.reflect=ALL-UNNAMED \
-      --add-opens java.base/jdk.internal.math=ALL-UNNAMED \
-      --add-opens java.base/jdk.internal.module=ALL-UNNAMED \
-      --add-opens java.base/jdk.internal.util.jar=ALL-UNNAMED \
-      --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED"
     cqlversion=3.4.5
     ;;
 esac
 
 # Run cassandra on a different port temporarily in order to setup the schema.
-java -cp 'libs/*' ${java_opts} \
+# We also add exports and opens from Cassandra 4, except RMI, which isn't in our JRE image.
+# See https://github.com/apache/cassandra/blob/cassandra-4.0-beta3/conf/jvm11-server.options
+java -cp 'classes:lib/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc \
+  -Djdk.attach.allowAttachSelf=true \
+  --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+  --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
+  --add-exports java.base/sun.nio.ch=ALL-UNNAMED \
+  --add-exports java.sql/java.sql=ALL-UNNAMED \
+  --add-opens java.base/java.lang.module=ALL-UNNAMED \
+  --add-opens java.base/jdk.internal.loader=ALL-UNNAMED \
+  --add-opens java.base/jdk.internal.ref=ALL-UNNAMED \
+  --add-opens java.base/jdk.internal.reflect=ALL-UNNAMED \
+  --add-opens java.base/jdk.internal.math=ALL-UNNAMED \
+  --add-opens java.base/jdk.internal.module=ALL-UNNAMED \
+  --add-opens java.base/jdk.internal.util.jar=ALL-UNNAMED \
+  --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED \
   -Dcassandra.storage_port=${TEMP_STORAGE_PORT} \
   -Dcassandra.native_transport_port=${TEMP_NATIVE_TRANSPORT_PORT} \
   -Dcassandra.storagedir=${PWD} \
@@ -216,14 +217,14 @@ cat schema | cql --debug && rm schema
 echo "*** Stopping Cassandra"
 kill ${TEMP_CASSANDRA_PID}
 
-# The image will use a less chatty Log4J conf which only logs warnings (to stderr).
+# The image will use a less chatty Log4J conf which only logs warnings (to stdout).
 cat > conf/log4j.properties <<-'EOF'
-log4j.rootLogger=WARN, stderr
+log4j.rootLogger=WARN, stdout
 
-log4j.appender.stderr=org.apache.log4j.ConsoleAppender
-log4j.appender.stderr.layout=org.apache.log4j.PatternLayout
-log4j.appender.stderr.layout.ConversionPattern=[%d] %p %m (%c)%n
-log4j.appender.stderr.Target=System.err
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=[%d] %p %m (%c)%n
+log4j.appender.stdout.Target=System.out
 
 # Ignore that we are using log4j as we aren't starting JMX anyway
 log4j.logger.org.apache.cassandra.utils.logging=ERROR
@@ -231,6 +232,8 @@ log4j.logger.org.apache.cassandra.utils.logging=ERROR
 log4j.logger.org.apache.cassandra.utils.NativeLibrary=ERROR
 # Ignore that we disabled JMX and haven't installed jemalloc (not available on Alpine)
 log4j.logger.org.apache.cassandra.service.StartupChecks=OFF
+# Ignore C* 3.x java.lang.NoSuchMethodError: 'sun.misc.Cleaner sun.nio.ch.DirectBuffer.cleaner()'
+log4j.logger.org.apache.cassandra.io.util.FileUtils=OFF
 # Ignore warnings about less than 64GB disk
 log4j.logger.org.apache.cassandra.config.DatabaseDescriptor=ERROR
 EOF

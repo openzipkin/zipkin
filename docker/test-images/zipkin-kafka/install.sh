@@ -19,6 +19,8 @@
 set -eux
 
 echo "*** Installing Kafka and dependencies"
+# Create directories for the Java classpath
+mkdir classes lib
 
 # Dist includes large dependencies needed by streams and connect: retain only broker and ZK.
 # We can do this because broker is independent from both kafka-streams and connect modules.
@@ -48,7 +50,7 @@ cat > pom.xml <<-'EOF'
   </dependencies>
 </project>
 EOF
-mvn -q --batch-mode -DoutputDirectory=libs \
+mvn -q --batch-mode -DoutputDirectory=lib \
     -Dscala.version=${SCALA_VERSION} -Dkafka.version=${KAFKA_VERSION} \
     org.apache.maven.plugins:maven-dependency-plugin:3.1.2:copy-dependencies
 rm pom.xml
@@ -57,7 +59,7 @@ rm pom.xml
 # is decoupled from runtime
 mkdir -p bin config data/kafka data/zookeeper
 
-# Make a basic log4j config which only logs warnings (to stderr)
+# Make a basic log4j config which only logs warnings (to stdout)
 #
 # NOTE: Two unavoidable log WARN messages remain:
 # 1. Either no config or no quorum defined in config, running  in standalone mode (org.apache.zookeeper.server.quorum.QuorumPeerMain)
@@ -65,12 +67,12 @@ mkdir -p bin config data/kafka data/zookeeper
 # 2. No meta.properties file under dir /kafka/./data/kafka/meta.properties (kafka.server.BrokerMetadataCheckpoint)
 #   * meta.properties file is generated when broker joins the cluster, using an auto-generated cluster id:
 cat > config/log4j.properties <<-'EOF'
-log4j.rootLogger=WARN, stderr
+log4j.rootLogger=WARN, stdout
 
-log4j.appender.stderr=org.apache.log4j.ConsoleAppender
-log4j.appender.stderr.layout=org.apache.log4j.PatternLayout
-log4j.appender.stderr.layout.ConversionPattern=[%d] %p %m (%c)%n
-log4j.appender.stderr.Target=System.err
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=[%d] %p %m (%c)%n
+log4j.appender.stdout.Target=System.out
 EOF
 
 # Set explicit, basic configuration
@@ -100,7 +102,8 @@ EOF
 cat > bin/kafka-run-class.sh <<-'EOF'
 #!/bin/sh
 set -eu
-exec java -cp 'libs/*' ${JAVA_OPTS} \
+# classes allows layers to patch the image without packaging or overwriting jars
+exec java -cp 'classes:lib/*' ${JAVA_OPTS} \
   -Djava.io.tmpdir=/tmp \
   -Dlog4j.configuration=file:./config/log4j.properties \
   "$@"

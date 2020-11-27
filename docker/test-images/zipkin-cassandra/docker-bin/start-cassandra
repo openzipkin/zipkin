@@ -31,33 +31,32 @@ sed -i "s/listen_address:.*/listen_address: $IP/" conf/cassandra.yaml
 sed -i "s/rpc_address:.*/rpc_address: $IP/" conf/cassandra.yaml
 sed -i "s/          - seeds: \".*\"/          - seeds: \"$IP\"/" conf/cassandra.yaml
 
-case ${CASSANDRA_VERSION} in
-  4* )
-    # Normal exports and opens, except RMI which we don't include in our JRE image
-    # See https://github.com/apache/cassandra/blob/cassandra-4.0-beta3/conf/jvm11-server.options
-    JAVA_OPTS="${JAVA_OPTS} \
-      -Djdk.attach.allowAttachSelf=true \
-      --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
-      --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
-      --add-exports java.base/sun.nio.ch=ALL-UNNAMED \
-      --add-exports java.sql/java.sql=ALL-UNNAMED \
-      --add-opens java.base/java.lang.module=ALL-UNNAMED \
-      --add-opens java.base/jdk.internal.loader=ALL-UNNAMED \
-      --add-opens java.base/jdk.internal.ref=ALL-UNNAMED \
-      --add-opens java.base/jdk.internal.reflect=ALL-UNNAMED \
-      --add-opens java.base/jdk.internal.math=ALL-UNNAMED \
-      --add-opens java.base/jdk.internal.module=ALL-UNNAMED \
-      --add-opens java.base/jdk.internal.util.jar=ALL-UNNAMED \
-      --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED"
-    ;;
-esac
+# Replace the logging level
+sed -i "s/log4j.rootLogger.*/log4j.rootLogger=${LOGGING_LEVEL}, stdout/" conf/log4j.properties
 
 # Use agent to allow instrumentation of a lambda: CASSANDRA-16304
-JAMM_JAR=$(ls libs/jamm-*.jar)
+JAMM_JAR=$(ls lib/jamm-*.jar)
 
 echo Starting Cassandra
-exec java -cp 'libs/*' ${JAVA_OPTS} \
+# -cp 'classes:lib/*' allows layers to patch the image without packaging or overwriting jars
+#
+# We also add exports and opens from Cassandra 4, except RMI, which isn't in our JRE image.
+# See https://github.com/apache/cassandra/blob/cassandra-4.0-beta3/conf/jvm11-server.options
+exec java -cp 'classes:lib/*' ${JAVA_OPTS} \
   -Xbootclasspath/a:${JAMM_JAR} -javaagent:${JAMM_JAR} \
+  -Djdk.attach.allowAttachSelf=true \
+  --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+  --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
+  --add-exports java.base/sun.nio.ch=ALL-UNNAMED \
+  --add-exports java.sql/java.sql=ALL-UNNAMED \
+  --add-opens java.base/java.lang.module=ALL-UNNAMED \
+  --add-opens java.base/jdk.internal.loader=ALL-UNNAMED \
+  --add-opens java.base/jdk.internal.ref=ALL-UNNAMED \
+  --add-opens java.base/jdk.internal.reflect=ALL-UNNAMED \
+  --add-opens java.base/jdk.internal.math=ALL-UNNAMED \
+  --add-opens java.base/jdk.internal.module=ALL-UNNAMED \
+  --add-opens java.base/jdk.internal.util.jar=ALL-UNNAMED \
+  --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED \
   -Djava.io.tmpdir=/tmp \
   -Dcassandra-foreground=yes \
   -Dcassandra.storagedir=${PWD} \
