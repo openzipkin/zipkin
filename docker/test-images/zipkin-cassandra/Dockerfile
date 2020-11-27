@@ -12,7 +12,7 @@
 # the License.
 #
 
-# java_version is used for install and runtime layers of zipkin-elasticsearch6
+# java_version is used for install and runtime layers of zipkin-cassandra
 #
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/java
 # This is defined in many places because Docker has no "env" script functionality unless you use
