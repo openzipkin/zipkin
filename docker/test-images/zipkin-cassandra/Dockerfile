@@ -66,5 +66,6 @@ COPY --from=install --chown=${USER} /install .
 
 # Set variables Cassandra's start script wants
 ENV JAVA_OPTS="-Xms256m -Xmx256m -XX:+ExitOnOutOfMemoryError -Djava.net.preferIPv4Stack=true"
+ENV LOGGING_LEVEL=WARN
 
 EXPOSE 9042

@@ -28,10 +28,9 @@ set -eu
 # * disable log4j JMX not just because we don't use it...
 #  * ES enables security manager https://github.com/elastic/elasticsearch/issues/21932#issuecomment-264435034
 
-exec java \
-$JAVA_OPTS \
+# -cp 'classes:lib/*' allows layers to patch the image without packaging or overwriting jars
+exec java -cp 'classes:lib/*' ${JAVA_OPTS} \
   -Djava.io.tmpdir=/tmp \
   -Dlog4j2.disable.jmx=true \
   -Des.path.home=$PWD -Des.path.conf=$PWD/config \
-  -cp 'lib/*' org.elasticsearch.bootstrap.Elasticsearch \
-  "$@"
+  org.elasticsearch.bootstrap.Elasticsearch "$@"

@@ -21,7 +21,7 @@ import org.testcontainers.utility.DockerImageName;
 class ITElasticsearchStorageV6 extends ITElasticsearchStorage {
 
   @RegisterExtension ElasticsearchStorageExtension backend = new ElasticsearchStorageExtension(
-    DockerImageName.parse("ghcr.io/openzipkin/zipkin-elasticsearch6:2.22.2"));
+    DockerImageName.parse("ghcr.io/openzipkin/zipkin-elasticsearch6:2.23.0"));
 
   @Override ElasticsearchStorageExtension backend() {
     return backend;

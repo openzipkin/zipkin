@@ -56,14 +56,17 @@ FROM ghcr.io/openzipkin/java:${java_version}-jre as base-server
 ARG USER=zipkin
 WORKDIR /${USER}
 
-# Ensure the process doesn't run as root
-RUN adduser -g '' -h ${PWD} -D ${USER}
-
-# Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=install /code/docker/bin/ /tmp/docker-bin/
-RUN mv /tmp/docker-bin/docker-healthcheck /usr/local/bin/ && \
-    mv /tmp/docker-bin/start-zipkin /usr/local/bin/ && \
-    rm -rf /tmp/docker-bin
+RUN \
+# Ensure the process doesn't run as root
+adduser -g '' -h ${PWD} -D ${USER} && \
+# Create directories for the Java classpath
+mkdir classes lib && \
+# Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
+mv /tmp/docker-bin/docker-healthcheck /usr/local/bin/ && \
+mv /tmp/docker-bin/start-zipkin /usr/local/bin/ && \
+rm -rf /tmp/docker-bin
+
 # We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts.
 #
 # If in production, you have a 30s startup, please report to https://gitter.im/openzipkin/zipkin
@@ -78,7 +81,7 @@ USER ${USER}
 FROM base-server as zipkin-slim
 LABEL org.opencontainers.image.description="Zipkin slim distribution on OpenJDK and Alpine Linux"
 
-COPY --from=install --chown=${USER} /install/zipkin-slim/ /zipkin/
+COPY --from=install --chown=${USER} /install/zipkin-slim/ classes/
 
 EXPOSE 9411
 
@@ -88,7 +91,7 @@ LABEL org.opencontainers.image.description="Zipkin full distribution on OpenJDK 
 # 3rd party modules like zipkin-aws will apply profile settings with this
 ENV MODULE_OPTS=
 
-COPY --from=install --chown=${USER} /install/zipkin/ /zipkin/
+COPY --from=install --chown=${USER} /install/zipkin/ classes/
 
 # Zipkin's full distribution includes Scribe support (albeit disabled)
 EXPOSE 9410 9411

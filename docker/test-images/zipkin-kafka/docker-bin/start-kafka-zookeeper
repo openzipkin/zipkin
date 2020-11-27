@@ -26,8 +26,12 @@ ADVERTISED_LISTENERS="advertised.listeners=PLAINTEXT://${HOSTNAME}:9092,PLAINTEX
 KAFKA_CONFIG=./config/server.properties
 grep -qF -- "$ADVERTISED_LISTENERS" $KAFKA_CONFIG || echo "$ADVERTISED_LISTENERS" >> $KAFKA_CONFIG
 
+# Replace the logging level
+sed -i "s/log4j.rootLogger.*/log4j.rootLogger=${LOGGING_LEVEL}, stdout/" conf/log4j.properties
+
 echo Starting ZooKeeper
-exec java -cp 'libs/*' ${ZOOKEEPER_JAVA_OPTS} \
+# -cp 'classes:lib/*' allows layers to patch the image without packaging or overwriting jars
+exec java -cp 'classes:lib/*' ${ZOOKEEPER_JAVA_OPTS} \
   -Djava.io.tmpdir=/tmp \
   -Dzookeeper.jmx.log4j.disable=true \
   -Dlog4j.configuration=file:./config/log4j.properties \

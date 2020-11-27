@@ -71,5 +71,6 @@ ENV KAFKA_ADVERTISED_HOST_NAME=localhost
 # Use to set heap, trust store or other system properties.
 ENV ZOOKEEPER_JAVA_OPTS="-Xms32m -Xmx32m -XX:+ExitOnOutOfMemoryError"
 ENV JAVA_OPTS="-Xms256m -Xmx256m -XX:+ExitOnOutOfMemoryError"
+ENV LOGGING_LEVEL=WARN
 
 EXPOSE 2181 9092 19092
