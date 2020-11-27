@@ -31,7 +31,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SchemaTest {
-  @Test public void getKeyspaceMetadata_failsWhenVersionLessThan3_11_3() {
+  @Test public void ensureKeyspaceMetadata_failsWhenVersionLessThan3_11_3() {
     CqlSession session = mock(CqlSession.class);
     Metadata metadata = mock(Metadata.class);
     Node node = mock(Node.class);
@@ -42,13 +42,13 @@ public class SchemaTest {
     ));
     when(node.getCassandraVersion()).thenReturn(Version.parse("3.11.2"));
 
-    assertThatThrownBy(() -> Schema.getKeyspaceMetadata(session, "zipkin2"))
+    assertThatThrownBy(() -> Schema.ensureKeyspaceMetadata(session, "zipkin2"))
       .isInstanceOf(RuntimeException.class)
       .hasMessage(
         "Node 11111111-1111-1111-1111-111111111111 is running Cassandra 3.11.2, but minimum version is 3.11.3");
   }
 
-  @Test public void getKeyspaceMetadata_failsWhenOneVersionLessThan3_11_3() {
+  @Test public void ensureKeyspaceMetadata_failsWhenOneVersionLessThan3_11_3() {
     CqlSession session = mock(CqlSession.class);
     Metadata metadata = mock(Metadata.class);
     Node node1 = mock(Node.class);
@@ -62,13 +62,13 @@ public class SchemaTest {
     when(node1.getCassandraVersion()).thenReturn(Version.parse("3.11.3"));
     when(node2.getCassandraVersion()).thenReturn(Version.parse("3.11.2"));
 
-    assertThatThrownBy(() -> Schema.getKeyspaceMetadata(session, "zipkin2"))
+    assertThatThrownBy(() -> Schema.ensureKeyspaceMetadata(session, "zipkin2"))
       .isInstanceOf(RuntimeException.class)
       .hasMessage(
         "Node 22222222-2222-2222-2222-222222222222 is running Cassandra 3.11.2, but minimum version is 3.11.3");
   }
 
-  @Test public void getKeyspaceMetadata_passesWhenVersion3_11_3AndKeyspaceMetadataIsNotNull() {
+  @Test public void ensureKeyspaceMetadata_passesWhenVersion3_11_3AndKeyspaceMetadataIsNotNull() {
     CqlSession session = mock(CqlSession.class);
     Metadata metadata = mock(Metadata.class);
     Node node = mock(Node.class);
@@ -81,11 +81,11 @@ public class SchemaTest {
     when(node.getCassandraVersion()).thenReturn(Version.parse("3.11.3"));
     when(metadata.getKeyspace("zipkin2")).thenReturn(Optional.of(keyspaceMetadata));
 
-    assertThat(Schema.getKeyspaceMetadata(session, "zipkin2"))
+    assertThat(Schema.ensureKeyspaceMetadata(session, "zipkin2"))
       .isSameAs(keyspaceMetadata);
   }
 
-  @Test public void getKeyspaceMetadata_passesWhenVersion3_11_4AndKeyspaceMetadataIsNotNull() {
+  @Test public void ensureKeyspaceMetadata_passesWhenVersion3_11_4AndKeyspaceMetadataIsNotNull() {
     CqlSession session = mock(CqlSession.class);
     Metadata metadata = mock(Metadata.class);
     Node node = mock(Node.class);
@@ -98,7 +98,7 @@ public class SchemaTest {
     when(node.getCassandraVersion()).thenReturn(Version.parse("3.11.4"));
     when(metadata.getKeyspace("zipkin2")).thenReturn(Optional.of(keyspaceMetadata));
 
-    assertThat(Schema.getKeyspaceMetadata(session, "zipkin2"))
+    assertThat(Schema.ensureKeyspaceMetadata(session, "zipkin2"))
       .isSameAs(keyspaceMetadata);
   }
 
@@ -116,5 +116,42 @@ public class SchemaTest {
     assertThatThrownBy(() -> Schema.ensureKeyspaceMetadata(session, "zipkin2"))
       .isInstanceOf(RuntimeException.class)
       .hasMessageStartingWith("Cannot read keyspace metadata for keyspace");
+  }
+
+  String schemaWithReadRepair = ""
+    + "CREATE TABLE IF NOT EXISTS zipkin2.remote_service_by_service (\n"
+    + "    service text,\n"
+    + "    remote_service text,\n"
+    + "    PRIMARY KEY (service, remote_service)\n"
+    + ")\n"
+    + "    WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}\n"
+    + "    AND caching = {'rows_per_partition': 'ALL'}\n"
+    + "    AND default_time_to_live =  259200\n"
+    + "    AND gc_grace_seconds = 3600\n"
+    + "    AND read_repair_chance = 0\n"
+    + "    AND dclocal_read_repair_chance = 0\n"
+    + "    AND speculative_retry = '95percentile'\n"
+    + "    AND comment = 'Secondary table for looking up remote service names by a service name.';";
+
+  @Test public void reviseCql_leaves_read_repair_chance_on_v3() {
+    assertThat(Schema.reviseCQL(Version.parse("3.11.9"), schemaWithReadRepair))
+      .isSameAs(schemaWithReadRepair);
+  }
+
+  @Test public void reviseCql_removes_dclocal_read_repair_chance_on_v4() {
+    assertThat(Schema.reviseCQL(Version.V4_0_0, schemaWithReadRepair))
+      // literal used to show newlines etc are in-tact
+      .isEqualTo(""
+        + "CREATE TABLE IF NOT EXISTS zipkin2.remote_service_by_service (\n"
+        + "    service text,\n"
+        + "    remote_service text,\n"
+        + "    PRIMARY KEY (service, remote_service)\n"
+        + ")\n"
+        + "    WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}\n"
+        + "    AND caching = {'rows_per_partition': 'ALL'}\n"
+        + "    AND default_time_to_live =  259200\n"
+        + "    AND gc_grace_seconds = 3600\n"
+        + "    AND speculative_retry = '95percentile'\n"
+        + "    AND comment = 'Secondary table for looking up remote service names by a service name.';");
   }
 }

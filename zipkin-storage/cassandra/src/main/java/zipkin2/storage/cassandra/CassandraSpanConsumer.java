@@ -63,9 +63,9 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
   }
 
   // Exposed to allow tests to switch from strictTraceId to not
-  CassandraSpanConsumer(CqlSession session, Schema.Metadata metadata,
-    boolean strictTraceId, boolean searchEnabled,
-    Set<String> autocompleteKeys, int autocompleteTtl, int autocompleteCardinality) {
+  CassandraSpanConsumer(CqlSession session, Schema.Metadata metadata, boolean strictTraceId,
+    boolean searchEnabled, Set<String> autocompleteKeys, int autocompleteTtl,
+    int autocompleteCardinality) {
     this.session = session;
     this.strictTraceId = strictTraceId;
     this.searchEnabled = searchEnabled;

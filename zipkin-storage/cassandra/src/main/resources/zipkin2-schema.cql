@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS zipkin2.span (
     AND default_time_to_live =  604800
     AND gc_grace_seconds = 3600
     AND read_repair_chance = 0
-    AND dclocal_read_repair_chance = 0.0
+    AND dclocal_read_repair_chance = 0
     AND speculative_retry = '95percentile'
     AND comment = 'Primary table for holding trace data';
 

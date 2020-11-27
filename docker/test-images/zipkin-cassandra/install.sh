@@ -36,6 +36,18 @@ cat > pom.xml <<-'EOF'
       <version>${cassandra.version}</version>
       <exclusions>
         <exclusion>
+          <groupId>com.github.jbellis</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.java.dev.jna</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.googlecode.concurrent-trees</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>*</artifactId>
         </exclusion>
@@ -43,17 +55,27 @@ cat > pom.xml <<-'EOF'
           <groupId>ch.qos.logback</groupId>
           <artifactId>*</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>net.java.dev.jna</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
+    <!-- Override until Cassandra 4.0 per CASSANDRA-9608 -->
+    <dependency>
+      <groupId>com.github.jbellis</groupId>
+      <artifactId>jamm</artifactId>
+      <version>0.3.3</version>
+    </dependency>
+    <!-- Alpine support CASSANDRA-16212 -->
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
       <version>5.6.0</version>
     </dependency>
+    <!-- NoClassDefFoundError in TrieMemIndex CASSANDRA-16303 (Cassandra 4.0) -->
+    <dependency>
+      <groupId>com.googlecode.concurrent-trees</groupId>
+      <artifactId>concurrent-trees</artifactId>
+      <version>2.6.1</version>
+    </dependency>
+    <!-- log4j not logback -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
@@ -89,11 +111,14 @@ seed_provider:
     - class_name: org.apache.cassandra.locator.SimpleSeedProvider
       parameters:
           - seeds: "127.0.0.1"
+
+# Disabled by default in Cassandra 4
+enable_sasi_indexes: true
 EOF
 
 # Avoid conflicts during multi-arch build (buildx starting two archs in the same container)
-ARCH=$(uname -m)
-case ${ARCH} in
+arch=$(uname -m)
+case ${arch} in
   aarch64* )
     TEMP_STORAGE_PORT=7020
     TEMP_NATIVE_TRANSPORT_PORT=9062
@@ -115,8 +140,38 @@ log4j.appender.stderr.layout.ConversionPattern=[%d] %p %m (%c)%n
 log4j.appender.stderr.Target=System.err
 EOF
 
+java_opts="-Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc"
+cat zipkin-schemas/zipkin2-schema.cql zipkin-schemas/zipkin2-schema-indexes.cql > schema
+case ${CASSANDRA_VERSION} in
+  3.11* )
+    cqlversion=3.4.4
+    ;;
+  4* )
+    # read_repair_chance options were removed and make Cassandra crash starting in v4
+    # See https://cassandra.apache.org/doc/latest/operating/read_repair.html#background-read-repair
+    sed -i '/read_repair_chance/d' schema
+    # Normal exports and opens, except RMI which we don't include in our JRE image
+    # See https://github.com/apache/cassandra/blob/cassandra-4.0-beta3/conf/jvm11-server.options
+    java_opts="${java_opts} \
+      -Djdk.attach.allowAttachSelf=true \
+      --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+      --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
+      --add-exports java.base/sun.nio.ch=ALL-UNNAMED \
+      --add-exports java.sql/java.sql=ALL-UNNAMED \
+      --add-opens java.base/java.lang.module=ALL-UNNAMED \
+      --add-opens java.base/jdk.internal.loader=ALL-UNNAMED \
+      --add-opens java.base/jdk.internal.ref=ALL-UNNAMED \
+      --add-opens java.base/jdk.internal.reflect=ALL-UNNAMED \
+      --add-opens java.base/jdk.internal.math=ALL-UNNAMED \
+      --add-opens java.base/jdk.internal.module=ALL-UNNAMED \
+      --add-opens java.base/jdk.internal.util.jar=ALL-UNNAMED \
+      --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED"
+    cqlversion=3.4.5
+    ;;
+esac
+
 # Run cassandra on a different port temporarily in order to setup the schema.
-java -cp 'libs/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc \
+java -cp 'libs/*' ${java_opts} \
   -Dcassandra.storage_port=${TEMP_STORAGE_PORT} \
   -Dcassandra.native_transport_port=${TEMP_NATIVE_TRANSPORT_PORT} \
   -Dcassandra.storagedir=${PWD} \
@@ -143,7 +198,7 @@ apk add --update --no-cache python2 py2-setuptools
 python2 -m easy_install pip
 pip install -Iq cqlsh
 function cql() {
-  cqlsh --cqlversion=3.4.4 "$@" 127.0.0.1 ${TEMP_NATIVE_TRANSPORT_PORT}
+  cqlsh --cqlversion=${cqlversion} "$@" 127.0.0.1 ${TEMP_NATIVE_TRANSPORT_PORT}
 }
 
 # Excessively long timeout to avoid having to create an ENV variable, decide its name, etc.
@@ -156,9 +211,7 @@ while [ "$timeout" -gt 0 ] && ! cql -e 'SHOW VERSION' > /dev/null 2>&1; do
 done
 
 echo "*** Importing Scheme"
-cat zipkin-schemas/cassandra-schema.cql | cql --debug
-cat zipkin-schemas/zipkin2-schema.cql | cql --debug
-cat zipkin-schemas/zipkin2-schema-indexes.cql | cql --debug
+cat schema | cql --debug && rm schema
 
 echo "*** Stopping Cassandra"
 kill ${TEMP_CASSANDRA_PID}

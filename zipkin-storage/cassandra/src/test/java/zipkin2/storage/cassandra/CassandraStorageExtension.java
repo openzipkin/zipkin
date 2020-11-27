@@ -29,6 +29,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
@@ -63,6 +64,9 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
           .withExposedPorts(CASSANDRA_PORT)
           .waitingFor(Wait.forHealthcheck());
         container.start();
+        if (Boolean.parseBoolean(System.getenv("CASSANDRA_DEBUG"))) {
+          container.followOutput(new Slf4jLogConsumer(LoggerFactory.getLogger(image.toString())));
+        }
       } catch (RuntimeException e) {
         LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
       }
