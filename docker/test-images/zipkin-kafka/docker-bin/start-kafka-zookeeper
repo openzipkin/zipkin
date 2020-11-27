@@ -27,7 +27,7 @@ KAFKA_CONFIG=./config/server.properties
 grep -qF -- "$ADVERTISED_LISTENERS" $KAFKA_CONFIG || echo "$ADVERTISED_LISTENERS" >> $KAFKA_CONFIG
 
 # Replace the logging level
-sed -i "s/log4j.rootLogger.*/log4j.rootLogger=${LOGGING_LEVEL}, stdout/" conf/log4j.properties
+sed -i "s/log4j.rootLogger.*/log4j.rootLogger=${LOGGING_LEVEL}, stdout/" config/log4j.properties
 
 echo Starting ZooKeeper
 # -cp 'classes:lib/*' allows layers to patch the image without packaging or overwriting jars
