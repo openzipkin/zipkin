@@ -19,9 +19,9 @@ import com.datastax.oss.driver.api.core.metadata.Node;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import zipkin2.internal.Nullable;
 
 import static zipkin2.storage.cassandra.internal.Resources.resourceToString;
 
@@ -79,7 +79,8 @@ final class Schema {
   }
 
   static KeyspaceMetadata ensureKeyspaceMetadata(CqlSession session, String keyspace) {
-    KeyspaceMetadata keyspaceMetadata = getKeyspaceMetadata(session, keyspace);
+    ensureVersion(session.getMetadata());
+    KeyspaceMetadata keyspaceMetadata = session.getMetadata().getKeyspace(keyspace).orElse(null);
     if (keyspaceMetadata == null) {
       throw new IllegalStateException(
         String.format(
@@ -89,10 +90,10 @@ final class Schema {
     return keyspaceMetadata;
   }
 
-  @Nullable static KeyspaceMetadata getKeyspaceMetadata(CqlSession session, String keyspace) {
-    com.datastax.oss.driver.api.core.metadata.Metadata metadata = session.getMetadata();
+  static Version ensureVersion(com.datastax.oss.driver.api.core.metadata.Metadata metadata) {
+    Version version = null;
     for (Map.Entry<UUID, Node> entry : metadata.getNodes().entrySet()) {
-      Version version = entry.getValue().getCassandraVersion();
+      version = entry.getValue().getCassandraVersion();
       if (version == null) throw new RuntimeException("node had no version: " + entry.getValue());
       if (Version.parse("3.11.3").compareTo(version) > 0) {
         throw new RuntimeException(String.format(
@@ -100,11 +101,12 @@ final class Schema {
           entry.getKey(), entry.getValue().getCassandraVersion()));
       }
     }
-    return metadata.getKeyspace(keyspace).orElse(null);
+    if (version == null) throw new RuntimeException("No nodes in the cluster");
+    return version;
   }
 
   static KeyspaceMetadata ensureExists(String keyspace, boolean searchEnabled, CqlSession session) {
-    KeyspaceMetadata result = getKeyspaceMetadata(session, keyspace);
+    KeyspaceMetadata result = session.getMetadata().getKeyspace(keyspace).orElse(null);
     if (result == null || !result.getTable(Schema.TABLE_SPAN).isPresent()) {
       LOG.info("Installing schema {} for keyspace {}", SCHEMA_RESOURCE, keyspace);
       applyCqlFile(keyspace, session, SCHEMA_RESOURCE);
@@ -135,12 +137,22 @@ final class Schema {
   }
 
   static void applyCqlFile(String keyspace, CqlSession session, String resource) {
+    Version version = ensureVersion(session.getMetadata());
     for (String cmd : resourceToString(resource).split(";", 100)) {
       cmd = cmd.trim().replace(" " + DEFAULT_KEYSPACE, " " + keyspace);
-      if (!cmd.isEmpty()) {
-        session.execute(cmd);
-      }
+      if (cmd.isEmpty()) continue;
+      cmd = reviseCQL(version, cmd);
+      session.execute(cmd);
     }
+  }
+
+  static String reviseCQL(Version version, String cql) {
+    if (version.getMajor() == 4) {
+      // read_repair_chance options were removed and make Cassandra crash starting in v4
+      // See https://cassandra.apache.org/doc/latest/operating/read_repair.html#background-read-repair
+      cql = cql.replaceAll(" *AND [^\\s]*read_repair_chance = 0\n", "");
+    }
+    return cql;
   }
 
   Schema() {

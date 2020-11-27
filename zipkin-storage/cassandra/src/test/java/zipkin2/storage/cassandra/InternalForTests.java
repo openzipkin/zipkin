@@ -14,15 +14,19 @@
 package zipkin2.storage.cassandra;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.Version;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
+import com.datastax.oss.driver.api.core.metadata.Node;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.TestInfo;
 import zipkin2.DependencyLink;
 
@@ -34,6 +38,13 @@ class InternalForTests {
   static CqlSession mockSession() {
     CqlSession session = mock(CqlSession.class);
     Metadata metadata = mock(Metadata.class);
+    Node node = mock(Node.class);
+
+    when(session.getMetadata()).thenReturn(metadata);
+    when(metadata.getNodes()).thenReturn(Collections.singletonMap(
+      UUID.fromString("11111111-1111-1111-1111-111111111111"), node
+    ));
+    when(node.getCassandraVersion()).thenReturn(Version.parse("3.11.9"));
 
     KeyspaceMetadata keyspaceMetadata = mock(KeyspaceMetadata.class);
     when(session.getMetadata()).thenReturn(metadata);

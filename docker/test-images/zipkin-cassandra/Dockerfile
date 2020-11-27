@@ -12,10 +12,12 @@
 # the License.
 #
 
-# java_version is used for install and runtime layers of zipkin-cassandra
+# java_version is used for install and runtime layers of zipkin-elasticsearch6
 #
-# Until Cassandra v4, we are stuck on JRE 8 for Cassandra
-ARG java_version=8.272.10
+# Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/java
+# This is defined in many places because Docker has no "env" script functionality unless you use
+# docker-compose: When updating, update everywhere.
+ARG java_version=15.0.1_p9
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -31,9 +33,8 @@ FROM ghcr.io/openzipkin/java:${java_version} as install
 # Use latest stable version: https://cassandra.apache.org/download/
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG cassandra3_version=3.11.9
-ENV CASSANDRA_VERSION=$cassandra3_version
-
+ARG cassandra_version=3.11.9
+ENV CASSANDRA_VERSION=$cassandra_version
 WORKDIR /install
 
 COPY --from=scratch /zipkin-schemas/* ./zipkin-schemas/
@@ -42,8 +43,9 @@ RUN /tmp/install.sh && rm /tmp/install.sh
 
 FROM ghcr.io/openzipkin/java:${java_version}-jre as zipkin-cassandra
 LABEL org.opencontainers.image.description="Cassandra on OpenJDK and Alpine Linux with Zipkin keyspaces pre-installed"
-ARG cassandra3_version=3.11.9
-LABEL cassandra-version=$cassandra3_version
+ARG cassandra_version=3.11.9
+LABEL cassandra-version=$cassandra_version
+ENV CASSANDRA_VERSION=$cassandra_version
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=scratch /docker-bin/* /usr/local/bin/
