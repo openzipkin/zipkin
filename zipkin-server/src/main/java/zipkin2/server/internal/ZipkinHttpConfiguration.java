@@ -79,12 +79,7 @@ public class ZipkinHttpConfiguration {
 
       // Block TRACE requests because https://github.com/openzipkin/zipkin/issues/2286
       sb.routeDecorator().trace("prefix:/")
-        .build((delegate, ctx, req) -> {
-          if (req.method() == HttpMethod.TRACE) { // TODO: we shouldn't need to double-check!
-            return HttpResponse.of(HttpStatus.METHOD_NOT_ALLOWED);
-          }
-          return delegate.serve(ctx, req);
-        });
+        .build((delegate, ctx, req) -> HttpResponse.of(HttpStatus.METHOD_NOT_ALLOWED));
     };
   }
 
