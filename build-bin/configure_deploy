@@ -1,6 +1,4 @@
-#!/bin/sh
-
-set -ue
+#!/bin/sh -ue
 
 # This script sets up anything needed for `./deploy`. Do not assume `configure_test` was called.
 #

@@ -24,9 +24,10 @@ ARG java_version=15.0.1_p9
 # COPY --from= works around the issue.
 FROM scratch as scratch
 
-COPY zipkin-storage/cassandra/src/main/resources/*.cql /zipkin-schemas/
+COPY build-bin/docker/docker-healthcheck /docker-bin/
+COPY docker/test-images/zipkin-cassandra/start-cassandra /docker-bin/
 COPY docker/test-images/zipkin-cassandra/install.sh /install/
-COPY docker/test-images/zipkin-cassandra/docker-bin/* /docker-bin/
+COPY zipkin-storage/cassandra/src/main/resources/*.cql /zipkin-schemas/
 
 FROM ghcr.io/openzipkin/java:${java_version} as install
 

@@ -22,9 +22,10 @@ ARG alpine_version=3.12.1
 # COPY --from= works around the issue.
 FROM scratch as scratch
 
-COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /zipkin-schemas/
+COPY build-bin/docker/docker-healthcheck /docker-bin/
+COPY docker/test-images/zipkin-mysql/start-mysql /docker-bin/
 COPY docker/test-images/zipkin-mysql/install.sh /install/
-COPY docker/test-images/zipkin-mysql/docker-bin/* /docker-bin/
+COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /zipkin-schemas/
 
 FROM ghcr.io/openzipkin/alpine:${alpine_version} as zipkin-mysql
 LABEL org.opencontainers.image.description="MySQL on Alpine Linux with Zipkin schema pre-installed"
@@ -36,7 +37,7 @@ HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthche
 ENTRYPOINT ["start-mysql"]
 
 # Use latest from https://pkgs.alpinelinux.org/packages?name=mysql
-ARG mysql_version=10.5.6
+ARG mysql_version=10.5.8
 LABEL mysql-version=$mysql_version
 ENV MYSQL_VERSION=$mysql_version
 

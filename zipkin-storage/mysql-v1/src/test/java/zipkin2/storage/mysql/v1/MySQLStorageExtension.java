@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 import zipkin2.CheckResult;
 
@@ -47,6 +48,7 @@ class MySQLStorageExtension implements BeforeAllCallback, AfterAllCallback {
       try {
         container = new ZipkinMySQLContainer(image);
         container.start();
+        container.withLogConsumer(new Slf4jLogConsumer(LOGGER));
         LOGGER.info("Starting docker image " + image);
       } catch (RuntimeException e) {
         LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
@@ -80,7 +82,8 @@ class MySQLStorageExtension implements BeforeAllCallback, AfterAllCallback {
         dataSource = new MariaDbDataSource();
 
         dataSource.setUser(System.getenv("MYSQL_USER"));
-        assumeTrue("Minimally, the environment variable MYSQL_USER must be set", dataSource.getUser() != null);
+        assumeTrue("Minimally, the environment variable MYSQL_USER must be set",
+          dataSource.getUser() != null);
 
         dataSource.setServerName(envOr("MYSQL_HOST", "localhost"));
         dataSource.setPort(envOr("MYSQL_TCP_PORT", 3306));
@@ -93,8 +96,8 @@ class MySQLStorageExtension implements BeforeAllCallback, AfterAllCallback {
     }
 
     return new MySQLStorage.Builder()
-        .datasource(dataSource)
-        .executor(Runnable::run);
+      .datasource(dataSource)
+      .executor(Runnable::run);
   }
 
   static int envOr(String key, int fallback) {

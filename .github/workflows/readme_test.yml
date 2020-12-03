@@ -88,56 +88,50 @@ jobs:
       - name: docker/README.md - openzipkin/zipkin
         run: |
           build-bin/docker/docker_build openzipkin/zipkin:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin
+          build-bin/docker/docker_test_image openzipkin/zipkin:test
         env:
           RELEASE_FROM_MAVEN_BUILD: true
       - name: docker/README.md - openzipkin/zipkin-slim
         run: |
           build-bin/docker/docker_build openzipkin/zipkin-slim:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-slim
+          build-bin/docker/docker_test_image openzipkin/zipkin-slim:test
         env:
           DOCKER_TARGET: zipkin-slim
           RELEASE_FROM_MAVEN_BUILD: true
       - name: docker/test-images/zipkin-ui/README.md
         run: |
           build-bin/docker/docker_build openzipkin/zipkin-ui:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-ui
+          build-bin/docker/docker_test_image openzipkin/zipkin-ui:test
         env:
           DOCKER_FILE: docker/test-images/zipkin-ui/Dockerfile
           RELEASE_FROM_MAVEN_BUILD: true
       - name: docker/test-images/zipkin-cassandra/README.md
         run: |
           build-bin/docker/docker_build openzipkin/zipkin-cassandra:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-cassandra
+          build-bin/docker/docker_test_image openzipkin/zipkin-cassandra:test
         env:
           DOCKER_FILE: docker/test-images/zipkin-cassandra/Dockerfile
       - name: docker/test-images/zipkin-elasticsearch6/README.md
         run: |
           build-bin/docker/docker_build openzipkin/zipkin-elasticsearch6:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-elasticsearch6
+          build-bin/docker/docker_test_image openzipkin/zipkin-elasticsearch6:test
         env:
           DOCKER_FILE: docker/test-images/zipkin-elasticsearch6/Dockerfile
       - name: docker/test-images/zipkin-elasticsearch7/README.md
         run: |
           build-bin/docker/docker_build openzipkin/zipkin-elasticsearch7:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-elasticsearch7
+          build-bin/docker/docker_test_image openzipkin/zipkin-elasticsearch7:test
         env:
           DOCKER_FILE: docker/test-images/zipkin-elasticsearch7/Dockerfile
       - name: docker/test-images/zipkin-kafka/README.md
         run: |
           build-bin/docker/docker_build openzipkin/zipkin-kafka:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-kafka
+          build-bin/docker/docker_test_image openzipkin/zipkin-kafka:test
         env:
           DOCKER_FILE: docker/test-images/zipkin-kafka/Dockerfile
       - name: docker/test-images/zipkin-mysql/README.md
         run: |
           build-bin/docker/docker_build openzipkin/zipkin-mysql:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-mysql
-        env:
-          DOCKER_FILE: docker/test-images/zipkin-mysql/Dockerfile
-      - name: docker/test-images/zipkin-mysql/README.md
-        run: |
-          build-bin/docker/docker_build openzipkin/zipkin-mysql:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-mysql
+          build-bin/docker/docker_test_image openzipkin/zipkin-mysql:test
         env:
           DOCKER_FILE: docker/test-images/zipkin-mysql/Dockerfile

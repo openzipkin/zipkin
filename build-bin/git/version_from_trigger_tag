@@ -13,8 +13,6 @@
 # the License.
 #
 
-set -ue
-
 # This script echos a `N.M.L` version tag based on..
 #  * arg1: XXXXX- prefix
 #  * arg2: XXXXX-N.M.L git trigger tag
@@ -22,6 +20,8 @@ set -ue
 # The script exits 1 if the prefix doesn't match. On success, the tag is deleted if it exists.
 #
 # Note: In CI, `build-bin/git/login_git` must be called before invoking this.
+
+set -ue
 
 trigger_tag_prefix=${1?required. Ex docker- to match docker-1.2.3}
 trigger_tag=${2?trigger_tag is required. Ex ${trigger_tag_prefix}1.2.3}

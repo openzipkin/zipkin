@@ -27,15 +27,18 @@ if [ ! -d data/zipkin2 ]; then
 fi
 
 IP="$(hostname -i || echo '127.0.0.1')"
-sed -i "s/listen_address:.*/listen_address: $IP/" conf/cassandra.yaml
-sed -i "s/rpc_address:.*/rpc_address: $IP/" conf/cassandra.yaml
-sed -i "s/          - seeds: \".*\"/          - seeds: \"$IP\"/" conf/cassandra.yaml
+sed -i "s/127.0.0.1/${IP}/g" conf/cassandra.yaml
 
 # Replace the logging level
 sed -i "s/log4j.rootLogger.*/log4j.rootLogger=${LOGGING_LEVEL}, stdout/" conf/log4j.properties
 
 # Use agent to allow instrumentation of a lambda: CASSANDRA-16304
 JAMM_JAR=$(ls lib/jamm-*.jar)
+
+# Configure the Docker HEALTHCHECK
+export HEALTHCHECK_IP=${IP}
+export HEALTHCHECK_PORT=9042
+export HEALTHCHECK_KIND=tcp
 
 echo Starting Cassandra
 # -cp 'classes:lib/*' allows layers to patch the image without packaging or overwriting jars

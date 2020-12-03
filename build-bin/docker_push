@@ -1,6 +1,4 @@
-#!/bin/sh
-
-set -ue
+#!/bin/sh -ue
 
 # Pushes docker as part of `deploy` or from a trigger tag
 version=${1:-master}

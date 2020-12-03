@@ -13,10 +13,10 @@
 # the License.
 #
 
+# This builds common docker arguments used by docker_build and docker_push.
+
 # This script checks each variable value, so it isn't important to fail on unbound (set -u)
 set -e
-
-# This builds common docker arguments used by docker_build and docker_push.
 
 docker_file=${DOCKER_FILE:-docker/Dockerfile}
 if ! test -f ${docker_file}; then
@@ -45,6 +45,15 @@ if [ -n "${DOCKER_TARGET}" ]; then
   docker_args="${docker_args} --target ${DOCKER_TARGET}"
 fi
 
+# When non-empty, becomes the base layer including tag appropriate for the image being built.
+# Ex. ghcr.io/openzipkin/java:15.0.1_p9-jre
+#
+# This is not required to be a base (FROM scratch) image like ghcr.io/openzipkin/alpine:3.12.1
+# See https://docs.docker.com/glossary/#parent-image
+if [ -n "${DOCKER_PARENT_IMAGE}" ]; then
+  docker_args="${docker_args} --build-arg docker_parent_image=${DOCKER_PARENT_IMAGE}"
+fi
+
 # When non-empty, becomes the build-arg alpine_version. Ex. "3.12.1"
 # Used to align base layers from https://github.com/orgs/openzipkin/packages/container/package/alpine
 if [ -n "${ALPINE_VERSION}" ]; then
@@ -54,8 +63,16 @@ fi
 # When non-empty, becomes the build-arg java_version. Ex. "15.0.1_p9"
 # Used to align base layers from https://github.com/orgs/openzipkin/packages/container/package/java
 if [ -n "${JAVA_VERSION}" ]; then
-  docker_args="${docker_args} --build-arg java_major_version=$(echo ${JAVA_VERSION}| cut -f1 -d .)"
   docker_args="${docker_args} --build-arg java_version=${JAVA_VERSION}"
+
+  # Only set java_home build arg when we control or can verify it.
+  java_major_version=$(echo ${JAVA_VERSION}| cut -f1 -d .)
+  case ${java_major_version} in
+    8) java_home=/usr/lib/jvm/java-1.8-openjdk;;
+    1?) java_home=/usr/lib/jvm/java-${java_major_version}-openjdk;;
+  esac
+
+  if [ -n "${java_home}" ]; then docker_args="${docker_args} --build-arg java_home=${java_home}"; fi
 fi
 
 # When non-empty, becomes the build-arg maven_classifier. Ex. "module" or "exec"

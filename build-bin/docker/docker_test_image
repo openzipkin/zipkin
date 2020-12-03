@@ -13,33 +13,51 @@
 # the License.
 #
 
+# Tests a an image by awaiting its HEALTHCHECK.
+#
+# This can be made more sophisticated via docker-compose. For example, you can set a utility
+# container that issues `wget` against your actual container in its HEALTHCHECK.
+
 set -ue
 
-# test a an image by awaiting its HEALTHCHECK
+# export this variable so that docker-compose can use it
+export DOCKER_IMAGE=${1?full docker_tag is required. Ex openzipkin/zipkin:test}
+# The two options are to run a single container of the image, or docker-compose which includes it.
+docker_compose_file=${2:-build-bin/docker-compose-$(echo ${DOCKER_IMAGE}| sed 's~.*/\(.*\):.*~\1~g').yml}
+docker_container=${3:-sut}
 
-docker_image=${1?docker_image is required, notably without a tag. Ex openzipkin/zipkin}
-
-# This just makes sure containers run and the HEALTHCHECK works (for now..)
-compose_file=${2:-build-bin/docker-compose-$(echo ${docker_image}| cut -f2 -d/).yml}
-
-if test -f "${compose_file}"; then
-  docker-compose -f "${compose_file}" up -d --quiet-pull
+# First try to run the intended containers.
+health_rc=0
+if test -f "${docker_compose_file}"; then
+  docker-compose -f "${docker_compose_file}" up --remove-orphans -d --quiet-pull || health_rc=1
 else
-  docker run --name sut -d ${docker_image}:test
+  docker run --name ${docker_container} -d ${DOCKER_IMAGE} || health_rc=1
 fi
 
-if build-bin/docker/docker_block_on_health sut; then
-  health_rc=0
-else
+# Next, inspect the health. This is a blocking command which waits until HEALTHCHECK passes or not.
+# This will fail if the container isn't healthy or doesn't exist (ex compose failed before creation)
+if [ "${health_rc}" = "1" ] || ! build-bin/docker/docker_block_on_health ${docker_container}; then
+  >&2 echo "*** Failed waiting for health of ${docker_container}"
+
+  # Sadly, we can't `docker-compose inspect`. This means we may not see the inspect output of the
+  # container that failed in docker-compose until this is revised to work around compose/issues/4155
+  docker inspect --format='{{json .State.Health.Log}}' ${docker_container} || true
+
+  # Log any containers output to console before we remove them.
+  if test -f "${docker_compose_file}"; then
+    docker-compose -f "${docker_compose_file}" logs
+  else
+    docker logs ${docker_container} || true
+  fi
   health_rc=1
-  docker logs sut
 fi
 
-if test -f "${compose_file}"; then
-  docker-compose -f "${compose_file}" down
+# Clean up any containers, so that we can run this again without conflict.
+if test -f "${docker_compose_file}"; then
+  docker-compose -f "${docker_compose_file}" down
 else
-  docker kill sut && docker rm sut
+  docker kill ${docker_container} && docker rm ${docker_container}
 fi
 
-exit $health_rc
+exit ${health_rc}
 

@@ -13,8 +13,6 @@
 # the License.
 #
 
-set -eu
-
 # This script gets one jar from Maven, most typically an exec or module jar, extracting its contents
 # to a directory corresponding to the artifact_id parameter.
 #
@@ -27,6 +25,8 @@ set -eu
 #
 # Ex.
 # !./module/target/zipkin-module-*-module.jar
+
+set -eu
 
 group_id=${1?group_id is required}
 artifact_id=${2?artifact_id is required}

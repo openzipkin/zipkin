@@ -13,11 +13,11 @@
 # the License.
 #
 
-set -ue
-
 # This script prepares for Sonatype deployment via `maven_deploy`
 #
 # This should be used instead of `configure_testcontainers` when a deployment will occur.
+
+set -ue
 
 # ensure GPG commands work non-interactively
 export GPG_TTY=$(tty)
