@@ -1,6 +1,4 @@
-#!/bin/sh
-
-set -ue
+#!/bin/sh -ue
 
 # This script sets up anything needed for `./test`. This should not login to anything, as that
 # should be done in `configure_deploy`.

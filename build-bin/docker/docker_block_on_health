@@ -13,9 +13,9 @@
 # the License.
 #
 
-set -ue
-
 # Blocks until a named docker container with a valid HEALTHCHECK instruction is healthy or not:
+
+set -ue
 
 container_name=${1?container_name is required}
 container_id=$(docker ps  -q -f name=${container_name})

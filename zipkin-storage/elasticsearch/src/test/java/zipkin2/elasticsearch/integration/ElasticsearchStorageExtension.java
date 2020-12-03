@@ -60,9 +60,7 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
           .withExposedPorts(ELASTICSEARCH_PORT)
           .waitingFor(Wait.forHealthcheck());
         container.start();
-        if (Boolean.parseBoolean(System.getenv("ES_DEBUG"))) {
-          container.followOutput(new Slf4jLogConsumer(LoggerFactory.getLogger(image.toString())));
-        }
+        container.withLogConsumer(new Slf4jLogConsumer(LOGGER));
         LOGGER.info("Starting docker image " + image);
       } catch (RuntimeException e) {
         LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);

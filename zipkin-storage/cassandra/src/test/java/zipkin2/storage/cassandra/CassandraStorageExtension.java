@@ -64,9 +64,7 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
           .withExposedPorts(CASSANDRA_PORT)
           .waitingFor(Wait.forHealthcheck());
         container.start();
-        if (Boolean.parseBoolean(System.getenv("CASSANDRA_DEBUG"))) {
-          container.followOutput(new Slf4jLogConsumer(LoggerFactory.getLogger(image.toString())));
-        }
+        container.withLogConsumer(new Slf4jLogConsumer(LOGGER));
       } catch (RuntimeException e) {
         LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
       }

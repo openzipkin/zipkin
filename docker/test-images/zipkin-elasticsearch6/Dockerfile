@@ -24,8 +24,9 @@ ARG java_version=15.0.1_p9
 # COPY --from= works around the issue.
 FROM scratch as scratch
 
+COPY build-bin/docker/docker-healthcheck /docker-bin/
+COPY docker/test-images/zipkin-elasticsearch7/start-elasticsearch /docker-bin/
 COPY docker/test-images/zipkin-elasticsearch6/config/ /config/
-COPY docker/test-images/zipkin-elasticsearch7/docker-bin/* /docker-bin/
 
 FROM ghcr.io/openzipkin/java:${java_version} as install
 

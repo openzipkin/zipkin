@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -ue
 #
 # Copyright 2015-2020 The OpenZipkin Authors
 #
@@ -12,8 +12,6 @@
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
 #
-
-set -ue
 
 # This script creates JavaDoc for a version and pushes an update to gh-pages. This fails if there
 # are no javadoc jars in the current directory.

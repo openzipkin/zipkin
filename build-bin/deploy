@@ -1,6 +1,4 @@
-#!/bin/sh
-
-set -ue
+#!/bin/sh -ue
 
 # This script deploys a master or release version.
 #

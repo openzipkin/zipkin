@@ -18,6 +18,9 @@ set -eu
 
 STORAGE_TYPE=${STORAGE_TYPE:-mem}
 
+# Configure the Docker HEALTHCHECK
+export HEALTHCHECK_PORT=${QUERY_PORT:-9411}
+
 if [ "${STORAGE_TYPE}" = "mem" ]; then
   # When using in-memory provider, allocate 128m, most of which for trace storage
   JAVA_OPTS=${JAVA_OPTS:-"-Xms128m -Xmx128m -XX:+ExitOnOutOfMemoryError"}

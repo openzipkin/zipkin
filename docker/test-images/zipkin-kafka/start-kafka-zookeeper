@@ -40,5 +40,9 @@ exec java -cp 'classes:lib/*' ${ZOOKEEPER_JAVA_OPTS} \
 # Wait for ZooKeeper to be ok
 until echo ruok | nc 127.0.0.1 2181 > /dev/null; do sleep 1; done
 
+# Configure the Docker HEALTHCHECK
+export HEALTHCHECK_PORT=9092
+export HEALTHCHECK_KIND=tcp
+
 echo Starting Kafka
 exec bin/kafka-run-class.sh kafka.Kafka ./config/server.properties "$@"

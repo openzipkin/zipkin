@@ -24,6 +24,8 @@ ARG java_version=15.0.1_p9
 # COPY --from= works around the issue.
 FROM scratch as scratch
 
+COPY build-bin/docker/docker-healthcheck /docker-bin/
+COPY docker/start-zipkin /docker-bin/
 COPY . /code/
 
 # This version is only used during the install process. Try to be consistent as it reduces layers,
@@ -60,10 +62,7 @@ WORKDIR /${USER}
 RUN adduser -g '' -h ${PWD} -D ${USER}
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
-COPY --from=install /code/docker/bin/ /tmp/docker-bin/
-RUN mv /tmp/docker-bin/docker-healthcheck /usr/local/bin/ && \
-    mv /tmp/docker-bin/start-zipkin /usr/local/bin/ && \
-    rm -rf /tmp/docker-bin
+COPY --from=scratch /docker-bin/* /usr/local/bin/
 # We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts.
 #
 # If in production, you have a 30s startup, please report to https://gitter.im/openzipkin/zipkin

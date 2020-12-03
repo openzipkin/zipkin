@@ -13,13 +13,13 @@
 # the License.
 #
 
-set -ue
-
 # Ensures Docker is logged in, buildx is available and it can build multi-architecture.
 # This should be used instead of `configure_docker` when a push will occur.
 #
 # This should only happen when we are publishing multi-arch builds, as otherwise the setup could use
 # Docker Hub pull quota and possibly cause a build outage.
+
+set -ue
 
 # Verify we are on an arch that can publish multi-arch images
 arch=$($(dirname "$0")/docker_arch)

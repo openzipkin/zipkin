@@ -18,6 +18,7 @@
 # When a release, and DOCKER_RELEASE_REPOS is unset they also push to Docker Hub (docker.io).
 #
 # Note: In CI, `configure_docker_push` must be called before invoking this.
+
 set -ue
 
 docker_image=${1?docker_image is required, notably without a tag. Ex openzipkin/zipkin}

@@ -1,36 +1,20 @@
-#!/bin/sh
-#
-# Copyright 2015-2020 The OpenZipkin Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
-# in compliance with the License. You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software distributed under the License
-# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-# or implied. See the License for the specific language governing permissions and limitations under
-# the License.
-#
-
-set -ue
+#!/bin/sh -ue
 
 # This script hydrates the Maven and NPM cache to make later processes operate with less chance of
 # network problems.
-
-ARCH=$(uname -m)
-case ${ARCH} in
+arch=$(uname -m)
+case ${arch} in
   arm64* )
-    ARCH=arm64
+    arch=arm64
     ;;
   aarch64* )
-    ARCH=arm64
+    arch=arm64
     ;;
 esac
 
 # ARM64 is not supported with musl, yet https://github.com/nodejs/node/blob/master/BUILDING.md
 # Workaround this by installing node and npm directly. See issue #3166
-if [ ${ARCH} = "arm64" ] && [ -f /etc/alpine-release ]; then
+if [ ${arch} = "arm64" ] && [ -f /etc/alpine-release ]; then
   # Get the version of nodejs the build uses. Note: this will take time as it downloads Maven plugins
   node_version=$(mvn help:evaluate -Dexpression=node.version -q -DforceStdout -pl zipkin-lens)
 

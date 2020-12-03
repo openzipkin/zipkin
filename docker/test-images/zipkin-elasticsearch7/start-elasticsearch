@@ -28,6 +28,10 @@ set -eu
 # * disable log4j JMX not just because we don't use it...
 #  * ES enables security manager https://github.com/elastic/elasticsearch/issues/21932#issuecomment-264435034
 
+# Configure the Docker HEALTHCHECK
+export HEALTHCHECK_PORT=9200
+export HEALTHCHECK_PATH=/_cluster/health
+
 # -cp 'classes:lib/*' allows layers to patch the image without packaging or overwriting jars
 exec java -cp 'classes:lib/*' ${JAVA_OPTS} \
   -Djava.io.tmpdir=/tmp \

@@ -13,11 +13,11 @@
 # the License.
 #
 
-set -ue
-
 # Defends against build outages caused by Docker Hub (docker.io) pull rate limits.
 #
 # It should not login to anything, as that should be done in `configure_docker_push`
+
+set -ue
 
 # The below sets up testcontainers configuration, which will be ignored if it isn't used. Even if
 # this is Docker related, it is coupled to integration tests configuration invoked with Maven.

@@ -108,8 +108,8 @@ storage_port: 7000
 # override via -Dcassandra.native_transport_port=9042
 native_transport_port: 9042
 listen_address: 127.0.0.1
-rpc_address: 127.0.0.1
 start_native_transport: true
+start_rpc: false
 seed_provider:
     - class_name: org.apache.cassandra.locator.SimpleSeedProvider
       parameters:
