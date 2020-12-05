@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           # Prevent use of implicit GitHub Actions read-only token GITHUB_TOKEN. We don't deploy on
-          # the tag N.M.L event, but we still need to deploy the maven-release-plugin master commit.
+          # the tag MAJOR.MINOR.PATCH event, but we still need to deploy the maven-release-plugin master commit.
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 1  # only need the HEAD commit as license check isn't run
       - name: Cache local Maven repository
@@ -35,6 +35,6 @@ jobs:
           #   - needs repo:status, public_repo
           #   - referenced in .settings.xml
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |  # GITHUB_REF will be refs/tags/release-N.M.L
+        run: |  # GITHUB_REF will be refs/tags/release-MAJOR.MINOR.PATCH
           build-bin/git/login_git &&
           build-bin/maven/maven_release $(echo ${GITHUB_REF} | cut -d/ -f 3)

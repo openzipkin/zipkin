@@ -23,4 +23,4 @@ docker_args=$($(dirname "$0")/docker_args ${version})
 #  * It only supports one platform/arch on load https://github.com/docker/buildx/issues/59
 #  * It would pull Docker Hub for moby/buildkit or multiarch/qemu-user-static images, using up quota
 echo "Building image ${docker_tag}"
-DOCKER_BUILDKIT=0 docker build ${docker_args} --tag ${docker_tag} .
+DOCKER_BUILDKIT=0 docker build --pull ${docker_args} --tag ${docker_tag} .

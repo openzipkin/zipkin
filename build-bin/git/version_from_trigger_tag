@@ -13,9 +13,9 @@
 # the License.
 #
 
-# This script echos a `N.M.L` version tag based on..
+# This script echos a `MAJOR.MINOR.PATCH` version tag based on..
 #  * arg1: XXXXX- prefix
-#  * arg2: XXXXX-N.M.L git trigger tag
+#  * arg2: XXXXX-MAJOR.MINOR.PATCH git trigger tag
 #
 # The script exits 1 if the prefix doesn't match. On success, the tag is deleted if it exists.
 #

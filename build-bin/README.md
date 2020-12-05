@@ -17,7 +17,7 @@ On test:
 
 On deploy:
 * [deploy], used by [../.github/workflows/deploy.yml] publishes jars and Docker images.
-* [javadoc_to_gh_pages] pushes Javadoc to the gh-pages branch on N.M.L branch, but not master.
+* [javadoc_to_gh_pages] pushes Javadoc to the gh-pages branch on MAJOR.MINOR.PATCH branch, but not master.
   * gh-pages is addressable via https://zipkin.io/zipkin/
 * Besides production Docker images, this project includes [../docker/test-images].
   * [docker_push] pushes test-images, but only to ghcr.io
@@ -161,7 +161,7 @@ jobs:
         env:
           GH_USER: ${{ secrets.GH_USER }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: |  # GITHUB_REF will be refs/heads/master or refs/tags/N.M.L
+        run: |  # GITHUB_REF will be refs/heads/master or refs/tags/MAJOR.MINOR.PATCH
           build-bin/configure_deploy &&
           build-bin/deploy $(echo ${GITHUB_REF} | cut -d/ -f 3)
 ```

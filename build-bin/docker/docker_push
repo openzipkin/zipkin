@@ -65,7 +65,7 @@ echo "Will push the following tags with platform ${docker_platforms}:${tags}\n"
 
 docker_args=$($(dirname "$0")/docker_args ${version})
 
-docker_push="docker buildx build --progress plain --platform=${docker_platforms} ${docker_args} . --push"
+docker_push="docker buildx build --pull --progress plain --platform=${docker_platforms} ${docker_args} . --output=type=registry"
 
 for tag in $(echo ${tags}|xargs); do
   echo "Pushing tag ${tag}..."

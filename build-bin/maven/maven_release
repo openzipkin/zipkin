@@ -15,7 +15,7 @@
 
 set -ue
 
-# This script creates a git `N.M.L` version tag which later will have `deploy` run against it.
+# This script creates a git `MAJOR.MINOR.PATCH` version tag which later will have `deploy` run against it.
 #
 # In CI..
 #  * trigger pattern: tag =~ /^release-[0-9]+\.[0-9]+\.[0-9]+/
