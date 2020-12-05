@@ -38,7 +38,7 @@ WORKDIR /install
 ARG elasticsearch6_version=6.8.13
 
 # We don't download bin scripts as we customize for reasons including BusyBox problems
-RUN wget -qO- https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-$elasticsearch6_version.tar.gz| tar xz \
+RUN wget --tries=3 -qO- https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-$elasticsearch6_version.tar.gz| tar xz \
     --wildcards --strip=1 --exclude=*/bin && mkdir classes
 
 COPY --from=scratch /config/ ./config/

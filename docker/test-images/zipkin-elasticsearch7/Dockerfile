@@ -39,7 +39,7 @@ ARG elasticsearch7_version=7.10.0
 
 # Download only the OSS distribution (lacks X-Pack)
 # We don't download bin scripts as we customize for reasons including BusyBox problems
-RUN wget -qO- https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-${elasticsearch7_version}-no-jdk-linux-x86_64.tar.gz| tar xz \
+RUN wget --tries=3 -qO- https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-${elasticsearch7_version}-no-jdk-linux-x86_64.tar.gz| tar xz \
     --wildcards --strip=1 --exclude=*/bin && mkdir classes
 
 COPY --from=scratch /config/ ./config/

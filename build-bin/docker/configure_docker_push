@@ -50,7 +50,7 @@ fi
 buildx_version=0.4.2
 buildx_url=https://github.com/docker/buildx/releases/download/v${buildx_version}/buildx-v${buildx_version}.linux-${arch}
 mkdir -p $HOME/.docker/cli-plugins
-( cd $HOME/.docker/cli-plugins && wget -qO- ${buildx_url} > docker-buildx && chmod 755 docker-buildx)
+( cd $HOME/.docker/cli-plugins && wget --tries=3 -qO- ${buildx_url} > docker-buildx && chmod 755 docker-buildx)
 docker version
 
 # Enable execution of different multi-architecture containers by QEMU and binfmt_misc
