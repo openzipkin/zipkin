@@ -8,7 +8,7 @@ name: deploy
 # See https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
 on:
   push:
-    # Don't deploy tags as they conflict with [maven-release-plugin] prepare release N.M.L
+    # Don't deploy tags as they conflict with [maven-release-plugin] prepare release MAJOR.MINOR.PATCH
     tags: ''
     branches: master
 
@@ -70,6 +70,6 @@ jobs:
           # DOCKERHUB_TOKEN=<access token for DOCKERHUB_USER>
           #   -  Access Token from here https://hub.docker.com/settings/security
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: |  # GITHUB_REF will be refs/heads/master or refs/tags/N.M.L
+        run: |  # GITHUB_REF will be refs/heads/master or refs/tags/MAJOR.MINOR.PATCH
           build-bin/configure_deploy &&
           build-bin/deploy $(echo ${GITHUB_REF} | cut -d/ -f 3)

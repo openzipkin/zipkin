@@ -43,5 +43,5 @@ jobs:
           #   -  Access Token from here https://hub.docker.com/settings/security
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Docker Push
-        # GITHUB_REF will be refs/tags/docker-N.M.L
+        # GITHUB_REF will be refs/tags/docker-MAJOR.MINOR.PATCH
         run: build-bin/docker_push $(echo ${GITHUB_REF} | cut -d/ -f 3)

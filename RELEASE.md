@@ -10,14 +10,14 @@ This repo uses semantic versions. Please keep this in mind when choosing version
 
 1. **Push a git tag**
 
-   The tag should be of the format `release-N.M.L`, ex `git tag release-1.18.1; git push origin release-1.18.1`.
+   The tag be formatted `release-MAJOR.MINOR.PATCH`, ex `git tag release-1.18.1 && git push origin release-1.18.1`.
 
 1. **Wait for CI**
 
-   The `release-N.M.L` tag triggers [`build-bin/maven/maven_release`](build-bin/maven/maven_release),
-   which creates commits, `N.M.L` tag, and increments the version (maven-release-plugin).
+   The `release-MAJOR.MINOR.PATCH` tag triggers [`build-bin/maven/maven_release`](build-bin/maven/maven_release),
+   which creates commits, `MAJOR.MINOR.PATCH` tag, and increments the version (maven-release-plugin).
 
-   The `N.M.L` tag triggers [`build-bin/deploy`](build-bin/deploy), which does the following:
+   The `MAJOR.MINOR.PATCH` tag triggers [`build-bin/deploy`](build-bin/deploy), which does the following:
      * Publishes jars to https://oss.sonatype.org/content/repositories/releases [`build-bin/maven/maven_deploy`](build-bin/maven/maven_deploy)
        * Later, the same jars synchronize to Maven Central
      * Publishes Javadoc to https://zipkin.io/brave into a versioned subdirectory
@@ -29,7 +29,7 @@ This repo uses semantic versions. Please keep this in mind when choosing version
 ## Credentials
 
 The release process uses various credentials. If you notice something failing due to unauthorized,
-look at the notes in [.github/workflows/deploy.yml] and check the [org secrets](https://github.com/organizations/openzipkin/settings/secrets/actions)
+look at the notes in [.github/workflows/deploy.yml] and check the [org secrets](https://github.com/organizations/openzipkin/settings/secrets/actions).
 
 ### Troubleshooting invalid credentials
 
@@ -79,7 +79,7 @@ export SONATYPE_USER=your_sonatype_account
 export SONATYPE_PASSWORD=your_sonatype_password
 release_version=xx-version-to-release-xx
 
-# now from latest master, create the release. This creates and pushes the N.M.L tag
+# now from latest master, create the release. This creates and pushes the MAJOR.MINOR.PATCH tag
 ./build-bin/maven/maven_release release-${release_version}
 
 # once this works, deploy the release
