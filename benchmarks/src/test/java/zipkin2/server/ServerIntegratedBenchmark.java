@@ -91,7 +91,7 @@ class ServerIntegratedBenchmark {
 
   @Test void elasticsearch() throws Exception {
     GenericContainer<?> elasticsearch =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch7:latest"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch7:2.23.1"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("elasticsearch")
         .withLabel("name", "elasticsearch")
@@ -104,25 +104,22 @@ class ServerIntegratedBenchmark {
   }
 
   @Test void cassandra3() throws Exception {
-    runBenchmark(createCassandra("cassandra3"));
-  }
-
-  private GenericContainer<?> createCassandra(String storageType) {
     GenericContainer<?> cassandra =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-cassandra:latest"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-cassandra:2.23.1"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("cassandra")
         .withLabel("name", "cassandra")
-        .withLabel("storageType", storageType)
+        .withLabel("storageType", "cassandra3")
         .withExposedPorts(9042)
         .waitingFor(Wait.forHealthcheck());
     containers.add(cassandra);
-    return cassandra;
+
+    runBenchmark(cassandra);
   }
 
   @Test void mysql() throws Exception {
     GenericContainer<?> mysql =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:latest"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:2.23.1"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("mysql")
         .withLabel("name", "mysql")
@@ -132,22 +129,6 @@ class ServerIntegratedBenchmark {
     containers.add(mysql);
 
     runBenchmark(mysql);
-  }
-
-  // Benchmark for zipkin-aws XRay UDP storage. As UDP does not actually need a server running to
-  // send to, we can reuse our benchmark logic here to check it. Note, this benchmark always uses
-  // a docker image and ignores RELEASED_ZIPKIN_SERVER.
-  @Test void xrayUdp() throws Exception {
-    GenericContainer<?> zipkin =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-aws:latest"))
-        .withNetwork(Network.SHARED)
-        .withNetworkAliases("zipkin")
-        .withEnv("STORAGE_TYPE", "xray")
-        .withExposedPorts(9411)
-        .waitingFor(Wait.forHealthcheck());
-    containers.add(zipkin);
-
-    runBenchmark(null, zipkin);
   }
 
   void runBenchmark(@Nullable GenericContainer<?> storage) throws Exception {
@@ -176,7 +157,7 @@ class ServerIntegratedBenchmark {
     // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     // Use same version as in docker/examples/docker-compose-prometheus.yml
     GenericContainer<?> prometheus =
-      new GenericContainer<>(parse("quay.io/prometheus/prometheus:v2.22.0"))
+      new GenericContainer<>(parse("quay.io/prometheus/prometheus:v2.23.0"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("prometheus")
         .withExposedPorts(9090)
@@ -186,7 +167,7 @@ class ServerIntegratedBenchmark {
 
     // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     // Use same version as in docker/examples/docker-compose-prometheus.yml
-    GenericContainer<?> grafana = new GenericContainer<>(parse("quay.io/app-sre/grafana:7.3.1"))
+    GenericContainer<?> grafana = new GenericContainer<>(parse("quay.io/app-sre/grafana:7.3.4"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("grafana")
       .withExposedPorts(3000)
