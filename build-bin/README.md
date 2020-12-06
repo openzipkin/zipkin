@@ -103,20 +103,35 @@ complete in less than a minute (10 credit cost).
 Here's a partial `.travis.yml` including only the aspects mentioned above.
 ```yaml
 git:
-  depth: false  # full git history for license check, and doc-only skipping
+  depth: false  # TRAVIS_COMMIT_RANGE requires full commit history.
 
 jobs:
   include:
     - stage: test
       if: branch = master AND tag IS blank AND type IN (push, pull_request)
       name: Run unit and integration tests
-      before_install: |
+      before_install: |  # Prevent test build of a documentation-only change.
         if [ -n "${TRAVIS_COMMIT_RANGE}" ] && ! git diff --name-only "${TRAVIS_COMMIT_RANGE}" -- | grep -qv '\.md$'; then
           echo "Stopping job as changes only affect documentation (ex. README.md)"
           travis_terminate 0
         fi
       install: ./build-bin/configure_test
       script: ./build-bin/test
+```
+
+When Travis only runs tests (something else does deploy), there's no need to use stages:
+```yaml
+git:
+  depth: false  # TRAVIS_COMMIT_RANGE requires full commit history.
+
+if: branch = master AND tag IS blank AND type IN (push, pull_request)
+before_install: |  # Prevent test build of a documentation-only change.
+  if [ -n "${TRAVIS_COMMIT_RANGE}" ] && ! git diff --name-only "${TRAVIS_COMMIT_RANGE}" -- | grep -qv '\.md$'; then
+    echo "Stopping job as changes only affect documentation (ex. README.md)"
+    travis_terminate 0
+  fi
+install: ./build-bin/configure_test
+script: ./build-bin/test
 ```
 
 ## Deploy
