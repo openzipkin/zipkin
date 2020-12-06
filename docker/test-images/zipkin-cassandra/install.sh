@@ -180,12 +180,12 @@ java -cp 'classes:lib/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc
   -Dcassandra.config=file:${PWD}/conf/cassandra.yaml \
   -Dlog4j.configuration=file:${PWD}/conf/log4j.properties \
   org.apache.cassandra.service.CassandraDaemon > temp_cassandra.out 2>&1 &
-TEMP_CASSANDRA_PID=$!
+temp_cassandra_pid=$!
 
 function is_cassandra_alive() {
-  if ! kill -0 ${TEMP_CASSANDRA_PID}; then
+  if ! kill -0 ${temp_cassandra_pid}; then
     cat temp_cassandra.out
-    maybe_crash_file=hs_err_pid${TEMP_CASSANDRA_PID}.log
+    maybe_crash_file=hs_err_pid${temp_cassandra_pid}.log
     test -f $maybe_crash_file && cat $maybe_crash_file
     return 1
   fi
@@ -215,7 +215,8 @@ echo "*** Importing Scheme"
 cat schema | cql --debug && rm schema
 
 echo "*** Stopping Cassandra"
-kill ${TEMP_CASSANDRA_PID}
+kill ${temp_cassandra_pid}
+wait
 
 # The image will use a less chatty Log4J conf which only logs warnings (to stdout).
 cat > conf/log4j.properties <<-'EOF'

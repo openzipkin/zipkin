@@ -20,12 +20,12 @@ apk add --update --no-cache mysql=~${MYSQL_VERSION} mysql-client=~${MYSQL_VERSIO
 # Fake auth tools install as 10.4.0 install dies otherwise
 mkdir -p /auth_pam_tool_dir/auth_pam_tool
 
-MYSQL_OPTS="--user=mysql --basedir=${PWD} --datadir=${PWD}/data --tmpdir=/tmp"
+mysql_opts="--user=mysql --basedir=${PWD} --datadir=${PWD}/data --tmpdir=/tmp"
 
 # Create the database (stored in the data directory)
 ln -s /usr/bin bin
 ln -s /usr/share share
-mysql_install_db ${MYSQL_OPTS} --force
+mysql_install_db ${mysql_opts} --force
 
 # Enable networking
 echo skip-networking=0 >> /etc/my.cnf
@@ -35,12 +35,13 @@ echo bind-address=0.0.0.0 >> /etc/my.cnf
 mkdir -p /run/mysqld/ && chown mysql /run/mysqld/
 
 echo "*** Starting MySQL"
-mysqld ${MYSQL_OPTS} &
+mysqld ${mysql_opts} &
+temp_mysql_pid=$!
 
 # Excessively long timeout to avoid having to create an ENV variable, decide its name, etc.
 timeout=180
 echo "Will wait up to ${timeout} seconds for MySQL to come up before installing Schema"
-while [ "$timeout" -gt 0 ] && ! mysql --protocol=socket -uroot -e 'SELECT 1' > /dev/null 2>&1; do
+while [ "$timeout" -gt 0 ] && kill -0 ${temp_mysql_pid} && ! mysql --protocol=socket -uroot -e 'SELECT 1' > /dev/null 2>&1; do
     sleep 1
     timeout=$(($timeout - 1))
 done
@@ -62,7 +63,8 @@ FLUSH PRIVILEGES ;
 EOF
 
 echo "*** Stopping MySQL"
-pkill -f mysqld
+kill ${temp_mysql_pid}
+wait
 
 echo "*** Copying database to /mysql/data"
 mkdir /mysql
