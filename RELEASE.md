@@ -10,7 +10,7 @@ This repo uses semantic versions. Please keep this in mind when choosing version
 
 1. **Push a git tag**
 
-   The tag be formatted `release-MAJOR.MINOR.PATCH`, ex `git tag release-1.18.1 && git push origin release-1.18.1`.
+   The trigger format is `release-MAJOR.MINOR.PATCH`, ex `git tag release-1.18.1 && git push origin release-1.18.1`.
 
 1. **Wait for CI**
 
