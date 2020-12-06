@@ -30,15 +30,15 @@ version=${2:-master}
 export DOCKER_BUILDKIT=0
 
 case ${version} in
-master)
-  is_release=false
-  ;;
-*-SNAPSHOT)
-  is_release=false
-  ;;
-*)
-  is_release=true
-  ;;
+  master)
+    is_release=false
+    ;;
+  *-SNAPSHOT)
+    is_release=false
+    ;;
+  *)
+    is_release=true
+    ;;
 esac
 
 if [ "${is_release}" = "true" ]; then
