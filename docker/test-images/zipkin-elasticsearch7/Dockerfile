@@ -35,11 +35,14 @@ WORKDIR /install
 # Use latest 7.x version from https://www.elastic.co/downloads/past-releases#elasticsearch
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG elasticsearch7_version=7.10.0
+ARG elasticsearch7_version=7.9.3
 
 # Download only the OSS distribution (lacks X-Pack)
+RUN \
+# Connection resets are frequent in GitHub Actions workflows
+wget --random-wait --tries=5 -qO- \
 # We don't download bin scripts as we customize for reasons including BusyBox problems
-RUN wget --tries=3 -qO- https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-${elasticsearch7_version}-no-jdk-linux-x86_64.tar.gz| tar xz \
+https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-${elasticsearch7_version}-no-jdk-linux-x86_64.tar.gz| tar xz \
     --wildcards --strip=1 --exclude=*/bin && mkdir classes
 
 COPY --from=scratch /config/ ./config/

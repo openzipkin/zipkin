@@ -45,7 +45,7 @@ class ITCassandraStorage {
   );
 
   @RegisterExtension CassandraStorageExtension backend = new CassandraStorageExtension(
-    DockerImageName.parse("ghcr.io/openzipkin/zipkin-cassandra:2.23.0"));
+    DockerImageName.parse("ghcr.io/openzipkin/zipkin-cassandra:2.23.1"));
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<CassandraStorage> {

@@ -46,11 +46,14 @@ if [ -n "${DOCKERHUB_USER:-}" ]; then
   echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USER}" --password-stdin
 fi
 
+# Connection resets are frequent in GitHub Actions workflows
+alias wget="wget --random-wait --tries=5 -qO-"
+
 # Latest version from https://github.com/docker/buildx/releases
 buildx_version=0.4.2
 buildx_url=https://github.com/docker/buildx/releases/download/v${buildx_version}/buildx-v${buildx_version}.linux-${arch}
 mkdir -p $HOME/.docker/cli-plugins
-( cd $HOME/.docker/cli-plugins && wget --tries=3 -qO- ${buildx_url} > docker-buildx && chmod 755 docker-buildx)
+( cd $HOME/.docker/cli-plugins && wget ${buildx_url} > docker-buildx && chmod 755 docker-buildx)
 docker version
 
 # Enable execution of different multi-architecture containers by QEMU and binfmt_misc
