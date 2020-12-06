@@ -18,7 +18,10 @@
 # When a release, and DOCKER_RELEASE_REPOS is unset they also push to Docker Hub (docker.io).
 #
 # Note: In CI, `configure_docker_push` must be called before invoking this.
-
+#
+# Avoid buildx on push for two reasons:
+#  * It runs archs in parallel and can create port conflicts (ex in cassandra)
+#  * Sometimes the cache has used the wrong layer leading to flakey builds
 set -ue
 
 docker_image=${1?docker_image is required, notably without a tag. Ex openzipkin/zipkin}

@@ -13,7 +13,7 @@
 # the License.
 #
 
-# Ensures Docker is logged in, buildx is available and it can build multi-architecture.
+# Ensures Docker is logged in and it can build multi-architecture.
 # This should be used instead of `configure_docker` when a push will occur.
 #
 # This should only happen when we are publishing multi-arch builds, as otherwise the setup could use
@@ -32,7 +32,7 @@ fi
 echo '{ "experimental":true, "registry-mirrors": ["https://mirror.gcr.io"] }' | sudo tee /etc/docker/daemon.json
 
 sudo service docker restart
-# Enable experimental client features (eg docker buildx)
+# Enable experimental client features (multi-arch)
 mkdir -p ${HOME}/.docker && echo '{"experimental":"enabled"}' > ${HOME}/.docker/config.json
 
 # Log in to GitHub Container Registry and Docker Hub for releasing images

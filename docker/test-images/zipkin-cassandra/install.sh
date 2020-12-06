@@ -119,18 +119,8 @@ seed_provider:
 enable_sasi_indexes: true
 EOF
 
-# Avoid conflicts during multi-arch build (buildx starting two archs in the same container)
-arch=$(uname -m)
-case ${arch} in
-  aarch64* )
-    TEMP_STORAGE_PORT=7020
-    TEMP_NATIVE_TRANSPORT_PORT=9062
-    ;;
-  * )
-    TEMP_STORAGE_PORT=7010
-    TEMP_NATIVE_TRANSPORT_PORT=9052
-    ;;
-esac
+temp_storage_port=7010
+temp_native_transport_port=9052
 
 # Keep INFO logs as if this fails in CI, we'll get more insight. These aren't displayed unless we
 # have a crash.
@@ -173,8 +163,8 @@ java -cp 'classes:lib/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc
   --add-opens java.base/jdk.internal.module=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.util.jar=ALL-UNNAMED \
   --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED \
-  -Dcassandra.storage_port=${TEMP_STORAGE_PORT} \
-  -Dcassandra.native_transport_port=${TEMP_NATIVE_TRANSPORT_PORT} \
+  -Dcassandra.storage_port=${temp_storage_port} \
+  -Dcassandra.native_transport_port=${temp_native_transport_port} \
   -Dcassandra.storagedir=${PWD} \
   -Dcassandra.triggers_dir=${PWD}/triggers \
   -Dcassandra.config=file:${PWD}/conf/cassandra.yaml \
@@ -199,7 +189,7 @@ apk add --update --no-cache python2 py2-setuptools
 python2 -m easy_install pip
 pip install -Iq cqlsh
 function cql() {
-  cqlsh --cqlversion=${cqlversion} "$@" 127.0.0.1 ${TEMP_NATIVE_TRANSPORT_PORT}
+  cqlsh --cqlversion=${cqlversion} "$@" 127.0.0.1 ${temp_native_transport_port}
 }
 
 # Excessively long timeout to avoid having to create an ENV variable, decide its name, etc.
