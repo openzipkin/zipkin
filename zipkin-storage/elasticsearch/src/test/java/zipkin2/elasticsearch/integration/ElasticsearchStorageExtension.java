@@ -131,7 +131,19 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
       }));
     });
     WebClient client = builder.build();
-    return ElasticsearchStorage.newBuilder(() -> client).index("zipkin-test").flushOnWrites(true);
+    return ElasticsearchStorage.newBuilder(new ElasticsearchStorage.LazyHttpClient() {
+      @Override public WebClient get() {
+        return client;
+      }
+
+      @Override public void close() {
+        client.endpointGroup().close();
+      }
+
+      @Override public String toString() {
+        return client.uri().toString();
+      }
+    }).index("zipkin-test").flushOnWrites(true);
   }
 
   String baseUrl() {

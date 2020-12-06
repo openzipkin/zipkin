@@ -47,14 +47,14 @@ abstract class ITEnsureIndexTemplate extends ITStorage<ElasticsearchStorage> {
     storage.clear();
   }
 
-  @Test
+  @Test // TODO: This test breaks in ES 7.10 due to deprecation
   void createZipkinIndexTemplate_getTraces_returnsSuccess(TestInfo testInfo) throws Exception {
     String testSuffix = testSuffix(testInfo);
     storage = newStorageBuilder(testInfo).templatePriority(10).build();
     try {
-      // Delete all index templates in order to create the "catch-all" index template, because
+      // Delete all templates in order to create the "catch-all" index template, because
       // ES does not allow multiple index templates of the same index_patterns and priority
-      deleteIndexTemplate("*");
+      delete("/_template/*");
       setUpCatchAllTemplate();
 
       // Implicitly creates an index template
@@ -71,7 +71,7 @@ abstract class ITEnsureIndexTemplate extends ITStorage<ElasticsearchStorage> {
         asList(span));
     } finally {
       // Delete "catch-all" index template so it does not interfere with any other test
-      deleteIndexTemplate("catch-all");
+      delete(catchAllIndexPath());
     }
   }
 
@@ -109,10 +109,9 @@ abstract class ITEnsureIndexTemplate extends ITStorage<ElasticsearchStorage> {
       + "}";
   }
 
-  void deleteIndexTemplate(String pattern) throws IOException {
-    String url = "/_index_template/" + pattern;
-    AggregatedHttpRequest delete = AggregatedHttpRequest.of(HttpMethod.DELETE, url);
+  void delete(String path) throws IOException {
+    AggregatedHttpRequest delete = AggregatedHttpRequest.of(HttpMethod.DELETE, path);
     Internal.instance.http(storage)
-      .newCall(delete, (parser, contentString) -> null, "delete-index").execute();
+      .newCall(delete, (parser, contentString) -> null, "delete-" + path).execute();
   }
 }
