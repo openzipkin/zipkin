@@ -37,10 +37,12 @@ WORKDIR /install
 # docker-compose: When updating, update everywhere.
 ARG elasticsearch6_version=6.8.13
 
+# Download only the OSS distribution (lacks X-Pack)
+RUN \
 # Connection resets are frequent in GitHub Actions workflows
-RUN alias wget="wget --random-wait --tries=5 -qO-"
+wget --random-wait --tries=5 -qO- \
 # We don't download bin scripts as we customize for reasons including BusyBox problems
-RUN wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-$elasticsearch6_version.tar.gz| tar xz \
+https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-$elasticsearch6_version.tar.gz| tar xz \
     --wildcards --strip=1 --exclude=*/bin && mkdir classes
 
 COPY --from=scratch /config/ ./config/
