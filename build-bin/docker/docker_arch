@@ -20,24 +20,24 @@
 
 set -ue
 
-# Normalize arch to what's available
-arch=${ARCH:-$(uname -m)}
-case ${arch} in
+# Normalize docker_arch to what's available
+docker_arch=${DOCKER_ARCH:-$(uname -m)}
+case ${docker_arch} in
   amd64* )
-    arch=amd64
+    docker_arch=amd64
     ;;
   x86_64* )
-    arch=amd64
+    docker_arch=amd64
     ;;
   arm64* )
-    arch=arm64
+    docker_arch=arm64
     ;;
   aarch64* )
-    arch=arm64
+    docker_arch=arm64
     ;;
   * )
-    >&2 echo "Unsupported arch: ${arch}"
+    >&2 echo "Unsupported DOCKER_ARCH: ${docker_arch}"
     exit 1;
 esac
 
-echo ${arch}
+echo ${docker_arch}

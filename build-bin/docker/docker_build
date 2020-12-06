@@ -19,7 +19,8 @@ docker_tag=${1?full docker_tag is required. Ex openzipkin/zipkin:test}
 version=${2:-}
 docker_args=$($(dirname "$0")/docker_args ${version})
 
-# Avoid buildx on load for two reasons:
+# Avoid buildx on load for reasons including:
+#  * Caching is more complex as builder instances must be considered
 #  * It only supports one platform/arch on load https://github.com/docker/buildx/issues/59
 #  * It would pull Docker Hub for moby/buildkit or multiarch/qemu-user-static images, using up quota
 echo "Building image ${docker_tag}"

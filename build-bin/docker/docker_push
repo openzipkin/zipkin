@@ -19,9 +19,10 @@
 #
 # Note: In CI, `configure_docker_push` must be called before invoking this.
 #
-# Avoid buildx on push for two reasons:
-#  * It runs archs in parallel and can create port conflicts (ex in cassandra)
-#  * Sometimes the cache has used the wrong layer leading to flakey builds
+# Avoid buildx on push for reasons including:
+#  * Caching is more complex as builder instances must be considered
+#  * Platform builds run in parallel, leading to port conflict failures (ex in cassandra)
+#  * 0.4.2 multi-platform builds have failed due to picking the wrong image for a FROM instruction
 set -ue
 
 docker_image=${1?docker_image is required, notably without a tag. Ex openzipkin/zipkin}
@@ -29,15 +30,15 @@ version=${2:-master}
 export DOCKER_BUILDKIT=0
 
 case ${version} in
-  master )
-    is_release=false
-    ;;
-  *-SNAPSHOT )
-    is_release=false
-    ;;
-  * )
-    is_release=true
-    ;;
+master)
+  is_release=false
+  ;;
+*-SNAPSHOT)
+  is_release=false
+  ;;
+*)
+  is_release=true
+  ;;
 esac
 
 if [ "${is_release}" = "true" ]; then
@@ -63,7 +64,7 @@ for repo in ${docker_repos}; do
 done
 
 docker_args=$($(dirname "$0")/docker_args ${version})
-docker_archs=${DOCKER_PLATFORMS:-amd64 arm64}
+docker_archs=${DOCKER_ARCHS:-amd64 arm64}
 
 echo "Will build the following architectures: ${docker_archs}"
 
