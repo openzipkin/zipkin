@@ -35,10 +35,6 @@ sudo service docker restart
 # Enable experimental client features (eg docker buildx)
 mkdir -p ${HOME}/.docker && echo '{"experimental":"enabled"}' > ${HOME}/.docker/config.json
 
-# temporarily purge cache as there's no way in github to do this
-docker buildx rm builder || true
-docker system prune -af || true
-
 # Log in to GitHub Container Registry and Docker Hub for releasing images
 # This effects ${HOME}/.docker/config.json, which was created above
 
