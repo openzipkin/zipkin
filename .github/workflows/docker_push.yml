@@ -17,16 +17,11 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 1  # only needed to get the sha label
-      - name: Cache Docker
-        uses: actions/cache@v2
-        with:
-          path: ~/.docker
-          key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
-          restore-keys: ${{ runner.os }}-docker
-      - name: Configure Docker Push
-        run: |
+      - name: Docker Push
+        run: |  # GITHUB_REF will be refs/tags/docker-MAJOR.MINOR.PATCH
           build-bin/git/login_git &&
-          build-bin/docker/configure_docker_push
+          build-bin/docker/configure_docker_push &&
+          build-bin/docker_push $(echo ${GITHUB_REF} | cut -d/ -f 3)
         env:
           # GH_USER=<user that created GH_TOKEN>
           GH_USER: ${{ secrets.GH_USER }}
@@ -42,6 +37,3 @@ jobs:
           # DOCKERHUB_TOKEN=<access token for DOCKERHUB_USER>
           #   -  Access Token from here https://hub.docker.com/settings/security
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Docker Push
-        # GITHUB_REF will be refs/tags/docker-MAJOR.MINOR.PATCH
-        run: build-bin/docker_push $(echo ${GITHUB_REF} | cut -d/ -f 3)
