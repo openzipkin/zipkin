@@ -19,6 +19,7 @@ import com.linecorp.armeria.client.WebClientBuilder;
 import com.linecorp.armeria.client.logging.LoggingClient;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.logging.LogLevel;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
