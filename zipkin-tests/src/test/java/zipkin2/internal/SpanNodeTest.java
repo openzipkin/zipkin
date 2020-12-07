@@ -72,8 +72,10 @@ public class SpanNodeTest {
    *          a
    *        / | \
    *       b  c  d
-   *      /|\     \
-   *     e f g     h
+   *      /|\
+   *     e f g
+   *          \
+   *           h
    * }</pre>
    */
   @Test public void traversesBreadthFirst() {

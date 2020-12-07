@@ -36,7 +36,8 @@ function link(callCounts, errorCounts) {
 }
 
 /*
- * This parses a span tree into dependency links used by Web UI. Ex. http://zipkin/dependency
+ * A dependency link is an edge between two services. This parses a span tree into dependency links
+ * used by Web UI. Ex. http://zipkin/dependency
  *
  * This implementation traverses the tree, and creates links for RPC and messaging spans. RPC links
  * are only between SERVER spans. One exception is at the bottom of the trace tree. CLIENT spans
