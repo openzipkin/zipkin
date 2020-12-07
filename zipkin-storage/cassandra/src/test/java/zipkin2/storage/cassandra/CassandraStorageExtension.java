@@ -23,10 +23,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import org.junit.AssumptionViolatedException;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.opentest4j.TestAbortedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -158,7 +158,7 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
     CassandraContainer() {
       super(parse("ghcr.io/openzipkin/zipkin-cassandra:2.23.1"));
       if ("true".equals(System.getProperty("docker.skip"))) {
-        throw new AssumptionViolatedException("${docker.skip} == true");
+        throw new TestAbortedException("${docker.skip} == true");
       }
       waitStrategy = Wait.forHealthcheck();
       withLogConsumer(new Slf4jLogConsumer(LOGGER));

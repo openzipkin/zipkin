@@ -19,11 +19,10 @@ import com.linecorp.armeria.client.WebClientBuilder;
 import com.linecorp.armeria.client.logging.LoggingClient;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.logging.LogLevel;
-import org.junit.AssumptionViolatedException;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.opentest4j.TestAbortedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -118,7 +117,7 @@ class ElasticsearchExtension implements BeforeAllCallback, AfterAllCallback {
     ElasticsearchContainer(int majorVersion) {
       super(parse("ghcr.io/openzipkin/zipkin-elasticsearch" + majorVersion + ":2.23.1"));
       if ("true".equals(System.getProperty("docker.skip"))) {
-        throw new AssumptionViolatedException("${docker.skip} == true");
+        throw new TestAbortedException("${docker.skip} == true");
       }
       waitStrategy = Wait.forHealthcheck();
       withLogConsumer(new Slf4jLogConsumer(LOGGER));

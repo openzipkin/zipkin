@@ -14,10 +14,10 @@
 package zipkin2.collector.rabbitmq;
 
 import java.time.Duration;
-import org.junit.AssumptionViolatedException;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.opentest4j.TestAbortedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Container.ExecResult;
@@ -64,11 +64,11 @@ class RabbitMQExtension implements BeforeAllCallback, AfterAllCallback {
       result = container.execInContainer("rabbitmqadmin", "declare", "queue", "name=" + queue);
     } catch (Throwable e) {
       propagateIfFatal(e);
-      throw new AssumptionViolatedException(
+      throw new TestAbortedException(
         "Couldn't declare queue " + queue + ": " + e.getMessage(), e);
     }
     if (result.getExitCode() != 0) {
-      throw new AssumptionViolatedException("Couldn't declare queue " + queue + ": " + result);
+      throw new TestAbortedException("Couldn't declare queue " + queue + ": " + result);
     }
   }
 
@@ -85,7 +85,7 @@ class RabbitMQExtension implements BeforeAllCallback, AfterAllCallback {
     RabbitMQContainer() {
       super(parse("ghcr.io/openzipkin/rabbitmq-management-alpine:latest"));
       if ("true".equals(System.getProperty("docker.skip"))) {
-        throw new AssumptionViolatedException("${docker.skip} == true");
+        throw new TestAbortedException("${docker.skip} == true");
       }
       withExposedPorts(RABBIT_PORT); // rabbit's image doesn't expose any port
       waitStrategy = Wait.forLogMessage(".*Server startup complete.*", 1);

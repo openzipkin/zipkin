@@ -19,10 +19,10 @@ import java.util.concurrent.ExecutionException;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.junit.AssumptionViolatedException;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.opentest4j.TestAbortedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -56,7 +56,7 @@ class KafkaExtension implements BeforeAllCallback, AfterAllCallback {
         Collections.singletonList(new NewTopic(topic, partitions, (short) 1))
       ).all().get();
     } catch (InterruptedException | ExecutionException e) {
-      throw new AssumptionViolatedException(
+      throw new TestAbortedException(
         "Topic cannot be created " + topic + ": " + e.getMessage(), e);
     }
   }
@@ -86,7 +86,7 @@ class KafkaExtension implements BeforeAllCallback, AfterAllCallback {
     KafkaContainer() {
       super(parse("ghcr.io/openzipkin/zipkin-kafka:2.23.1"));
       if ("true".equals(System.getProperty("docker.skip"))) {
-        throw new AssumptionViolatedException("${docker.skip} == true");
+        throw new TestAbortedException("${docker.skip} == true");
       }
       waitStrategy = Wait.forHealthcheck();
       // 19092 is for connections from the Docker host and needs to be used as a fixed port.
