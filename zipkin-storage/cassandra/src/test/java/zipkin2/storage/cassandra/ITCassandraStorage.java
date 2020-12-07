@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.testcontainers.utility.DockerImageName;
 import zipkin2.Span;
 import zipkin2.storage.StorageComponent.Builder;
 
@@ -44,13 +43,12 @@ class ITCassandraStorage {
     TABLE_TRACE_BY_SERVICE_SPAN
   );
 
-  @RegisterExtension CassandraStorageExtension backend = new CassandraStorageExtension(
-    DockerImageName.parse("ghcr.io/openzipkin/zipkin-cassandra:2.23.1"));
+  @RegisterExtension CassandraStorageExtension cassandra = new CassandraStorageExtension();
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<CassandraStorage> {
     @Override protected Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.newStorageBuilder();
+      return cassandra.newStorageBuilder();
     }
 
     @Override @Test @Disabled("No consumer-side span deduplication")
@@ -62,14 +60,14 @@ class ITCassandraStorage {
     }
 
     @Override public void clear() {
-      backend.clear(storage);
+      cassandra.clear(storage);
     }
   }
 
   @Nested
   class ITSpanStore extends zipkin2.storage.ITSpanStore<CassandraStorage> {
     @Override protected Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.newStorageBuilder();
+      return cassandra.newStorageBuilder();
     }
 
     @Override protected void blockWhileInFlight() {
@@ -77,14 +75,14 @@ class ITCassandraStorage {
     }
 
     @Override public void clear() {
-      backend.clear(storage);
+      cassandra.clear(storage);
     }
   }
 
   @Nested
   class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse<CassandraStorage> {
     @Override protected Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.newStorageBuilder();
+      return cassandra.newStorageBuilder();
     }
 
     @Override protected void blockWhileInFlight() {
@@ -92,7 +90,7 @@ class ITCassandraStorage {
     }
 
     @Override public void clear() {
-      backend.clear(storage);
+      cassandra.clear(storage);
     }
   }
 
@@ -101,7 +99,7 @@ class ITCassandraStorage {
     CassandraStorage strictTraceId;
 
     @Override protected Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.newStorageBuilder();
+      return cassandra.newStorageBuilder();
     }
 
     @BeforeEach void initializeStorageBeforeSwitch() {
@@ -135,14 +133,14 @@ class ITCassandraStorage {
     }
 
     @Override public void clear() {
-      backend.clear(storage);
+      cassandra.clear(storage);
     }
   }
 
   @Nested
   class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames<CassandraStorage> {
     @Override protected Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.newStorageBuilder();
+      return cassandra.newStorageBuilder();
     }
 
     @Override protected void blockWhileInFlight() {
@@ -150,14 +148,14 @@ class ITCassandraStorage {
     }
 
     @Override public void clear() {
-      backend.clear(storage);
+      cassandra.clear(storage);
     }
   }
 
   @Nested
   class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags<CassandraStorage> {
     @Override protected Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.newStorageBuilder();
+      return cassandra.newStorageBuilder();
     }
 
     @Override protected void blockWhileInFlight() {
@@ -165,14 +163,14 @@ class ITCassandraStorage {
     }
 
     @Override public void clear() {
-      backend.clear(storage);
+      cassandra.clear(storage);
     }
   }
 
   @Nested
   class ITDependencies extends zipkin2.storage.ITDependencies<CassandraStorage> {
     @Override protected Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.newStorageBuilder();
+      return cassandra.newStorageBuilder();
     }
 
     @Override protected void blockWhileInFlight() {
@@ -180,7 +178,7 @@ class ITCassandraStorage {
     }
 
     @Override public void clear() {
-      backend.clear(storage);
+      cassandra.clear(storage);
     }
 
     /**
@@ -197,7 +195,7 @@ class ITCassandraStorage {
   @Nested
   class ITSpanConsumer extends zipkin2.storage.cassandra.ITSpanConsumer {
     @Override protected Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.newStorageBuilder();
+      return cassandra.newStorageBuilder();
     }
 
     @Override protected void blockWhileInFlight() {
@@ -205,7 +203,7 @@ class ITCassandraStorage {
     }
 
     @Override public void clear() {
-      backend.clear(storage);
+      cassandra.clear(storage);
     }
   }
 }

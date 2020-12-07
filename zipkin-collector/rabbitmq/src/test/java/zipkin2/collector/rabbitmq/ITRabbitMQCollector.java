@@ -14,59 +14,101 @@
 package zipkin2.collector.rabbitmq;
 
 import com.rabbitmq.client.Channel;
-import java.io.IOException;
-import java.util.Arrays;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
-import org.junit.After;
-import org.junit.ClassRule;
-import org.junit.Test;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import zipkin2.Call;
+import zipkin2.Callback;
+import zipkin2.Component;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.collector.InMemoryCollectorMetrics;
-import zipkin2.storage.InMemoryStorage;
+import zipkin2.storage.ForwardingStorageComponent;
+import zipkin2.storage.SpanConsumer;
+import zipkin2.storage.StorageComponent;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
 import static zipkin2.TestObjects.UTF_8;
-import static zipkin2.codec.SpanBytesEncoder.JSON_V2;
 import static zipkin2.codec.SpanBytesEncoder.THRIFT;
 
-public class ITRabbitMQCollector {
-  List<Span> spans = Arrays.asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Timeout(60)
+class ITRabbitMQCollector {
+  @RegisterExtension RabbitMQExtension rabbit = new RabbitMQExtension();
 
-  @ClassRule public static RabbitMQCollectorRule rabbit = new RabbitMQCollectorRule();
+  List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
 
-  InMemoryStorage storage = InMemoryStorage.newBuilder().build();
   InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
   InMemoryCollectorMetrics rabbitmqMetrics = metrics.forTransport("rabbitmq");
-  RabbitMQCollector collector = rabbit.tryToInitializeCollector(newCollectorBuilder()).start();
 
-  @After public void after() throws Exception {
-    collector.close();
+  CopyOnWriteArraySet<Thread> threadsProvidingSpans = new CopyOnWriteArraySet<>();
+  LinkedBlockingQueue<List<Span>> receivedSpans = new LinkedBlockingQueue<>();
+  SpanConsumer consumer = (spans) -> {
+    threadsProvidingSpans.add(Thread.currentThread());
+    receivedSpans.add(spans);
+    return Call.create(null);
+  };
+  Connection connection;
+
+  @BeforeEach void setup() throws Exception {
+    metrics.clear();
+    ConnectionFactory factory = new ConnectionFactory();
+    factory.setHost(rabbit.host());
+    factory.setPort(rabbit.port());
+    connection = factory.newConnection();
+  }
+
+  @AfterEach void tearDown() throws Exception {
+    if (connection != null) connection.close();
+  }
+
+  @Test void checkPasses() throws Exception {
+    try (RabbitMQCollector collector = builder("check_passes").build()) {
+      assertThat(collector.check().ok()).isTrue();
+    }
+  }
+
+  /** Ensures list encoding works: a TBinaryProtocol encoded list of spans */
+  @Test void messageWithMultipleSpans_thrift() throws Exception {
+    messageWithMultipleSpans(builder("multiple_spans_thrift"), THRIFT);
   }
 
   /** Ensures list encoding works: a json encoded list of spans */
-  @Test public void messageWithMultipleSpans_json() throws Exception {
-    messageWithMultipleSpans(SpanBytesEncoder.JSON_V1);
+  @Test void messageWithMultipleSpans_json() throws Exception {
+    messageWithMultipleSpans(builder("multiple_spans_json"), SpanBytesEncoder.JSON_V1);
   }
 
   /** Ensures list encoding works: a version 2 json list of spans */
-  @Test public void messageWithMultipleSpans_json2() throws Exception {
-    messageWithMultipleSpans(SpanBytesEncoder.JSON_V2);
+  @Test void messageWithMultipleSpans_json2() throws Exception {
+    messageWithMultipleSpans(builder("multiple_spans_json2"), SpanBytesEncoder.JSON_V2);
   }
 
   /** Ensures list encoding works: proto3 ListOfSpans */
-  @Test public void messageWithMultipleSpans_proto3() throws Exception {
-    messageWithMultipleSpans(SpanBytesEncoder.PROTO3);
+  @Test void messageWithMultipleSpans_proto3() throws Exception {
+    messageWithMultipleSpans(builder("multiple_spans_proto3"), SpanBytesEncoder.PROTO3);
   }
 
-  void messageWithMultipleSpans(SpanBytesEncoder encoder) throws Exception {
+  void messageWithMultipleSpans(RabbitMQCollector.Builder builder, SpanBytesEncoder encoder)
+    throws Exception {
     byte[] message = encoder.encodeList(spans);
-    publish(message);
 
-    Thread.sleep(200L);
-    assertThat(storage.acceptedSpanCount()).isEqualTo(spans.size());
+    produceSpans(message, builder.queue);
+
+    try (RabbitMQCollector collector = builder.build()) {
+      collector.start();
+      assertThat(receivedSpans.take()).containsAll(spans);
+    }
 
     assertThat(rabbitmqMetrics.messages()).isEqualTo(1);
     assertThat(rabbitmqMetrics.messagesDropped()).isZero();
@@ -76,16 +118,23 @@ public class ITRabbitMQCollector {
   }
 
   /** Ensures malformed spans don't hang the collector */
-  @Test public void skipsMalformedData() throws Exception {
+  @Test void skipsMalformedData() throws Exception {
+    RabbitMQCollector.Builder builder = builder("decoder_exception");
+
     byte[] malformed1 = "[\"='".getBytes(UTF_8); // screwed up json
     byte[] malformed2 = "malformed".getBytes(UTF_8);
-    publish(THRIFT.encodeList(spans));
-    publish(new byte[0]);
-    publish(malformed1);
-    publish(malformed2);
-    publish(THRIFT.encodeList(spans));
+    produceSpans(THRIFT.encodeList(spans), builder.queue);
+    produceSpans(new byte[0], builder.queue);
+    produceSpans(malformed1, builder.queue);
+    produceSpans(malformed2, builder.queue);
+    produceSpans(THRIFT.encodeList(spans), builder.queue);
 
-    Thread.sleep(200L);
+    try (RabbitMQCollector collector = builder.build()) {
+      collector.start();
+      assertThat(receivedSpans.take()).containsExactlyElementsOf(spans);
+      // the only way we could read this, is if the malformed spans were skipped.
+      assertThat(receivedSpans.take()).containsExactlyElementsOf(spans);
+    }
 
     assertThat(rabbitmqMetrics.messages()).isEqualTo(5);
     assertThat(rabbitmqMetrics.messagesDropped()).isEqualTo(2); // only malformed, not empty
@@ -95,40 +144,96 @@ public class ITRabbitMQCollector {
     assertThat(rabbitmqMetrics.spansDropped()).isZero();
   }
 
-  /** See GitHub issue #2068 */
-  @Test
-  public void startsWhenConfiguredQueueAlreadyExists() throws Exception {
-    String differentQueue = "zipkin-test2";
-
-    rabbit.declareQueue(differentQueue);
-    collector.close();
-    collector = rabbit.tryToInitializeCollector(newCollectorBuilder().queue(differentQueue)).start();
-
-    publish(JSON_V2.encodeList(spans));
-
-    Thread.sleep(200L);
-    assertThat(storage.acceptedSpanCount()).isEqualTo(spans.size());
+  @Test void startsWhenConfiguredQueueDoesntExist() throws Exception {
+    try (RabbitMQCollector collector = builder("ignored").queue("zipkin-test2").build()) {
+      assertThat(collector.check().ok()).isTrue();
+    }
   }
 
   /** Guards against errors that leak from storage, such as InvalidQueryException */
-  @Test public void skipsOnSpanConsumerException() {
-    // TODO: reimplement
-  }
+  @Test void skipsOnSpanStorageException() throws Exception {
+    AtomicInteger counter = new AtomicInteger();
+    consumer = (input) -> new Call.Base<Void>() {
+      @Override protected Void doExecute() {
+        throw new AssertionError();
+      }
 
-  @Test public void messagesDistributedAcrossMultipleThreadsSuccessfully() {
-    // TODO: reimplement
-  }
+      @Override protected void doEnqueue(Callback<Void> callback) {
+        if (counter.getAndIncrement() == 1) {
+          callback.onError(new RuntimeException("storage fell over"));
+        } else {
+          receivedSpans.add(spans);
+          callback.onSuccess(null);
+        }
+      }
 
-  RabbitMQCollector.Builder newCollectorBuilder() {
-    return rabbit.newCollectorBuilder().storage(storage).metrics(metrics);
-  }
+      @Override public Call<Void> clone() {
+        throw new AssertionError();
+      }
+    };
+    final StorageComponent storage = buildStorage(consumer);
+    RabbitMQCollector.Builder builder = builder("storage_exception").storage(storage);
 
-  void publish(byte[] message) throws IOException, TimeoutException {
-    Channel channel = collector.connection.get().createChannel();
-    try {
-      channel.basicPublish("", collector.queue, null, message);
-    } finally {
-      channel.close();
+    produceSpans(THRIFT.encodeList(spans), builder.queue);
+    produceSpans(THRIFT.encodeList(spans), builder.queue); // tossed on error
+    produceSpans(THRIFT.encodeList(spans), builder.queue);
+
+    try (RabbitMQCollector collector = builder.build()) {
+      collector.start();
+      assertThat(receivedSpans.take()).containsExactlyElementsOf(spans);
+      // the only way we could read this, is if the malformed span was skipped.
+      assertThat(receivedSpans.take()).containsExactlyElementsOf(spans);
     }
+
+    assertThat(rabbitmqMetrics.messages()).isEqualTo(3);
+    assertThat(rabbitmqMetrics.messagesDropped()).isZero(); // storage failure isn't a message failure
+    assertThat(rabbitmqMetrics.bytes()).isEqualTo(THRIFT.encodeList(spans).length * 3);
+    assertThat(rabbitmqMetrics.spans()).isEqualTo(spans.size() * 3);
+    assertThat(rabbitmqMetrics.spansDropped()).isEqualTo(spans.size()); // only one dropped
+  }
+
+  /**
+   * The {@code toString()} of {@link Component} implementations appear in health check endpoints.
+   * Since these are likely to be exposed in logs and other monitoring tools, care should be taken
+   * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
+   * information.
+   */
+  @Test void toStringContainsOnlySummaryInformation() throws Exception {
+    try (RabbitMQCollector collector = builder("bugs bunny").build()) {
+      collector.start();
+
+      assertThat(collector).hasToString(
+        String.format("RabbitMQCollector{addresses=[%s:%s], queue=%s}", rabbit.host(),
+          rabbit.port(), "bugs bunny")
+      );
+    }
+  }
+
+  void produceSpans(byte[] spans, String queue) throws Exception {
+    Channel channel = null;
+    try {
+      channel = connection.createChannel();
+      channel.basicPublish("", queue, null, spans);
+    } finally {
+      if (channel != null) channel.close();
+    }
+  }
+
+  RabbitMQCollector.Builder builder(String queue) {
+    return rabbit.newCollectorBuilder(queue)
+      .metrics(metrics)
+      .storage(buildStorage(consumer));
+  }
+
+  static StorageComponent buildStorage(final SpanConsumer spanConsumer) {
+    return new ForwardingStorageComponent() {
+      @Override protected StorageComponent delegate() {
+        throw new AssertionError();
+      }
+
+      @Override public SpanConsumer spanConsumer() {
+        return spanConsumer;
+      }
+    };
   }
 }
