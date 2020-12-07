@@ -30,6 +30,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.Call;
 import zipkin2.Callback;
@@ -49,6 +50,7 @@ import static zipkin2.codec.SpanBytesEncoder.JSON_V2;
 import static zipkin2.codec.SpanBytesEncoder.THRIFT;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Timeout(60)
 class ITKafkaCollector {
   @RegisterExtension KafkaExtension kafka = new KafkaExtension();
 
