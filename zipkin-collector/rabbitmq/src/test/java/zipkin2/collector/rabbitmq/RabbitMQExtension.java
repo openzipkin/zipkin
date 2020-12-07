@@ -15,7 +15,6 @@ package zipkin2.collector.rabbitmq;
 
 import java.time.Duration;
 import org.junit.AssumptionViolatedException;
-import org.junit.ClassRule;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -29,7 +28,6 @@ import static java.util.Arrays.asList;
 import static org.testcontainers.utility.DockerImageName.parse;
 import static zipkin2.Call.propagateIfFatal;
 
-/** This should be used as a {@link ClassRule} as it takes a very long time to start-up. */
 class RabbitMQExtension implements BeforeAllCallback, AfterAllCallback {
   static final Logger LOGGER = LoggerFactory.getLogger(RabbitMQExtension.class);
   static final int RABBIT_PORT = 5672;
