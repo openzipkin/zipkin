@@ -202,7 +202,7 @@ class ITRabbitMQCollector {
 
       assertThat(collector).hasToString(
         String.format("RabbitMQCollector{addresses=[%s:%s], queue=%s}", rabbit.host(),
-          rabbit.port(), "muah")
+          rabbit.port(), "bugs bunny")
       );
     }
   }
