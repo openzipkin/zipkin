@@ -31,19 +31,19 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.InternalForTests;
 import zipkin2.storage.StorageComponent;
 
-import static zipkin2.elasticsearch.integration.ElasticsearchStorageExtension.index;
+import static zipkin2.elasticsearch.integration.ElasticsearchExtension.index;
 import static zipkin2.storage.ITDependencies.aggregateLinks;
 
 abstract class ITElasticsearchStorage {
 
   static final Logger LOGGER = LoggerFactory.getLogger(ITElasticsearchStorage.class);
 
-  abstract ElasticsearchStorageExtension backend();
+  abstract ElasticsearchExtension elasticsearch();
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<ElasticsearchStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend().computeStorageBuilder().index(index(testInfo));
+      return elasticsearch().computeStorageBuilder().index(index(testInfo));
     }
 
     @Override public void clear() throws IOException {
@@ -54,7 +54,7 @@ abstract class ITElasticsearchStorage {
   @Nested
   class ITSpanStore extends zipkin2.storage.ITSpanStore<ElasticsearchStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend().computeStorageBuilder().index(index(testInfo));
+      return elasticsearch().computeStorageBuilder().index(index(testInfo));
     }
 
     @Override public void clear() throws IOException {
@@ -65,7 +65,7 @@ abstract class ITElasticsearchStorage {
   @Nested
   class ITSpanStoreHeavy extends zipkin2.storage.ITSpanStoreHeavy<ElasticsearchStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend().computeStorageBuilder().index(index(testInfo));
+      return elasticsearch().computeStorageBuilder().index(index(testInfo));
     }
 
     @Override public void clear() throws IOException {
@@ -76,7 +76,7 @@ abstract class ITElasticsearchStorage {
   @Nested
   class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse<ElasticsearchStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend().computeStorageBuilder().index(index(testInfo));
+      return elasticsearch().computeStorageBuilder().index(index(testInfo));
     }
 
     @Override public void clear() throws IOException {
@@ -87,7 +87,7 @@ abstract class ITElasticsearchStorage {
   @Nested
   class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames<ElasticsearchStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend().computeStorageBuilder().index(index(testInfo));
+      return elasticsearch().computeStorageBuilder().index(index(testInfo));
     }
 
     @Override public void clear() throws IOException {
@@ -98,7 +98,7 @@ abstract class ITElasticsearchStorage {
   @Nested
   class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags<ElasticsearchStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend().computeStorageBuilder().index(index(testInfo));
+      return elasticsearch().computeStorageBuilder().index(index(testInfo));
     }
 
     @Override public void clear() throws IOException {
@@ -109,7 +109,7 @@ abstract class ITElasticsearchStorage {
   @Nested
   class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse<ElasticsearchStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend().computeStorageBuilder().index(index(testInfo));
+      return elasticsearch().computeStorageBuilder().index(index(testInfo));
     }
 
     @Override public void clear() throws IOException {
@@ -120,7 +120,7 @@ abstract class ITElasticsearchStorage {
   @Nested
   class ITDependencies extends zipkin2.storage.ITDependencies<ElasticsearchStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend().computeStorageBuilder().index(index(testInfo));
+      return elasticsearch().computeStorageBuilder().index(index(testInfo));
     }
 
     @Override protected void processDependencies(List<Span> spans) {
@@ -135,7 +135,7 @@ abstract class ITElasticsearchStorage {
   @Nested
   class ITDependenciesHeavy extends zipkin2.storage.ITDependenciesHeavy<ElasticsearchStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend().computeStorageBuilder().index(index(testInfo));
+      return elasticsearch().computeStorageBuilder().index(index(testInfo));
     }
 
     @Override protected void processDependencies(List<Span> spans) {
@@ -158,7 +158,7 @@ abstract class ITElasticsearchStorage {
   }
 
   @Test void testUsageOfDeprecatedFeatures() {
-    WebClient webClient = WebClient.builder(backend().baseUrl()).factory(ClientFactory.builder()
+    WebClient webClient = WebClient.builder(elasticsearch().baseUrl()).factory(ClientFactory.builder()
       .useHttp2Preface(false).build()).build();
     final AggregatedHttpResponse response =
       webClient.execute(HttpRequest.of(RequestHeaders.of(HttpMethod.GET,

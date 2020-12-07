@@ -19,6 +19,7 @@ import com.linecorp.armeria.client.WebClientBuilder;
 import com.linecorp.armeria.client.logging.LoggingClient;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.logging.LogLevel;
+import org.junit.AssumptionViolatedException;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -28,23 +29,19 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.utility.DockerImageName;
-import zipkin2.CheckResult;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.ElasticsearchStorage.Builder;
 
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.testcontainers.utility.DockerImageName.parse;
 import static zipkin2.elasticsearch.integration.IgnoredDeprecationWarnings.IGNORE_THESE_WARNINGS;
 
-class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallback {
-  static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchStorageExtension.class);
+class ElasticsearchExtension implements BeforeAllCallback, AfterAllCallback {
+  static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchExtension.class);
 
-  static final int ELASTICSEARCH_PORT = 9200;
-  final DockerImageName image;
-  GenericContainer<?> container;
+  final ElasticsearchContainer container;
 
-  ElasticsearchStorageExtension(DockerImageName image) {
-    this.image = image;
+  ElasticsearchExtension(int majorVersion) {
+    container = new ElasticsearchContainer(majorVersion);
   }
 
   @Override public void beforeAll(ExtensionContext context) {
@@ -53,31 +50,8 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
       return;
     }
 
-    if (!"true".equals(System.getProperty("docker.skip"))) {
-      try {
-        LOGGER.info("Starting docker image " + image);
-        container = new GenericContainer<>(image)
-          .withExposedPorts(ELASTICSEARCH_PORT)
-          .waitingFor(Wait.forHealthcheck());
-        container.start();
-        container.withLogConsumer(new Slf4jLogConsumer(LOGGER));
-        LOGGER.info("Starting docker image " + image);
-      } catch (RuntimeException e) {
-        LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
-      }
-    } else {
-      LOGGER.info("Skipping startup of docker " + image);
-    }
-
-    try {
-      tryToInitializeSession();
-    } catch (RuntimeException | Error e) {
-      if (container == null) throw e;
-      LOGGER.warn("Couldn't connect to docker image " + image + ": " + e.getMessage(), e);
-      container.stop();
-      container = null; // try with local connection instead
-      tryToInitializeSession();
-    }
+    container.start();
+    LOGGER.info("Using baseUrl " + baseUrl());
   }
 
   @Override public void afterAll(ExtensionContext context) {
@@ -86,18 +60,7 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
       return;
     }
 
-    if (container != null) {
-      LOGGER.info("Stopping docker image " + image);
-      container.stop();
-    }
-  }
-
-  void tryToInitializeSession() {
-    try (ElasticsearchStorage result = computeStorageBuilder().build()) {
-      CheckResult check = result.check();
-      assumeTrue(check.ok(), () -> "Could not connect to storage, skipping test: "
-        + check.error().getMessage());
-    }
+    container.stop();
   }
 
   Builder computeStorageBuilder() {
@@ -147,13 +110,18 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
   }
 
   String baseUrl() {
-    if (container != null && container.isRunning()) {
-      return String.format(
-        "http://%s:%d",
-        container.getContainerIpAddress(), container.getMappedPort(ELASTICSEARCH_PORT));
-    } else {
-      // Use localhost if we failed to start a container (i.e. Docker is not available)
-      return "http://localhost:" + ELASTICSEARCH_PORT;
+    return "http://" + container.getHost() + ":" + container.getMappedPort(9200);
+  }
+
+  // mostly waiting for https://github.com/testcontainers/testcontainers-java/issues/3537
+  static final class ElasticsearchContainer extends GenericContainer<ElasticsearchContainer> {
+    ElasticsearchContainer(int majorVersion) {
+      super(parse("ghcr.io/openzipkin/zipkin-elasticsearch" + majorVersion + ":2.23.1"));
+      if ("true".equals(System.getProperty("docker.skip"))) {
+        throw new AssumptionViolatedException("${docker.skip} == true");
+      }
+      waitStrategy = Wait.forHealthcheck();
+      withLogConsumer(new Slf4jLogConsumer(LOGGER));
     }
   }
 

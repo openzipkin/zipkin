@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.testcontainers.utility.DockerImageName;
 import zipkin2.DependencyLink;
 import zipkin2.storage.StorageComponent;
 
@@ -38,13 +37,12 @@ import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependenc
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ITMySQLStorage {
 
-  @RegisterExtension MySQLStorageExtension backend = new MySQLStorageExtension(
-    DockerImageName.parse("ghcr.io/openzipkin/zipkin-mysql:2.23.1"));
+  @RegisterExtension MySQLExtension mysql = new MySQLExtension();
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<MySQLStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder();
+      return mysql.computeStorageBuilder();
     }
 
     @Override @Test @Disabled("v1 format is lossy in conversion when rows as upsert")
@@ -71,7 +69,7 @@ class ITMySQLStorage {
   @Nested
   class ITSpanStore extends zipkin2.storage.ITSpanStore<MySQLStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder();
+      return mysql.computeStorageBuilder();
     }
 
     @Override @Test @Disabled("v1 format is lossy in conversion when rows as upsert")
@@ -90,7 +88,7 @@ class ITMySQLStorage {
   @Nested
   class ITSpanStoreHeavy extends zipkin2.storage.ITSpanStoreHeavy<MySQLStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder();
+      return mysql.computeStorageBuilder();
     }
 
     @Override protected boolean returnsRawSpans() {
@@ -105,7 +103,7 @@ class ITMySQLStorage {
   @Nested
   class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse<MySQLStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder();
+      return mysql.computeStorageBuilder();
     }
 
     @Override protected boolean returnsRawSpans() {
@@ -120,7 +118,7 @@ class ITMySQLStorage {
   @Nested
   class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse<MySQLStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder();
+      return mysql.computeStorageBuilder();
     }
 
     @Override protected boolean returnsRawSpans() {
@@ -135,7 +133,7 @@ class ITMySQLStorage {
   @Nested
   class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames<MySQLStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder();
+      return mysql.computeStorageBuilder();
     }
 
     @Override protected boolean returnsRawSpans() {
@@ -150,7 +148,7 @@ class ITMySQLStorage {
   @Nested
   class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags<MySQLStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder();
+      return mysql.computeStorageBuilder();
     }
 
     @Override protected boolean returnsRawSpans() {
@@ -165,7 +163,7 @@ class ITMySQLStorage {
   @Nested
   class ITDependenciesOnDemand extends zipkin2.storage.ITDependencies<MySQLStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder();
+      return mysql.computeStorageBuilder();
     }
 
     @Override protected boolean returnsRawSpans() {
@@ -180,7 +178,7 @@ class ITMySQLStorage {
   @Nested
   class ITDependenciesHeavyOnDemand extends zipkin2.storage.ITDependenciesHeavy<MySQLStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder();
+      return mysql.computeStorageBuilder();
     }
 
     @Override protected boolean returnsRawSpans() {
@@ -195,7 +193,7 @@ class ITMySQLStorage {
   @Nested
   class ITDependenciesPreAggregated extends zipkin2.storage.ITDependencies<MySQLStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder();
+      return mysql.computeStorageBuilder();
     }
 
     @Override protected boolean returnsRawSpans() {
@@ -218,7 +216,7 @@ class ITMySQLStorage {
   @Nested
   class ITDependenciesHeavyPreAggregated extends zipkin2.storage.ITDependenciesHeavy<MySQLStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
-      return backend.computeStorageBuilder();
+      return mysql.computeStorageBuilder();
     }
 
     @Override protected boolean returnsRawSpans() {

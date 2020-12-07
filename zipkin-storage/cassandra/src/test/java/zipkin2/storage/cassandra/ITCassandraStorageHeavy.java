@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.testcontainers.utility.DockerImageName;
 import zipkin2.Span;
 import zipkin2.storage.QueryRequest;
 
@@ -44,8 +43,7 @@ import static zipkin2.storage.cassandra.InternalForTests.writeDependencyLinks;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ITCassandraStorageHeavy {
 
-  @RegisterExtension CassandraStorageExtension backend = new CassandraStorageExtension(
-    DockerImageName.parse("ghcr.io/openzipkin/zipkin-cassandra:2.23.1"));
+  @RegisterExtension CassandraStorageExtension backend = new CassandraStorageExtension();
 
   @Nested
   class ITSpanStoreHeavy extends zipkin2.storage.ITSpanStoreHeavy<CassandraStorage> {
