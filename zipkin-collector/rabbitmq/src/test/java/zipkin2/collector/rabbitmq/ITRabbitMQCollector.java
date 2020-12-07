@@ -197,7 +197,7 @@ class ITRabbitMQCollector {
    * information.
    */
   @Test void toStringContainsOnlySummaryInformation() throws Exception {
-    try (RabbitMQCollector collector = builder("muah").build()) {
+    try (RabbitMQCollector collector = builder("bugs bunny").build()) {
       collector.start();
 
       assertThat(collector).hasToString(
