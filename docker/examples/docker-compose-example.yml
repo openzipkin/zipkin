@@ -21,16 +21,19 @@ services:
   frontend:
     container_name: frontend
     image: ghcr.io/openzipkin/brave-example:${PROJECT:-armeria}
-    command: frontend
+    entrypoint: start-frontend
     ports:
       - 8081:8081
     depends_on:
-      - backend
-      - zipkin
+      backend:
+        condition: service_healthy
+      zipkin:
+        condition: service_started
   # Serves the /api endpoint the frontend uses
   backend:
     container_name: backend
     image: ghcr.io/openzipkin/brave-example:${PROJECT:-armeria}
-    command: backend
+    entrypoint: start-backend
     depends_on:
-      - zipkin
+      zipkin:
+        condition: service_started
