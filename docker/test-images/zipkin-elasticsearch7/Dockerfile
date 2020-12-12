@@ -35,7 +35,7 @@ WORKDIR /install
 # Use latest 7.x version from https://www.elastic.co/downloads/past-releases#elasticsearch
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG elasticsearch7_version=7.9.3
+ARG elasticsearch7_version=7.10.1
 
 # Download only the OSS distribution (lacks X-Pack)
 RUN \
