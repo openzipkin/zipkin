@@ -19,21 +19,28 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V5_0;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V7_8;
 
 class VersionSpecificTemplatesTest {
+  static final ElasticsearchVersion V2_4 = new ElasticsearchVersion(2, 4);
+  static final ElasticsearchVersion V6_7 = new ElasticsearchVersion(6, 7);
+  static final ElasticsearchVersion V7_9 = new ElasticsearchVersion(7, 9);
+
   ElasticsearchStorage storage =
     ElasticsearchStorage.newBuilder(() -> mock(WebClient.class)).build();
 
   /** Unsupported, but we should test that parsing works */
   @Test void version2_unsupported() {
-    assertThatThrownBy(() -> storage.versionSpecificTemplates(2.4f))
+    assertThatThrownBy(() -> storage.versionSpecificTemplates(V2_4))
       .hasMessage("Elasticsearch versions 5-7.x are supported, was: 2.4");
   }
 
   @Test void version5() {
-    IndexTemplates template = storage.versionSpecificTemplates(5.0f);
+    IndexTemplates template = storage.versionSpecificTemplates(V5_0);
 
-    assertThat(template.version()).isEqualTo(5.0f);
+    assertThat(template.version()).isEqualTo(V5_0);
     assertThat(template.autocomplete())
       .withFailMessage("In v5.x, the index_patterns field was named template")
       .contains("\"template\":");
@@ -43,16 +50,16 @@ class VersionSpecificTemplatesTest {
   }
 
   @Test void version6() {
-    IndexTemplates template = storage.versionSpecificTemplates(6.7f);
+    IndexTemplates template = storage.versionSpecificTemplates(V6_7);
 
-    assertThat(template.version()).isEqualTo(6.7f);
+    assertThat(template.version()).isEqualTo(V6_7);
     assertThat(template.autocomplete())
       .withFailMessage("Until v7.x, we delimited index and type with a colon")
       .contains("\"index_patterns\": \"zipkin:autocomplete-*\"");
   }
 
   @Test void version6_wrapsPropertiesWithType() {
-    IndexTemplates template = storage.versionSpecificTemplates(6.7f);
+    IndexTemplates template = storage.versionSpecificTemplates(V6_7);
 
     assertThat(template.dependency()).contains(""
       + "  \"mappings\": {\n"
@@ -74,9 +81,9 @@ class VersionSpecificTemplatesTest {
   }
 
   @Test void version7() {
-    IndexTemplates template = storage.versionSpecificTemplates(7.0f);
+    IndexTemplates template = storage.versionSpecificTemplates(V7_0);
 
-    assertThat(template.version()).isEqualTo(7.0f);
+    assertThat(template.version()).isEqualTo(V7_0);
     assertThat(template.autocomplete())
       .withFailMessage("Starting at v7.x, we delimit index and type with hyphen")
       .contains("\"index_patterns\": \"zipkin-autocomplete-*\"");
@@ -86,7 +93,7 @@ class VersionSpecificTemplatesTest {
   }
 
   @Test void version7_doesntWrapPropertiesWithType() {
-    IndexTemplates template = storage.versionSpecificTemplates(7.0f);
+    IndexTemplates template = storage.versionSpecificTemplates(V7_0);
 
     assertThat(template.dependency()).contains(""
       + "  \"mappings\": {\n"
@@ -104,9 +111,9 @@ class VersionSpecificTemplatesTest {
   }
 
   @Test void version78_legacy() {
-    IndexTemplates template = storage.versionSpecificTemplates(7.8f);
+    IndexTemplates template = storage.versionSpecificTemplates(V7_8);
 
-    assertThat(template.version()).isEqualTo(7.8f);
+    assertThat(template.version()).isEqualTo(V7_8);
     assertThat(template.autocomplete())
       .withFailMessage("Starting at v7.x, we delimit index and type with hyphen")
       .contains("\"index_patterns\": \"zipkin-autocomplete-*\"");
@@ -124,10 +131,11 @@ class VersionSpecificTemplatesTest {
   @Test void version78_composable() {
     // Set up a new storage with priority
     storage.close();
-    storage = ElasticsearchStorage.newBuilder(() -> mock(WebClient.class)).templatePriority(0).build();
-    IndexTemplates template = storage.versionSpecificTemplates(7.8f);
+    storage =
+      ElasticsearchStorage.newBuilder(() -> mock(WebClient.class)).templatePriority(0).build();
+    IndexTemplates template = storage.versionSpecificTemplates(V7_8);
 
-    assertThat(template.version()).isEqualTo(7.8f);
+    assertThat(template.version()).isEqualTo(V7_8);
     assertThat(template.autocomplete())
       .withFailMessage("Starting at v7.x, we delimit index and type with hyphen")
       .contains("\"index_patterns\": \"zipkin-autocomplete-*\"");
@@ -143,9 +151,9 @@ class VersionSpecificTemplatesTest {
   }
 
   @Test void version79_legacy() {
-    IndexTemplates template = storage.versionSpecificTemplates(7.9f);
+    IndexTemplates template = storage.versionSpecificTemplates(V7_9);
 
-    assertThat(template.version()).isEqualTo(7.9f);
+    assertThat(template.version()).isEqualTo(V7_9);
     assertThat(template.autocomplete())
       .withFailMessage("Starting at v7.x, we delimit index and type with hyphen")
       .contains("\"index_patterns\": \"zipkin-autocomplete-*\"");
@@ -163,10 +171,11 @@ class VersionSpecificTemplatesTest {
   @Test void version79_composable() {
     // Set up a new storage with priority
     storage.close();
-    storage = ElasticsearchStorage.newBuilder(() -> mock(WebClient.class)).templatePriority(0).build();
-    IndexTemplates template = storage.versionSpecificTemplates(7.9f);
+    storage =
+      ElasticsearchStorage.newBuilder(() -> mock(WebClient.class)).templatePriority(0).build();
+    IndexTemplates template = storage.versionSpecificTemplates(V7_9);
 
-    assertThat(template.version()).isEqualTo(7.9f);
+    assertThat(template.version()).isEqualTo(V7_9);
     assertThat(template.autocomplete())
       .withFailMessage("Starting at v7.x, we delimit index and type with hyphen")
       .contains("\"index_patterns\": \"zipkin-autocomplete-*\"");
@@ -187,7 +196,7 @@ class VersionSpecificTemplatesTest {
       .searchEnabled(false)
       .build();
 
-    IndexTemplates template = storage.versionSpecificTemplates(6.7f);
+    IndexTemplates template = storage.versionSpecificTemplates(V6_7);
 
     assertThat(template.span())
       .contains(""
@@ -207,7 +216,7 @@ class VersionSpecificTemplatesTest {
       .searchEnabled(false)
       .build();
 
-    IndexTemplates template = storage.versionSpecificTemplates(7.0f);
+    IndexTemplates template = storage.versionSpecificTemplates(V7_0);
 
     // doesn't wrap in a type name
     assertThat(template.span())
@@ -222,7 +231,7 @@ class VersionSpecificTemplatesTest {
   }
 
   @Test void strictTraceId_doesNotIncludeAnalysisSection() {
-    IndexTemplates template = storage.versionSpecificTemplates(6.7f);
+    IndexTemplates template = storage.versionSpecificTemplates(V6_7);
 
     assertThat(template.span()).doesNotContain("analysis");
   }
@@ -233,7 +242,7 @@ class VersionSpecificTemplatesTest {
       .strictTraceId(false)
       .build();
 
-    IndexTemplates template = storage.versionSpecificTemplates(6.7f);
+    IndexTemplates template = storage.versionSpecificTemplates(V6_7);
 
     assertThat(template.span()).contains("analysis");
   }

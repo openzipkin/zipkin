@@ -13,6 +13,12 @@
  */
 package zipkin2.elasticsearch;
 
+import static zipkin2.elasticsearch.ElasticsearchVersion.V5_0;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V6_0;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V7_8;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V8_0;
+
 /** Returns version-specific index templates */
 // TODO: make a main class that spits out the index template using ENV variables for the server,
 // a parameter for the version, and a parameter for the index type. Ex.
@@ -45,9 +51,9 @@ final class VersionSpecificTemplates {
     this.templatePriority = templatePriority;
   }
 
-  String indexPattern(String type, float version) {
+  String indexPattern(String type, ElasticsearchVersion version) {
     return '"'
-      + (version < 6.0f ? "template" : "index_patterns")
+      + (version.compareTo(V6_0) < 0 ? "template" : "index_patterns")
       + "\": \""
       + indexPrefix
       + indexTypeDelimiter(version)
@@ -56,7 +62,7 @@ final class VersionSpecificTemplates {
       + "\"";
   }
 
-  String indexProperties(float version) {
+  String indexProperties(ElasticsearchVersion version) {
     // 6.x _all disabled https://www.elastic.co/guide/en/elasticsearch/reference/6.7/breaking-changes-6.0.html#_the_literal__all_literal_meta_field_is_now_disabled_by_default
     // 7.x _default disallowed https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_the_literal__default__literal_mapping_is_no_longer_allowed
     String result = ""
@@ -66,7 +72,7 @@ final class VersionSpecificTemplates {
     return result + "\n";
   }
 
-  String indexTemplate(float version) {
+  String indexTemplate(ElasticsearchVersion version) {
     if (useComposableTemplate(version)) {
       return "\"template\": {\n";
     }
@@ -74,7 +80,7 @@ final class VersionSpecificTemplates {
     return "";
   }
 
-  String indexTemplateClosing(float version) {
+  String indexTemplateClosing(ElasticsearchVersion version) {
     if (useComposableTemplate(version)) {
       return "},\n";
     }
@@ -82,7 +88,7 @@ final class VersionSpecificTemplates {
     return "";
   }
 
-  String templatePriority(float version) {
+  String templatePriority(ElasticsearchVersion version) {
     if (useComposableTemplate(version)) {
       return "\"priority\": " + templatePriority + "\n";
     }
@@ -90,7 +96,7 @@ final class VersionSpecificTemplates {
     return "";
   }
 
-  String beginTemplate(String type, float version) {
+  String beginTemplate(String type, ElasticsearchVersion version) {
     return "{\n"
       + "  " + indexPattern(type, version) + ",\n"
       + indexTemplate(version)
@@ -98,14 +104,14 @@ final class VersionSpecificTemplates {
       + indexProperties(version);
   }
 
-  String endTemplate(float version) {
+  String endTemplate(ElasticsearchVersion version) {
     return indexTemplateClosing(version)
       + templatePriority(version)
       + "}";
   }
 
   /** Templatized due to version differences. Only fields used in search are declared */
-  String spanIndexTemplate(float version) {
+  String spanIndexTemplate(ElasticsearchVersion version) {
     String result = beginTemplate(TYPE_SPAN, version);
 
     String traceIdMapping = KEYWORD;
@@ -191,7 +197,7 @@ final class VersionSpecificTemplates {
   }
 
   /** Templatized due to version differences. Only fields used in search are declared */
-  String dependencyTemplate(float version) {
+  String dependencyTemplate(ElasticsearchVersion version) {
     return beginTemplate(TYPE_DEPENDENCY, version)
       + "  },\n"
       + "  \"mappings\": {\n"
@@ -202,7 +208,7 @@ final class VersionSpecificTemplates {
 
   // The key filed of a autocompleteKeys is intentionally names as tagKey since it clashes with the
   // BodyConverters KEY
-  String autocompleteTemplate(float version) {
+  String autocompleteTemplate(ElasticsearchVersion version) {
     return beginTemplate(TYPE_AUTOCOMPLETE, version)
       + "  },\n"
       + "  \"mappings\": {\n"
@@ -216,8 +222,8 @@ final class VersionSpecificTemplates {
       + endTemplate(version);
   }
 
-  IndexTemplates get(float version) {
-    if (version < 5.0f || version >= 8.0f) {
+  IndexTemplates get(ElasticsearchVersion version) {
+    if (version.compareTo(V5_0) < 0 || version.compareTo(V8_0) >= 0) {
       throw new IllegalArgumentException(
         "Elasticsearch versions 5-7.x are supported, was: " + version);
     }
@@ -230,8 +236,8 @@ final class VersionSpecificTemplates {
       .build();
   }
 
-  boolean useComposableTemplate(float version) {
-    return (version >= 7.8f && templatePriority != null);
+  boolean useComposableTemplate(ElasticsearchVersion version) {
+    return (version.compareTo(V7_8) >= 0 && templatePriority != null);
   }
 
   /**
@@ -242,13 +248,13 @@ final class VersionSpecificTemplates {
    *
    * <p>See https://github.com/openzipkin/zipkin/issues/2219
    */
-  static char indexTypeDelimiter(float version) {
-    return version < 7.0f ? ':' : '-';
+  static char indexTypeDelimiter(ElasticsearchVersion version) {
+    return version.compareTo(V7_0) < 0 ? ':' : '-';
   }
 
-  static String maybeWrap(String type, float version, String json) {
+  static String maybeWrap(String type, ElasticsearchVersion version, String json) {
     // ES 7.x defaults include_type_name to false https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_literal_include_type_name_literal_now_defaults_to_literal_false_literal
-    if (version >= 7.0f) return json;
+    if (version.compareTo(V7_0) >= 0) return json;
     return "    \"" + type + "\": {\n  " + json.replace("\n", "\n  ") + "  }\n";
   }
 }
