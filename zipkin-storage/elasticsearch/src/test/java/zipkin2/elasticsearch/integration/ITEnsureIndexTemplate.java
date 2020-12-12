@@ -15,9 +15,7 @@ package zipkin2.elasticsearch.integration;
 
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpData;
-import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
-import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.RequestHeaders;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
@@ -29,6 +27,11 @@ import zipkin2.elasticsearch.internal.Internal;
 import zipkin2.storage.ITStorage;
 import zipkin2.storage.StorageComponent;
 
+import static com.linecorp.armeria.common.HttpHeaderNames.CONTENT_TYPE;
+import static com.linecorp.armeria.common.HttpMethod.DELETE;
+import static com.linecorp.armeria.common.HttpMethod.GET;
+import static com.linecorp.armeria.common.HttpMethod.PUT;
+import static com.linecorp.armeria.common.MediaType.JSON_UTF_8;
 import static java.util.Arrays.asList;
 import static zipkin2.TestObjects.spanBuilder;
 
@@ -47,19 +50,23 @@ abstract class ITEnsureIndexTemplate extends ITStorage<ElasticsearchStorage> {
     storage.clear();
   }
 
-  @Test // TODO: This test breaks in ES 7.10 due to deprecation
+  @Test
   void createZipkinIndexTemplate_getTraces_returnsSuccess(TestInfo testInfo) throws Exception {
     String testSuffix = testSuffix(testInfo);
     storage = newStorageBuilder(testInfo).templatePriority(10).build();
     try {
       // Delete all templates in order to create the "catch-all" index template, because
       // ES does not allow multiple index templates of the same index_patterns and priority
-      delete("/_template/*");
+      http(DELETE, "/_template/*");
       setUpCatchAllTemplate();
 
       // Implicitly creates an index template
       checkStorage();
 
+      // Get all templates. We don't assert on this at the moment. This is for logging on ES_DEBUG.
+      http(GET, "/_template");
+
+      // Now, add a span, which should be indexed differently than default.
       Span span = spanBuilder(testSuffix).putTag("queryTest", "ok").build();
       accept(asList(span));
 
@@ -71,7 +78,7 @@ abstract class ITEnsureIndexTemplate extends ITStorage<ElasticsearchStorage> {
         asList(span));
     } finally {
       // Delete "catch-all" index template so it does not interfere with any other test
-      delete(catchAllIndexPath());
+      http(DELETE, catchAllIndexPath());
     }
   }
 
@@ -82,8 +89,7 @@ abstract class ITEnsureIndexTemplate extends ITStorage<ElasticsearchStorage> {
    */
   void setUpCatchAllTemplate() throws IOException {
     AggregatedHttpRequest updateTemplate = AggregatedHttpRequest.of(
-      RequestHeaders.of(
-        HttpMethod.PUT, catchAllIndexPath(), HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),
+      RequestHeaders.of(PUT, catchAllIndexPath(), CONTENT_TYPE, JSON_UTF_8),
       HttpData.ofUtf8(catchAllTemplate()));
     Internal.instance.http(storage).newCall(updateTemplate, (parser, contentString) -> null,
       "update-template").execute();
@@ -109,9 +115,9 @@ abstract class ITEnsureIndexTemplate extends ITStorage<ElasticsearchStorage> {
       + "}";
   }
 
-  void delete(String path) throws IOException {
-    AggregatedHttpRequest delete = AggregatedHttpRequest.of(HttpMethod.DELETE, path);
+  void http(HttpMethod method, String path) throws IOException {
+    AggregatedHttpRequest delete = AggregatedHttpRequest.of(method, path);
     Internal.instance.http(storage)
-      .newCall(delete, (parser, contentString) -> null, "delete-" + path).execute();
+      .newCall(delete, (parser, contentString) -> null, method + "-" + path).execute();
   }
 }

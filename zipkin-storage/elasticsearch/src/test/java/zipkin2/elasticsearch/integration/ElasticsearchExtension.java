@@ -14,9 +14,13 @@
 package zipkin2.elasticsearch.integration;
 
 import com.linecorp.armeria.client.ClientFactory;
+import com.linecorp.armeria.client.ClientOptions;
+import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.WebClientBuilder;
+import com.linecorp.armeria.client.logging.ContentPreviewingClient;
 import com.linecorp.armeria.client.logging.LoggingClient;
+import com.linecorp.armeria.client.logging.LoggingClientBuilder;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.logging.LogLevel;
 import org.junit.jupiter.api.TestInfo;
@@ -70,12 +74,6 @@ class ElasticsearchExtension implements BeforeAllCallback, AfterAllCallback {
       //
       // TODO: find or raise a bug with Elastic
       .factory(ClientFactory.builder().useHttp2Preface(false).build());
-
-    if (Boolean.parseBoolean(System.getenv("ES_DEBUG"))) {
-      builder.decorator(c -> LoggingClient.builder()
-        .requestLogLevel(LogLevel.INFO)
-        .successfulResponseLogLevel(LogLevel.INFO).build(c));
-    }
     builder.decorator((delegate, ctx, req) -> {
       final HttpResponse response = delegate.execute(ctx, req);
       return HttpResponse.from(response.aggregate().thenApply(r -> {
@@ -93,6 +91,19 @@ class ElasticsearchExtension implements BeforeAllCallback, AfterAllCallback {
         return r.toHttpResponse();
       }));
     });
+
+    // When ES_DEBUG=true log full headers, request and response body to the category
+    // com.linecorp.armeria.client.logging
+    if (Boolean.parseBoolean(System.getenv("ES_DEBUG"))) {
+      ClientOptionsBuilder options = ClientOptions.builder();
+      LoggingClientBuilder loggingBuilder = LoggingClient.builder()
+        .requestLogLevel(LogLevel.INFO)
+        .successfulResponseLogLevel(LogLevel.INFO);
+      options.decorator(loggingBuilder.newDecorator());
+      options.decorator(ContentPreviewingClient.newDecorator(Integer.MAX_VALUE));
+      builder.options(options.build());
+    }
+
     WebClient client = builder.build();
     return ElasticsearchStorage.newBuilder(new ElasticsearchStorage.LazyHttpClient() {
       @Override public WebClient get() {
@@ -116,7 +127,9 @@ class ElasticsearchExtension implements BeforeAllCallback, AfterAllCallback {
   // mostly waiting for https://github.com/testcontainers/testcontainers-java/issues/3537
   static final class ElasticsearchContainer extends GenericContainer<ElasticsearchContainer> {
     ElasticsearchContainer(int majorVersion) {
-      super(parse("ghcr.io/openzipkin/zipkin-elasticsearch" + majorVersion + ":2.23.1"));
+      // TODO: temporary use master, which is ES 7.10.1. We need to figure out how to fix
+      // ITEnsureIndexTemplates#createZipkinIndexTemplate_getTraces_returnsSuccess
+      super(parse("ghcr.io/openzipkin/zipkin-elasticsearch" + majorVersion + ":master"));
       if ("true".equals(System.getProperty("docker.skip"))) {
         throw new TestAbortedException("${docker.skip} == true");
       }
