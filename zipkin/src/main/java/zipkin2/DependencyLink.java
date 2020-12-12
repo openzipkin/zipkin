@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,9 +21,10 @@ import java.util.Locale;
 import zipkin2.codec.DependencyLinkBytesDecoder;
 import zipkin2.codec.DependencyLinkBytesEncoder;
 
+/** A dependency link is an edge between two services. */
 //@Immutable
 public final class DependencyLink implements Serializable { // for Spark and Flink jobs
-  static final Charset UTF_8 = Charset.forName("UTF-8");
+  static final Charset UTF_8 = Charset.forName("UTF-8"); // pre-Java 1.8
 
   private static final long serialVersionUID = 0L;
 
@@ -31,22 +32,25 @@ public final class DependencyLink implements Serializable { // for Spark and Fli
     return new Builder();
   }
 
-  /** parent service name (caller) */
+  /** The parent service name (caller), {@link Span#localServiceName()} if instrumented. */
   public String parent() {
     return parent;
   }
 
-  /** child service name (callee) */
+  /** The chold service name (callee), {@link Span#localServiceName()} if instrumented. */
   public String child() {
     return child;
   }
 
-  /** total traced calls made from {@link #parent} to {@link #child} */
+  /** Total traced calls made from {@link #parent} to {@link #child} */
   public long callCount() {
     return callCount;
   }
 
-  /** How many {@link #callCount calls} are known to be errors */
+  /**
+   * {@linkplan #callCount Count of calls} known to be errors (having one {@linkplain Span#tags()
+   * tag} named "error").
+   */
   public long errorCount() {
     return errorCount;
   }
@@ -69,23 +73,27 @@ public final class DependencyLink implements Serializable { // for Spark and Fli
       this.errorCount = source.errorCount;
     }
 
+    /** @see #parent() */
     public Builder parent(String parent) {
       if (parent == null) throw new NullPointerException("parent == null");
       this.parent = parent.toLowerCase(Locale.ROOT);
       return this;
     }
 
+    /** @see #child() */
     public Builder child(String child) {
       if (child == null) throw new NullPointerException("child == null");
       this.child = child.toLowerCase(Locale.ROOT);
       return this;
     }
 
+    /** @see #callCount() */
     public Builder callCount(long callCount) {
       this.callCount = callCount;
       return this;
     }
 
+    /** @see #errorCount() */
     public Builder errorCount(long errorCount) {
       this.errorCount = errorCount;
       return this;
