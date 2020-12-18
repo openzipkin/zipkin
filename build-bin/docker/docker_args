@@ -25,7 +25,7 @@ if ! test -f ${docker_file}; then
 fi
 
 # Add default labels for the day and the SHA we're building from
-docker_args="-f ${docker_file} \
+docker_args="${DOCKER_ARGS:-} -f ${docker_file} \
 --label org.opencontainers.image.created=$(date +%Y-%m-%d) \
 --label org.opencontainers.image.revision=$(git rev-parse --short HEAD)"
 
@@ -48,13 +48,13 @@ fi
 # When non-empty, becomes the base layer including tag appropriate for the image being built.
 # Ex. ghcr.io/openzipkin/java:15.0.1_p9-jre
 #
-# This is not required to be a base (FROM scratch) image like ghcr.io/openzipkin/alpine:3.12.1
+# This is not required to be a base (FROM scratch) image like ghcr.io/openzipkin/alpine:3.12.3
 # See https://docs.docker.com/glossary/#parent-image
 if [ -n "${DOCKER_PARENT_IMAGE}" ]; then
   docker_args="${docker_args} --build-arg docker_parent_image=${DOCKER_PARENT_IMAGE}"
 fi
 
-# When non-empty, becomes the build-arg alpine_version. Ex. "3.12.1"
+# When non-empty, becomes the build-arg alpine_version. Ex. "3.12.3"
 # Used to align base layers from https://github.com/orgs/openzipkin/packages/container/package/alpine
 if [ -n "${ALPINE_VERSION}" ]; then
   docker_args="${docker_args} --build-arg alpine_version=${ALPINE_VERSION}"

@@ -69,6 +69,7 @@ docker_archs=${DOCKER_ARCHS:-amd64 arm64}
 echo "Will build the following architectures: ${docker_archs}"
 
 docker_tag0="$(echo ${docker_tags} | awk '{print $1;}')"
+docker_arch0="$(echo ${docker_archs} | awk '{print $1;}')"
 arch_tags=""
 for docker_arch in ${docker_archs}; do
   arch_tag=${docker_image}:${docker_tag0}-${docker_arch}
@@ -79,24 +80,38 @@ done
 
 echo "Will push the following tags:\n${tags}"
 
-for tag in $(echo ${tags} | xargs); do
-  manifest_tags=""
-  for arch_tag in ${arch_tags}; do
-    docker_arch=$(echo ${arch_tag} | sed 's/.*-//g')
-    manifest_tag=${tag}-${docker_arch}
-    docker tag ${arch_tag} ${manifest_tag}
-    echo "Pushing tag ${manifest_tag}..."
-    docker push ${manifest_tag}
-    manifest_tags="${manifest_tags} ${manifest_tag}"
+if [ "${docker_arch0}" = "${docker_archs}" ]; then
+  # single architecture
+  arch_tag=${docker_image}:${docker_tag0}-${docker_arch0}
+
+  for tag in $(echo ${tags} | xargs); do
+    docker tag ${arch_tag} ${tag}
+    echo "Pushing tag ${tag}..."
+    docker push ${tag}
   done
 
-  docker manifest create ${tag} ${manifest_tags}
+else
+  # multi-architecture: make a manifest
+  for tag in $(echo ${tags} | xargs); do
+    manifest_tags=""
+    for arch_tag in ${arch_tags}; do
+      docker_arch=$(echo ${arch_tag} | sed 's/.*-//g')
+      manifest_tag=${tag}-${docker_arch}
+      docker tag ${arch_tag} ${manifest_tag}
+      echo "Pushing tag ${manifest_tag}..."
+      docker push ${manifest_tag}
+      manifest_tags="${manifest_tags} ${manifest_tag}"
+    done
 
-  for manifest_tag in ${manifest_tags}; do
-    docker_arch=$(echo ${manifest_tag} | sed 's/.*-//g')
-    docker manifest annotate ${tag} ${manifest_tag} --os linux --arch ${docker_arch}
+    docker manifest create ${tag} ${manifest_tags}
+
+    for manifest_tag in ${manifest_tags}; do
+      docker_arch=$(echo ${manifest_tag} | sed 's/.*-//g')
+      docker manifest annotate ${tag} ${manifest_tag} --os linux --arch ${docker_arch}
+    done
+
+    echo "Pushing manifest ${manifest_tag}..."
+    docker manifest push -p ${tag}
   done
+fi
 
-  echo "Pushing manifest ${manifest_tag}..."
-  docker manifest push -p ${tag}
-done

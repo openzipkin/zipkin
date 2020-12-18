@@ -17,12 +17,8 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 1  # only needed to get the sha label
-      - name: Cache Docker
-        uses: actions/cache@v2
-        with:
-          path: ~/.docker
-          key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
-          restore-keys: ${{ runner.os }}-docker
+      # We can't cache Docker without using buildx because GH actions restricts /var/lib/docker
+      # That's ok because DOCKER_PARENT_IMAGE is always ghcr.io and local anyway.
       - name: Docker Push
         run: |  # GITHUB_REF will be refs/tags/docker-MAJOR.MINOR.PATCH
           build-bin/git/login_git &&

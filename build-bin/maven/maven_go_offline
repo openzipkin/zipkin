@@ -13,9 +13,14 @@
 # the License.
 #
 
+# This is a go-offline that properly works with multi-module builds
+
 set -ue
 
 export MAVEN_OPTS="$($(dirname "$0")/maven_opts)"
+if [ -x ./mvnw ]; then alias mvn=${PWD}/mvnw; fi
 
-# Use a go-offline that properly works with multi-module builds
-./mvnw -q --batch-mode -nsu -Prelease de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
+(
+  if [ "${MAVEN_PROJECT_BASEDIR:-.}" != "." ]; then cd ${MAVEN_PROJECT_BASEDIR}; fi
+  mvn -q --batch-mode -nsu -Prelease de.qaware.maven:go-offline-maven-plugin:resolve-dependencies "$@"
+)
