@@ -58,12 +58,8 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
-      - name: Cache Docker
-        uses: actions/cache@v2
-        with:
-          path: ~/.docker
-          key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
-          restore-keys: ${{ runner.os }}-docker
+      # We can't cache Docker without using buildx because GH actions restricts /var/lib/docker
+      # That's ok because DOCKER_PARENT_IMAGE is always ghcr.io and local anyway.
       - name: Test with Docker
         run: |  # configure_test seeds NPM cache, which isn't needed for these tests
           build-bin/maven/maven_go_offline &&

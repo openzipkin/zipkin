@@ -28,6 +28,9 @@
 
 set -eu
 
+export MAVEN_OPTS="$($(dirname "$0")/maven_opts)"
+if [ -x ./mvnw ]; then alias mvn=${PWD}/mvnw; fi
+
 group_id=${1?group_id is required}
 artifact_id=${2?artifact_id is required}
 version=${3?version is required}
@@ -48,8 +51,11 @@ case ${version} in
     ;;
 esac
 
-local_repo=$HOME/.m2/repository
-local_repo_path=${local_repo}/$(echo ${group_id}|tr '.' '/')/${artifact_id}/${version}/${qualified_jar}
+# Parse MAVEN_OPTS as it may have overridden .m2/repository
+local_repo=$(echo ${MAVEN_OPTS} | sed -n 's/.*maven.repo.local=\([^ ]*\).*/\1/p')
+if [ "${local_repo}" = "" ]; then local_repo=$HOME/.m2/repository; fi
+
+local_repo_path=${local_repo}/$(echo ${group_id} | tr '.' '/')/${artifact_id}/${version}/${qualified_jar}
 
 if test -f ${local_repo_path}; then
   echo "*** Reusing ${qualified_jar} from Maven local repository..."

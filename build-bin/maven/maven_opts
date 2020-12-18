@@ -32,10 +32,10 @@ case ${arch} in
     ;;
 esac
 
-maven_opts=""
+maven_opts="${MAVEN_OPTS:-}"
 if [ ${arch} = "arm64" ] && [ -f /etc/alpine-release ]; then
   # Defensively avoid arm64+alpine problems with posix_spawn
-  maven_opts="-Djdk.lang.Process.launchMechanism=vfork"
+  maven_opts="${maven_opts} -Djdk.lang.Process.launchMechanism=vfork"
 fi
 
 echo ${maven_opts}

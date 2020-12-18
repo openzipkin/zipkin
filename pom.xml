@@ -106,6 +106,8 @@
     <maven-dependency-plugin.version>3.1.2</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
     <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
+    <!-- Use same version as https://github.com/openzipkin/docker-java -->
+    <maven-help-plugin.version>3.2.0</maven-help-plugin.version>
     <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
     <maven-javadoc-plugin.version>3.2.0</maven-javadoc-plugin.version>
     <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
@@ -258,13 +260,6 @@
           <configuration>
             <!-- Add dependencies indirectly referenced by build plugins -->
             <dynamicDependencies>
-              <!-- animal sniffer implicitly uses this -->
-              <DynamicDependency>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>${maven-dependency-plugin.version}</version>
-                <repositoryType>PLUGIN</repositoryType>
-              </DynamicDependency>
               <DynamicDependency>
                 <groupId>org.codehaus.mojo.signature</groupId>
                 <artifactId>${main.signature.artifact}</artifactId>
@@ -429,6 +424,16 @@
     </pluginManagement>
 
     <plugins>
+      <!-- Ensure common utility commands use coherent versions (avoid lazy downloads) -->
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${maven-dependency-plugin.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-help-plugin</artifactId>
+        <version>${maven-help-plugin.version}</version>
+      </plugin>
+
       <!-- Top-level to ensure our server can use JDK 1.8
              (by checking we don't accidentally use later apis) -->
       <plugin>
