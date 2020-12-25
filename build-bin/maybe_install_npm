@@ -15,13 +15,13 @@ esac
 # ARM64 is not supported with musl, yet https://github.com/nodejs/node/blob/master/BUILDING.md
 # Workaround this by installing node and npm directly. See issue #3166
 if [ ${arch} = "arm64" ] && [ -f /etc/alpine-release ]; then
-  # Get the version of nodejs the build uses. Note: this will take time as it downloads Maven plugins
+  # Get the version of nodejs the build uses. Note: this takes time as it downloads Maven plugins.
   node_version=$(mvn help:evaluate -Dexpression=node.version -q -DforceStdout -pl zipkin-lens)
 
   # Defensively avoid arm64+alpine problems with posix_spawn
   export MAVEN_OPTS="-Djdk.lang.Process.launchMechanism=vfork"
 
   set -x
-  # Repos for https://pkgs.alpinelinux.org/packages?name=nodejs-current are already in the base image
-  apk add --update --no-cache nodejs-current=~${node_version} npm
+  # Repos for https://pkgs.alpinelinux.org/packages?name=nodejs are already in the base image.
+  apk add --update --no-cache nodejs=~${node_version} npm
 fi
