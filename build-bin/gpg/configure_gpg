@@ -13,9 +13,7 @@
 # the License.
 #
 
-# This script prepares for Sonatype deployment via `maven_deploy`
-#
-# This should be used instead of `configure_testcontainers` when a deployment will occur.
+# This script prepares GPG, needed to sign jars for Sonatype deployment during `maven_deploy`
 
 set -ue
 
