@@ -86,7 +86,7 @@
     <assertj.version>3.18.1</assertj.version>
     <awaitility.version>4.0.3</awaitility.version>
     <hamcrest.version>1.3</hamcrest.version>
-    <testcontainers.version>1.15.0</testcontainers.version>
+    <testcontainers.version>1.15.1</testcontainers.version>
     <okhttp.version>4.9.0</okhttp.version>
     <kryo.version>5.0.2</kryo.version>
     <!-- Only used for proto interop testing; wire-maven-plugin is usually behind latest. -->

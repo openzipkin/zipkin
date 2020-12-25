@@ -23,9 +23,10 @@ set -ue
 # this is Docker related, it is coupled to integration tests configuration invoked with Maven.
 # * See https://www.testcontainers.org/supported_docker_environment/image_registry_rate_limiting/
 # * checks.disable=true - saves time and a docker.io pull of alpine
+# * ryuk doesn't count against docker.io rate limits because Docker approved testcontainers as OSS
 echo checks.disable=true >> ~/.testcontainers.properties
-# * change ryuk to ghcr.io until: https://github.com/testcontainers/moby-ryuk/issues/15 and 16
-echo ryuk.container.image=ghcr.io/openzipkin/testcontainers-ryuk:latest >> ~/.testcontainers.properties
+# * upgrade ryuk until https://github.com/testcontainers/testcontainers-java/pull/3630
+echo ryuk.container.image=testcontainers/ryuk:0.3.1 >> ~/.testcontainers.properties
 
 # We don't use any docker.io images, but add a Google's mirror in case something implicitly does
 # * See https://cloud.google.com/container-registry/docs/pulling-cached-images
