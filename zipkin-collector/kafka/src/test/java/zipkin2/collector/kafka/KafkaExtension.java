@@ -13,12 +13,14 @@
  */
 package zipkin2.collector.kafka;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.common.errors.TopicExistsException;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -48,16 +50,22 @@ class KafkaExtension implements BeforeAllCallback, AfterAllCallback {
     LOGGER.info("Using bootstrapServer " + bootstrapServer());
   }
 
-  void prepareTopic(final String topic, final int partitions) {
+  void prepareTopics(String topics, int partitions) {
     Properties config = new Properties();
     config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServer());
+
+    List<NewTopic> newTopics = new ArrayList<>();
+    for (String topic : topics.split(",")) {
+      if ("".equals(topic)) continue;
+      newTopics.add(new NewTopic(topic, partitions, (short) 1));
+    }
+
     try (AdminClient adminClient = AdminClient.create(config)) {
-      adminClient.createTopics(
-        Collections.singletonList(new NewTopic(topic, partitions, (short) 1))
-      ).all().get();
+      adminClient.createTopics(newTopics).all().get();
     } catch (InterruptedException | ExecutionException e) {
+      if (e.getCause() != null && e.getCause() instanceof TopicExistsException) return;
       throw new TestAbortedException(
-        "Topic cannot be created " + topic + ": " + e.getMessage(), e);
+        "Topics could not be created " + newTopics + ": " + e.getMessage(), e);
     }
   }
 
@@ -66,7 +74,7 @@ class KafkaExtension implements BeforeAllCallback, AfterAllCallback {
   }
 
   KafkaCollector.Builder newCollectorBuilder(String topic, int streams) {
-    prepareTopic(topic, streams);
+    prepareTopics(topic, streams);
     return KafkaCollector.builder().bootstrapServers(bootstrapServer())
       .topic(topic)
       .groupId(topic + "_group")

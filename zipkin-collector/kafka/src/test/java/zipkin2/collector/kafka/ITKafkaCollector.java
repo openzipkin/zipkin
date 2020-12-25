@@ -70,6 +70,7 @@ class ITKafkaCollector {
 
   @BeforeEach void setup() {
     metrics.clear();
+    threadsProvidingSpans.clear();
     Properties config = new Properties();
     config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.bootstrapServer());
     producer = new KafkaProducer<>(config, new ByteArraySerializer(), new ByteArraySerializer());
@@ -255,7 +256,7 @@ class ITKafkaCollector {
   @Test void messagesDistributedAcrossMultipleThreadsSuccessfully() throws Exception {
     KafkaCollector.Builder builder = builder("multi_thread", 2);
 
-    kafka.prepareTopic(builder.topic, 2);
+    kafka.prepareTopics(builder.topic, 2);
     warmUpTopic(builder.topic);
 
     final byte[] traceBytes = JSON_V2.encodeList(spans);
