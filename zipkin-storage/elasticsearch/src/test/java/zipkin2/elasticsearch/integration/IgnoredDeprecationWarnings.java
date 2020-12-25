@@ -31,6 +31,7 @@ abstract class IgnoredDeprecationWarnings {
   // warning header for it to be ignored
   static List<Pattern> IGNORE_THESE_WARNINGS = asList(
     compile("Elasticsearch 7\\.x will read, but not allow creation of new indices containing ':'"),
-    compile("has index patterns \\[.*] matching patterns from existing older templates")
+    compile("has index patterns \\[.*] matching patterns from existing older templates"),
+    compile("has index patterns \\[.*] matching patterns from existing composable templates")
   );
 }

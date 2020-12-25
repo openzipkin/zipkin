@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -35,10 +35,12 @@ import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
 import zipkin2.elasticsearch.ElasticsearchStorage;
+import zipkin2.elasticsearch.ElasticsearchVersion;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.elasticsearch.internal.client.HttpCall.BodyConverter;
 
 import static zipkin2.Call.propagateIfFatal;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
 import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
 
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
@@ -63,7 +65,6 @@ public final class BulkCallBuilder {
         } else {
           toThrow = new RuntimeException(message);
         }
-
       } catch (RuntimeException | IOException possiblyParseException) { // All use of jackson throws
       }
       if (toThrow != null) throw toThrow;
@@ -84,9 +85,9 @@ public final class BulkCallBuilder {
   // Mutated for each call to index
   final List<IndexEntry<?>> entries = new ArrayList<>();
 
-  public BulkCallBuilder(ElasticsearchStorage es, float esVersion, String tag) {
+  public BulkCallBuilder(ElasticsearchStorage es, ElasticsearchVersion version, String tag) {
     this.tag = tag;
-    shouldAddType = esVersion < 7.0f;
+    shouldAddType = version.compareTo(V7_0) < 0;
     http = Internal.instance.http(es);
     pipeline = es.pipeline();
     waitForRefresh = es.flushOnWrites();

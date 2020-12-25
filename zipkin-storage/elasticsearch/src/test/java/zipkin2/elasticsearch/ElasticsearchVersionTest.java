@@ -28,8 +28,13 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static zipkin2.elasticsearch.ElasticsearchStorageTest.RESPONSE_UNAUTHORIZED;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V5_0;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
 
 class ElasticsearchVersionTest {
+  static final ElasticsearchVersion V2_4 = new ElasticsearchVersion(2, 4);
+  static final ElasticsearchVersion V6_7 = new ElasticsearchVersion(6, 7);
+
   static final AggregatedHttpResponse VERSION_RESPONSE_7 = AggregatedHttpResponse.of(
     HttpStatus.OK, MediaType.JSON_UTF_8, ""
       + "{\n"
@@ -115,14 +120,14 @@ class ElasticsearchVersionTest {
       ResponseHeaders.of(HttpStatus.OK),
       HttpData.ofUtf8("you got mail")));
 
-    assertThatThrownBy(() -> ElasticsearchVersion.INSTANCE.get(storage.http()))
+    assertThatThrownBy(() -> ElasticsearchVersion.get(storage.http()))
       .hasMessage(".version.number not found in response: you got mail");
   }
 
   @Test void unauthorized() {
     server.enqueue(RESPONSE_UNAUTHORIZED);
 
-    assertThatThrownBy(() -> ElasticsearchVersion.INSTANCE.get(storage.http()))
+    assertThatThrownBy(() -> ElasticsearchVersion.get(storage.http()))
       .hasMessage("User: anonymous is not authorized to perform: es:ESHttpGet");
   }
 
@@ -130,28 +135,35 @@ class ElasticsearchVersionTest {
   @Test void version2() throws Exception {
     server.enqueue(VERSION_RESPONSE_2);
 
-    assertThat(ElasticsearchVersion.INSTANCE.get(storage.http()))
-      .isEqualTo(2.4f);
+    assertThat(ElasticsearchVersion.get(storage.http()))
+      .isEqualTo(V2_4);
   }
 
   @Test void version5() throws Exception {
     server.enqueue(VERSION_RESPONSE_5);
 
-    assertThat(ElasticsearchVersion.INSTANCE.get(storage.http()))
-      .isEqualTo(5.0f);
+    assertThat(ElasticsearchVersion.get(storage.http()))
+      .isEqualTo(V5_0);
   }
 
   @Test void version6() throws Exception {
     server.enqueue(VERSION_RESPONSE_6);
 
-    assertThat(ElasticsearchVersion.INSTANCE.get(storage.http()))
-      .isEqualTo(6.7f);
+    assertThat(ElasticsearchVersion.get(storage.http()))
+      .isEqualTo(V6_7);
   }
 
   @Test void version7() throws Exception {
     server.enqueue(VERSION_RESPONSE_7);
 
-    assertThat(ElasticsearchVersion.INSTANCE.get(storage.http()))
-      .isEqualTo(7.0f);
+    assertThat(ElasticsearchVersion.get(storage.http()))
+      .isEqualTo(V7_0);
+  }
+
+  /** Prove we compare better than a float. A float of 7.10 is the same as 7.1! */
+  @Test void version7_10IsGreaterThan_V7_2() {
+    assertThat(new ElasticsearchVersion(7, 10))
+      .hasToString("7.10")
+      .isGreaterThan(new ElasticsearchVersion(7, 2));
   }
 }

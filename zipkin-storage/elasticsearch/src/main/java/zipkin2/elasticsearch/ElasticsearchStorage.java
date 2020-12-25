@@ -46,6 +46,8 @@ import zipkin2.storage.StorageComponent;
 import zipkin2.storage.Traces;
 
 import static com.linecorp.armeria.common.HttpMethod.GET;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V7_8;
 import static zipkin2.elasticsearch.EnsureIndexTemplate.ensureIndexTemplate;
 import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_AUTOCOMPLETE;
 import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_DEPENDENCY;
@@ -248,9 +250,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   /** Returns the Elasticsearch version of the connected cluster. Internal use only */
-  @Memoized public float version() {
+  @Memoized public ElasticsearchVersion version() {
     try {
-      return ElasticsearchVersion.INSTANCE.get(http());
+      return ElasticsearchVersion.get(http());
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -342,7 +344,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     }
   }
 
-  IndexTemplates versionSpecificTemplates(float version) {
+  IndexTemplates versionSpecificTemplates(ElasticsearchVersion version) {
     return new VersionSpecificTemplates(
       indexNameFormatter().index(),
       indexReplicas(),
@@ -356,10 +358,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   String buildUrl(IndexTemplates templates, String type) {
     String indexPrefix = indexNameFormatter().index() + templates.indexTypeDelimiter();
 
-    if (version() >= 7.8f && templatePriority() != null) {
+    if (version().compareTo(V7_8) >= 0 && templatePriority() != null) {
       return "/_index_template/" + indexPrefix + type + "_template";
     }
-    if (version() < 7f) {
+    if (version().compareTo(V7_0) < 0) {
       // because deprecation warning on 6 to prepare for 7 :
       //
       // [types removal] The parameter include_type_name should be explicitly specified in get
