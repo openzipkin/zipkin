@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -41,6 +41,8 @@ final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
   @Override public EndpointGroup get() {
     List<EndpointGroup> endpointGroups = new ArrayList<>();
     for (String hostText : hosts.split(",", 100)) {
+      if ("".equals(hostText)) continue; // possibly extra comma
+
       URI url;
       if (hostText.startsWith("http://") || hostText.startsWith("https://")) {
         url = URI.create(hostText);
@@ -51,6 +53,11 @@ final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
       }
 
       String host = url.getHost();
+      if (host == null) {
+        LOGGER.warn("Skipping invalid ES host {}", url);
+        continue;
+      }
+
       int port = getPort(url);
 
       if (port == 9300) {
@@ -66,6 +73,10 @@ final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
         // with single IPs freely, they'll all get used.
         endpointGroups.add(DnsAddressEndpointGroup.builder(host).port(port).build());
       }
+    }
+
+    if (endpointGroups.isEmpty()) {
+      throw new IllegalArgumentException("No valid endpoints found in ES hosts: " + hosts);
     }
 
     return EndpointGroup.of(endpointGroups);
