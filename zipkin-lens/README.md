@@ -117,7 +117,7 @@ similar to what video games use to quickly scroll to a place of
 interest in a game. This is especially important in messaging spans
 where there can be a large time gap separating clusters of spans. The
 initial mini-map implementation in Lens is very similar to work in
-Jaeger Ui, as a mini-map occurs over the trace and lets you zoom to a
+Jaeger UI, as a mini-map occurs over the trace and lets you zoom to a
 timeframe similar to Chrome or FireFox debug tools. The implementation
 was different as it is implemented with SVG, which is easier to debug
 than Canvas.
