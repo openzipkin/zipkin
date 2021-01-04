@@ -23,23 +23,29 @@ import { ThunkDispatch } from 'redux-thunk';
 import DiscoverPageContent from './DiscoverPageContent';
 import { useUiConfig } from '../UiConfig';
 import { loadAutocompleteKeys } from '../../slices/autocompleteKeysSlice';
+import { loadServices } from '../../slices/servicesSlice';
 import { RootState } from '../../store';
 
 interface DiscoverPageImplProps {
   autocompleteKeys: string[];
   isLoadingAutocompleteKeys: boolean;
+  isLoadingServices: boolean;
   loadAutocompleteKeys: () => void;
+  loadServices: () => void;
 }
 
 const DiscoverPageImpl: React.FC<DiscoverPageImplProps> = ({
   autocompleteKeys,
   isLoadingAutocompleteKeys,
+  isLoadingServices,
   loadAutocompleteKeys,
+  loadServices,
 }) => {
   const config = useUiConfig();
 
   useEffect(() => {
     loadAutocompleteKeys();
+    loadServices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -55,7 +61,7 @@ const DiscoverPageImpl: React.FC<DiscoverPageImplProps> = ({
     );
   }
 
-  if (isLoadingAutocompleteKeys) {
+  if (isLoadingAutocompleteKeys || isLoadingServices) {
     // Need to fetch autocompleteKeys before displaying a search bar,
     // because SearchBar uses autocompleteKeys inside.
     return (
@@ -81,6 +87,7 @@ const DiscoverPageImpl: React.FC<DiscoverPageImplProps> = ({
 const mapStateToProps = (state: RootState) => ({
   autocompleteKeys: state.autocompleteKeys.autocompleteKeys,
   isLoadingAutocompleteKeys: state.autocompleteKeys.isLoading,
+  isLoadingServices: state.services.isLoading,
 });
 
 const mapDispatchToProps = (
@@ -88,6 +95,9 @@ const mapDispatchToProps = (
 ) => ({
   loadAutocompleteKeys: () => {
     dispatch(loadAutocompleteKeys());
+  },
+  loadServices: () => {
+    dispatch(loadServices());
   },
 });
 
