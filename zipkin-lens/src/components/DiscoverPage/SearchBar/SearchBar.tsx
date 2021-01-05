@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2021 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -31,7 +31,6 @@ import Criterion, { newCriterion } from '../Criterion';
 import CriterionBox from './CriterionBox';
 import { loadAutocompleteValues } from '../../../slices/autocompleteValuesSlice';
 import { loadRemoteServices } from '../../../slices/remoteServicesSlice';
-import { loadServices } from '../../../slices/servicesSlice';
 import { loadSpans } from '../../../slices/spansSlice';
 import { RootState } from '../../../store';
 
@@ -59,7 +58,6 @@ type SearchBarProps = {
   autocompleteKeys: string[];
   autocompleteValues: string[];
   isLoadingAutocompleteValues: boolean;
-  loadServices: () => void;
   loadRemoteServices: (serviceName: string) => void;
   loadSpans: (serviceName: string) => void;
   loadAutocompleteValues: (autocompleteKey: string) => void;
@@ -78,7 +76,6 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
   autocompleteKeys,
   autocompleteValues,
   isLoadingAutocompleteValues,
-  loadServices,
   loadRemoteServices,
   loadSpans,
   loadAutocompleteValues,
@@ -128,11 +125,6 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
     const nextCriterionIndex = criteria.length;
     setCriterionIndex(nextCriterionIndex);
   }, [criteria, onChange]);
-
-  useEffect(() => {
-    loadServices();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const prevServiceName = useRef('');
   useEffect(() => {
@@ -249,9 +241,6 @@ const mapStateToProps = (state: RootState) => ({
 const mapDispatchToProps = (
   dispatch: ThunkDispatch<RootState, undefined, any>,
 ) => ({
-  loadServices: () => {
-    dispatch(loadServices());
-  },
   loadRemoteServices: (serviceName: string) => {
     dispatch(loadRemoteServices(serviceName));
   },

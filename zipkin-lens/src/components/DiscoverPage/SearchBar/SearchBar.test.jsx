@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2021 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -54,15 +54,9 @@ describe('<SearchBar />', () => {
     autocompleteKeys: [],
     autocompleteValues: [],
     isLoadingAutocompleteValues: false,
-    loadServices: jest.fn(),
     loadRemoteServices: jest.fn(),
     loadSpans: jest.fn(),
   };
-
-  it('should load services when mounted', () => {
-    render(<SearchBarImpl {...commonProps} />);
-    expect(commonProps.loadServices.mock.calls.length).toBe(1);
-  });
 
   it('should add an empty criterion when add button is clicked', () => {
     const { getByTestId } = render(<SearchBarImpl {...commonProps} />);
