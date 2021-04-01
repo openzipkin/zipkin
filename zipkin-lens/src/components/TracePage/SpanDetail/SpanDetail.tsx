@@ -45,13 +45,7 @@ const SpanDetail = React.memo<SpanDetailProps>(({ span, minHeight }) => {
   const [openTags, toggleOpenTags] = useToggle(true);
 
   return (
-    <Box
-      borderColor="divider"
-      bgcolor="background.paper"
-      borderLeft="1px solid"
-      boxShadow={3}
-      minHeight={minHeight}
-    >
+    <Box bgcolor="background.paper" boxShadow={3} minHeight={minHeight}>
       <Box
         pt={2}
         pl={2}

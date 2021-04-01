@@ -213,7 +213,7 @@ const TraceSummary = React.memo(({ traceSummary }) => {
         <Box width={`${100 - traceTimelineWidthPercent}%`}>
           <AutoSizer>
             {({ height, width }) => (
-              <Box height={height} width={width} overflow="auto">
+              <Box height={height} width={width} overflow="auto" boxShadow={2}>
                 <SpanDetail
                   span={traceSummary.spans[currentSpanIndex]}
                   minHeight={height}
