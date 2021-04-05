@@ -20,7 +20,9 @@ import React, { useCallback } from 'react';
 import TimeMarker from './TimeMarker';
 
 interface TraceTimelineHeaderProps {
+  collapseAll: () => void;
   endTs: number;
+  expandAll: () => void;
   openSpanDetail: boolean;
   reroot: (spanId?: string) => void;
   rootSpanId?: string;
@@ -31,7 +33,9 @@ interface TraceTimelineHeaderProps {
 
 const TraceTimelineHeader = React.memo<TraceTimelineHeaderProps>(
   ({
+    collapseAll,
     endTs,
+    expandAll,
     openSpanDetail,
     reroot,
     rootSpanId,
@@ -54,8 +58,8 @@ const TraceTimelineHeader = React.memo<TraceTimelineHeaderProps>(
           pb={1}
         >
           <ButtonGroup size="small" variant="outlined">
-            <Button>Collapse</Button>
-            <Button>Expand</Button>
+            <Button onClick={collapseAll}>Collapse</Button>
+            <Button onClick={expandAll}>Expand</Button>
           </ButtonGroup>
           <Box display="flex">
             {rootSpanId && (

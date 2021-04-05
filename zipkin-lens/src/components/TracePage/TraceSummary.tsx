@@ -64,6 +64,19 @@ const TraceSummary = React.memo<TraceSummaryProps>(({ traceSummary }) => {
     }));
   }, []);
 
+  const collapseAll = useCallback(() => {
+    setClosedSpanIds((prev) =>
+      Object.keys(prev).reduce((acc, cur) => {
+        acc[cur] = true;
+        return acc;
+      }, {} as { [key: string]: boolean }),
+    );
+  }, []);
+
+  const expandAll = useCallback(() => {
+    setClosedSpanIds(getInitialClosedSpanIds(traceSummary.spans));
+  }, [traceSummary.spans]);
+
   const reroot = useCallback((spanId?: string) => {
     setRootSpanId(spanId);
   }, []);
@@ -117,6 +130,8 @@ const TraceSummary = React.memo<TraceSummaryProps>(({ traceSummary }) => {
           <Box flexGrow={1} width="100%" overflow="auto">
             <TraceTimeline
               closedSpanIds={closedSpanIds}
+              collapseAll={collapseAll}
+              expandAll={expandAll}
               openSpanDetail={openSpanDetail}
               reroot={reroot}
               rootSpanId={rootSpanId}

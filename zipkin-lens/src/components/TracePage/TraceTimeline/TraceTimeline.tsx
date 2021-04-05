@@ -39,6 +39,8 @@ const extractStartTsAndEndTs = (spans: AdjustedSpan[]) => {
 
 interface TraceTimelineProps {
   closedSpanIds: { [key: string]: boolean };
+  collapseAll: () => void;
+  expandAll: () => void;
   openSpanDetail: boolean;
   reroot: (span?: string) => void;
   rootSpanId?: string;
@@ -52,6 +54,8 @@ interface TraceTimelineProps {
 const TraceTimeline = React.memo<TraceTimelineProps>(
   ({
     closedSpanIds,
+    collapseAll,
+    expandAll,
     openSpanDetail,
     reroot,
     rootSpanId,
@@ -98,7 +102,9 @@ const TraceTimeline = React.memo<TraceTimelineProps>(
     return (
       <Box display="flex" flexDirection="column" height="100%">
         <TraceTimelineHeader
+          collapseAll={collapseAll}
           endTs={endTs}
+          expandAll={expandAll}
           openSpanDetail={openSpanDetail}
           reroot={reroot}
           rootSpanId={rootSpanId}
