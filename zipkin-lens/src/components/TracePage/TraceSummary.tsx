@@ -131,6 +131,7 @@ const TraceSummary = React.memo<TraceSummaryProps>(({ traceSummary }) => {
             <TraceTimeline
               closedSpanIds={closedSpanIds}
               collapseAll={collapseAll}
+              currentSpanId={currentSpanId}
               expandAll={expandAll}
               openSpanDetail={openSpanDetail}
               reroot={reroot}

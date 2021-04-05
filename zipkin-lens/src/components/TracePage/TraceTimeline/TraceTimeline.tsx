@@ -40,6 +40,7 @@ const extractStartTsAndEndTs = (spans: AdjustedSpan[]) => {
 interface TraceTimelineProps {
   closedSpanIds: { [key: string]: boolean };
   collapseAll: () => void;
+  currentSpanId: string;
   expandAll: () => void;
   openSpanDetail: boolean;
   reroot: (span?: string) => void;
@@ -55,6 +56,7 @@ const TraceTimeline = React.memo<TraceTimelineProps>(
   ({
     closedSpanIds,
     collapseAll,
+    currentSpanId,
     expandAll,
     openSpanDetail,
     reroot,
@@ -76,6 +78,7 @@ const TraceTimeline = React.memo<TraceTimelineProps>(
           key={span.spanId}
           endTs={endTs}
           isClosed={closedSpanIds[span.spanId]}
+          isSelected={span.spanId === currentSpanId}
           rowHeight={rowHeight}
           span={span}
           startTs={startTs}
@@ -89,6 +92,7 @@ const TraceTimeline = React.memo<TraceTimelineProps>(
       ),
       [
         closedSpanIds,
+        currentSpanId,
         endTs,
         rowHeight,
         setCurrentSpanId,
@@ -112,7 +116,7 @@ const TraceTimeline = React.memo<TraceTimelineProps>(
           toggleOpenSpanDetail={toggleOpenSpanDetail}
           treeWidthPercent={treeWidthPercent}
         />
-        <Box pt={2} flexGrow={1} overflow="auto">
+        <Box mt={2} flexGrow={1} overflow="auto">
           {spans.length > virtualizeThreshold ? (
             <AutoSizer>
               {({ width, height }) => (
@@ -131,6 +135,7 @@ const TraceTimeline = React.memo<TraceTimelineProps>(
                 key={span.spanId}
                 endTs={endTs}
                 isClosed={closedSpanIds[span.spanId]}
+                isSelected={span.spanId === currentSpanId}
                 rowHeight={rowHeight}
                 span={span}
                 startTs={startTs}

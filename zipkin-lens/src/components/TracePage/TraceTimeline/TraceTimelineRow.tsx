@@ -14,6 +14,7 @@
 
 import { Box, createStyles, makeStyles, Theme } from '@material-ui/core';
 import ErrorOutlineIcon from '@material-ui/icons/ErrorOutline';
+import classNames from 'classnames';
 import React, { useCallback } from 'react';
 
 import { TreeElementType } from './buildTimelineTree';
@@ -27,8 +28,11 @@ const useStyles = makeStyles((theme: Theme) =>
     root: {
       cursor: 'pointer',
       '&:hover': {
-        backgroundColor: theme.palette.grey[100],
+        backgroundColor: theme.palette.grey[200],
       },
+    },
+    'root--isSelected': {
+      backgroundColor: theme.palette.grey[200],
     },
     treeBegin: {
       borderTop: `1px solid ${theme.palette.grey[300]}`,
@@ -51,6 +55,7 @@ interface TraceTimelineRowProps {
   endTs: number;
   // When undefined, the row does not have children.
   isClosed?: boolean;
+  isSelected: boolean;
   rowHeight: number;
   setCurrentSpanId: (spanId: string) => void;
   span: AdjustedSpan;
@@ -66,6 +71,7 @@ const TraceTimelineRow = React.memo<TraceTimelineRowProps>(
   ({
     endTs,
     isClosed,
+    isSelected,
     rowHeight,
     setCurrentSpanId,
     span,
@@ -103,6 +109,7 @@ const TraceTimelineRow = React.memo<TraceTimelineRowProps>(
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
+              zIndex: 101,
             }}
           >
             {isClosed ? '+' : '-'}
@@ -128,6 +135,7 @@ const TraceTimelineRow = React.memo<TraceTimelineRowProps>(
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
+                  zIndex: 101,
                 }}
               >
                 {isClosed ? '+' : '-'}
@@ -146,6 +154,7 @@ const TraceTimelineRow = React.memo<TraceTimelineRowProps>(
       width: `${100 / (treeData.length + 1)}%`,
       style: {
         transform: `translateY(${(rowHeight / 4) * 3}px)`,
+        zIndex: 100,
       },
     };
     tree.push(<Box {...commonProps} className={classes.treeEnd} />);
@@ -196,7 +205,9 @@ const TraceTimelineRow = React.memo<TraceTimelineRowProps>(
         pl={2}
         pr={2}
         display="flex"
-        className={classes.root}
+        className={classNames(classes.root, {
+          [classes['root--isSelected']]: isSelected,
+        })}
         style={style}
         onClick={handleClick}
       >
