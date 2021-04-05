@@ -120,7 +120,7 @@ const TraceTimelineRow = React.memo<TraceTimelineRowProps>(
                   cursor: 'pointer',
                   position: 'absolute',
                   left: `calc(${
-                    (100 / treeData.length) * (isClosed ? i + 1 : i)
+                    (100 / (treeData.length + 1)) * (isClosed ? i + 1 : i)
                   }% - ${buttonSizePx / 2}px)`,
                   top: `${(rowHeight / 4) * 3 - buttonSizePx / 2}px`,
                   width: `${buttonSizePx}px`,
@@ -143,11 +143,12 @@ const TraceTimelineRow = React.memo<TraceTimelineRowProps>(
     const tree: JSX.Element[] = [];
     const commonProps = {
       height: rowHeight,
-      width: `${100 / treeData.length}%`,
+      width: `${100 / (treeData.length + 1)}%`,
       style: {
         transform: `translateY(${(rowHeight / 4) * 3}px)`,
       },
     };
+    tree.push(<Box {...commonProps} className={classes.treeEnd} />);
     for (let i = treeData.length - 1; i >= 0; i -= 1) {
       const tp = treeData[i];
       const props = { ...commonProps, key: i };
