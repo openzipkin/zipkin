@@ -81,8 +81,8 @@
 export type TreeElementType = 'BEGIN' | 'END' | 'MIDDLE';
 
 export const getMinMaxDepth = (spans: { depth: number }[]) => {
-  let minDepth = Number.MAX_VALUE;
-  let maxDepth = Number.MIN_VALUE;
+  let minDepth = Number.POSITIVE_INFINITY;
+  let maxDepth = Number.NEGATIVE_INFINITY;
   spans.forEach((span) => {
     minDepth = Math.min(span.depth, minDepth);
     maxDepth = Math.max(span.depth, maxDepth);

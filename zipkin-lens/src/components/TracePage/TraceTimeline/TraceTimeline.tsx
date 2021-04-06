@@ -26,8 +26,8 @@ const treeWidthPercent = 10;
 const virtualizeThreshold = 100;
 
 const extractStartTsAndEndTs = (spans: AdjustedSpan[]) => {
-  let startTs = Number.MAX_VALUE;
-  let endTs = Number.MIN_VALUE;
+  let startTs = Number.POSITIVE_INFINITY;
+  let endTs = Number.NEGATIVE_INFINITY;
   spans.forEach((span) => {
     if (typeof span.timestamp !== 'undefined') {
       startTs = Math.min(startTs, span.timestamp);

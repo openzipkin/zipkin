@@ -112,12 +112,12 @@ const TraceSummary = React.memo<TraceSummaryProps>(({ traceSummary }) => {
   }, [rootSpanId, traceSummary.spans]);
 
   const shownTree = useMemo(() => {
-    let childrenHiddenSpanDepth: number = Number.MAX_VALUE;
+    let childrenHiddenSpanDepth: number = Number.POSITIVE_INFINITY;
     return rerootedTree.reduce((acc, span) => {
       if (span.depth > childrenHiddenSpanDepth) {
         return acc;
       }
-      childrenHiddenSpanDepth = Number.MAX_VALUE;
+      childrenHiddenSpanDepth = Number.POSITIVE_INFINITY;
       acc.push(span);
       if (closedSpanIds[span.spanId]) {
         childrenHiddenSpanDepth = span.depth;
