@@ -18,17 +18,23 @@ import { useToggle } from 'react-use';
 
 import TraceTimeline from './TraceTimeline';
 import AdjustedTrace, { AdjustedSpan } from '../../models/AdjustedTrace';
+import { getMinMaxDepth } from './TraceTimeline/buildTimelineTree';
 
 const { default: SpanDetail } = require('./SpanDetail');
 const { default: TraceSummaryHeader } = require('./TraceSummaryHeader');
 
 const getInitialClosedSpanIds = (spans: AdjustedSpan[]) => {
+  const [minDepth] = getMinMaxDepth(spans);
   const ret: { [key: string]: boolean } = {};
   for (let i = 0; i < spans.length - 1; i += 1) {
     const span = spans[i];
     const nextSpan = spans[i + 1];
     if (span.depth < nextSpan.depth) {
-      ret[span.spanId] = false;
+      if (span.depth <= minDepth + 3) {
+        ret[span.spanId] = false;
+      } else {
+        ret[span.spanId] = true;
+      }
     }
   }
   return ret;
@@ -74,8 +80,13 @@ const TraceSummary = React.memo<TraceSummaryProps>(({ traceSummary }) => {
   }, []);
 
   const expandAll = useCallback(() => {
-    setClosedSpanIds(getInitialClosedSpanIds(traceSummary.spans));
-  }, [traceSummary.spans]);
+    setClosedSpanIds((prev) =>
+      Object.keys(prev).reduce((acc, cur) => {
+        acc[cur] = false;
+        return acc;
+      }, {} as { [key: string]: boolean }),
+    );
+  }, []);
 
   const reroot = useCallback((spanId?: string) => {
     setRootSpanId(spanId);
