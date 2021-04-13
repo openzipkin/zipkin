@@ -63,6 +63,7 @@ const SpanAnnotationTable = React.memo<SpanAnnotationTableProps>(
         density="compact"
         disableSelectionOnClick
         disableColumnSelector
+        disableColumnMenu
         hideFooter
       />
     );
