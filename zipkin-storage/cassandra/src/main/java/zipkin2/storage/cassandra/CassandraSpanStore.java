@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2021 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -125,7 +125,7 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
   @Override public Call<List<List<Span>>> getTraces(QueryRequest request) {
     if (!searchEnabled) return Call.emptyList();
 
-    TimestampRange timestampRange = timestampRange(request);
+    TimestampRange timestampRange = timestampRange(request, indexTtl);
     // If we have to make multiple queries, over fetch on indexes as they don't return distinct
     // (trace id, timestamp) rows. This mitigates intersection resulting in < limit traces
     final int traceIndexFetchSize = request.limit() * indexFetchMultiplier;
@@ -305,8 +305,8 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
     UUID endUUID;
   }
 
-  TimestampRange timestampRange(QueryRequest request) {
-    long oldestData = Math.max(System.currentTimeMillis() - indexTtl * 1000, 0); // >= 1970
+  TimestampRange timestampRange(QueryRequest request, int indexTtl) {
+    long oldestData = Math.max(System.currentTimeMillis() - indexTtl * 1000L, 0); // >= 1970
     TimestampRange result = new TimestampRange();
     result.startMillis = Math.max((request.endTs() - request.lookback()), oldestData);
     result.startUUID = Uuids.startOf(result.startMillis);

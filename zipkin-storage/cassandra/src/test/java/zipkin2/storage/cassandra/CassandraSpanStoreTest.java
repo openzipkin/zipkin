@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2021 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,6 +32,13 @@ import static zipkin2.storage.cassandra.InternalForTests.mockSession;
 public class CassandraSpanStoreTest {
   CassandraSpanStore spanStore = spanStore(CassandraStorage.newBuilder());
   QueryRequest.Builder queryBuilder = QueryRequest.newBuilder().endTs(TODAY).lookback(DAY).limit(5);
+
+  @Test public void timestampRange_withIndexTtlProvidedAvoidsOverflow() {
+    QueryRequest query = QueryRequest.newBuilder().endTs(TODAY).lookback(TODAY).limit(5).build();
+    CassandraSpanStore.TimestampRange timestampRange = spanStore.timestampRange(query, 7890000);
+
+    assertThat(timestampRange.startMillis).isLessThan(timestampRange.endMillis);
+  }
 
   @Test public void getTraces_fansOutAgainstServices() {
     Call<List<List<Span>>> call = spanStore.getTraces(queryBuilder.build());
