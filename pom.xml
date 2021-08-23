@@ -51,7 +51,7 @@
 
     <!-- This allows you to test feature branches with jitpack -->
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>1.3.0</armeria.version>
+    <armeria.version>1.6.0</armeria.version>
     <!-- Match Armeria version to avoid conflicts including running tests in the IDE -->
     <netty.version>4.1.54.Final</netty.version>
 

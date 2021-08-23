@@ -19,7 +19,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.TFramedTransport;
+import org.apache.thrift.TConfiguration;
+import org.apache.thrift.transport.layered.TFramedTransport;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.junit.jupiter.api.AfterAll;
@@ -69,7 +70,7 @@ class ITScribeCollector {
   @Test void normal() throws Exception {
     // Java version of this sample code
     // https://github.com/facebookarchive/scribe/wiki/Logging-Messages
-    TTransport transport = new TFramedTransport(new TSocket("localhost", server.port()));
+    TTransport transport = new TFramedTransport(new TSocket(new TConfiguration(), "localhost", server.port()));
     TProtocol protocol = new TBinaryProtocol(transport, false, false);
     Scribe.Iface client = new Scribe.Client(protocol);
 
