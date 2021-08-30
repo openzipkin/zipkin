@@ -42,7 +42,7 @@ $ docker-compose -f docker-compose-cassandra.yml up
 ## MySQL
 
 You can store traces in [MySQL](../test-images/zipkin-mysql/README.md) instead of memory, using the
-`docker-compose-cassandra.yml` file. This configuration starts `zipkin`, `zipkin-mysql` and
+`docker-compose-mysql.yml` file. This configuration starts `zipkin`, `zipkin-mysql` and
 `zipkin-dependencies` (cron job) in their own containers.
 
 To start the MySQL-backed configuration, run:
