@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2015-2020 The OpenZipkin Authors
+# Copyright 2015-2021 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -25,13 +25,8 @@ set -ue
 # * checks.disable=true - saves time and a docker.io pull of alpine
 # * ryuk doesn't count against docker.io rate limits because Docker approved testcontainers as OSS
 echo checks.disable=true >> ~/.testcontainers.properties
-# * upgrade ryuk until https://github.com/testcontainers/testcontainers-java/pull/3630
-echo ryuk.container.image=testcontainers/ryuk:0.3.1 >> ~/.testcontainers.properties
 
 # We don't use any docker.io images, but add a Google's mirror in case something implicitly does
 # * See https://cloud.google.com/container-registry/docs/pulling-cached-images
 echo '{ "registry-mirrors": ["https://mirror.gcr.io"] }' | sudo tee /etc/docker/daemon.json
 sudo service docker restart
-
-# * Ensure buildx and related features are disabled
-mkdir -p ${HOME}/.docker && echo '{"experimental":"disabled"}' > ${HOME}/.docker/config.json

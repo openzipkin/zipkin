@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2015-2020 The OpenZipkin Authors
+# Copyright 2015-2021 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -27,7 +27,7 @@ set -ue
 
 docker_image=${1?docker_image is required, notably without a tag. Ex openzipkin/zipkin}
 version=${2:-master}
-export DOCKER_BUILDKIT=0
+export DOCKER_BUILDKIT=1
 
 case ${version} in
   master )
