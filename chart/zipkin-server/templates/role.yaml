@@ -1,0 +1,13 @@
+{{- if .Values.serviceAccount.psp }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "zipkin.fullname" . }}
+  labels:
+    {{- include "zipkin.labels" . | nindent 4 }}
+rules:
+- apiGroups: ['policy']
+  resourceNames: ['{{ include "zipkin.serviceAccountName" . }}']
+  resources: ['podsecuritypolicies']
+  verbs: ['use']
+{{- end }}
