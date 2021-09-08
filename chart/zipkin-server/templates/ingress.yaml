@@ -32,12 +32,10 @@ spec:
     {{- end }}
   {{- end }}
   rules:
-    {{- range .Values.ingress.hosts }}
-    - host: {{ .host | quote }}
+    - host: {{ .Values.ingress.host | quote }}
       http:
         paths:
-          {{- range .paths }}
-          - path: {{ .path }}
+          - path: {{ .Values.ingress.path }}
             {{- if or (.Capabilities.APIVersions.Has "networking.k8s.io/v1") (.Capabilities.APIVersions.Has "networking.k8s.io/v1beta1") }}
             pathType: Prefix
             {{- end }}
@@ -51,6 +49,4 @@ spec:
               serviceName: {{ $fullName }}
               servicePort: {{ $svcPort }}
               {{- end }}
-          {{- end }}
-    {{- end }}
   {{- end }}

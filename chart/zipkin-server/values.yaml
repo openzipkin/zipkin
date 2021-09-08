@@ -53,13 +53,8 @@ ingress:
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   # className: nginx
-  hosts:
-    - host: chart-example.local
-      paths:
-      - path: /
-        backend:
-          serviceName: chart-example.local
-          servicePort: 80
+  host: chart-example.local
+  path: /
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
