@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2021 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -46,7 +46,9 @@ import zipkin2.storage.StorageComponent;
 import zipkin2.storage.Traces;
 
 import static com.linecorp.armeria.common.HttpMethod.GET;
-import static zipkin2.elasticsearch.ElasticsearchVersion.*;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V6_7;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V7_8;
 import static zipkin2.elasticsearch.EnsureIndexTemplate.ensureIndexTemplate;
 import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_AUTOCOMPLETE;
 import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_DEPENDENCY;
