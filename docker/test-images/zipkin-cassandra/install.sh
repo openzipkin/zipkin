@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2015-2020 The OpenZipkin Authors
+# Copyright 2015-2021 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -185,8 +185,10 @@ function is_cassandra_alive() {
 is_cassandra_alive || exit 1
 
 echo "*** Installing cqlsh"
+# stuck on python2 for compatability with cassandra 3.x
 apk add --update --no-cache python2 py2-setuptools
-python2 -m easy_install pip
+# use pip version that is compatable with python2
+python2 -m easy_install pip==20.3.4
 pip install -Iq cqlsh
 function cql() {
   cqlsh --cqlversion=${cqlversion} "$@" 127.0.0.1 ${temp_native_transport_port}

@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2020 The OpenZipkin Authors
+# Copyright 2015-2021 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,7 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/alpine
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG alpine_version=3.12.3
+ARG alpine_version=3.14.2
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -37,7 +37,7 @@ HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthche
 ENTRYPOINT ["start-mysql"]
 
 # Use latest from https://pkgs.alpinelinux.org/packages?name=mysql
-ARG mysql_version=10.5.8
+ARG mysql_version=10.6.4
 LABEL mysql-version=$mysql_version
 ENV MYSQL_VERSION=$mysql_version
 

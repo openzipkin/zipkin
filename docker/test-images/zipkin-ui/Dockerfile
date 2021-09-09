@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2020 The OpenZipkin Authors
+# Copyright 2015-2021 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -15,14 +15,14 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/alpine
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG alpine_version=3.12.3
+ARG alpine_version=3.14.2
 
 # java_version is used during the installation process to build or download the zipkin-lens jar.
 #
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/java
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG java_version=15.0.1_p9
+ARG java_version=15.0.4_p5
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -61,7 +61,7 @@ RUN /build-bin/maven/maven_build_or_unjar io.zipkin zipkin-lens ${VERSION}
 FROM ghcr.io/openzipkin/alpine:$alpine_version as zipkin-ui
 LABEL org.opencontainers.image.description="NGINX on Alpine Linux hosting the Zipkin UI with Zipkin API proxy_pass"
 # Use latest from https://pkgs.alpinelinux.org/packages?name=nginx
-ARG nginx_version=1.18.0
+ARG nginx_version=1.20.1
 LABEL nginx-version=$nginx_version
 
 ENV ZIPKIN_BASE_URL=http://zipkin:9411

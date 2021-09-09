@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2021 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -282,7 +282,7 @@ class ServerIntegratedBenchmark {
 
     final GenericContainer<?> zipkin;
     if (RELEASE_VERSION == null) {
-      zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/java:15.0.1_p9"));
+      zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/java:15.0.4_p5"));
       List<String> classpath = new ArrayList<>();
       for (String item : System.getProperty("java.class.path").split(File.pathSeparator)) {
         Path path = Paths.get(item);
