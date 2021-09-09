@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2021 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -197,6 +197,69 @@ class ElasticsearchStorageTest {
   @Test void toStringContainsOnlySummaryInformation() {
     assertThat(storage).hasToString(
       String.format("ElasticsearchStorage{initialEndpoints=%s, index=zipkin}", server.httpUri()));
+  }
+
+  /** Ensure that Zipkin doesn't include "include_type_name" parameter with unsupported versions */
+  @Test void check_create_indexTemplate_resourcePath__version66() {
+    server.enqueue(AggregatedHttpResponse.of(
+      HttpStatus.OK, MediaType.JSON_UTF_8, "{\"version\":{\"number\":\"6.6.6\"}}"));
+    server.enqueue(SUCCESS_RESPONSE); // get span template
+    server.enqueue(SUCCESS_RESPONSE); // get dependency template
+    server.enqueue(SUCCESS_RESPONSE); // get autocomplete template
+    server.enqueue(SUCCESS_RESPONSE); // cluster health
+
+    storage.check();
+
+    server.takeRequest(); // get version
+
+    assertThat(server.takeRequest().request().path()) // get span template
+      .startsWith("/_template/zipkin:span_template");
+    assertThat(server.takeRequest().request().path()) // // get dependency template
+      .startsWith("/_template/zipkin:dependency_template");
+    assertThat(server.takeRequest().request().path()) // get autocomplete template
+      .startsWith("/_template/zipkin:autocomplete_template");
+  }
+
+  /** Ensure that Zipkin includes "include_type_name" parameter with 6.7 */
+  @Test void check_create_indexTemplate_resourcePath_version67() {
+    server.enqueue(AggregatedHttpResponse.of(
+      HttpStatus.OK, MediaType.JSON_UTF_8, "{\"version\":{\"number\":\"6.7.0\"}}"));
+    server.enqueue(SUCCESS_RESPONSE); // get span template
+    server.enqueue(SUCCESS_RESPONSE); // get dependency template
+    server.enqueue(SUCCESS_RESPONSE); // get autocomplete template
+    server.enqueue(SUCCESS_RESPONSE); // cluster health
+
+    storage.check();
+
+    server.takeRequest(); // get version
+
+    assertThat(server.takeRequest().request().path()) // get span template
+      .startsWith("/_template/zipkin:span_template?include_type_name=true");
+    assertThat(server.takeRequest().request().path()) // // get dependency template
+      .startsWith("/_template/zipkin:dependency_template?include_type_name=true");
+    assertThat(server.takeRequest().request().path()) // get autocomplete template
+      .startsWith("/_template/zipkin:autocomplete_template?include_type_name=true");
+  }
+
+  /** Ensure that Zipkin doesn't include "include_type_name" parameter with version >7.0 */
+  @Test void check_create_indexTemplate_resourcePath_version71() {
+    server.enqueue(AggregatedHttpResponse.of(
+      HttpStatus.OK, MediaType.JSON_UTF_8, "{\"version\":{\"number\":\"7.0.0\"}}"));
+    server.enqueue(SUCCESS_RESPONSE); // get span template
+    server.enqueue(SUCCESS_RESPONSE); // get dependency template
+    server.enqueue(SUCCESS_RESPONSE); // get autocomplete template
+    server.enqueue(SUCCESS_RESPONSE); // cluster health
+
+    storage.check();
+
+    server.takeRequest(); // get version
+
+    assertThat(server.takeRequest().request().path()) // get span template
+      .startsWith("/_template/zipkin-span_template");
+    assertThat(server.takeRequest().request().path()) // // get dependency template
+      .startsWith("/_template/zipkin-dependency_template");
+    assertThat(server.takeRequest().request().path()) // get autocomplete template
+      .startsWith("/_template/zipkin-autocomplete_template");
   }
 
   /** Ensure that Zipkin uses the legacy resource path when priority is not set. */

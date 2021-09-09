@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2021 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -29,6 +29,7 @@ import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 public final class ElasticsearchVersion implements Comparable<ElasticsearchVersion> {
   public static final ElasticsearchVersion V5_0 = new ElasticsearchVersion(5, 0);
   public static final ElasticsearchVersion V6_0 = new ElasticsearchVersion(6, 0);
+  public static final ElasticsearchVersion V6_7 = new ElasticsearchVersion(6, 7);
   public static final ElasticsearchVersion V7_0 = new ElasticsearchVersion(7, 0);
   public static final ElasticsearchVersion V7_8 = new ElasticsearchVersion(7, 8);
   public static final ElasticsearchVersion V8_0 = new ElasticsearchVersion(8, 0);
