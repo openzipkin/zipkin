@@ -51,15 +51,15 @@
 
     <!-- This allows you to test feature branches with jitpack -->
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>1.3.0</armeria.version>
+    <armeria.version>1.12.0</armeria.version>
     <!-- Match Armeria version to avoid conflicts including running tests in the IDE -->
-    <netty.version>4.1.54.Final</netty.version>
+    <netty.version>4.1.69.Final</netty.version>
 
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
-    <jackson.version>2.12.0</jackson.version>
+    <jackson.version>2.12.4</jackson.version>
 
-    <java-driver.version>4.9.0</java-driver.version>
-    <micrometer.version>1.6.2</micrometer.version>
+    <java-driver.version>4.11.3</java-driver.version>
+    <micrometer.version>1.6.10</micrometer.version>
 
     <!-- Used for Generated annotations -->
     <javax-annotation-api.version>1.3.1</javax-annotation-api.version>
@@ -96,7 +96,7 @@
 
     <license.skip>${skipTests}</license.skip>
 
-    <animal-sniffer-maven-plugin.version>1.19</animal-sniffer-maven-plugin.version>
+    <animal-sniffer-maven-plugin.version>1.20</animal-sniffer-maven-plugin.version>
     <go-offline-maven-plugin.version>1.2.8</go-offline-maven-plugin.version>
     <!-- TODO: cleanup any redundant ignores now also in the 4.0 release (once final) -->
     <license-maven-plugin.version>4.0.rc2</license-maven-plugin.version>
