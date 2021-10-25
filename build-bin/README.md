@@ -162,7 +162,7 @@ explicitly defined and `on.tags` is a [glob pattern](https://docs.github.com/en/
 ```yaml
 on:
   push:
-    tags: '[0-9]+.[0-9]+.[0-9]+**'  # Ex. 8.272.10 or 15.0.4_p5
+    tags: '[0-9]+.[0-9]+.[0-9]+**'  # Ex. 8.272.10 or 15.0.5_p3
     branches: master
 
 jobs:
@@ -223,7 +223,7 @@ jobs:
         - if [ "${SHOULD_DEPLOY}" != "true" ]; then travis_terminate 0; fi
         - travis_wait ./build-bin/deploy master
     - stage: deploy
-      # Ex. 8.272.10 or 15.0.4_p5
+      # Ex. 8.272.10 or 15.0.5_p3
       if: tag =~ /^[0-9]+\.[0-9]+\.[0-9]+/ AND type = push AND env(GH_TOKEN) IS present
       install: ./build-bin/configure_deploy
       script: ./build-bin/deploy ${TRAVIS_TAG}
