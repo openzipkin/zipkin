@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2021 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,6 +20,7 @@ import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -57,7 +58,7 @@ final class ZipkinGrpcCollector {
       this.metrics = metrics;
     }
 
-    @Override protected CompletableFuture<ByteBuf> handleMessage(ByteBuf bytes) {
+    @Override protected CompletionStage<ByteBuf> handleMessage(ServiceRequestContext srCtx, ByteBuf bytes) {
       metrics.incrementMessages();
       metrics.incrementBytes(bytes.readableBytes());
 
