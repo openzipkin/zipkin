@@ -15,6 +15,11 @@
 
 set -eux
 
+arch=${1#*/}
+row_format_option="ROW_FORMAT=COMPRESSED"
+if [ "$arch" = "s390x" ]; then
+    row_format_option=""
+fi
 echo "*** Installing MySQL"
 apk add --update --no-cache mysql=~${MYSQL_VERSION} mysql-client=~${MYSQL_VERSION}
 # Fake auth tools install as 10.4.0 install dies otherwise
@@ -75,5 +80,4 @@ echo "*** Cleaning Up"
 apk del mysql-client
 rm bin share
 # Remove large binaries
-(cd /usr/bin; rm mysql_* aria_* mysqlbinlog myis* test-connect-t mysqlslap innochecksum resolve* my_print_defaults sst_dump)
-
+(cd /usr/bin; rm -f mysql_* aria_* mysqlbinlog myis* test-connect-t mysqlslap innochecksum resolve* my_print_defaults sst_dump)

@@ -27,8 +27,9 @@ COPY docker/test-images/zipkin-mysql/start-mysql /docker-bin/
 COPY docker/test-images/zipkin-mysql/install.sh /install/
 COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /zipkin-schemas/
 
-FROM ghcr.io/openzipkin/alpine:${alpine_version} as zipkin-mysql
+FROM --platform=$BUILDPLATFORM ghcr.io/openzipkin/alpine:${alpine_version} as zipkin-mysql
 LABEL org.opencontainers.image.description="MySQL on Alpine Linux with Zipkin schema pre-installed"
+ARG TARGETPLATFORM
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=scratch /docker-bin/* /usr/local/bin/
@@ -44,7 +45,7 @@ ENV MYSQL_VERSION=$mysql_version
 WORKDIR /tmp
 COPY --from=scratch /zipkin-schemas/* ./install/zipkin-schemas/
 COPY --from=scratch /install/install.sh ./install
-RUN (cd install && ./install.sh) && rm -rf ./install
+RUN (cd install && ./install.sh $TARGETPLATFORM) && rm -rf ./install
 
 # All content including binaries and logs write under WORKDIR
 ARG USER=mysql
