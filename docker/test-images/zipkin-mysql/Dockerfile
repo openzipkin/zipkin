@@ -27,7 +27,7 @@ COPY docker/test-images/zipkin-mysql/start-mysql /docker-bin/
 COPY docker/test-images/zipkin-mysql/install.sh /install/
 COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /zipkin-schemas/
 
-FROM --platform=$BUILDPLATFORM ghcr.io/openzipkin/alpine:${alpine_version} as zipkin-mysql
+FROM ghcr.io/openzipkin/alpine:${alpine_version} as zipkin-mysql
 LABEL org.opencontainers.image.description="MySQL on Alpine Linux with Zipkin schema pre-installed"
 ARG TARGETPLATFORM
 

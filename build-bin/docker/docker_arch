@@ -35,9 +35,6 @@ case ${docker_arch} in
   aarch64* )
     docker_arch=arm64
     ;;
-  s390x* )
-    docker_arch=s390x
-    ;;
   * )
     >&2 echo "Unsupported DOCKER_ARCH: ${docker_arch}"
     exit 1;
