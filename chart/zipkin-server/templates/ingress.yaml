@@ -13,7 +13,7 @@ the License.
 */}}
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "zipkin.fullname" . -}}
-{{- $svcPort := .Values.service.port -}}
+{{- $svcPort := .Values.service.zipkin.port -}}
 {{- if .Capabilities.APIVersions.Has "networking.k8s.io/v1" }}
 apiVersion: networking.k8s.io/v1
 {{- else if .Capabilities.APIVersions.Has "networking.k8s.io/v1beta1" }}
