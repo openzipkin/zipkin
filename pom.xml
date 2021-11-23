@@ -19,7 +19,7 @@
 
   <groupId>io.zipkin</groupId>
   <artifactId>zipkin-parent</artifactId>
-  <version>2.23.6-SNAPSHOT</version>
+  <version>2.23.6</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -140,7 +140,7 @@
     <url>https://github.com/openzipkin/zipkin</url>
     <connection>scm:git:https://github.com/openzipkin/zipkin.git</connection>
     <developerConnection>scm:git:https://github.com/openzipkin/zipkin.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>2.23.6</tag>
   </scm>
 
   <!-- Developer section is needed for Maven Central, but doesn't need to include each person -->
