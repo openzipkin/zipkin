@@ -61,7 +61,7 @@ RUN /build-bin/maven/maven_build_or_unjar io.zipkin zipkin-lens ${VERSION}
 FROM ghcr.io/openzipkin/alpine:$alpine_version as zipkin-ui
 LABEL org.opencontainers.image.description="NGINX on Alpine Linux hosting the Zipkin UI with Zipkin API proxy_pass"
 # Use latest from https://pkgs.alpinelinux.org/packages?name=nginx
-ARG nginx_version=1.20.1
+ARG nginx_version=1.20.2
 LABEL nginx-version=$nginx_version
 
 ENV ZIPKIN_BASE_URL=http://zipkin:9411
