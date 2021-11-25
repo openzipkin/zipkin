@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.zipkin2</groupId>
     <artifactId>zipkin-collector-parent</artifactId>
-    <version>2.23.8-SNAPSHOT</version>
+    <version>2.23.8</version>
   </parent>
 
   <artifactId>zipkin-collector-activemq</artifactId>
