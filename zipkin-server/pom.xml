@@ -606,7 +606,7 @@
                 </dependency>
                 <exclude>
                   <groupId>${armeria.groupId}</groupId>
-                  <artifactId>armeria-thrift0.14</artifactId>
+                  <artifactId>armeria-thrift0.15</artifactId>
                 </exclude>
               </excludes>
             </configuration>

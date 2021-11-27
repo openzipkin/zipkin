@@ -42,7 +42,7 @@
 
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-thrift0.14</artifactId>
+      <artifactId>armeria-thrift0.15</artifactId>
       <version>${armeria.version}</version>
     </dependency>
 
