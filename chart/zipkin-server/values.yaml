@@ -48,12 +48,8 @@ securityContext:
   runAsUser: 1000
 
 service:
-  tracing:
-    type: ClusterIP
-    port: 80
-  zipkin:
-    type: ClusterIP
-    port: 9411
+  type: ClusterIP
+  port: 9411
 
 ingress:
   enabled: false

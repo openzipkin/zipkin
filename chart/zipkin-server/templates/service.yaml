@@ -14,29 +14,13 @@ the License.
 apiVersion: v1
 kind: Service
 metadata:
-  name: tracing
-  labels:
-    {{- include "zipkin.labels" . | nindent 4 }}
-spec:
-  type: {{ .Values.service.tracing.type }}
-  ports:
-    - port: {{ .Values.service.tracing.port }}
-      targetPort: 9411
-      protocol: TCP
-      name: http-query
-  selector:
-    {{- include "zipkin.selectorLabels" . | nindent 4 }}
----
-apiVersion: v1
-kind: Service
-metadata:
   name: {{ include "zipkin.fullname" . }}
   labels:
     {{- include "zipkin.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.zipkin.type }}
+  type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.zipkin.port }}
+    - port: {{ .Values.service.port }}
       targetPort: 9411
       protocol: TCP
       name: http-query
