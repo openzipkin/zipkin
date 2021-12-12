@@ -1,0 +1,25 @@
+name: helm-release
+
+on:
+  push:
+    branches:
+    - master
+    paths:
+    - 'chart/**'
+
+jobs:
+  release:
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Configure Git
+      run: |
+        git config user.name "$GITHUB_ACTOR"
+        git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+    - name: Run chart-releaser
+      uses: helm/chart-releaser-action@v1.2.1
+      with:
+        charts_dir: chart
+      env:
+        CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
