@@ -64,7 +64,7 @@ for repo in ${docker_repos}; do
 done
 
 docker_args=$($(dirname "$0")/docker_args ${version})
-docker_archs=${DOCKER_ARCHS:-amd64 arm64}
+docker_archs=${DOCKER_ARCHS:-amd64 arm64 s390x}
 
 echo "Will build the following architectures: ${docker_archs}"
 
