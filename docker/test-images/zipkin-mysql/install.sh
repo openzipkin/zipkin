@@ -15,10 +15,6 @@
 
 set -eux
 
-arch=${1#*/}
-if [ "$arch" = "s390x" ]; then
-    sed -i 's/\(.*\)ROW_FORMAT=COMPRESSED \(.*\)/\1\2/g' zipkin-schemas/mysql.sql
-fi
 echo "*** Installing MySQL"
 apk add --update --no-cache mysql=~${MYSQL_VERSION} mysql-client=~${MYSQL_VERSION}
 # Fake auth tools install as 10.4.0 install dies otherwise
