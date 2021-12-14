@@ -16,9 +16,8 @@
 set -eux
 
 arch=${1#*/}
-row_format_option="ROW_FORMAT=COMPRESSED"
 if [ "$arch" = "s390x" ]; then
-    row_format_option=""
+    sed -i 's/\(.*\)ROW_FORMAT=COMPRESSED \(.*\)/\1\2/g' zipkin-schemas/mysql.sql
 fi
 echo "*** Installing MySQL"
 apk add --update --no-cache mysql=~${MYSQL_VERSION} mysql-client=~${MYSQL_VERSION}
