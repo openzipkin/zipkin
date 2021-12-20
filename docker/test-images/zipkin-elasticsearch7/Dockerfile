@@ -35,7 +35,7 @@ WORKDIR /install
 # Use latest 7.x version from https://www.elastic.co/downloads/past-releases#elasticsearch
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG elasticsearch7_version=7.10.1
+ARG elasticsearch7_version=7.16.1
 
 # Download only the OSS distribution (lacks X-Pack)
 RUN \
@@ -49,7 +49,7 @@ COPY --from=scratch /config/ ./config/
 
 FROM ghcr.io/openzipkin/java:${java_version}-jre as zipkin-elasticsearch7
 LABEL org.opencontainers.image.description="Elasticsearch OSS distribution on OpenJDK and Alpine Linux"
-ARG elasticsearch7_version=7.10.0
+ARG elasticsearch7_version=7.16.1
 LABEL elasticsearch-version=$elasticsearch7_version
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
