@@ -95,3 +95,10 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+zipkin:
+  storage:
+    type: mem
+#    elasticsearch:
+#      hosts: hostA hostB
+#      index: fooIndex
