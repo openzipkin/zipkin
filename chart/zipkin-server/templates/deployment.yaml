@@ -48,7 +48,15 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           env:
             - name: STORAGE_METHOD
-              value: mem
+              value: "{{ .Values.zipkin.storage.type }}"
+            {{- if eq .Values.zipkin.storage.type "elasticsearch" }}
+            {{- with .Values.zipkin.storage.elasticsearch }}
+            - name: ES_HOSTS
+              value: "{{ .hosts }}"
+            - name: ES_INDEX
+              value: "{{ .index }}"
+            {{- end }}
+            {{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           readinessProbe:
             httpGet:
