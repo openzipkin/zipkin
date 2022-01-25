@@ -14,4 +14,4 @@ name: zipkin
 description: A Zipkin helm chart for kubernetes
 type: application
 version: 0.2.0
-appVersion: "2.23.16"
+appVersion: 2.23.1
