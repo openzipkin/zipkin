@@ -21,7 +21,7 @@
 
 trigger_tag=${1?trigger_tag is required. Ex release-1.2.3}
 release_version=$(build-bin/git/version_from_trigger_tag release- ${trigger_tag})
-release_branch=${2:-master}
+release_branch=${3:-master}
 
 # Checkout master, as we release from master, not a tag ref
 git fetch --no-tags --prune --depth=1 origin +refs/heads/${release_branch}:refs/remotes/origin/${release_branch}
@@ -36,7 +36,7 @@ if [ "$commit_local_release_branch" != "$commit_remote_release_branch" ]; then
 fi
 
 # Update appVersion
-latest_app_version=$(git describe --abbrev=0)
+latest_app_version=${2?latest_app_version is required. Ex 4.5.6}
 sh -c "cat ./chart/Chart.yaml | sed 's/appVersion\:\s[0-9.]\+/appVersion\: ${latest_app_version}/g'"
 
 # Update version

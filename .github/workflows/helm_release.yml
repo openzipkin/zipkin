@@ -16,8 +16,15 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
+      - uses: oprypin/find-latest-tag@v1
+        with:
+          repository: openzipkin/zipkin
+          releases-only: true
+          regex: '^\d+\.\d+\.\d+$'
+        id: appVersion
+
       - name: Prepare release
-        run: build-bin/helm/helm_prepare
+        run: build-bin/helm/helm_prepare $(echo ${GITHUB_REF} | cut -d/ -f 3) ${{ steps.appVersion.outputs.tag }}
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.2.1
