@@ -1,0 +1,29 @@
+name: helm_test
+
+on:
+  pull_request:
+    paths:
+      - "charts/**"
+
+jobs:
+  lint:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+      - name: Lint the charts
+        uses: helm/chart-testing-action@v2.1.0
+        with:
+          command: lint
+          config: .github/ct.yaml
+      - name: Get chart version
+        id: chartVersion
+        uses: mikefarah/yq@master
+        with:
+          cmd: yq e '.version' charts/Chart.yaml
+      - name: Next version
+        run: echo '{{ steps.chartVersion.outputs.result }}' | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}'

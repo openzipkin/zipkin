@@ -204,6 +204,9 @@ commits to master.
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin` and GitHub
 Container Registry as `ghcr.io/openzipkin/zipkin`. See [docker](./docker) for details.
 
+### Helm Charts
+Helm charts are avaible at https://openzipkin.github.io/zipkin. See [./charts/zipkin-server] for details.
+
 ### Javadocs
 https://zipkin.io/zipkin contains versioned folders with JavaDocs published on each (non-PR) build, as well
 as releases.

@@ -1,6 +1,17 @@
-# zipkin-server
+# Zipkin Helm Chart
 
-A distributed tracing system
+## Usage
+
+[Helm](https://helm.sh) must be installed to use the charts.
+Please refer to Helm's [documentation](https://helm.sh/docs/) to get started.
+
+Once Helm is set up properly, add the repo as follows:
+
+```console
+helm repo add openzipkin https://openzipkin.github.io/zipkin
+```
+
+You can then run `helm search repo zipkin` to see the charts.
 
 ## Values
 
@@ -44,5 +55,6 @@ A distributed tracing system
 | zipkin.storage.type | string | `"elasticsearch"` |  |
 
 The values are validated using a JSON schema, which contains logic to enforce either:
+
 - `zipkin.storage.type` is set to `mem`
 - `zipkin.storage.type` is set to `elasticsearch` *AND* both `z.s.elasticsearch.hosts` and `z.s.elasticsearch.index` is set
