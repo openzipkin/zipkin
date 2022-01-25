@@ -26,4 +26,4 @@ jobs:
         with:
           cmd: yq e '.version' chart/Chart.yaml
       - name: Next version
-        run: echo '{{ steps.chartVersion.outputs.result }}' | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}'
+        run: echo ${{ steps.chartVersion.outputs.result }} | awk -F. -v OFS=. 'NF==1{print ++$NF}; NF>1{if(length($NF+1)>length($NF))$(NF-1)++; $NF=sprintf("%0*d", length($NF), ($NF+1)%(10^length($NF))); print}'
