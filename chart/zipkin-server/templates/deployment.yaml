@@ -47,7 +47,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           env:
-            - name: STORAGE_METHOD
+            - name: STORAGE_TYPE
               value: "{{ .Values.zipkin.storage.type }}"
             {{- if eq .Values.zipkin.storage.type "elasticsearch" }}
             {{- with .Values.zipkin.storage.elasticsearch }}
