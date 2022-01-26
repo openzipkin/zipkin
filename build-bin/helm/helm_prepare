@@ -19,8 +19,8 @@
 # This leaves the git context on gh-pages when done. For this reason, it is better to run this at
 # the end of deployment.
 
-trigger_tag=${1?trigger_tag is required. Ex release-1.2.3}
-release_version=$(build-bin/git/version_from_trigger_tag release- ${trigger_tag})
+trigger_tag=${1?trigger_tag is required. Ex release-chart-1.2.3}
+release_version=$(build-bin/git/version_from_trigger_tag release-chart- ${trigger_tag})
 release_branch=${3:-master}
 
 # Checkout master, as we release from master, not a tag ref
@@ -42,4 +42,11 @@ sh -c "cat ./chart/Chart.yaml | sed 's/appVersion\:\s[0-9.]\+/appVersion\: ${lat
 # Update version
 sh -c "cat ./chart/Chart.yaml | sed 's/version\:\s[0-9.]\+/version\: ${release_version}/g'"
 
-#git commit -m "prepare chart release ${release_version}"
+# Commit changes to ./chart/Chart.yaml
+git commit -m "chore: prepare chart release ${release_version}"
+
+# Push the changes in ./chart/Chart.yaml to the release branch
+git push origin ${release_branch}
+
+# Delete current release tag as we aren't using it anymore
+git push --delete origin ${trigger_tag}
