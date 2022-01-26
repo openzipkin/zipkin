@@ -11,7 +11,7 @@ Once Helm is set up properly, add the repo as follows:
 helm repo add openzipkin https://openzipkin.github.io/zipkin
 ```
 
-You can then run `helm search repo zipkin` to see the charts.
+You can then run `helm search repo openzipkin` to see the charts.
 
 ## Values
 
