@@ -10,13 +10,13 @@ on:
     branches: master
     paths-ignore:
       - "**/*.md"
-      - "chart/**"
+      - "charts/**"
   # We also run tests on pull requests targeted at the master branch.
   pull_request:
     branches: master
     paths-ignore:
       - "**/*.md"
-      - "chart/**"
+      - "charts/**"
 
 jobs:
   test:

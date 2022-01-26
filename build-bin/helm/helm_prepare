@@ -37,15 +37,15 @@ fi
 
 # Update appVersion
 latest_app_version=${2?latest_app_version is required. Ex 4.5.6}
-sh -c "cat ./chart/Chart.yaml | sed 's/appVersion\:\s[0-9.]\+/appVersion\: ${latest_app_version}/g'"
+sh -c "cat ./charts/zipkin/Chart.yaml | sed 's/appVersion\:\s[0-9.]\+/appVersion\: ${latest_app_version}/g'"
 
 # Update version
-sh -c "cat ./chart/Chart.yaml | sed 's/version\:\s[0-9.]\+/version\: ${release_version}/g'"
+sh -c "cat ./charts/zipkin/Chart.yaml | sed 's/version\:\s[0-9.]\+/version\: ${release_version}/g'"
 
-# Commit changes to ./chart/Chart.yaml
-git commit -m "chore: prepare chart release ${release_version}"
+# Commit changes to ./charts/zipkin/Chart.yaml
+git add ./charts/zipkin/Chart.yaml && git commit -m "chore: prepare chart release ${release_version}"
 
-# Push the changes in ./chart/Chart.yaml to the release branch
+# Push the changes in ./charts/zipkin/Chart.yaml to the release branch
 git push origin ${release_branch}
 
 # Delete current release tag as we aren't using it anymore

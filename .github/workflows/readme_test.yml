@@ -12,7 +12,7 @@ on:
     branches: master
     paths-ignore:
       - "**/*.md"
-      - "chart/**"
+      - "charts/**"
 
 jobs:
   zipkin-server:

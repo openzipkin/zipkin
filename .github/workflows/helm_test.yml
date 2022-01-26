@@ -3,7 +3,7 @@ name: helm_test
 on:
   pull_request:
     paths:
-      - "chart/**"
+      - "charts/**"
 
 jobs:
   lint:

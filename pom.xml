@@ -618,7 +618,7 @@
             <exclude>**/generated/**</exclude>
             <exclude>.dockerignore</exclude>
             <exclude>build-bin/*</exclude>
-            <exclude>chart/**</exclude>
+            <exclude>charts/**</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
         </configuration>
