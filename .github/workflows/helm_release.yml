@@ -27,11 +27,11 @@ jobs:
           regex: '^\d+\.\d+\.\d+$'
         id: appVersion
 
-      - name: Setup push permissions
-        run: git remote set-url origin https://${{ secrets.GH_TOKEN }}:x-oauth-basic@github.com/$GITHUB_REPOSITORY.git
-
       - name: Prepare release
-        run: build-bin/helm/helm_prepare $(echo ${GITHUB_REF} | cut -d/ -f 3) ${{ steps.appVersion.outputs.tag }}
+        run: |
+          git remote set-url origin https://${{ secrets.GH_TOKEN }}:x-oauth-basic@github.com/$GITHUB_REPOSITORY.git
+          build-bin/helm/helm_prepare $(echo ${GITHUB_REF} | cut -d/ -f 3) ${{ steps.appVersion.outputs.tag }}
+          git remote set-url origin https://github.com/$GITHUB_REPOSITORY.git
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.2.1
