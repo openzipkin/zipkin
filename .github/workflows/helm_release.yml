@@ -27,10 +27,10 @@ jobs:
           regex: '^\d+\.\d+\.\d+$'
         id: appVersion
 
+      - name: Setup push permissions
+        run: git remote set-url origin https://${{ secrets.GH_TOKEN }}:x-oauth-basic@github.com/$GITHUB_REPOSITORY.git
+
       - name: Prepare release
-        env:
-          GH_USER: ${{ secrets.GH_USER }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: build-bin/helm/helm_prepare $(echo ${GITHUB_REF} | cut -d/ -f 3) ${{ steps.appVersion.outputs.tag }}
 
       - name: Run chart-releaser
