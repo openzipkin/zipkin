@@ -205,7 +205,7 @@ Released versions of zipkin-server are published to Docker Hub as `openzipkin/zi
 Container Registry as `ghcr.io/openzipkin/zipkin`. See [docker](./docker) for details.
 
 ### Helm Charts
-Helm charts are avaible at https://openzipkin.github.io/zipkin. See [charts](./charts/zipkin) for details.
+Helm charts are available at https://openzipkin.github.io/zipkin. See [charts](./charts/zipkin) for details.
 
 ### Javadocs
 https://zipkin.io/zipkin contains versioned folders with JavaDocs published on each (non-PR) build, as well
