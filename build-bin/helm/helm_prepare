@@ -47,6 +47,3 @@ git add ./charts/zipkin/Chart.yaml && git commit -m "chore: prepare chart releas
 
 # Push the changes in ./charts/zipkin/Chart.yaml to the release branch
 git push origin ${release_branch}
-
-# Delete current release tag as we aren't using it anymore
-git push --delete origin ${trigger_tag}

@@ -39,3 +39,10 @@ jobs:
           charts_dir: charts
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Removes trigger target
+        uses: dev-drprasad/delete-tag-and-release@v0.2.0
+        with:
+          tag_name: $(echo ${GITHUB_REF} | cut -d/ -f 3)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
