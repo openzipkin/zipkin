@@ -6,7 +6,7 @@ name: helm_release
 
 on:
   push:
-    tags: "chart-release-[0-9]+.[0-9]+.[0-9]+**"
+    tags: "release-chart-[0-9]+.[0-9]+.[0-9]+**"
 
 jobs:
   release:
