@@ -28,6 +28,9 @@ jobs:
         id: appVersion
 
       - name: Prepare release
+        env:
+          GH_USER: ${{ secrets.GH_USER }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: build-bin/helm/helm_prepare $(echo ${GITHUB_REF} | cut -d/ -f 3) ${{ steps.appVersion.outputs.tag }}
 
       - name: Run chart-releaser
