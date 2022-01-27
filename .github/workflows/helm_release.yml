@@ -40,9 +40,13 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
+      - name: Get current tag trigger
+        id: trigger-tag
+        run: echo ::set-output name=tag::$(echo ${GITHUB_REF} | cut -d/ -f 3)
+
       - name: Removes trigger target
         uses: dev-drprasad/delete-tag-and-release@v0.2.0
         with:
-          tag_name: $(echo ${GITHUB_REF} | cut -d/ -f 3)
+          tag_name: ${{ steps.trigger-tag.outputs.tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
