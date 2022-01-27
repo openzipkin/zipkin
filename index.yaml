@@ -14,15 +14,4 @@ entries:
     urls:
     - https://github.com/openzipkin/zipkin/releases/download/zipkin-0.3.0/zipkin-0.3.0.tgz
     version: 0.3.0
-  zipkin-server:
-  - apiVersion: v2
-    appVersion: 2.23.16
-    created: "2022-01-24T20:40:22.38752466Z"
-    description: a distributed tracing system
-    digest: cc472a2960b897914daec03389f881fc3193f9bffc125b7315ce10b1cb5b8014
-    name: zipkin-server
-    type: application
-    urls:
-    - https://github.com/openzipkin/zipkin/releases/download/zipkin-server-0.2.0/zipkin-server-0.2.0.tgz
-    version: 0.2.0
 generated: "2022-01-27T21:32:37.160417856Z"
