@@ -2,7 +2,7 @@
 ---
 name: helm_release
 
-# We release helm_charts into https://openzipkin.github.com/index.yaml
+# We release helm_charts into https://github.com/openzipkin/zipkin/blob/gh-pages/index.yaml
 
 on:
   push:
