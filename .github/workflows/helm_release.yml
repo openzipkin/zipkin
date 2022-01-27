@@ -1,0 +1,38 @@
+# yamllint --format github .github/workflows/helm_release.yml
+---
+name: helm_release
+
+# We release helm_charts into https://github.com/openzipkin/zipkin/blob/gh-pages/index.yaml
+
+on:
+  push:
+    tags: "chart-release-[0-9]+.[0-9]+.[0-9]+**"
+
+jobs:
+  release:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - uses: oprypin/find-latest-tag@v1
+        with:
+          repository: openzipkin/zipkin
+          releases-only: true
+          regex: '^\d+\.\d+\.\d+$'
+        id: appVersion
+
+      - name: Prepare release
+        run: build-bin/helm/helm_prepare $(echo ${GITHUB_REF} | cut -d/ -f 3) ${{ steps.appVersion.outputs.tag }}
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.2.1
+        with:
+          charts_dir: charts
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

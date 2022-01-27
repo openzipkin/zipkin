@@ -1,0 +1,52 @@
+#!/bin/sh -ue
+#
+# Copyright 2015-2022 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+# This script creates JavaDoc for a version and pushes an update to gh-pages. This fails if there
+# are no javadoc jars in the current directory.
+#
+# This leaves the git context on gh-pages when done. For this reason, it is better to run this at
+# the end of deployment.
+
+trigger_tag=${1?trigger_tag is required. Ex release-chart-1.2.3}
+release_version=$(build-bin/git/version_from_trigger_tag release-chart- ${trigger_tag})
+release_branch=${3:-master}
+
+# Checkout master, as we release from master, not a tag ref
+git fetch --no-tags --prune --depth=1 origin +refs/heads/${release_branch}:refs/remotes/origin/${release_branch}
+git checkout ${release_branch}
+
+# Ensure no one pushed commits since this release tag as it would fail later commands
+commit_local_release_branch=$(git show --pretty='format:%H' ${release_branch})
+commit_remote_release_branch=$(git show --pretty='format:%H' origin/${release_branch})
+if [ "$commit_local_release_branch" != "$commit_remote_release_branch" ]; then
+  >&2 echo "${release_branch} on remote 'origin' has commits since the version to release, aborting"
+  exit 1
+fi
+
+# Update appVersion
+latest_app_version=${2?latest_app_version is required. Ex 4.5.6}
+sh -c "cat ./charts/zipkin/Chart.yaml | sed 's/appVersion\:\s[0-9.]\+/appVersion\: ${latest_app_version}/g'"
+
+# Update version
+sh -c "cat ./charts/zipkin/Chart.yaml | sed 's/version\:\s[0-9.]\+/version\: ${release_version}/g'"
+
+# Commit changes to ./charts/zipkin/Chart.yaml
+git add ./charts/zipkin/Chart.yaml && git commit -m "chore: prepare chart release ${release_version}"
+
+# Push the changes in ./charts/zipkin/Chart.yaml to the release branch
+git push origin ${release_branch}
+
+# Delete current release tag as we aren't using it anymore
+git push --delete origin ${trigger_tag}

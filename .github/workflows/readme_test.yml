@@ -10,7 +10,9 @@ on:
   # * This skips master pushes as it is rare things not done in PRs break, and conserves resources
   pull_request:
     branches: master
-    paths-ignore: '**/*.md'
+    paths-ignore:
+      - "**/*.md"
+      - "charts/**"
 
 jobs:
   zipkin-server:
@@ -18,7 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        include:  # ubuntu is tested as a part of the docker job
+        include: # ubuntu is tested as a part of the docker job
           - name: macos
             os: macos-latest
           - name: windows
@@ -45,11 +47,11 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
-      - name: Execute Server Build  # command from zipkin-server/README.md
+      - name: Execute Server Build # command from zipkin-server/README.md
         run: ./mvnw -T1C -q --batch-mode -DskipTests --also-make -pl zipkin-server clean package
 
   docker:
-    runs-on: ubuntu-20.04  # newest available distribution, aka focal
+    runs-on: ubuntu-20.04 # newest available distribution, aka focal
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -79,7 +81,7 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
-      - name: zipkin-server/README.md  # Tests the build which is re-used for a few images
+      - name: zipkin-server/README.md # Tests the build which is re-used for a few images
         run: ./mvnw -T1C -q --batch-mode -DskipTests --also-make -pl zipkin-server clean package
       - name: docker/README.md - openzipkin/zipkin
         run: |
