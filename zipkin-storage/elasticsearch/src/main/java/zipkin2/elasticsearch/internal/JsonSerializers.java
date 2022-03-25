@@ -64,6 +64,9 @@ public final class JsonSerializers {
       if (value == JsonToken.VALUE_NULL) {
         continue;
       }
+      if (parser.currentName() == null) {
+        continue;
+      }
       switch (parser.currentName()) {
         case "traceId":
           result.traceId(parser.getText());
