@@ -125,6 +125,13 @@ public abstract class CassandraStorageBuilder<B extends CassandraStorageBuilder<
     return (B) this;
   }
 
+  /** Max number of requests per connection. Defaults to 40960 / poolLocalSize */
+  public B maxRequestsPerConnection(int maxRequestsPerConnection) {
+    if (maxRequestsPerConnection <= 0) throw new IllegalArgumentException("maxRequestsPerConnection <= 0");
+    this.maxRequestsPerConnection = maxRequestsPerConnection;
+    return (B) this;
+  }
+
   /** Will throw an exception on startup if authentication fails. No default. */
   public B username(@Nullable String username) {
     this.username = username;

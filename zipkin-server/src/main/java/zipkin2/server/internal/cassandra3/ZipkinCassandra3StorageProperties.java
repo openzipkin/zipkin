@@ -25,6 +25,7 @@ class ZipkinCassandra3StorageProperties implements Serializable { // for Spark j
   private String contactPoints = "localhost";
   private String localDc = "datacenter1";
   private int maxConnections = 8;
+  private int maxRequestsPerConnection = 5120;
   private boolean ensureSchema = true;
   private boolean useSsl = false;
   private String username;
@@ -62,6 +63,14 @@ class ZipkinCassandra3StorageProperties implements Serializable { // for Spark j
 
   public void setMaxConnections(int maxConnections) {
     this.maxConnections = maxConnections;
+  }
+
+  public int getMaxRequestsPerConnection() {
+    return maxRequestsPerConnection;
+  }
+
+  public void setMaxRequestsPerConnection(int maxRequestsPerConnection) {
+    this.maxRequestsPerConnection = maxRequestsPerConnection;
   }
 
   public boolean isEnsureSchema() {
@@ -110,6 +119,7 @@ class ZipkinCassandra3StorageProperties implements Serializable { // for Spark j
       .contactPoints(contactPoints)
       .localDc(localDc)
       .maxConnections(maxConnections)
+      .maxRequestsPerConnection(maxRequestsPerConnection)
       .ensureSchema(ensureSchema)
       .useSsl(useSsl)
       .username(username)
