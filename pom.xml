@@ -68,8 +68,8 @@
     <javax-annotation-api.version>1.3.1</javax-annotation-api.version>
 
     <!-- update together -->
-    <spring-boot.version>2.4.13</spring-boot.version>
-    <spring.version>5.3.7</spring.version>
+    <spring-boot.version>2.6.6</spring-boot.version>
+    <spring.version>5.3.18</spring.version>
 
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
