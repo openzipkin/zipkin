@@ -190,7 +190,10 @@
                             "required": ["elasticsearch"]
                         }
                     ]
-                }
+                },
+		"extraEnv": {
+			"type": "object"
+		}
             }
         }
     }

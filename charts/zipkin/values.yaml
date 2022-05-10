@@ -104,3 +104,5 @@ zipkin:
 #   elasticsearch:
 #      hosts: hostA hostB
 #      index: fooIndex
+  extraEnv: {}
+#    JAVA_OPTS: "-Xms128m -Xmx512m -XX:+ExitOnOutOfMemoryError"
