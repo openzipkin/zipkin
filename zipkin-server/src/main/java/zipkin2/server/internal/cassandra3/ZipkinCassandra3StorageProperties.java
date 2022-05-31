@@ -19,101 +19,104 @@ import zipkin2.storage.cassandra.CassandraStorage;
 
 @ConfigurationProperties("zipkin.storage.cassandra3")
 class ZipkinCassandra3StorageProperties implements Serializable { // for Spark jobs
-  private static final long serialVersionUID = 0L;
+	private static final long serialVersionUID = 0L;
 
-  private String keyspace = "zipkin3";
-  private String contactPoints = "localhost";
-  private String localDc = "datacenter1";
-  private int maxConnections = 8;
-  private boolean ensureSchema = true;
-  private boolean useSsl = false;
-  private String username;
-  private String password;
-  /** See {@link CassandraStorage.Builder#indexFetchMultiplier(int)} */
-  private int indexFetchMultiplier = 3;
+	private String keyspace = "zipkin3";
+	private String contactPoints = "localhost";
+	private String localDc = "datacenter1";
+	private int maxConnections = 8;
+	private boolean ensureSchema = true;
+	private boolean useSsl = false;
+	private boolean overrideHostnameVerification = false;
+	private String username;
+	private String password;
+	/** See {@link CassandraStorage.Builder#indexFetchMultiplier(int)} */
+	private int indexFetchMultiplier = 3;
 
-  public String getKeyspace() {
-    return keyspace;
-  }
+	public String getKeyspace() {
+		return keyspace;
+	}
 
-  public void setKeyspace(String keyspace) {
-    this.keyspace = keyspace;
-  }
+	public void setKeyspace(String keyspace) {
+		this.keyspace = keyspace;
+	}
 
-  public String getContactPoints() {
-    return contactPoints;
-  }
+	public String getContactPoints() {
+		return contactPoints;
+	}
 
-  public void setContactPoints(String contactPoints) {
-    this.contactPoints = contactPoints;
-  }
+	public void setContactPoints(String contactPoints) {
+		this.contactPoints = contactPoints;
+	}
 
-  public String getLocalDc() {
-    return localDc;
-  }
+	public String getLocalDc() {
+		return localDc;
+	}
 
-  public void setLocalDc(String localDc) {
-    this.localDc = "".equals(localDc) ? null : localDc;
-  }
+	public void setLocalDc(String localDc) {
+		this.localDc = "".equals(localDc) ? null : localDc;
+	}
 
-  public int getMaxConnections() {
-    return maxConnections;
-  }
+	public int getMaxConnections() {
+		return maxConnections;
+	}
 
-  public void setMaxConnections(int maxConnections) {
-    this.maxConnections = maxConnections;
-  }
+	public void setMaxConnections(int maxConnections) {
+		this.maxConnections = maxConnections;
+	}
 
-  public boolean isEnsureSchema() {
-    return ensureSchema;
-  }
+	public boolean isEnsureSchema() {
+		return ensureSchema;
+	}
 
-  public void setEnsureSchema(boolean ensureSchema) {
-    this.ensureSchema = ensureSchema;
-  }
+	public void setEnsureSchema(boolean ensureSchema) {
+		this.ensureSchema = ensureSchema;
+	}
 
-  public boolean isUseSsl() {
-    return useSsl;
-  }
+	public boolean isUseSsl() {
+		return useSsl;
+	}
 
-  public void setUseSsl(boolean useSsl) {
-    this.useSsl = useSsl;
-  }
+	public void setUseSsl(boolean useSsl) {
+		this.useSsl = useSsl;
+	}
 
-  public String getUsername() {
-    return username;
-  }
+	public String getUsername() {
+		return username;
+	}
 
-  public void setUsername(String username) {
-    this.username = "".equals(username) ? null : username;
-  }
+	public void setUsername(String username) {
+		this.username = "".equals(username) ? null : username;
+	}
 
-  public String getPassword() {
-    return password;
-  }
+	public String getPassword() {
+		return password;
+	}
 
-  public void setPassword(String password) {
-    this.password = "".equals(password) ? null : password;
-  }
+	public void setPassword(String password) {
+		this.password = "".equals(password) ? null : password;
+	}
 
-  public int getIndexFetchMultiplier() {
-    return indexFetchMultiplier;
-  }
+	public int getIndexFetchMultiplier() {
+		return indexFetchMultiplier;
+	}
 
-  public void setIndexFetchMultiplier(int indexFetchMultiplier) {
-    this.indexFetchMultiplier = indexFetchMultiplier;
-  }
+	public void setIndexFetchMultiplier(int indexFetchMultiplier) {
+		this.indexFetchMultiplier = indexFetchMultiplier;
+	}
 
-  public CassandraStorage.Builder toBuilder() {
-    return CassandraStorage.newBuilder()
-      .keyspace(keyspace)
-      .contactPoints(contactPoints)
-      .localDc(localDc)
-      .maxConnections(maxConnections)
-      .ensureSchema(ensureSchema)
-      .useSsl(useSsl)
-      .username(username)
-      .password(password)
-      .indexFetchMultiplier(indexFetchMultiplier);
-  }
+	public boolean isOverrideHostnameVerification() {
+		return overrideHostnameVerification;
+	}
+
+	public void setOverrideHostnameVerification(boolean overrideHostnameVerification) {
+		this.overrideHostnameVerification = overrideHostnameVerification;
+	}
+
+	public CassandraStorage.Builder toBuilder() {
+		return CassandraStorage.newBuilder().keyspace(keyspace).contactPoints(contactPoints).localDc(localDc)
+				.maxConnections(maxConnections).ensureSchema(ensureSchema).useSsl(useSsl)
+				.overrideHostnameVerification(overrideHostnameVerification).username(username)
+				.password(password).indexFetchMultiplier(indexFetchMultiplier);
+	}
 }

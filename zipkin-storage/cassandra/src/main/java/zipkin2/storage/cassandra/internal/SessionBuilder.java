@@ -14,6 +14,7 @@
 package zipkin2.storage.cassandra.internal;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+
 import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.auth.AuthProvider;
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader;
@@ -38,7 +39,7 @@ import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUES
 import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_TRACKER_CLASS;
 import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_WARN_IF_SET_KEYSPACE;
 import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.SSL_ENGINE_FACTORY_CLASS;
-
+import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.SSL_HOSTNAME_VALIDATION;
 public final class SessionBuilder {
   /** Returns a connected session. Closes the cluster if any exception occurred. */
   public static CqlSession buildSession(
@@ -46,7 +47,8 @@ public final class SessionBuilder {
     String localDc,
     Map<DriverOption, Integer> poolingOptions,
     @Nullable AuthProvider authProvider,
-    boolean useSsl
+    boolean useSsl,
+    boolean overrideHostnameVerification
   ) {
     // Some options aren't supported by builder methods. In these cases, we use driver config
     // See https://groups.google.com/a/lists.datastax.com/forum/#!topic/java-driver-user/Z8HrCDX47Q0
@@ -77,6 +79,8 @@ public final class SessionBuilder {
     config = config.withBoolean(REQUEST_DEFAULT_IDEMPOTENCE, true);
 
     if (useSsl) config = config.withClass(SSL_ENGINE_FACTORY_CLASS, DefaultSslEngineFactory.class);
+    
+    if (overrideHostnameVerification) config = config.withClass(SSL_HOSTNAME_VALIDATION, DefaultSslEngineFactory.class);
 
     // Log categories can enable query logging
     Logger requestLogger = LoggerFactory.getLogger(SessionBuilder.class);

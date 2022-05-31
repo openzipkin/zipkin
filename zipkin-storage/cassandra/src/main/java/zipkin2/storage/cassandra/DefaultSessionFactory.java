@@ -64,7 +64,8 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
       cassandra.localDc,
       cassandra.poolingOptions,
       cassandra.authProvider,
-      cassandra.useSsl
+      cassandra.useSsl,
+      cassandra.overrideHostnameVerification
     );
   }
 

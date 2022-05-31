@@ -41,7 +41,8 @@ public abstract class CassandraStorageBuilder<B extends CassandraStorageBuilder<
   protected String localDc = "datacenter1";
   @Nullable protected String username, password;
   protected boolean useSsl = false;
-
+  
+  protected boolean overrideHostnameVerification = false;
   protected String keyspace;
   protected boolean ensureSchema = true;
 
@@ -138,11 +139,20 @@ public abstract class CassandraStorageBuilder<B extends CassandraStorageBuilder<
   }
 
   /** Use ssl for connection. Defaults to false. */
-  public B useSsl(boolean useSsl) {
-    this.useSsl = useSsl;
+  public B overrideHostnameVerification(boolean overrideHostnameVerification) {
+    this.overrideHostnameVerification = overrideHostnameVerification;
     return (B) this;
   }
-
+  
+  /** Dsable HostName verification for Cassandra
+   * 
+   * 
+   */
+  public B useSsl(boolean useSsl) {
+	    this.useSsl = useSsl;
+	    return (B) this;
+	  }
+  
   /** Keyspace to store span and index data. Defaults to "zipkin3" */
   public B keyspace(String keyspace) {
     if (keyspace == null) throw new NullPointerException("keyspace == null");

@@ -92,7 +92,7 @@ public final class CassandraStorage extends StorageComponent {
         authProvider = new ProgrammaticPlainTextAuthProvider(username, password);
       }
       return new CassandraStorage(strictTraceId, searchEnabled, autocompleteKeys, autocompleteTtl,
-        autocompleteCardinality, contactPoints, localDc, poolingOptions(), authProvider, useSsl,
+        autocompleteCardinality, contactPoints, localDc, poolingOptions(), authProvider, useSsl, overrideHostnameVerification,
         sessionFactory, keyspace, ensureSchema, maxTraceCols, indexFetchMultiplier);
     }
   }
@@ -105,6 +105,7 @@ public final class CassandraStorage extends StorageComponent {
   final Map<DriverOption, Integer> poolingOptions;
   @Nullable final AuthProvider authProvider;
   final boolean useSsl;
+  final boolean overrideHostnameVerification;
   final String keyspace;
   final boolean ensureSchema;
 
@@ -114,7 +115,7 @@ public final class CassandraStorage extends StorageComponent {
 
   CassandraStorage(boolean strictTraceId, boolean searchEnabled, Set<String> autocompleteKeys,
     int autocompleteTtl, int autocompleteCardinality, String contactPoints, String localDc,
-    Map<DriverOption, Integer> poolingOptions, AuthProvider authProvider, boolean useSsl,
+    Map<DriverOption, Integer> poolingOptions, AuthProvider authProvider, boolean useSsl, boolean overrideHostnameVerification,
     SessionFactory sessionFactory, String keyspace, boolean ensureSchema, int maxTraceCols,
     int indexFetchMultiplier) {
     // Assign generic configuration for all storage components
@@ -130,6 +131,7 @@ public final class CassandraStorage extends StorageComponent {
     this.poolingOptions = poolingOptions;
     this.authProvider = authProvider;
     this.useSsl = useSsl;
+    this.overrideHostnameVerification = overrideHostnameVerification;
     this.ensureSchema = ensureSchema;
     this.keyspace = keyspace;
 
