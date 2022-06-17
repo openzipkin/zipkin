@@ -80,8 +80,11 @@ public final class SessionBuilder {
 
     if (useSsl) config = config.withClass(SSL_ENGINE_FACTORY_CLASS, DefaultSslEngineFactory.class);
     
-    if (overrideHostnameVerification) config = config.withClass(SSL_HOSTNAME_VALIDATION, DefaultSslEngineFactory.class);
-
+    if (overrideHostnameVerification) 
+    	config = config.withBoolean(SSL_HOSTNAME_VALIDATION, true);
+    else
+    	config = config.withBoolean(SSL_HOSTNAME_VALIDATION, false);
+    
     // Log categories can enable query logging
     Logger requestLogger = LoggerFactory.getLogger(SessionBuilder.class);
     if (requestLogger.isDebugEnabled()) {
