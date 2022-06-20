@@ -141,7 +141,7 @@ zipkin:
       # Using ssl for connection, rely on Keystore
       use-ssl: ${CASSANDRA_USE_SSL:false}
       # Override hostname verification in Cassandra setting
-      override-hostname-verification: ${CASSANDRA_OVERRIDE_HOSTNAME:false}
+      override-hostname-verification: ${CASSANDRA_OVERRIDE_HOSTNAME_VERIFICATION:false}
     cassandra3:
       # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
       contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
@@ -160,7 +160,7 @@ zipkin:
       # Using ssl for connection, rely on Keystore
       use-ssl: ${CASSANDRA_USE_SSL:false}
       # Override hostname verification in Cassandra setting
-      override-hostname-verification: ${CASSANDRA_OVERRIDE_HOSTNAME:false}
+      override-hostname-verification: ${CASSANDRA_OVERRIDE_HOSTNAME_VERIFICATION:false}
     elasticsearch:
       # host is left unset intentionally, to defer the decision
       hosts: ${ES_HOSTS:}
