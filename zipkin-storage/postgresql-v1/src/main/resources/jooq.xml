@@ -1,0 +1,11 @@
+<settings xmlns="http://www.jooq.org/xsd/jooq-runtime-2.5.0.xsd">
+  <withRenderSchema>bubbleGum</withRenderSchema>
+  <renderMapping>
+    <schemata>
+      <schema>
+        <input>ZIPKIN</input>
+        <output>ZIPKIN</output>
+      </schema>
+    </schemata>
+  </renderMapping>
+</settings>

@@ -7,7 +7,7 @@ features are used, but tests run against MariaDB 10.3.
 
 See the [schema DDL](src/main/resources/mysql.sql).
 
-`zipkin2.storage.mysql.v1.MySQLStorage.Builder` includes defaults that will
+`zipkin2.storage.mysql.MySQLStorage.Builder` includes defaults that will
 operate against a given Datasource.
 
 ## Testing this component

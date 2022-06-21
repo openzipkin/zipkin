@@ -86,7 +86,7 @@ public class ITZipkinSelfTracing {
 
   @Test @Ignore("https://github.com/openzipkin/zipkin/issues/2781")
   public void postIsTraced_v1() throws Exception {
-    postSpan("v1");
+    postSpan("zipkin2/storage/mysql/v1");
 
     List<List<Span>> traces = awaitSpans(3); // test span + POST + accept-spans
 
@@ -144,7 +144,7 @@ public class ITZipkinSelfTracing {
    */
   void postSpan(String version) throws IOException {
     SpanBytesEncoder encoder =
-      "v1".equals(version) ? SpanBytesEncoder.JSON_V1 : SpanBytesEncoder.JSON_V2;
+      "zipkin2/storage/mysql/v1".equals(version) ? SpanBytesEncoder.JSON_V1 : SpanBytesEncoder.JSON_V2;
 
     List<Span> testTrace = Collections.singletonList(
       Span.newBuilder().timestamp(TODAY).traceId("1").id("2").name("test-trace").build()

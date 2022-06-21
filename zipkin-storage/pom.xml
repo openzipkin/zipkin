@@ -38,6 +38,7 @@
     <module>cassandra</module>
     <module>mysql-v1</module>
     <module>elasticsearch</module>
+    <module>postgresql-v1</module>
   </modules>
 
   <dependencies>

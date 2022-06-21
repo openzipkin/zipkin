@@ -241,6 +241,14 @@
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
+
+    <!-- PostgreSQL backend -->
+    <dependency>
+      <groupId>${project.groupId}.zipkin2</groupId>
+      <artifactId>zipkin-storage-postgresql-v1</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
     <dependency>
       <groupId>org.mariadb.jdbc</groupId>
       <artifactId>mariadb-java-client</artifactId>
@@ -610,6 +618,12 @@
                 <dependency>
                   <groupId>${project.groupId}.zipkin2</groupId>
                   <artifactId>zipkin-storage-mysql-v1</artifactId>
+                </dependency>
+
+                <!-- PostgreSQL backend -->
+                <dependency>
+                  <groupId>${project.groupId}.zipkin2</groupId>
+                  <artifactId>zipkin-storage-postgresql-v1</artifactId>
                 </dependency>
 
                 <!-- ActiveMQ Collector -->

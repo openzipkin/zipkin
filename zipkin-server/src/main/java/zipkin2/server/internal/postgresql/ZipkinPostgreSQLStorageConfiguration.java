@@ -11,11 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.server.internal.mysql;
+package zipkin2.server.internal.postgresql;
 
-import java.util.List;
-import java.util.concurrent.Executor;
-import javax.sql.DataSource;
 import org.jooq.ExecuteListenerProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,31 +26,36 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import zipkin2.storage.StorageComponent;
 import zipkin2.storage.postgresql.v1.PostgreSQLStorage;
 
-@EnableConfigurationProperties(ZipkinMySQLStorageProperties.class)
+import javax.sql.DataSource;
+import java.util.List;
+import java.util.concurrent.Executor;
+
+@EnableConfigurationProperties(ZipkinPostgreSQLStorageProperties.class)
 @ConditionalOnClass(PostgreSQLStorage.class)
-@ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
+@ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "postgresql")
 @ConditionalOnMissingBean(StorageComponent.class)
-@Import(ZipkinSelfTracingMySQLStorageConfiguration.class)
-public class ZipkinMySQLStorageConfiguration {
-  @Autowired(required = false) ZipkinMySQLStorageProperties mysql;
-  @Autowired(required = false) ExecuteListenerProvider mysqlListener;
+@Import(ZipkinSelfTracingPostgreSQLStorageConfiguration.class)
+public class ZipkinPostgreSQLStorageConfiguration {
+  @Autowired(required = false)
+  ZipkinPostgreSQLStorageProperties pg;
+  @Autowired(required = false) ExecuteListenerProvider pgListener;
 
   @Bean @ConditionalOnMissingBean
-  Executor mysqlExecutor() {
+  Executor pgExecutor() {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-    executor.setThreadNamePrefix("ZipkinMySQLStorage-");
+    executor.setThreadNamePrefix("ZipkinPostgreSQLStorage-");
     executor.initialize();
     return executor;
   }
 
   @Bean @ConditionalOnMissingBean
-  DataSource mysqlDataSource() {
-    return mysql.toDataSource();
+  DataSource pgDataSource() {
+    return pg.toDataSource();
   }
 
   @Bean StorageComponent storage(
-    Executor mysqlExecutor,
-    DataSource mysqlDataSource,
+    Executor pgExecutor,
+    DataSource pgDataSource,
     @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
     @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
     @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys) {
@@ -61,9 +63,9 @@ public class ZipkinMySQLStorageConfiguration {
       .strictTraceId(strictTraceId)
       .searchEnabled(searchEnabled)
       .autocompleteKeys(autocompleteKeys)
-      .executor(mysqlExecutor)
-      .datasource(mysqlDataSource)
-      .listenerProvider(mysqlListener)
+      .executor(pgExecutor)
+      .datasource(pgDataSource)
+      .listenerProvider(pgListener)
       .build();
   }
 }

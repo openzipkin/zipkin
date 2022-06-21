@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright 2015-2021 The OpenZipkin Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+    in compliance with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software distributed under the License
+    is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+    or implied. See the License for the specific language governing permissions and limitations under
+    the License.
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>io.zipkin.zipkin2</groupId>
+    <artifactId>zipkin-storage-parent</artifactId>
+    <version>2.23.17-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>zipkin-storage-postgresql-v1</artifactId>
+  <name>Storage: PostgreSQL (v1)</name>
+
+  <!-- mvn groovy:execute@testcontainer-start flyway:migrate org.jooq:jooq-codegen-maven:generate groovy:execute@testcontainer-stop -->
+  <!-- mvn groovy:execute@testcontainer-start help:evaluate -Dexpression=project.properties flyway:migrate  org.jooq:jooq-codegen-maven:generate groovy:execute@testcontainer-stop -->
+  <properties>
+    <main.basedir>${project.basedir}/../..</main.basedir>
+    <jooq.version>3.14.4</jooq.version>
+    <db.username>postgres</db.username>
+    <db.password>postgres</db.password>
+    <flyway.locations>filesystem:src/main/resources/</flyway.locations>
+
+    <!-- jOOQ doesn't add the Generated annotation, so we have to explicitly disable rules -->
+    <errorprone.args>-Xep:InconsistentCapitalization:OFF</errorprone.args>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.jooq</groupId>
+      <artifactId>jooq</artifactId>
+      <version>${jooq.version}</version>
+    </dependency>
+
+    <!-- for Generated annotation -->
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <version>${javax-annotation-api.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>42.4.0</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <!-- Much better if there was a testcontainers lifecycle management plugin!
+                Upvote here if you like the idea: https://github.com/testcontainers/testcontainers-java/issues/4397 -->
+        <plugin>
+          <groupId>org.codehaus.gmaven</groupId>
+          <artifactId>groovy-maven-plugin</artifactId>
+          <version>2.1.1</version>
+          <executions>
+            <execution>
+              <id>testcontainer-start</id>
+              <phase>generate-sources</phase>
+              <goals>
+                <goal>execute</goal>
+              </goals>
+              <configuration>
+                <source>
+                  db = new org.testcontainers.containers.PostgreSQLContainer("postgres:latest")
+                    .withUsername("${db.username}")
+                    .withDatabaseName("postgres")
+                    .withPassword("${db.password}");
+
+                  db.start();
+
+
+                  project.properties.setProperty('db.url', db.getJdbcUrl());
+
+                  // TODO: figure out why we must do flyway explicilty
+                  project.properties.setProperty('flyway.url', db.getJdbcUrl());
+                  project.properties.setProperty('flyway.user', "${db.username}");
+                  project.properties.setProperty('flyway.password', "${db.password}");
+
+                  project.properties.setProperty('testcontainer.containerid', db.getContainerId());
+                  project.properties.setProperty('testcontainer.imageName', db.getDockerImageName());
+                </source>
+              </configuration>
+            </execution>
+            <execution>
+              <id>testcontainer-stop</id>
+              <phase>test</phase>
+              <goals>
+                <goal>execute</goal>
+              </goals>
+              <configuration>
+                <source>
+                  containerId = "${testcontainer.containerid}"
+                  imageName = "${testcontainer.imageName}"
+                  println("Stopping testcontainer $containerId - $imageName")
+                  org.testcontainers.utility.ResourceReaper
+                    .instance()
+                    .stopAndRemoveContainer(containerId, imageName);
+                </source>
+              </configuration>
+            </execution>
+
+          </executions>
+
+          <dependencies>
+            <dependency>
+              <groupId>org.testcontainers</groupId>
+              <artifactId>postgresql</artifactId>
+              <version>${testcontainers.version}</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+
+        <plugin>
+          <groupId>org.flywaydb</groupId>
+          <artifactId>flyway-maven-plugin</artifactId>
+          <version>7.14.0</version>
+          <executions>
+            <execution>
+              <phase>generate-sources</phase>
+              <goals>
+                <goal>migrate</goal>
+              </goals>
+              <configuration>
+                <url>${db.url}</url>
+                <user>${db.username}</user>
+                <password>${db.password}</password>
+                <schemas>
+                  <schema>public</schema>
+                </schemas>
+                <locations>
+                  <location>filesystem:src/main/resources/</location>
+                </locations>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.jooq</groupId>
+          <artifactId>jooq-codegen-maven</artifactId>
+          <version>${jooq.version}</version>
+
+          <executions>
+            <execution>
+              <id>java-generator</id>
+              <phase>generate-sources</phase>
+              <goals>
+                <goal>generate</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <!--            <configurationFile>src/main/resources/jooq.xml</configurationFile>-->
+            <jdbc>
+              <url>${db.url}</url>
+              <user>${db.username}</user>
+              <password>${db.password}</password>
+            </jdbc>
+            <generator>
+              <database>
+                <inputSchema>public</inputSchema>
+<!--                <outputSchema>zipkin</outputSchema>-->
+                <outputSchemaToDefault>false</outputSchemaToDefault>
+<!--                <outputSchemaToDefault>true</outputSchemaToDefault>-->
+              </database>
+              <target>
+                <packageName>zipkin2.storage.postgresql.v1.internal.generated</packageName>
+                <directory>src/main/java</directory>
+              </target>
+            </generator>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <systemPropertyVariables>
+              <db.url>${db.url}</db.url>
+              <db.username>${db.username}</db.username>
+              <db.password>${db.password}</db.password>
+            </systemPropertyVariables>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>
