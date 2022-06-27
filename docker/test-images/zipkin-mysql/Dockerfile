@@ -37,7 +37,7 @@ HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthche
 ENTRYPOINT ["start-mysql"]
 
 # Use latest from https://pkgs.alpinelinux.org/packages?name=mysql
-ARG mysql_version=10.6.4
+ARG mysql_version=10.6.8
 LABEL mysql-version=$mysql_version
 ENV MYSQL_VERSION=$mysql_version
 
