@@ -56,7 +56,7 @@
     <netty.version>4.1.70.Final</netty.version>
 
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
-    <jackson.version>2.13.0</jackson.version>
+    <jackson.version>2.13.2.1</jackson.version>
 
     <java-driver.version>4.11.3</java-driver.version>
     <micrometer.version>1.6.12</micrometer.version>
@@ -65,8 +65,8 @@
     <javax-annotation-api.version>1.3.1</javax-annotation-api.version>
 
     <!-- update together -->
-    <spring-boot.version>2.4.13</spring-boot.version>
-    <spring.version>5.3.7</spring.version>
+    <spring-boot.version>2.5.14</spring-boot.version>
+    <spring.version>5.3.20</spring.version>
 
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
