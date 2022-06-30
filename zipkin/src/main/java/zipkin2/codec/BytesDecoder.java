@@ -34,7 +34,7 @@ public interface BytesDecoder<T> {
   Encoding encoding();
 
   /**
-   * This is used seldomly as the canonical message form is a {@link #decodeList(byte[], Collection)
+   * This is used seldom as the canonical message form is a {@link #decodeList(byte[], Collection)
    * list}.
    *
    * <p>Note: multiple elements can be consumed from a single serialized object. For example, if the

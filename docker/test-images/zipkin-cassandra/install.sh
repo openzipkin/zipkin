@@ -185,9 +185,9 @@ function is_cassandra_alive() {
 is_cassandra_alive || exit 1
 
 echo "*** Installing cqlsh"
-# stuck on python2 for compatability with cassandra 3.x
+# stuck on python2 for compatibility with cassandra 3.x
 apk add --update --no-cache python2 py2-setuptools
-# use pip version that is compatable with python2
+# use pip version that is compatible with python2
 python2 -m easy_install pip==20.3.4
 pip install -Iq cqlsh
 function cql() {

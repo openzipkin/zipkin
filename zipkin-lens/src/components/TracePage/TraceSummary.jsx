@@ -121,7 +121,7 @@ const TraceSummary = React.memo(({ traceSummary }) => {
     [traceSummary.spans, childrenHiddenSpanIndices],
   );
 
-  // Find the minumum and maximum timestamps in the shown spans.
+  // Find the minimum and maximum timestamps in the shown spans.
   const startTs = useMemo(() => minBy(rerootedTree, 'timestamp').timestamp, [
     rerootedTree,
   ]);

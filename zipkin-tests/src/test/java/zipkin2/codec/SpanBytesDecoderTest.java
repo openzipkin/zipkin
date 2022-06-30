@@ -159,7 +159,7 @@ public class SpanBytesDecoderTest {
   }
 
   /**
-   * Particulary, thrift can mistake malformed content as a huge list. Let's not blow up.
+   * Particular, thrift can mistake malformed content as a huge list. Let's not blow up.
    */
   @Test public void niceErrorOnMalformed_inputSpans_JSON_V2() {
     thrown.expect(IllegalArgumentException.class);

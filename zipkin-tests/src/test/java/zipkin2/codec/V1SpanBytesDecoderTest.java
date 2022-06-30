@@ -146,7 +146,7 @@ public class V1SpanBytesDecoderTest {
     assertThat(SpanBytesDecoder.THRIFT.decodeList(new byte[0], new ArrayList<>())).isFalse();
   }
 
-  /** Particulary, thrift can mistake malformed content as a huge list. Let's not blow up. */
+  /** Particular, thrift can mistake malformed content as a huge list. Let's not blow up. */
   @Test
   public void niceErrorOnMalformed_inputSpans_JSON_V1() {
     thrown.expect(IllegalArgumentException.class);
