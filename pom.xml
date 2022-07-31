@@ -26,6 +26,7 @@
     <module>zipkin</module>
     <module>zipkin-tests</module>
     <module>zipkin-junit</module>
+    <module>zipkin-junit5</module>
     <module>zipkin-storage</module>
     <module>zipkin-collector</module>
     <module>zipkin-server</module>
@@ -83,13 +84,14 @@
 
     <!-- Test only dependencies -->
     <junit.version>4.13.1</junit.version>
-    <junit-jupiter.version>5.7.0</junit-jupiter.version>
+    <junit-jupiter.version>5.9.2</junit-jupiter.version>
     <mockito.version>3.6.28</mockito.version>
     <assertj.version>3.18.1</assertj.version>
     <awaitility.version>4.0.3</awaitility.version>
     <hamcrest.version>1.3</hamcrest.version>
     <testcontainers.version>1.15.1</testcontainers.version>
     <okhttp.version>4.9.0</okhttp.version>
+    <okhttp5.version>5.0.0-alpha.11</okhttp5.version>
     <kryo.version>5.0.3</kryo.version>
     <!-- Only used for proto interop testing; wire-maven-plugin is usually behind latest. -->
     <wire.version>3.0.2</wire.version>
