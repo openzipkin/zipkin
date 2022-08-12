@@ -61,13 +61,13 @@ When in Docker, the following environment variables also apply
   environment variable is typically set by linking a container running
   `zipkin-kafka` as "kafka" when you start the container.
 
-For example, to increase heap size, set `JAVA_OPTS` as shown in our [docker-compose](docker-compose.yml) file:
+For example, to increase heap size, set `JAVA_OPTS` as shown in our [docker-compose](examples/docker-compose.yml) file:
 ```yaml
     environment:
       - JAVA_OPTS=-Xms128m -Xmx128m -XX:+ExitOnOutOfMemoryError
 ```
 
-For example, to add debug logging, set `command` as shown in our [docker-compose](docker-compose.yml) file:
+For example, to add debug logging, set `command` as shown in our [docker-compose](examples/docker-compose.yml) file:
 ```yaml
     command: --logging.level.zipkin2=DEBUG
 ```
