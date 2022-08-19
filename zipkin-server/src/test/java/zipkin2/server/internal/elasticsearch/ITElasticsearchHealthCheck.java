@@ -14,6 +14,7 @@
 package zipkin2.server.internal.elasticsearch;
 
 import com.linecorp.armeria.client.endpoint.EmptyEndpointGroupException;
+import com.linecorp.armeria.client.endpoint.EndpointSelectionTimeoutException;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.healthcheck.HealthCheckService;
 import com.linecorp.armeria.server.healthcheck.SettableHealthChecker;
@@ -132,7 +133,7 @@ public class ITElasticsearchHealthCheck {
       CheckResult result = storage.check();
       assertThat(result.ok()).isFalse();
       assertThat(result.error())
-        .isInstanceOf(EmptyEndpointGroupException.class);
+        .isInstanceOf(EndpointSelectionTimeoutException.class);
     }
   }
 
