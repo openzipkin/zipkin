@@ -57,6 +57,12 @@ spec:
               value: "{{ .index }}"
             {{- end }}
             {{- end }}
+            {{- if .Values.zipkin.extra.env.enabled }}
+            {{- range $key, $val :=  .Values.zipkin.extra.env.data }}
+            - name: {{ $key }}
+              value: "{{ $val }}"
+            {{- end }}  
+            {{- end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           readinessProbe:
             httpGet:
