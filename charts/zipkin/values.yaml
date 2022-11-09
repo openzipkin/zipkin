@@ -104,3 +104,11 @@ zipkin:
 #   elasticsearch:
 #      hosts: hostA hostB
 #      index: fooIndex
+
+  extra:
+    env:
+      # Enable extra envs
+      enabled: false
+      data:
+        # Envs in format Key: Value
+        # JAVA_OPTS: "-Xms2g -Xmx2g -XX:+ExitOnOutOfMemoryError" # Example, configuration for Java Options
