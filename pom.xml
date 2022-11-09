@@ -19,7 +19,7 @@
 
   <groupId>io.zipkin</groupId>
   <artifactId>zipkin-parent</artifactId>
-  <version>2.23.19-SNAPSHOT</version>
+  <version>2.23.20-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
