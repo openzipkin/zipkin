@@ -37,10 +37,10 @@ export const SpanSearcher = () => {
     <ButtonGroup size="small">
       <Button startIcon={<SearchIcon />}>Search</Button>
       <Button className={classes.iconButton}>
-        <KeyboardArrowDownIcon />
+        <KeyboardArrowDownIcon fontSize="small" />
       </Button>
       <Button className={classes.iconButton}>
-        <KeyboardArrowUpIcon />
+        <KeyboardArrowUpIcon fontSize="small" />
       </Button>
     </ButtonGroup>
   );
