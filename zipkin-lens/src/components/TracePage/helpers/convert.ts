@@ -59,21 +59,77 @@ export const convertSpansToSpanTree = (
   return roots.map((root) => fn(root, 0));
 };
 
+const spanTreeToSpans = (roots: SpanTreeNode[]) => {
+  const spans: AdjustedSpan[] = [];
+
+  function fn(node: SpanTreeNode) {
+    spans.push(node);
+    node.children?.forEach(fn);
+  }
+  roots.forEach(fn);
+
+  return spans;
+};
+
+const extractPartialTree = (roots: SpanTreeNode[], rerootedSpanId: string) => {
+  let isFinished = false;
+  let partialTree: SpanTreeNode[] = [];
+  let spans: AdjustedSpan[] = [];
+
+  function findRerootedSpan(node: SpanTreeNode) {
+    if (node.spanId === rerootedSpanId) {
+      isFinished = true;
+      partialTree = [node];
+      spans = spanTreeToSpans(partialTree);
+    } else {
+      node.children?.forEach(findRerootedSpan);
+    }
+  }
+
+  // eslint-disable-next-line no-restricted-syntax
+  for (const root of roots) {
+    findRerootedSpan(root);
+    if (isFinished) {
+      break;
+    }
+  }
+
+  return {
+    roots: partialTree,
+    spans,
+  };
+};
+
 export const convertSpanTreeToSpanRow = (
   roots: SpanTreeNode[],
   spans: AdjustedSpan[],
   closedSpanIdMap: { [spanId: string]: boolean },
+  rerootedSpanId?: string,
 ) => {
+  // If rerootedSpanId is specified, calculate the partial tree.
+  let partialRoots: SpanTreeNode[];
+  let partialSpans: AdjustedSpan[];
+  if (rerootedSpanId) {
+    const result = extractPartialTree(roots, rerootedSpanId);
+    partialRoots = result.roots;
+    partialSpans = result.spans;
+  } else {
+    partialRoots = roots;
+    partialSpans = spans;
+  }
+
   const minTimestamp = Math.min(
-    ...spans.filter((span) => span.timestamp).map((span) => span.timestamp),
+    ...partialSpans
+      .filter((span) => span.timestamp)
+      .map((span) => span.timestamp),
   );
   const maxTimestamp = Math.max(
-    ...spans
+    ...partialSpans
       .filter((span) => span.timestamp && span.duration)
       .map((span) => span.timestamp + span.duration),
   );
 
-  return roots.map((root) => {
+  return partialRoots.map((root) => {
     const spanRows: SpanRow[] = [];
     const openedDepth: boolean[] = [];
     for (let i = 0; i < root.maxDepth; i += 1) {
