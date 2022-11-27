@@ -21,6 +21,7 @@ import TraceSummary from './TraceSummary';
 import { setAlert } from '../App/slice';
 import { LoadingIndicator } from '../common/LoadingIndicator';
 import { loadTrace } from '../../slices/tracesSlice';
+import { TracePageContent } from './TracePageContent';
 
 const propTypes = {
   match: PropTypes.shape({
@@ -74,6 +75,7 @@ export const TracePageImpl = React.memo(({ match }) => {
   if (!traceSummary) {
     return null;
   }
+  return <TracePageContent trace={traceSummary} />;
   return <TraceSummary traceSummary={traceSummary} />;
 });
 

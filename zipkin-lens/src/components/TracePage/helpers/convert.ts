@@ -29,17 +29,15 @@ export const convertSpansToSpanTree = (
   }, {});
   const unconsumedSpans = { ...idToSpan };
 
-  const roots = spans.filter((span) => {
-    return !span.parentId || !idToSpan[span.parentId];
-  });
+  const roots = spans.filter((span) => !span.parentId);
   roots.forEach((root) => {
     delete unconsumedSpans[root.spanId];
   });
 
   function fn(span: AdjustedSpan, depth: number): SpanTreeNode {
-    const childSpans = spans.filter(
-      (s) => !!unconsumedSpans[s.spanId] && s.parentId === span.spanId,
-    );
+    const childSpans = span.childIds
+      .map((childId) => unconsumedSpans[childId])
+      .filter((s) => !!s);
     childSpans.forEach((child) => {
       delete unconsumedSpans[child.spanId];
     });
@@ -100,7 +98,7 @@ const extractPartialTree = (roots: SpanTreeNode[], rerootedSpanId: string) => {
   };
 };
 
-export const convertSpanTreeToSpanRow = (
+export const convertSpanTreeToSpanRows = (
   roots: SpanTreeNode[],
   spans: AdjustedSpan[],
   closedSpanIdMap: { [spanId: string]: boolean },
@@ -129,7 +127,7 @@ export const convertSpanTreeToSpanRow = (
       .map((span) => span.timestamp + span.duration),
   );
 
-  return partialRoots.map((root) => {
+  return partialRoots.flatMap((root) => {
     const spanRows: SpanRow[] = [];
     const openedDepth: boolean[] = [];
     for (let i = 0; i < root.maxDepth; i += 1) {
@@ -165,18 +163,18 @@ export const convertSpanTreeToSpanRow = (
       } else {
         treeEdgeShape = [...parentTreeEdgeShape];
 
-        if (parentTreeEdgeShape[node.depth - 1] === 'E') {
-          treeEdgeShape[node.depth - 1] = '-';
-        } else {
-          treeEdgeShape[node.depth - 1] = 'M';
+        if (node.depth >= 2 && parentTreeEdgeShape[node.depth - 2] === 'E') {
+          treeEdgeShape[node.depth - 2] = '-';
         }
-
+        if (node.depth >= 1) {
+          if (index === siblings.length - 1) {
+            treeEdgeShape[node.depth - 1] = 'E';
+          } else {
+            treeEdgeShape[node.depth - 1] = 'M';
+          }
+        }
         if (node.children) {
           treeEdgeShape[node.depth] = 'B';
-        } else if (index === siblings.length - 1) {
-          treeEdgeShape[node.depth] = 'E';
-        } else {
-          treeEdgeShape[node.depth] = '-';
         }
       }
 
@@ -191,7 +189,7 @@ export const convertSpanTreeToSpanRow = (
 
       if (node.children && !isClosed) {
         for (let i = 0; i < node.children.length; i += 1) {
-          fn(index, node.children, treeEdgeShape);
+          fn(i, node.children, treeEdgeShape);
         }
       }
     }
