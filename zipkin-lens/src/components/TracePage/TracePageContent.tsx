@@ -48,9 +48,18 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
   );
 
   return (
-    <Box>
-      <Header trace={trace} />
-      <Timeline spanRows={spanRows} />
+    <Box display="flex" flexDirection="column">
+      <Box flex="1 1">
+        <Header trace={trace} />
+      </Box>
+      <Box flex="0 0" display="flex">
+        <Box flex="1 1">
+          <Timeline spanRows={spanRows} />
+        </Box>
+        <Box flex="0 0">
+          <Box width={320}>Span Detail</Box>
+        </Box>
+      </Box>
     </Box>
   );
 };

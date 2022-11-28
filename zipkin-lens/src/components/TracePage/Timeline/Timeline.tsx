@@ -15,6 +15,7 @@
 import { Box, makeStyles } from '@material-ui/core';
 import React from 'react';
 import { SpanRow } from '../types';
+import { TimelineHeader } from './TimelineHeader';
 import { TimelineRow } from './TimelineRow';
 
 const useStyles = makeStyles((theme) => ({
@@ -32,6 +33,7 @@ export const Timeline = ({ spanRows }: TimelineProps) => {
 
   return (
     <Box className={classes.root}>
+      <TimelineHeader />
       {spanRows.map((spanRow) => (
         <TimelineRow {...spanRow} />
       ))}

@@ -50,3 +50,14 @@ export type SpanRow = Omit<AdjustedSpan, 'left' | 'width'> & {
   isClosed: boolean;
   isCollapsible: boolean;
 };
+
+export type ServiceTreeNode = {
+  serviceName: string;
+};
+
+export type ServiceTreeEdge = {
+  spans: AdjustedSpan[];
+  sourceServiceName: string;
+  targetServiceName: string;
+  hasPair: boolean;
+};

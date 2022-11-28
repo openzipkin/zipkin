@@ -13,7 +13,12 @@
  */
 
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
-import { SpanRow, TreeEdgeShapeType } from '../types';
+import {
+  ServiceTreeEdge,
+  ServiceTreeNode,
+  SpanRow,
+  TreeEdgeShapeType,
+} from '../types';
 
 type SpanTreeNode = AdjustedSpan & {
   children?: SpanTreeNode[];
@@ -201,4 +206,47 @@ export const convertSpanTreeToSpanRows = (
 
     return spanRows;
   });
+};
+
+const buildEdgeId = (sourceServiceName: string, targetServiceName: string) => {
+  return `${sourceServiceName} ====> ${targetServiceName}`;
+};
+
+export const convertSpanTreeToServiceTree = (roots: SpanTreeNode[]) => {
+  const nodeMap: { [id: string]: ServiceTreeNode } = {};
+  const edgeMap: { [id: string]: ServiceTreeEdge } = {};
+
+  function fn(node: SpanTreeNode) {
+    if (!nodeMap[node.serviceName]) {
+      nodeMap[node.serviceName] = {
+        serviceName: node.serviceName,
+      };
+    }
+    node.children?.forEach((child) => {
+      const id = buildEdgeId(node.serviceName, child.serviceName);
+      if (!edgeMap[id]) {
+        edgeMap[id] = {
+          spans: [],
+          sourceServiceName: node.serviceName,
+          targetServiceName: child.serviceName,
+          hasPair: false,
+        };
+        edgeMap[id].spans.push(node);
+      }
+      fn(child);
+    });
+  }
+  roots.forEach(fn);
+
+  Object.keys(edgeMap).forEach((id) => {
+    const reversedEdgeId = buildEdgeId(
+      edgeMap[id].targetServiceName,
+      edgeMap[id].sourceServiceName,
+    );
+    if (edgeMap[reversedEdgeId]) {
+      edgeMap[id].hasPair = true;
+    }
+  });
+
+  return { nodeMap, edgeMap };
 };
