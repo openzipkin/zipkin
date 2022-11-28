@@ -13,14 +13,15 @@
  */
 
 import { Box } from '@material-ui/core';
-import React, { useMemo, useState } from 'react';
-import AdjustedTrace from '../../models/AdjustedTrace';
+import React, { useEffect, useMemo, useState } from 'react';
+import AdjustedTrace, { AdjustedSpan } from '../../models/AdjustedTrace';
 import { Header } from './Header';
 import {
   convertSpansToSpanTree,
   convertSpanTreeToSpanRows,
 } from './helpers/convert';
 import { Timeline } from './Timeline';
+import { SpanRow } from './types';
 
 type TracePageContentProps = {
   trace: AdjustedTrace;
@@ -37,15 +38,42 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
   ]);
 
   const spanRows = useMemo(
-    () =>
-      convertSpanTreeToSpanRows(
-        roots,
-        trace.spans,
-        closedSpanIdMap,
-        rerootedSpanId,
-      ),
-    [closedSpanIdMap, rerootedSpanId, roots, trace.spans],
+    () => convertSpanTreeToSpanRows(roots, closedSpanIdMap, rerootedSpanId),
+    [closedSpanIdMap, rerootedSpanId, roots],
   );
+
+  const [minTimestamp, maxTimestamp] = useMemo(
+    () => [
+      Math.min(
+        ...spanRows
+          .filter((spanRow) => spanRow.timestamp !== undefined)
+          .map((spanRow) => spanRow.timestamp),
+      ),
+      Math.max(
+        ...spanRows
+          .filter(
+            (spanRow) =>
+              spanRow.timestamp !== undefined && spanRow.duration !== undefined,
+          )
+          .map((spanRow) => spanRow.timestamp + spanRow.duration),
+      ),
+    ],
+    [spanRows],
+  );
+
+  const [selectedSpanRow, setSelectedSpanRow] = useState<SpanRow>(spanRows[0]);
+  const [selectedTimeRange, setSelectedTimeRange] = useState<[number, number]>([
+    minTimestamp,
+    maxTimestamp,
+  ]);
+
+  useEffect(() => {
+    setSelectedSpanRow(spanRows[0]);
+  }, [spanRows]);
+
+  useEffect(() => {
+    setSelectedTimeRange([minTimestamp, maxTimestamp]);
+  }, [maxTimestamp, minTimestamp]);
 
   return (
     <Box display="flex" flexDirection="column">
@@ -54,7 +82,7 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
       </Box>
       <Box flex="0 0" display="flex">
         <Box flex="1 1">
-          <Timeline spanRows={spanRows} />
+          <Timeline spanRows={spanRows} timeRange={selectedTimeRange} />
         </Box>
         <Box flex="0 0">
           <Box width={320}>Span Detail</Box>

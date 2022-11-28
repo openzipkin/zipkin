@@ -36,7 +36,9 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-type TimelineRowProps = SpanRow & {};
+type TimelineRowProps = SpanRow & {
+  timeRange: [number, number];
+};
 
 export const TimelineRow = (props: TimelineRowProps) => {
   const {
@@ -47,6 +49,7 @@ export const TimelineRow = (props: TimelineRowProps) => {
     errorType,
     isClosed,
     isCollapsible,
+    timeRange,
   } = props;
   const classes = useStyles();
 
@@ -61,7 +64,7 @@ export const TimelineRow = (props: TimelineRowProps) => {
         rowHeight={rowHeight}
       />
       <Box position="relative" width="100%">
-        <Box pt={0.25} display="flex" justifyContent="space-between">
+        <Box pt={0.25} display="flex" justifyContent="space-between" pr={1}>
           <Box display="flex" alignItems="center">
             {errorType !== 'none' && (
               <ErrorOutlineIcon
@@ -74,7 +77,11 @@ export const TimelineRow = (props: TimelineRowProps) => {
           </Box>
           <Box className={classes.text}>{durationStr}</Box>
         </Box>
-        <TimelineRowBar spanRow={props} rowHeight={rowHeight} />
+        <TimelineRowBar
+          spanRow={props}
+          rowHeight={rowHeight}
+          timeRange={timeRange}
+        />
       </Box>
     </Box>
   );

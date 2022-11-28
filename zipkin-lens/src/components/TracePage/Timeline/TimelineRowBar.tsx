@@ -13,7 +13,7 @@
  */
 
 import { Box, makeStyles, Theme } from '@material-ui/core';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { selectServiceColor } from '../../../constants/color';
 import { SpanRow } from '../types';
 
@@ -21,7 +21,7 @@ const useStyles = makeStyles<Theme, { rowHeight: number; serviceName: string }>(
   (theme) => ({
     root: {
       left: 0,
-      right: 0,
+      right: theme.spacing(1),
       top: 0,
       bottom: 0,
       position: 'absolute',
@@ -44,19 +44,46 @@ const useStyles = makeStyles<Theme, { rowHeight: number; serviceName: string }>(
   }),
 );
 
-type TimelineRowBarProps = { spanRow: SpanRow; rowHeight: number };
+type TimelineRowBarProps = {
+  spanRow: SpanRow;
+  rowHeight: number;
+  timeRange: [number, number];
+};
 
-export const TimelineRowBar = ({ spanRow, rowHeight }: TimelineRowBarProps) => {
+export const TimelineRowBar = ({
+  spanRow,
+  rowHeight,
+  timeRange,
+}: TimelineRowBarProps) => {
   const classes = useStyles({ rowHeight, serviceName: spanRow.serviceName });
+
+  const left = useMemo(
+    () =>
+      spanRow.timestamp
+        ? ((spanRow.timestamp - timeRange[0]) / (timeRange[1] - timeRange[0])) *
+          100
+        : 0,
+    [spanRow.timestamp, timeRange],
+  );
+
+  const width = useMemo(
+    () =>
+      left !== undefined && spanRow.duration && spanRow.timestamp
+        ? Math.max(
+            ((spanRow.timestamp + spanRow.duration - timeRange[0]) /
+              (timeRange[1] - timeRange[0])) *
+              100 -
+              left,
+            1,
+          )
+        : 1,
+    [left, spanRow.duration, spanRow.timestamp, timeRange],
+  );
 
   return (
     <Box className={classes.root}>
       <Box className={classes.line} />
-      <Box
-        className={classes.bar}
-        left={spanRow.left !== undefined ? `${spanRow.left}%` : undefined}
-        width={spanRow.width !== undefined ? `${spanRow.width}%` : undefined}
-      />
+      <Box className={classes.bar} left={`${left}%`} width={`${width}%`} />
     </Box>
   );
 };

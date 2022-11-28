@@ -26,16 +26,17 @@ const useStyles = makeStyles((theme) => ({
 
 type TimelineProps = {
   spanRows: SpanRow[];
+  timeRange: [number, number];
 };
 
-export const Timeline = ({ spanRows }: TimelineProps) => {
+export const Timeline = ({ spanRows, timeRange }: TimelineProps) => {
   const classes = useStyles();
 
   return (
     <Box className={classes.root}>
       <TimelineHeader />
       {spanRows.map((spanRow) => (
-        <TimelineRow {...spanRow} />
+        <TimelineRow {...spanRow} timeRange={timeRange} />
       ))}
     </Box>
   );

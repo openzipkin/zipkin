@@ -42,7 +42,7 @@ const useStyles = makeStyles((theme) => ({
   infoRow: {
     padding: theme.spacing(0.5, 2),
     display: 'flex',
-    backgroundColoe: theme.palette.grey[800],
+    backgroundColor: theme.palette.grey[50],
     fontSize: theme.typography.body2.fontSize,
   },
   infoCell: {

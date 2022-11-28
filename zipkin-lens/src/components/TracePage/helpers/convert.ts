@@ -13,12 +13,7 @@
  */
 
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
-import {
-  ServiceTreeEdge,
-  ServiceTreeNode,
-  SpanRow,
-  TreeEdgeShapeType,
-} from '../types';
+import { SpanRow, TreeEdgeShapeType } from '../types';
 
 type SpanTreeNode = AdjustedSpan & {
   children?: SpanTreeNode[];
@@ -105,32 +100,17 @@ const extractPartialTree = (roots: SpanTreeNode[], rerootedSpanId: string) => {
 
 export const convertSpanTreeToSpanRows = (
   roots: SpanTreeNode[],
-  spans: AdjustedSpan[],
   closedSpanIdMap: { [spanId: string]: boolean },
   rerootedSpanId?: string,
 ) => {
   // If rerootedSpanId is specified, calculate the partial tree.
   let partialRoots: SpanTreeNode[];
-  let partialSpans: AdjustedSpan[];
   if (rerootedSpanId) {
     const result = extractPartialTree(roots, rerootedSpanId);
     partialRoots = result.roots;
-    partialSpans = result.spans;
   } else {
     partialRoots = roots;
-    partialSpans = spans;
   }
-
-  const minTimestamp = Math.min(
-    ...partialSpans
-      .filter((span) => span.timestamp)
-      .map((span) => span.timestamp),
-  );
-  const maxTimestamp = Math.max(
-    ...partialSpans
-      .filter((span) => span.timestamp && span.duration)
-      .map((span) => span.timestamp + span.duration),
-  );
 
   return partialRoots.flatMap((root) => {
     const spanRows: SpanRow[] = [];
@@ -145,20 +125,6 @@ export const convertSpanTreeToSpanRows = (
       parentTreeEdgeShape?: TreeEdgeShapeType[],
     ) {
       const node = siblings[index];
-      const left = node.timestamp
-        ? ((node.timestamp - minTimestamp) / (maxTimestamp - minTimestamp)) *
-          100
-        : 0;
-      const width =
-        left !== undefined && node.duration && node.timestamp
-          ? Math.max(
-              ((node.timestamp + node.duration - minTimestamp) /
-                (maxTimestamp - minTimestamp)) *
-                100 -
-                left,
-              0.1,
-            )
-          : 0.1;
 
       let treeEdgeShape: TreeEdgeShapeType[] = [];
       if (!parentTreeEdgeShape) {
@@ -190,8 +156,6 @@ export const convertSpanTreeToSpanRows = (
       spanRows.push({
         ...node,
         treeEdgeShape,
-        left,
-        width,
         isClosed,
         isCollapsible: !!node.children,
       });
@@ -206,47 +170,4 @@ export const convertSpanTreeToSpanRows = (
 
     return spanRows;
   });
-};
-
-const buildEdgeId = (sourceServiceName: string, targetServiceName: string) => {
-  return `${sourceServiceName} ====> ${targetServiceName}`;
-};
-
-export const convertSpanTreeToServiceTree = (roots: SpanTreeNode[]) => {
-  const nodeMap: { [id: string]: ServiceTreeNode } = {};
-  const edgeMap: { [id: string]: ServiceTreeEdge } = {};
-
-  function fn(node: SpanTreeNode) {
-    if (!nodeMap[node.serviceName]) {
-      nodeMap[node.serviceName] = {
-        serviceName: node.serviceName,
-      };
-    }
-    node.children?.forEach((child) => {
-      const id = buildEdgeId(node.serviceName, child.serviceName);
-      if (!edgeMap[id]) {
-        edgeMap[id] = {
-          spans: [],
-          sourceServiceName: node.serviceName,
-          targetServiceName: child.serviceName,
-          hasPair: false,
-        };
-        edgeMap[id].spans.push(node);
-      }
-      fn(child);
-    });
-  }
-  roots.forEach(fn);
-
-  Object.keys(edgeMap).forEach((id) => {
-    const reversedEdgeId = buildEdgeId(
-      edgeMap[id].targetServiceName,
-      edgeMap[id].sourceServiceName,
-    );
-    if (edgeMap[reversedEdgeId]) {
-      edgeMap[id].hasPair = true;
-    }
-  });
-
-  return { nodeMap, edgeMap };
 };

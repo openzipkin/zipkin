@@ -45,8 +45,6 @@ export type TreeEdgeShapeType = 'B' | 'M' | 'E' | '-';
 
 export type SpanRow = Omit<AdjustedSpan, 'left' | 'width'> & {
   treeEdgeShape: TreeEdgeShapeType[];
-  left?: number;
-  width?: number;
   isClosed: boolean;
   isCollapsible: boolean;
 };
