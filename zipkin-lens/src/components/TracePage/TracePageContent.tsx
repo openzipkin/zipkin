@@ -20,6 +20,7 @@ import {
   convertSpansToSpanTree,
   convertSpanTreeToSpanRows,
 } from './helpers/convert';
+import { SpanTable } from './SpanTable';
 import { Timeline } from './Timeline';
 import { SpanRow } from './types';
 
@@ -84,14 +85,19 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
         <Header trace={trace} />
       </Box>
       <Box flex="0 0" display="flex">
-        <Box flex="1 1">
-          <Timeline
-            spanRows={spanRows}
-            minTimestamp={minTimestamp}
-            maxTimestamp={maxTimestamp}
-            selectedMinTimestamp={selectedTimeRange.minTimestamp}
-            selectedMaxTimestamp={selectedTimeRange.maxTimestamp}
-          />
+        <Box flex="1 1" display="flex" flexDirection="column">
+          <Box flex="0 0 240px">
+            <SpanTable spans={trace.spans} />
+          </Box>
+          <Box flex="1 1">
+            <Timeline
+              spanRows={spanRows}
+              minTimestamp={minTimestamp}
+              maxTimestamp={maxTimestamp}
+              selectedMinTimestamp={selectedTimeRange.minTimestamp}
+              selectedMaxTimestamp={selectedTimeRange.maxTimestamp}
+            />
+          </Box>
         </Box>
         <Box flex="0 0">
           <Box width={320}>Span Detail</Box>
