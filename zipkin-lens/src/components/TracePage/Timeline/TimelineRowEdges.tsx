@@ -12,11 +12,25 @@
  * the License.
  */
 
-import { Box, makeStyles } from '@material-ui/core';
+import { Box, Button, makeStyles } from '@material-ui/core';
+import { Add as AddIcon, Remove as RemoveIcon } from '@material-ui/icons';
 import React, { memo, ReactNode, useMemo } from 'react';
 import { TreeEdgeShapeType } from '../types';
 
 const useStyles = makeStyles((theme) => ({
+  root: {
+    paddingLeft: theme.spacing(2),
+    display: 'flex',
+    width: 120,
+    pointerEvents: 'none',
+    position: 'relative',
+  },
+  button: {
+    position: 'absolute',
+    minWidth: 0,
+    padding: 0,
+    pointerEvents: 'auto',
+  },
   horizontalAndVertical: {
     borderTop: `1px solid ${theme.palette.divider}`,
     borderLeft: `1px solid ${theme.palette.divider}`,
@@ -29,16 +43,53 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+const buttonSizePx = 16;
+
 type TimelineRowEdgeProps = {
   treeEdgeShape: TreeEdgeShapeType[];
+  isClosed: boolean;
+  isCollapsible: boolean;
   rowHeight: number;
 };
 
 const TimelineRowEdgeImpl = ({
   treeEdgeShape,
+  isClosed,
+  isCollapsible,
   rowHeight,
 }: TimelineRowEdgeProps) => {
   const classes = useStyles();
+
+  const button = useMemo(() => {
+    if (isCollapsible) {
+      for (let i = treeEdgeShape.length - 1; i >= 0; i -= 1) {
+        if (treeEdgeShape[i] !== '-') {
+          return (
+            <Button
+              color="primary"
+              variant="contained"
+              className={classes.button}
+              style={{
+                left: `calc(${
+                  (100 / (treeEdgeShape.length + 2)) * (i + 1)
+                }% - ${buttonSizePx / 2}px)`,
+                top: `${(rowHeight / 4) * 3 - buttonSizePx / 2}px`,
+                width: `${buttonSizePx}px`,
+                height: `${buttonSizePx}px`,
+              }}
+            >
+              {isClosed ? (
+                <AddIcon fontSize="small" />
+              ) : (
+                <RemoveIcon fontSize="small" />
+              )}
+            </Button>
+          );
+        }
+      }
+    }
+    return null;
+  }, [classes, isClosed, isCollapsible, rowHeight, treeEdgeShape]);
 
   const content = useMemo(() => {
     const commonProps = {
@@ -46,7 +97,6 @@ const TimelineRowEdgeImpl = ({
       width: `${100 / (treeEdgeShape.length + 1)}%`,
       style: {
         transform: `translateY(${(rowHeight / 4) * 3}px)`,
-        zIndex: 100,
       },
     };
 
@@ -92,8 +142,9 @@ const TimelineRowEdgeImpl = ({
   }, [classes, rowHeight, treeEdgeShape]);
 
   return (
-    <Box pl={2} display="flex" width={120}>
+    <Box className={classes.root}>
       {content}
+      {button}
     </Box>
   );
 };

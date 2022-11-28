@@ -48,4 +48,5 @@ export type SpanRow = Omit<AdjustedSpan, 'left' | 'width'> & {
   left?: number;
   width?: number;
   isClosed: boolean;
+  isCollapsible: boolean;
 };

@@ -12,18 +12,26 @@
  * the License.
  */
 
-import { Box } from '@material-ui/core';
+import { Box, makeStyles } from '@material-ui/core';
 import React from 'react';
 import { SpanRow } from '../types';
 import { TimelineRow } from './TimelineRow';
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    backgroundColor: theme.palette.background.paper,
+  },
+}));
 
 type TimelineProps = {
   spanRows: SpanRow[];
 };
 
 export const Timeline = ({ spanRows }: TimelineProps) => {
+  const classes = useStyles();
+
   return (
-    <Box>
+    <Box className={classes.root}>
       {spanRows.map((spanRow) => (
         <TimelineRow {...spanRow} />
       ))}

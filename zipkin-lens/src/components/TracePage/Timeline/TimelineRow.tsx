@@ -12,22 +12,70 @@
  * the License.
  */
 
-import { Box } from '@material-ui/core';
+import { Box, makeStyles } from '@material-ui/core';
+import { ErrorOutline as ErrorOutlineIcon } from '@material-ui/icons';
 import React from 'react';
 import { SpanRow } from '../types';
+import { TimelineRowBar } from './TimelineRowBar';
 import { TimelineRowEdge } from './TimelineRowEdges';
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    display: 'flex',
+    cursor: 'pointer',
+    '&:hover': {
+      backgroundColor: theme.palette.grey[100],
+    },
+  },
+  text: {
+    fontSize: theme.typography.caption.fontSize,
+    color: theme.palette.text.secondary,
+  },
+  errorIcon: {
+    marginRight: theme.spacing(0.5),
+  },
+}));
 
 type TimelineRowProps = SpanRow & {};
 
-export const TimelineRow = ({
-  treeEdgeShape,
-  serviceName,
-  spanName,
-}: TimelineRowProps) => {
+export const TimelineRow = (props: TimelineRowProps) => {
+  const {
+    serviceName,
+    spanName,
+    treeEdgeShape,
+    durationStr,
+    errorType,
+    isClosed,
+    isCollapsible,
+  } = props;
+  const classes = useStyles();
+
+  const rowHeight = 30;
+
   return (
-    <Box height={32} display="flex">
-      <TimelineRowEdge treeEdgeShape={treeEdgeShape} rowHeight={32} />
-      {serviceName}:{spanName}
+    <Box className={classes.root}>
+      <TimelineRowEdge
+        treeEdgeShape={treeEdgeShape}
+        isClosed={isClosed}
+        isCollapsible={isCollapsible}
+        rowHeight={rowHeight}
+      />
+      <Box position="relative" width="100%">
+        <Box pt={0.25} display="flex" justifyContent="space-between">
+          <Box display="flex" alignItems="center">
+            {errorType !== 'none' && (
+              <ErrorOutlineIcon
+                className={classes.errorIcon}
+                fontSize="small"
+                color="error"
+              />
+            )}
+            <Box className={classes.text}>{`${serviceName}: ${spanName}`}</Box>
+          </Box>
+          <Box className={classes.text}>{durationStr}</Box>
+        </Box>
+        <TimelineRowBar spanRow={props} rowHeight={rowHeight} />
+      </Box>
     </Box>
   );
 };

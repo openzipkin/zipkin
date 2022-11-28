@@ -12,8 +12,10 @@
  * the License.
  */
 
+import { Box } from '@material-ui/core';
 import React, { useMemo, useState } from 'react';
 import AdjustedTrace from '../../models/AdjustedTrace';
+import { Header } from './Header';
 import {
   convertSpansToSpanTree,
   convertSpanTreeToSpanRows,
@@ -45,5 +47,10 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
     [closedSpanIdMap, rerootedSpanId, roots, trace.spans],
   );
 
-  return <Timeline spanRows={spanRows} />;
+  return (
+    <Box>
+      <Header trace={trace} />
+      <Timeline spanRows={spanRows} />
+    </Box>
+  );
 };

@@ -143,14 +143,17 @@ export const convertSpanTreeToSpanRows = (
       const left = node.timestamp
         ? ((node.timestamp - minTimestamp) / (maxTimestamp - minTimestamp)) *
           100
-        : undefined;
+        : 0;
       const width =
         left !== undefined && node.duration && node.timestamp
-          ? ((node.timestamp + node.duration - minTimestamp) /
-              (maxTimestamp - minTimestamp)) *
-              100 -
-            left
-          : undefined;
+          ? Math.max(
+              ((node.timestamp + node.duration - minTimestamp) /
+                (maxTimestamp - minTimestamp)) *
+                100 -
+                left,
+              0.1,
+            )
+          : 0.1;
 
       let treeEdgeShape: TreeEdgeShapeType[] = [];
       if (!parentTreeEdgeShape) {
@@ -185,6 +188,7 @@ export const convertSpanTreeToSpanRows = (
         left,
         width,
         isClosed,
+        isCollapsible: !!node.children,
       });
 
       if (node.children && !isClosed) {
