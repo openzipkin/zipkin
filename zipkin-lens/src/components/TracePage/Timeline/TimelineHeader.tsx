@@ -12,7 +12,13 @@
  * the License.
  */
 
-import { Box, Button, ButtonGroup, makeStyles } from '@material-ui/core';
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  IconButton,
+  makeStyles,
+} from '@material-ui/core';
 import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
   KeyboardArrowLeft as KeyboardArrowLeftIcon,
@@ -38,7 +44,7 @@ export const TimelineHeader = ({}: TimelineHeaderProps) => {
   const classes = useStyles();
   return (
     <Box className={classes.root}>
-      <Box display="flex" px={2} py={1} justifyContent="space-between">
+      <Box px={2} py={1} position="relative">
         <ButtonGroup>
           <Button className={classes.iconButton}>
             <KeyboardArrowUpIcon fontSize="small" />
@@ -47,9 +53,11 @@ export const TimelineHeader = ({}: TimelineHeaderProps) => {
             <KeyboardArrowDownIcon fontSize="small" />
           </Button>
         </ButtonGroup>
-        <Button variant="outlined" className={classes.iconButton}>
-          <KeyboardArrowLeftIcon fontSize="small" />
-        </Button>
+        <Box position="absolute" right={-14} top={10}>
+          <IconButton size="small">
+            <KeyboardArrowLeftIcon />
+          </IconButton>
+        </Box>
       </Box>
     </Box>
   );

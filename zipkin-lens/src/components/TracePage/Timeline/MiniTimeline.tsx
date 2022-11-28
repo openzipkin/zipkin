@@ -15,49 +15,41 @@
 import { Box, makeStyles } from '@material-ui/core';
 import React from 'react';
 import { SpanRow } from '../types';
-import { MiniTimeline } from './MiniTimeline';
-import { TimelineHeader } from './TimelineHeader';
-import { TimelineRow } from './TimelineRow';
+import { MiniTimelineRow } from './MiniTimelineRow';
 
 const useStyles = makeStyles((theme) => ({
   root: {
+    height: 60,
+    position: 'relative',
+    border: `1px solid ${theme.palette.divider}`,
     backgroundColor: theme.palette.background.paper,
-  },
-  miniViewerContainer: {
-    padding: theme.spacing(1),
-    backgroundColor: theme.palette.grey[50],
-    borderBottom: `1px solid ${theme.palette.divider}`,
   },
 }));
 
-type TimelineProps = {
+type MiniTimelineProps = {
   spanRows: SpanRow[];
   minTimestamp: number;
   maxTimestamp: number;
   timeRange: [number, number];
 };
 
-export const Timeline = ({
+export const MiniTimeline = ({
   spanRows,
   minTimestamp,
   maxTimestamp,
   timeRange,
-}: TimelineProps) => {
+}: MiniTimelineProps) => {
   const classes = useStyles();
 
   return (
     <Box className={classes.root}>
-      <Box className={classes.miniViewerContainer}>
-        <MiniTimeline
-          spanRows={spanRows}
+      {spanRows.map((spanRow, i) => (
+        <MiniTimelineRow
+          top={(100 / spanRows.length) * i}
+          spanRow={spanRow}
           minTimestamp={minTimestamp}
           maxTimestamp={maxTimestamp}
-          timeRange={timeRange}
         />
-      </Box>
-      <TimelineHeader />
-      {spanRows.map((spanRow) => (
-        <TimelineRow {...spanRow} timeRange={timeRange} />
       ))}
     </Box>
   );
