@@ -14,6 +14,7 @@
 
 import { Box, makeStyles } from '@material-ui/core';
 import { ErrorOutline as ErrorOutlineIcon } from '@material-ui/icons';
+import classNames from 'classnames';
 import React from 'react';
 import { SpanRow } from '../types';
 import { TimelineRowBar } from './TimelineRowBar';
@@ -27,6 +28,9 @@ const useStyles = makeStyles((theme) => ({
       backgroundColor: theme.palette.grey[100],
     },
   },
+  rootSelected: {
+    backgroundColor: theme.palette.grey.A100,
+  },
   text: {
     fontSize: theme.typography.caption.fontSize,
     color: theme.palette.text.secondary,
@@ -37,12 +41,14 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 type TimelineRowProps = SpanRow & {
+  isSelected: boolean;
   selectedMinTimestamp: number;
   selectedMaxTimestamp: number;
 };
 
 export const TimelineRow = (props: TimelineRowProps) => {
   const {
+    isSelected,
     serviceName,
     spanName,
     treeEdgeShape,
@@ -58,7 +64,11 @@ export const TimelineRow = (props: TimelineRowProps) => {
   const rowHeight = 30;
 
   return (
-    <Box className={classes.root}>
+    <Box
+      className={classNames(classes.root, {
+        [classes.rootSelected]: isSelected,
+      })}
+    >
       <TimelineRowEdge
         treeEdgeShape={treeEdgeShape}
         isClosed={isClosed}

@@ -75,13 +75,16 @@ export const Timeline = ({
           <TimelineRow
             key={props.key}
             {...spanRow}
+            isSelected={
+              (selectedSpan && selectedSpan.spanId === spanRow.spanId) || false
+            }
             selectedMinTimestamp={selectedMinTimestamp}
             selectedMaxTimestamp={selectedMaxTimestamp}
           />
         </div>
       );
     },
-    [selectedMaxTimestamp, selectedMinTimestamp, spanRows],
+    [selectedMaxTimestamp, selectedMinTimestamp, selectedSpan, spanRows],
   );
 
   return (
