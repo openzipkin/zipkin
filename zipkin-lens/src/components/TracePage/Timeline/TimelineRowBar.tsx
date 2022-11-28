@@ -47,37 +47,46 @@ const useStyles = makeStyles<Theme, { rowHeight: number; serviceName: string }>(
 type TimelineRowBarProps = {
   spanRow: SpanRow;
   rowHeight: number;
-  timeRange: [number, number];
+  selectedMinTimestamp: number;
+  selectedMaxTimestamp: number;
 };
 
 export const TimelineRowBar = ({
   spanRow,
   rowHeight,
-  timeRange,
+  selectedMinTimestamp,
+  selectedMaxTimestamp,
 }: TimelineRowBarProps) => {
   const classes = useStyles({ rowHeight, serviceName: spanRow.serviceName });
 
   const left = useMemo(
     () =>
       spanRow.timestamp
-        ? ((spanRow.timestamp - timeRange[0]) / (timeRange[1] - timeRange[0])) *
+        ? ((spanRow.timestamp - selectedMinTimestamp) /
+            (selectedMaxTimestamp - selectedMinTimestamp)) *
           100
         : 0,
-    [spanRow.timestamp, timeRange],
+    [selectedMaxTimestamp, selectedMinTimestamp, spanRow.timestamp],
   );
 
   const width = useMemo(
     () =>
       left !== undefined && spanRow.duration && spanRow.timestamp
         ? Math.max(
-            ((spanRow.timestamp + spanRow.duration - timeRange[0]) /
-              (timeRange[1] - timeRange[0])) *
+            ((spanRow.timestamp + spanRow.duration - selectedMinTimestamp) /
+              (selectedMaxTimestamp - selectedMinTimestamp)) *
               100 -
               left,
             1,
           )
         : 1,
-    [left, spanRow.duration, spanRow.timestamp, timeRange],
+    [
+      left,
+      selectedMaxTimestamp,
+      selectedMinTimestamp,
+      spanRow.duration,
+      spanRow.timestamp,
+    ],
   );
 
   return (

@@ -37,7 +37,8 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 type TimelineRowProps = SpanRow & {
-  timeRange: [number, number];
+  selectedMinTimestamp: number;
+  selectedMaxTimestamp: number;
 };
 
 export const TimelineRow = (props: TimelineRowProps) => {
@@ -49,7 +50,8 @@ export const TimelineRow = (props: TimelineRowProps) => {
     errorType,
     isClosed,
     isCollapsible,
-    timeRange,
+    selectedMinTimestamp,
+    selectedMaxTimestamp,
   } = props;
   const classes = useStyles();
 
@@ -63,7 +65,7 @@ export const TimelineRow = (props: TimelineRowProps) => {
         isCollapsible={isCollapsible}
         rowHeight={rowHeight}
       />
-      <Box position="relative" width="100%">
+      <Box position="relative" width="100%" flex="1 1">
         <Box pt={0.25} display="flex" justifyContent="space-between" pr={1}>
           <Box display="flex" alignItems="center">
             {errorType !== 'none' && (
@@ -80,7 +82,8 @@ export const TimelineRow = (props: TimelineRowProps) => {
         <TimelineRowBar
           spanRow={props}
           rowHeight={rowHeight}
-          timeRange={timeRange}
+          selectedMinTimestamp={selectedMinTimestamp}
+          selectedMaxTimestamp={selectedMaxTimestamp}
         />
       </Box>
     </Box>

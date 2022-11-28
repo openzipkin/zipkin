@@ -30,14 +30,16 @@ type MiniTimelineProps = {
   spanRows: SpanRow[];
   minTimestamp: number;
   maxTimestamp: number;
-  timeRange: [number, number];
+  selectedMinTimestamp: number;
+  selectedMaxTimestamp: number;
 };
 
 export const MiniTimeline = ({
   spanRows,
   minTimestamp,
   maxTimestamp,
-  timeRange,
+  selectedMinTimestamp,
+  selectedMaxTimestamp,
 }: MiniTimelineProps) => {
   const classes = useStyles();
 

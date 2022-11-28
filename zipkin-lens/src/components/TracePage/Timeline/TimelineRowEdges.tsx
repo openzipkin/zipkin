@@ -19,9 +19,9 @@ import { TreeEdgeShapeType } from '../types';
 
 const useStyles = makeStyles((theme) => ({
   root: {
+    flex: '0 0 120px',
     paddingLeft: theme.spacing(2),
     display: 'flex',
-    width: 120,
     pointerEvents: 'none',
     position: 'relative',
   },

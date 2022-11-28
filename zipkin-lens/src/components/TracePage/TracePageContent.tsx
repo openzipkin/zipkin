@@ -62,17 +62,20 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
   );
 
   const [selectedSpanRow, setSelectedSpanRow] = useState<SpanRow>(spanRows[0]);
-  const [selectedTimeRange, setSelectedTimeRange] = useState<[number, number]>([
+  const [selectedTimeRange, setSelectedTimeRange] = useState({
     minTimestamp,
     maxTimestamp,
-  ]);
+  });
 
   useEffect(() => {
     setSelectedSpanRow(spanRows[0]);
   }, [spanRows]);
 
   useEffect(() => {
-    setSelectedTimeRange([minTimestamp, maxTimestamp]);
+    setSelectedTimeRange({
+      minTimestamp,
+      maxTimestamp,
+    });
   }, [maxTimestamp, minTimestamp]);
 
   return (
@@ -86,7 +89,8 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
             spanRows={spanRows}
             minTimestamp={minTimestamp}
             maxTimestamp={maxTimestamp}
-            timeRange={selectedTimeRange}
+            selectedMinTimestamp={selectedTimeRange.minTimestamp}
+            selectedMaxTimestamp={selectedTimeRange.maxTimestamp}
           />
         </Box>
         <Box flex="0 0">

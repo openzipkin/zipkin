@@ -16,6 +16,7 @@ import { Box, makeStyles } from '@material-ui/core';
 import React from 'react';
 import { SpanRow } from '../types';
 import { MiniTimeline } from './MiniTimeline';
+import { TickMarkers } from './TickMarkers';
 import { TimelineHeader } from './TimelineHeader';
 import { TimelineRow } from './TimelineRow';
 
@@ -34,30 +35,45 @@ type TimelineProps = {
   spanRows: SpanRow[];
   minTimestamp: number;
   maxTimestamp: number;
-  timeRange: [number, number];
+  selectedMinTimestamp: number;
+  selectedMaxTimestamp: number;
 };
 
 export const Timeline = ({
   spanRows,
   minTimestamp,
   maxTimestamp,
-  timeRange,
+  selectedMinTimestamp,
+  selectedMaxTimestamp,
 }: TimelineProps) => {
   const classes = useStyles();
 
   return (
     <Box className={classes.root}>
       <Box className={classes.miniViewerContainer}>
+        <TickMarkers
+          minTimestamp={0}
+          maxTimestamp={maxTimestamp - minTimestamp}
+        />
         <MiniTimeline
           spanRows={spanRows}
           minTimestamp={minTimestamp}
           maxTimestamp={maxTimestamp}
-          timeRange={timeRange}
+          selectedMinTimestamp={selectedMinTimestamp}
+          selectedMaxTimestamp={selectedMaxTimestamp}
         />
       </Box>
-      <TimelineHeader />
+      <TimelineHeader
+        minTimestamp={minTimestamp}
+        selectedMinTimestamp={selectedMinTimestamp}
+        selectedMaxTimestamp={selectedMaxTimestamp}
+      />
       {spanRows.map((spanRow) => (
-        <TimelineRow {...spanRow} timeRange={timeRange} />
+        <TimelineRow
+          {...spanRow}
+          selectedMinTimestamp={selectedMinTimestamp}
+          selectedMaxTimestamp={selectedMaxTimestamp}
+        />
       ))}
     </Box>
   );

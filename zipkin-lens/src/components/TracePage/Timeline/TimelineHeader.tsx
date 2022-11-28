@@ -25,9 +25,11 @@ import {
   KeyboardArrowUp as KeyboardArrowUpIcon,
 } from '@material-ui/icons';
 import React from 'react';
+import { TickMarkers } from './TickMarkers';
 
 const useStyles = makeStyles((theme) => ({
   root: {
+    position: 'relative',
     backgroundColor: theme.palette.grey[100],
     borderBottom: `1px solid ${theme.palette.divider}`,
   },
@@ -36,12 +38,28 @@ const useStyles = makeStyles((theme) => ({
     width: 32,
     height: 32,
   },
+  tickMarkersWrapper: {
+    position: 'absolute',
+    left: 120,
+    right: 0,
+    bottom: 0,
+    paddingRight: theme.spacing(1),
+  },
 }));
 
-type TimelineHeaderProps = {};
+type TimelineHeaderProps = {
+  minTimestamp: number;
+  selectedMinTimestamp: number;
+  selectedMaxTimestamp: number;
+};
 
-export const TimelineHeader = ({}: TimelineHeaderProps) => {
+export const TimelineHeader = ({
+  minTimestamp,
+  selectedMinTimestamp,
+  selectedMaxTimestamp,
+}: TimelineHeaderProps) => {
   const classes = useStyles();
+
   return (
     <Box className={classes.root}>
       <Box px={2} py={1} position="relative">
@@ -58,6 +76,12 @@ export const TimelineHeader = ({}: TimelineHeaderProps) => {
             <KeyboardArrowLeftIcon />
           </IconButton>
         </Box>
+      </Box>
+      <Box className={classes.tickMarkersWrapper}>
+        <TickMarkers
+          minTimestamp={selectedMinTimestamp - minTimestamp}
+          maxTimestamp={selectedMaxTimestamp - minTimestamp}
+        />
       </Box>
     </Box>
   );
