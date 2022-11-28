@@ -22,7 +22,6 @@ import {
 } from './helpers/convert';
 import { SpanTable } from './SpanTable';
 import { Timeline } from './Timeline';
-import { SpanRow } from './types';
 
 type TracePageContentProps = {
   trace: AdjustedTrace;
@@ -62,14 +61,14 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
     [spanRows],
   );
 
-  const [selectedSpanRow, setSelectedSpanRow] = useState<SpanRow>(spanRows[0]);
+  const [selectedSpan, setSelectedSpan] = useState<AdjustedSpan>(spanRows[0]);
   const [selectedTimeRange, setSelectedTimeRange] = useState({
     minTimestamp,
     maxTimestamp,
   });
 
   useEffect(() => {
-    setSelectedSpanRow(spanRows[0]);
+    setSelectedSpan(spanRows[0]);
   }, [spanRows]);
 
   useEffect(() => {
@@ -80,18 +79,19 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
   }, [maxTimestamp, minTimestamp]);
 
   return (
-    <Box display="flex" flexDirection="column">
-      <Box flex="1 1">
+    <Box display="flex" flexDirection="column" height="calc(100vh - 64px)">
+      <Box flex="0 0">
         <Header trace={trace} />
       </Box>
-      <Box flex="0 0" display="flex">
+      <Box flex="1 1" display="flex">
         <Box flex="1 1" display="flex" flexDirection="column">
           <Box flex="0 0 240px">
-            <SpanTable spans={trace.spans} />
+            <SpanTable spans={trace.spans} setSelectedSpan={setSelectedSpan} />
           </Box>
           <Box flex="1 1">
             <Timeline
               spanRows={spanRows}
+              selectedSpan={selectedSpan}
               minTimestamp={minTimestamp}
               maxTimestamp={maxTimestamp}
               selectedMinTimestamp={selectedTimeRange.minTimestamp}

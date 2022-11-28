@@ -43,7 +43,7 @@ import { AdjustedSpan } from '../../models/AdjustedTrace';
 */
 export type TreeEdgeShapeType = 'B' | 'M' | 'E' | '-';
 
-export type SpanRow = Omit<AdjustedSpan, 'left' | 'width'> & {
+export type SpanRow = AdjustedSpan & {
   treeEdgeShape: TreeEdgeShapeType[];
   isClosed: boolean;
   isCollapsible: boolean;

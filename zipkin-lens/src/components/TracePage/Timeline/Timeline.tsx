@@ -13,7 +13,9 @@
  */
 
 import { Box, makeStyles } from '@material-ui/core';
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
+import { AutoSizer, List, ListRowProps } from 'react-virtualized';
+import { AdjustedSpan } from '../../../models/AdjustedTrace';
 import { SpanRow } from '../types';
 import { MiniTimeline } from './MiniTimeline';
 import { TickMarkers } from './TickMarkers';
@@ -22,9 +24,13 @@ import { TimelineRow } from './TimelineRow';
 
 const useStyles = makeStyles((theme) => ({
   root: {
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
     backgroundColor: theme.palette.background.paper,
   },
   miniViewerContainer: {
+    flex: '0 0',
     padding: theme.spacing(1),
     backgroundColor: theme.palette.grey[50],
     borderBottom: `1px solid ${theme.palette.divider}`,
@@ -33,20 +39,50 @@ const useStyles = makeStyles((theme) => ({
 
 type TimelineProps = {
   spanRows: SpanRow[];
+  selectedSpan?: AdjustedSpan;
   minTimestamp: number;
   maxTimestamp: number;
   selectedMinTimestamp: number;
   selectedMaxTimestamp: number;
 };
 
+const rowHeight = 30;
+
 export const Timeline = ({
   spanRows,
+  selectedSpan,
   minTimestamp,
   maxTimestamp,
   selectedMinTimestamp,
   selectedMaxTimestamp,
 }: TimelineProps) => {
   const classes = useStyles();
+
+  const scrollToIndex = useMemo(() => {
+    if (selectedSpan) {
+      const index = spanRows.findIndex((r) => r.spanId === selectedSpan.spanId);
+      return index === -1 ? undefined : index;
+    }
+    return undefined;
+  }, [selectedSpan, spanRows]);
+
+  const rowRenderer = useCallback(
+    (props: ListRowProps) => {
+      const spanRow = spanRows[props.index];
+
+      return (
+        <div key={props.key} style={props.style}>
+          <TimelineRow
+            key={props.key}
+            {...spanRow}
+            selectedMinTimestamp={selectedMinTimestamp}
+            selectedMaxTimestamp={selectedMaxTimestamp}
+          />
+        </div>
+      );
+    },
+    [selectedMaxTimestamp, selectedMinTimestamp, spanRows],
+  );
 
   return (
     <Box className={classes.root}>
@@ -63,18 +99,27 @@ export const Timeline = ({
           selectedMaxTimestamp={selectedMaxTimestamp}
         />
       </Box>
-      <TimelineHeader
-        minTimestamp={minTimestamp}
-        selectedMinTimestamp={selectedMinTimestamp}
-        selectedMaxTimestamp={selectedMaxTimestamp}
-      />
-      {spanRows.map((spanRow) => (
-        <TimelineRow
-          {...spanRow}
+      <Box flex="0 0">
+        <TimelineHeader
+          minTimestamp={minTimestamp}
           selectedMinTimestamp={selectedMinTimestamp}
           selectedMaxTimestamp={selectedMaxTimestamp}
         />
-      ))}
+      </Box>
+      <Box flex="1 1">
+        <AutoSizer>
+          {({ width, height }) => (
+            <List
+              width={width}
+              height={height}
+              rowHeight={rowHeight}
+              rowCount={spanRows.length}
+              rowRenderer={rowRenderer}
+              scrollToIndex={scrollToIndex}
+            />
+          )}
+        </AutoSizer>
+      </Box>
     </Box>
   );
 };
