@@ -12,8 +12,9 @@
  * the License.
  */
 
-import { Box } from '@material-ui/core';
+import { Box, Collapse } from '@material-ui/core';
 import React, { useEffect, useMemo, useState } from 'react';
+import { useToggle } from 'react-use';
 import AdjustedTrace, { AdjustedSpan } from '../../models/AdjustedTrace';
 import { Header } from './Header';
 import {
@@ -33,6 +34,9 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
   const [closedSpanIdMap, setClosedSpanIdMap] = useState<{
     [spanId: string]: boolean;
   }>({});
+  const [isSpanDetailDrawerOpen, toggleIsSpanDetailDrawerOpen] = useToggle(
+    true,
+  );
 
   const roots = useMemo(() => convertSpansToSpanTree(trace.spans), [
     trace.spans,
@@ -98,14 +102,21 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
               maxTimestamp={maxTimestamp}
               selectedMinTimestamp={selectedTimeRange.minTimestamp}
               selectedMaxTimestamp={selectedTimeRange.maxTimestamp}
+              isSpanDetailDrawerOpen={isSpanDetailDrawerOpen}
+              toggleIsSpanDetailDrawerOpen={toggleIsSpanDetailDrawerOpen}
             />
           </Box>
         </Box>
-        <Box flex="0 0 500px">
-          {selectedSpan && (
-            <SpanDetailDrawer minTimestamp={minTimestamp} span={selectedSpan} />
-          )}
-        </Box>
+        {isSpanDetailDrawerOpen && (
+          <Box flex="0 0 500px">
+            {selectedSpan && (
+              <SpanDetailDrawer
+                minTimestamp={minTimestamp}
+                span={selectedSpan}
+              />
+            )}
+          </Box>
+        )}
       </Box>
     </Box>
   );

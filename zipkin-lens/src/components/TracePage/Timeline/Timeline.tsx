@@ -45,6 +45,8 @@ type TimelineProps = {
   maxTimestamp: number;
   selectedMinTimestamp: number;
   selectedMaxTimestamp: number;
+  isSpanDetailDrawerOpen: boolean;
+  toggleIsSpanDetailDrawerOpen: () => void;
 };
 
 const rowHeight = 30;
@@ -57,6 +59,8 @@ export const Timeline = ({
   maxTimestamp,
   selectedMinTimestamp,
   selectedMaxTimestamp,
+  isSpanDetailDrawerOpen,
+  toggleIsSpanDetailDrawerOpen,
 }: TimelineProps) => {
   const classes = useStyles();
 
@@ -116,6 +120,8 @@ export const Timeline = ({
           minTimestamp={minTimestamp}
           selectedMinTimestamp={selectedMinTimestamp}
           selectedMaxTimestamp={selectedMaxTimestamp}
+          isSpanDetailDrawerOpen={isSpanDetailDrawerOpen}
+          toggleIsSpanDetailDrawerOpen={toggleIsSpanDetailDrawerOpen}
         />
       </Box>
       <Box flex="1 1">

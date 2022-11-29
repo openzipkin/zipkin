@@ -59,12 +59,16 @@ type TimelineHeaderProps = {
   minTimestamp: number;
   selectedMinTimestamp: number;
   selectedMaxTimestamp: number;
+  isSpanDetailDrawerOpen: boolean;
+  toggleIsSpanDetailDrawerOpen: () => void;
 };
 
 export const TimelineHeader = ({
   minTimestamp,
   selectedMinTimestamp,
   selectedMaxTimestamp,
+  isSpanDetailDrawerOpen,
+  toggleIsSpanDetailDrawerOpen,
 }: TimelineHeaderProps) => {
   const classes = useStyles();
 
@@ -94,8 +98,15 @@ export const TimelineHeader = ({
           <ToggleButton className={classes.iconButton}>
             <KeyboardArrowUpIcon fontSize="small" />
           </ToggleButton>
-          <ToggleButton className={classes.iconButton}>
-            <KeyboardArrowRightIcon fontSize="small" />
+          <ToggleButton
+            className={classes.iconButton}
+            onClick={toggleIsSpanDetailDrawerOpen}
+          >
+            {isSpanDetailDrawerOpen ? (
+              <KeyboardArrowRightIcon fontSize="small" />
+            ) : (
+              <KeyboardArrowLeftIcon fontSize="small" />
+            )}
           </ToggleButton>
         </Box>
       </Box>
