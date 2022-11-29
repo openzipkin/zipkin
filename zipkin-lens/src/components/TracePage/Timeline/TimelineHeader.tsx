@@ -25,7 +25,7 @@ import {
   KeyboardArrowUp as KeyboardArrowUpIcon,
 } from '@material-ui/icons';
 import React from 'react';
-import { TickMarkers } from './TickMarkers';
+import { TickMarkers } from '../TickMarkers';
 
 const useStyles = makeStyles((theme) => ({
   root: {

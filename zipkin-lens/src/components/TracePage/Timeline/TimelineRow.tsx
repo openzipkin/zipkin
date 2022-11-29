@@ -15,7 +15,8 @@
 import { Box, makeStyles } from '@material-ui/core';
 import { ErrorOutline as ErrorOutlineIcon } from '@material-ui/icons';
 import classNames from 'classnames';
-import React from 'react';
+import React, { useCallback } from 'react';
+import { AdjustedSpan } from '../../../models/AdjustedTrace';
 import { SpanRow } from '../types';
 import { TimelineRowBar } from './TimelineRowBar';
 import { TimelineRowEdge } from './TimelineRowEdges';
@@ -42,6 +43,7 @@ const useStyles = makeStyles((theme) => ({
 
 type TimelineRowProps = SpanRow & {
   isSelected: boolean;
+  setSelectedSpan: (span: AdjustedSpan) => void;
   selectedMinTimestamp: number;
   selectedMaxTimestamp: number;
 };
@@ -49,6 +51,7 @@ type TimelineRowProps = SpanRow & {
 export const TimelineRow = (props: TimelineRowProps) => {
   const {
     isSelected,
+    setSelectedSpan,
     serviceName,
     spanName,
     treeEdgeShape,
@@ -63,11 +66,16 @@ export const TimelineRow = (props: TimelineRowProps) => {
 
   const rowHeight = 30;
 
+  const handleClick = useCallback(() => {
+    setSelectedSpan(props);
+  }, [props, setSelectedSpan]);
+
   return (
     <Box
       className={classNames(classes.root, {
         [classes.rootSelected]: isSelected,
       })}
+      onClick={handleClick}
     >
       <TimelineRowEdge
         treeEdgeShape={treeEdgeShape}

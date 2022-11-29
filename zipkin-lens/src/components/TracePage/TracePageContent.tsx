@@ -93,6 +93,7 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
             <Timeline
               spanRows={spanRows}
               selectedSpan={selectedSpan}
+              setSelectedSpan={setSelectedSpan}
               minTimestamp={minTimestamp}
               maxTimestamp={maxTimestamp}
               selectedMinTimestamp={selectedTimeRange.minTimestamp}
@@ -101,7 +102,9 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
           </Box>
         </Box>
         <Box flex="0 0 500px">
-          {selectedSpan && <SpanDetailDrawer span={selectedSpan} />}
+          {selectedSpan && (
+            <SpanDetailDrawer minTimestamp={minTimestamp} span={selectedSpan} />
+          )}
         </Box>
       </Box>
     </Box>

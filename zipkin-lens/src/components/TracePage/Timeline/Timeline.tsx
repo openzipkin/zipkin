@@ -16,9 +16,9 @@ import { Box, makeStyles } from '@material-ui/core';
 import React, { useCallback, useMemo } from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
+import { TickMarkers } from '../TickMarkers';
 import { SpanRow } from '../types';
 import { MiniTimeline } from './MiniTimeline';
-import { TickMarkers } from './TickMarkers';
 import { TimelineHeader } from './TimelineHeader';
 import { TimelineRow } from './TimelineRow';
 
@@ -40,6 +40,7 @@ const useStyles = makeStyles((theme) => ({
 type TimelineProps = {
   spanRows: SpanRow[];
   selectedSpan?: AdjustedSpan;
+  setSelectedSpan: (span: AdjustedSpan) => void;
   minTimestamp: number;
   maxTimestamp: number;
   selectedMinTimestamp: number;
@@ -51,6 +52,7 @@ const rowHeight = 30;
 export const Timeline = ({
   spanRows,
   selectedSpan,
+  setSelectedSpan,
   minTimestamp,
   maxTimestamp,
   selectedMinTimestamp,
@@ -75,6 +77,7 @@ export const Timeline = ({
           <TimelineRow
             key={props.key}
             {...spanRow}
+            setSelectedSpan={setSelectedSpan}
             isSelected={
               (selectedSpan && selectedSpan.spanId === spanRow.spanId) || false
             }
@@ -84,7 +87,13 @@ export const Timeline = ({
         </div>
       );
     },
-    [selectedMaxTimestamp, selectedMinTimestamp, selectedSpan, spanRows],
+    [
+      selectedMaxTimestamp,
+      selectedMinTimestamp,
+      selectedSpan,
+      setSelectedSpan,
+      spanRows,
+    ],
   );
 
   return (
