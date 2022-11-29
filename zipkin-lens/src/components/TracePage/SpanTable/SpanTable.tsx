@@ -88,6 +88,8 @@ export const SpanTable = ({ spans, setSelectedSpan }: SpanTableProps) => {
       columns={COLUMN_DEFS}
       getRowId={(span) => span.spanId}
       onRowClick={handleRowClick}
+      hideFooter
+      pageSize={spans.length}
     />
   );
 };

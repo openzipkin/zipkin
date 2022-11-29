@@ -22,8 +22,11 @@ import {
 import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
   KeyboardArrowLeft as KeyboardArrowLeftIcon,
+  KeyboardArrowRight as KeyboardArrowRightIcon,
   KeyboardArrowUp as KeyboardArrowUpIcon,
+  SettingsOverscan as SettingsOverscanIcon,
 } from '@material-ui/icons';
+import { ToggleButton } from '@material-ui/lab';
 import React from 'react';
 import { TickMarkers } from '../TickMarkers';
 
@@ -33,10 +36,15 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.grey[100],
     borderBottom: `1px solid ${theme.palette.divider}`,
   },
+  rightButtonsWrapper: {
+    '& > :not(:last-child)': {
+      marginRight: theme.spacing(1),
+    },
+  },
   iconButton: {
-    minWidth: 32,
-    width: 32,
-    height: 32,
+    minWidth: 0,
+    width: 28,
+    height: 28,
   },
   tickMarkersWrapper: {
     position: 'absolute',
@@ -62,7 +70,15 @@ export const TimelineHeader = ({
 
   return (
     <Box className={classes.root}>
-      <Box px={2} py={1} position="relative">
+      <Box
+        px={2}
+        pt={1}
+        pb={3}
+        position="relative"
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+      >
         <ButtonGroup>
           <Button className={classes.iconButton}>
             <KeyboardArrowUpIcon fontSize="small" />
@@ -71,10 +87,16 @@ export const TimelineHeader = ({
             <KeyboardArrowDownIcon fontSize="small" />
           </Button>
         </ButtonGroup>
-        <Box position="absolute" right={-14} top={10}>
-          <IconButton size="small">
-            <KeyboardArrowLeftIcon />
-          </IconButton>
+        <Box className={classes.rightButtonsWrapper}>
+          <ToggleButton className={classes.iconButton}>
+            <SettingsOverscanIcon fontSize="small" />
+          </ToggleButton>
+          <ToggleButton className={classes.iconButton}>
+            <KeyboardArrowUpIcon fontSize="small" />
+          </ToggleButton>
+          <ToggleButton className={classes.iconButton}>
+            <KeyboardArrowRightIcon fontSize="small" />
+          </ToggleButton>
         </Box>
       </Box>
       <Box className={classes.tickMarkersWrapper}>
