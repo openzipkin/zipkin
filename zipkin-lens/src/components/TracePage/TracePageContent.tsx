@@ -20,6 +20,7 @@ import {
   convertSpansToSpanTree,
   convertSpanTreeToSpanRows,
 } from './helpers/convert';
+import { SpanDetailDrawer } from './SpanDetailDrawer';
 import { SpanTable } from './SpanTable';
 import { Timeline } from './Timeline';
 
@@ -85,7 +86,7 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
       </Box>
       <Box flex="1 1" display="flex">
         <Box flex="1 1" display="flex" flexDirection="column">
-          <Box flex="0 0 240px">
+          <Box flex="0 0 200px">
             <SpanTable spans={trace.spans} setSelectedSpan={setSelectedSpan} />
           </Box>
           <Box flex="1 1">
@@ -99,8 +100,8 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
             />
           </Box>
         </Box>
-        <Box flex="0 0">
-          <Box width={320}>Span Detail</Box>
+        <Box flex="0 0 500px">
+          {selectedSpan && <SpanDetailDrawer span={selectedSpan} />}
         </Box>
       </Box>
     </Box>
