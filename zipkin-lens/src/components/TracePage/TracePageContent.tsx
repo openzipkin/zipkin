@@ -37,6 +37,8 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
   const [isSpanDetailDrawerOpen, toggleIsSpanDetailDrawerOpen] = useToggle(
     true,
   );
+  const [isMiniTimelineOpen, toggleIsMiniTimelineOpen] = useToggle(true);
+  const [isSpanTableOpen, toggleIsSpanTableOpen] = useToggle(false);
 
   const roots = useMemo(() => convertSpansToSpanTree(trace.spans), [
     trace.spans,
@@ -90,9 +92,14 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
       </Box>
       <Box flex="1 1" display="flex">
         <Box flex="1 1" display="flex" flexDirection="column">
-          <Box flex="0 0 200px">
-            <SpanTable spans={trace.spans} setSelectedSpan={setSelectedSpan} />
-          </Box>
+          {isSpanTableOpen && (
+            <Box flex="0 0 200px">
+              <SpanTable
+                spans={trace.spans}
+                setSelectedSpan={setSelectedSpan}
+              />
+            </Box>
+          )}
           <Box flex="1 1">
             <Timeline
               spanRows={spanRows}
@@ -104,6 +111,10 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
               selectedMaxTimestamp={selectedTimeRange.maxTimestamp}
               isSpanDetailDrawerOpen={isSpanDetailDrawerOpen}
               toggleIsSpanDetailDrawerOpen={toggleIsSpanDetailDrawerOpen}
+              isMiniTimelineOpen={isMiniTimelineOpen}
+              toggleIsMiniTimelineOpen={toggleIsMiniTimelineOpen}
+              isSpanTableOpen={isSpanTableOpen}
+              toggleIsSpanTableOpen={toggleIsSpanTableOpen}
             />
           </Box>
         </Box>

@@ -12,19 +12,14 @@
  * the License.
  */
 
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  IconButton,
-  makeStyles,
-} from '@material-ui/core';
+import { Box, Button, ButtonGroup, makeStyles } from '@material-ui/core';
 import {
   KeyboardArrowDown as KeyboardArrowDownIcon,
   KeyboardArrowLeft as KeyboardArrowLeftIcon,
   KeyboardArrowRight as KeyboardArrowRightIcon,
   KeyboardArrowUp as KeyboardArrowUpIcon,
-  SettingsOverscan as SettingsOverscanIcon,
+  List as ListIcon,
+  Visibility as VisibilityIcon,
 } from '@material-ui/icons';
 import { ToggleButton } from '@material-ui/lab';
 import React from 'react';
@@ -61,6 +56,10 @@ type TimelineHeaderProps = {
   selectedMaxTimestamp: number;
   isSpanDetailDrawerOpen: boolean;
   toggleIsSpanDetailDrawerOpen: () => void;
+  isMiniTimelineOpen: boolean;
+  toggleIsMiniTimelineOpen: () => void;
+  isSpanTableOpen: boolean;
+  toggleIsSpanTableOpen: () => void;
 };
 
 export const TimelineHeader = ({
@@ -69,6 +68,10 @@ export const TimelineHeader = ({
   selectedMaxTimestamp,
   isSpanDetailDrawerOpen,
   toggleIsSpanDetailDrawerOpen,
+  isMiniTimelineOpen,
+  toggleIsMiniTimelineOpen,
+  isSpanTableOpen,
+  toggleIsSpanTableOpen,
 }: TimelineHeaderProps) => {
   const classes = useStyles();
 
@@ -92,14 +95,23 @@ export const TimelineHeader = ({
           </Button>
         </ButtonGroup>
         <Box className={classes.rightButtonsWrapper}>
-          <ToggleButton className={classes.iconButton}>
-            <SettingsOverscanIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton className={classes.iconButton}>
-            <KeyboardArrowUpIcon fontSize="small" />
+          <ToggleButton
+            className={classes.iconButton}
+            selected={isMiniTimelineOpen}
+            onClick={toggleIsMiniTimelineOpen}
+          >
+            <VisibilityIcon fontSize="small" />
           </ToggleButton>
           <ToggleButton
             className={classes.iconButton}
+            selected={isSpanTableOpen}
+            onClick={toggleIsSpanTableOpen}
+          >
+            <ListIcon fontSize="small" />
+          </ToggleButton>
+          <ToggleButton
+            className={classes.iconButton}
+            selected={isSpanDetailDrawerOpen}
             onClick={toggleIsSpanDetailDrawerOpen}
           >
             {isSpanDetailDrawerOpen ? (

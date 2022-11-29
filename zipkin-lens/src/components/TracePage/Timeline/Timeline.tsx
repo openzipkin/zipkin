@@ -47,6 +47,10 @@ type TimelineProps = {
   selectedMaxTimestamp: number;
   isSpanDetailDrawerOpen: boolean;
   toggleIsSpanDetailDrawerOpen: () => void;
+  isMiniTimelineOpen: boolean;
+  toggleIsMiniTimelineOpen: () => void;
+  isSpanTableOpen: boolean;
+  toggleIsSpanTableOpen: () => void;
 };
 
 const rowHeight = 30;
@@ -61,6 +65,10 @@ export const Timeline = ({
   selectedMaxTimestamp,
   isSpanDetailDrawerOpen,
   toggleIsSpanDetailDrawerOpen,
+  isMiniTimelineOpen,
+  toggleIsMiniTimelineOpen,
+  isSpanTableOpen,
+  toggleIsSpanTableOpen,
 }: TimelineProps) => {
   const classes = useStyles();
 
@@ -102,19 +110,21 @@ export const Timeline = ({
 
   return (
     <Box className={classes.root}>
-      <Box className={classes.miniViewerContainer}>
-        <TickMarkers
-          minTimestamp={0}
-          maxTimestamp={maxTimestamp - minTimestamp}
-        />
-        <MiniTimeline
-          spanRows={spanRows}
-          minTimestamp={minTimestamp}
-          maxTimestamp={maxTimestamp}
-          selectedMinTimestamp={selectedMinTimestamp}
-          selectedMaxTimestamp={selectedMaxTimestamp}
-        />
-      </Box>
+      {isMiniTimelineOpen && (
+        <Box className={classes.miniViewerContainer}>
+          <TickMarkers
+            minTimestamp={0}
+            maxTimestamp={maxTimestamp - minTimestamp}
+          />
+          <MiniTimeline
+            spanRows={spanRows}
+            minTimestamp={minTimestamp}
+            maxTimestamp={maxTimestamp}
+            selectedMinTimestamp={selectedMinTimestamp}
+            selectedMaxTimestamp={selectedMaxTimestamp}
+          />
+        </Box>
+      )}
       <Box flex="0 0">
         <TimelineHeader
           minTimestamp={minTimestamp}
@@ -122,6 +132,10 @@ export const Timeline = ({
           selectedMaxTimestamp={selectedMaxTimestamp}
           isSpanDetailDrawerOpen={isSpanDetailDrawerOpen}
           toggleIsSpanDetailDrawerOpen={toggleIsSpanDetailDrawerOpen}
+          isMiniTimelineOpen={isMiniTimelineOpen}
+          toggleIsMiniTimelineOpen={toggleIsMiniTimelineOpen}
+          isSpanTableOpen={isSpanTableOpen}
+          toggleIsSpanTableOpen={toggleIsSpanTableOpen}
         />
       </Box>
       <Box flex="1 1">
