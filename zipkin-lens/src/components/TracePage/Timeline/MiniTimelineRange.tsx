@@ -134,8 +134,6 @@ export const MiniTimelineRange = ({
     setSelectedMaxTimestamp,
   );
 
-  console.log(minRangeHandler.currentX, minRangeHandler.mouseDownX);
-
   const rightOnTheLeft = useMemo(
     () =>
       ((selectedMinTimestamp - minTimestamp) / (maxTimestamp - minTimestamp)) *

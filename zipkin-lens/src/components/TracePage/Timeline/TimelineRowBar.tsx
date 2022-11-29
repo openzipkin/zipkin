@@ -59,18 +59,23 @@ export const TimelineRowBar = ({
 }: TimelineRowBarProps) => {
   const classes = useStyles({ rowHeight, serviceName: spanRow.serviceName });
 
-  const left = useMemo(
-    () =>
-      spanRow.timestamp
-        ? ((spanRow.timestamp - selectedMinTimestamp) /
-            (selectedMaxTimestamp - selectedMinTimestamp)) *
-          100
-        : 0,
-    [selectedMaxTimestamp, selectedMinTimestamp, spanRow.timestamp],
-  );
+  const left = useMemo(() => {
+    const result = spanRow.timestamp
+      ? ((spanRow.timestamp - selectedMinTimestamp) /
+          (selectedMaxTimestamp - selectedMinTimestamp)) *
+        100
+      : 0;
+    if (result <= 0) {
+      return 0;
+    }
+    if (result >= 100) {
+      return 0;
+    }
+    return result;
+  }, [selectedMaxTimestamp, selectedMinTimestamp, spanRow.timestamp]);
 
-  const width = useMemo(
-    () =>
+  const width = useMemo(() => {
+    const result =
       left !== undefined && spanRow.duration && spanRow.timestamp
         ? Math.max(
             ((spanRow.timestamp + spanRow.duration - selectedMinTimestamp) /
@@ -79,15 +84,18 @@ export const TimelineRowBar = ({
               left,
             1,
           )
-        : 1,
-    [
-      left,
-      selectedMaxTimestamp,
-      selectedMinTimestamp,
-      spanRow.duration,
-      spanRow.timestamp,
-    ],
-  );
+        : 1;
+    if (result + left >= 100) {
+      return 100 - left;
+    }
+    return result;
+  }, [
+    left,
+    selectedMaxTimestamp,
+    selectedMinTimestamp,
+    spanRow.duration,
+    spanRow.timestamp,
+  ]);
 
   return (
     <Box className={classes.root}>
