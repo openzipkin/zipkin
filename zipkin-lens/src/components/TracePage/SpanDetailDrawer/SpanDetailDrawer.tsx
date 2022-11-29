@@ -16,6 +16,7 @@ import { Box, Divider, Grid, makeStyles, Typography } from '@material-ui/core';
 import React from 'react';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
 import { AnnotationViewer } from './AnnotationViewer';
+import { TagList } from './TagList';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -23,15 +24,13 @@ const useStyles = makeStyles((theme) => ({
     height: '100%',
     backgroundColor: theme.palette.background.paper,
     borderLeft: `1px solid ${theme.palette.divider}`,
-    display: 'flex',
-    flexDirection: 'column',
   },
   basicInfoLabel: {
     lineHeight: 1.2,
   },
   divider: {
     marginTop: theme.spacing(1.5),
-    marginBottom: theme.spacing(1.5),
+    marginBottom: theme.spacing(2.5),
   },
 }));
 
@@ -69,6 +68,8 @@ export const SpanDetailDrawer = ({
       </Grid>
       <Divider className={classes.divider} />
       <AnnotationViewer minTimestamp={minTimestamp} span={span} />
+      <Divider className={classes.divider} />
+      <TagList span={span} />
     </Box>
   );
 };

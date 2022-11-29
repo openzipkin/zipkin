@@ -49,14 +49,11 @@ const useStyles = makeStyles<Theme, { serviceName: string }>((theme) => ({
     },
   },
   relativeTimeCell: {
-    width: 45,
+    width: 35,
   },
   labelCell: {
     width: 35,
     color: theme.palette.text.secondary,
-  },
-  valueCell: {
-    fontWeight: theme.typography.fontWeightBold,
   },
 }));
 
