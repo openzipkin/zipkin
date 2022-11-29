@@ -12,8 +12,8 @@
  * the License.
  */
 
-import { Box, Collapse } from '@material-ui/core';
-import React, { useEffect, useMemo, useState } from 'react';
+import { Box } from '@material-ui/core';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useToggle } from 'react-use';
 import AdjustedTrace, { AdjustedSpan } from '../../models/AdjustedTrace';
 import { Header } from './Header';
@@ -73,6 +73,18 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
     minTimestamp,
     maxTimestamp,
   });
+  const setSelectedMinTimestamp = useCallback((value: number) => {
+    setSelectedTimeRange((prev) => ({
+      ...prev,
+      minTimestamp: value,
+    }));
+  }, []);
+  const setSelectedMaxTimestamp = useCallback((value: number) => {
+    setSelectedTimeRange((prev) => ({
+      ...prev,
+      maxTimestamp: value,
+    }));
+  }, []);
 
   useEffect(() => {
     setSelectedSpan(spanRows[0]);
@@ -109,6 +121,8 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
               maxTimestamp={maxTimestamp}
               selectedMinTimestamp={selectedTimeRange.minTimestamp}
               selectedMaxTimestamp={selectedTimeRange.maxTimestamp}
+              setSelectedMinTimestamp={setSelectedMinTimestamp}
+              setSelectedMaxTimestamp={setSelectedMaxTimestamp}
               isSpanDetailDrawerOpen={isSpanDetailDrawerOpen}
               toggleIsSpanDetailDrawerOpen={toggleIsSpanDetailDrawerOpen}
               isMiniTimelineOpen={isMiniTimelineOpen}

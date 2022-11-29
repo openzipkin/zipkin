@@ -12,19 +12,9 @@
  * the License.
  */
 
-import { Box, makeStyles, Theme } from '@material-ui/core';
 import React, { useMemo } from 'react';
 import { selectServiceColor } from '../../../constants/color';
 import { SpanRow } from '../types';
-
-const useStyles = makeStyles<Theme, { serviceName: string }>(() => ({
-  bar: {
-    position: 'absolute',
-    height: 4,
-    transform: `translateY(-1px)`,
-    backgroundColor: ({ serviceName }) => selectServiceColor(serviceName),
-  },
-}));
 
 type MiniTimelineRowProps = {
   top: number;
@@ -39,8 +29,6 @@ export const MiniTimelineRow = ({
   minTimestamp,
   maxTimestamp,
 }: MiniTimelineRowProps) => {
-  const classes = useStyles({ serviceName: spanRow.serviceName });
-
   const left = useMemo(
     () =>
       spanRow.timestamp
@@ -65,11 +53,12 @@ export const MiniTimelineRow = ({
   );
 
   return (
-    <Box
-      className={classes.bar}
-      top={`${top}%`}
-      left={`${left}%`}
+    <rect
+      x={`${left}%`}
+      y={`${top}%`}
       width={`${width}%`}
+      height="3"
+      fill={selectServiceColor(spanRow.serviceName)}
     />
   );
 };

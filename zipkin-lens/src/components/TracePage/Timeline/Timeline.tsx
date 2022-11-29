@@ -45,6 +45,8 @@ type TimelineProps = {
   maxTimestamp: number;
   selectedMinTimestamp: number;
   selectedMaxTimestamp: number;
+  setSelectedMinTimestamp: (value: number) => void;
+  setSelectedMaxTimestamp: (value: number) => void;
   isSpanDetailDrawerOpen: boolean;
   toggleIsSpanDetailDrawerOpen: () => void;
   isMiniTimelineOpen: boolean;
@@ -63,6 +65,8 @@ export const Timeline = ({
   maxTimestamp,
   selectedMinTimestamp,
   selectedMaxTimestamp,
+  setSelectedMinTimestamp,
+  setSelectedMaxTimestamp,
   isSpanDetailDrawerOpen,
   toggleIsSpanDetailDrawerOpen,
   isMiniTimelineOpen,
@@ -122,6 +126,8 @@ export const Timeline = ({
             maxTimestamp={maxTimestamp}
             selectedMinTimestamp={selectedMinTimestamp}
             selectedMaxTimestamp={selectedMaxTimestamp}
+            setSelectedMinTimestamp={setSelectedMinTimestamp}
+            setSelectedMaxTimestamp={setSelectedMaxTimestamp}
           />
         </Box>
       )}

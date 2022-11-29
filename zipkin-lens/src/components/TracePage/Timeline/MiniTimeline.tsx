@@ -12,15 +12,16 @@
  * the License.
  */
 
-import { Box, makeStyles } from '@material-ui/core';
-import React from 'react';
+import { makeStyles } from '@material-ui/core';
+import React, { useRef } from 'react';
 import { SpanRow } from '../types';
+import { MiniTimelineRange } from './MiniTimelineRange';
 import { MiniTimelineRow } from './MiniTimelineRow';
 
 const useStyles = makeStyles((theme) => ({
   root: {
+    width: '100%',
     height: 60,
-    position: 'relative',
     border: `1px solid ${theme.palette.divider}`,
     backgroundColor: theme.palette.background.paper,
   },
@@ -32,6 +33,8 @@ type MiniTimelineProps = {
   maxTimestamp: number;
   selectedMinTimestamp: number;
   selectedMaxTimestamp: number;
+  setSelectedMinTimestamp: (value: number) => void;
+  setSelectedMaxTimestamp: (value: number) => void;
 };
 
 export const MiniTimeline = ({
@@ -40,19 +43,32 @@ export const MiniTimeline = ({
   maxTimestamp,
   selectedMinTimestamp,
   selectedMaxTimestamp,
+  setSelectedMinTimestamp,
+  setSelectedMaxTimestamp,
 }: MiniTimelineProps) => {
   const classes = useStyles();
+  const rootEl = useRef<SVGSVGElement | null>(null);
 
   return (
-    <Box className={classes.root}>
+    <svg className={classes.root} ref={rootEl}>
       {spanRows.map((spanRow, i) => (
         <MiniTimelineRow
+          key={spanRow.spanId}
           top={(100 / spanRows.length) * i}
           spanRow={spanRow}
           minTimestamp={minTimestamp}
           maxTimestamp={maxTimestamp}
         />
       ))}
-    </Box>
+      <MiniTimelineRange
+        rootEl={rootEl}
+        minTimestamp={minTimestamp}
+        maxTimestamp={maxTimestamp}
+        selectedMinTimestamp={selectedMinTimestamp}
+        selectedMaxTimestamp={selectedMaxTimestamp}
+        setSelectedMinTimestamp={setSelectedMinTimestamp}
+        setSelectedMaxTimestamp={setSelectedMaxTimestamp}
+      />
+    </svg>
   );
 };
