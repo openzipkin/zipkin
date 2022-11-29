@@ -12,10 +12,20 @@
  * the License.
  */
 
-import { Box, makeStyles, Theme, Typography } from '@material-ui/core';
+import {
+  Box,
+  makeStyles,
+  Table,
+  TableBody,
+  TableCell,
+  TableRow,
+  Theme,
+  Typography,
+} from '@material-ui/core';
 import React from 'react';
 import { selectServiceColor } from '../../../constants/color';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
+import { formatTimestamp } from '../../../util/timestamp';
 import { TickMarkers } from '../TickMarkers';
 
 const useStyles = makeStyles<Theme, { serviceName: string }>((theme) => ({
@@ -32,6 +42,21 @@ const useStyles = makeStyles<Theme, { serviceName: string }>((theme) => ({
     width: 2,
     top: 2,
     cursor: 'pointer',
+  },
+  tableRow: {
+    '&:last-child > *': {
+      borderBottom: 'none',
+    },
+  },
+  relativeTimeCell: {
+    width: 45,
+  },
+  labelCell: {
+    width: 35,
+    color: theme.palette.text.secondary,
+  },
+  valueCell: {
+    fontWeight: theme.typography.fontWeightBold,
   },
 }));
 
@@ -50,7 +75,7 @@ export const AnnotationViewer = ({
     <Box>
       <Typography>Annotation</Typography>
       {span.timestamp && span.duration && (
-        <Box mt={1.5}>
+        <Box mt={1.5} mb={1.5}>
           <TickMarkers
             minTimestamp={span.timestamp - minTimestamp}
             maxTimestamp={span.timestamp + span.duration - minTimestamp}
@@ -67,17 +92,51 @@ export const AnnotationViewer = ({
                 <Box
                   className={classes.annotationMarker}
                   style={{
-                    left: `${
+                    left: `calc(${
                       ((annotation.timestamp - span.timestamp) /
                         span.duration) *
                       100
-                    }%`,
+                    }% - 1px)`,
                   }}
                 />
               ))}
           </Box>
         </Box>
       )}
+      <Box>
+        <Table size="small">
+          <TableBody>
+            {span.annotations.map((annotation) => (
+              <TableRow className={classes.tableRow}>
+                <TableCell className={classes.relativeTimeCell}>
+                  {annotation.relativeTime}
+                </TableCell>
+                <TableCell>
+                  <Table size="small">
+                    <TableBody>
+                      {[
+                        {
+                          label: 'Time',
+                          value: formatTimestamp(annotation.timestamp),
+                        },
+                        { label: 'Value', value: annotation.value },
+                        { label: 'Endpoint', value: annotation.endpoint },
+                      ].map(({ label, value }) => (
+                        <TableRow className={classes.tableRow}>
+                          <TableCell className={classes.labelCell}>
+                            {label}
+                          </TableCell>
+                          <TableCell>{value}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Box>
     </Box>
   );
 };
