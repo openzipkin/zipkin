@@ -39,7 +39,7 @@ const useStyles = makeStyles((theme) => ({
 
 type TimelineProps = {
   spanRows: SpanRow[];
-  selectedSpan?: AdjustedSpan;
+  selectedSpan: AdjustedSpan;
   setSelectedSpan: (span: AdjustedSpan) => void;
   minTimestamp: number;
   maxTimestamp: number;
@@ -53,6 +53,8 @@ type TimelineProps = {
   toggleIsMiniTimelineOpen: () => void;
   isSpanTableOpen: boolean;
   toggleIsSpanTableOpen: () => void;
+  rerootedSpanId?: string;
+  setRerootedSpanId: (value: string | undefined) => void;
 };
 
 const rowHeight = 30;
@@ -73,15 +75,14 @@ export const Timeline = ({
   toggleIsMiniTimelineOpen,
   isSpanTableOpen,
   toggleIsSpanTableOpen,
+  rerootedSpanId,
+  setRerootedSpanId,
 }: TimelineProps) => {
   const classes = useStyles();
 
   const scrollToIndex = useMemo(() => {
-    if (selectedSpan) {
-      const index = spanRows.findIndex((r) => r.spanId === selectedSpan.spanId);
-      return index === -1 ? undefined : index;
-    }
-    return undefined;
+    const index = spanRows.findIndex((r) => r.spanId === selectedSpan.spanId);
+    return index === -1 ? undefined : index;
   }, [selectedSpan, spanRows]);
 
   const rowRenderer = useCallback(
@@ -94,9 +95,7 @@ export const Timeline = ({
             key={props.key}
             {...spanRow}
             setSelectedSpan={setSelectedSpan}
-            isSelected={
-              (selectedSpan && selectedSpan.spanId === spanRow.spanId) || false
-            }
+            isSelected={selectedSpan.spanId === spanRow.spanId}
             selectedMinTimestamp={selectedMinTimestamp}
             selectedMaxTimestamp={selectedMaxTimestamp}
           />
@@ -142,6 +141,9 @@ export const Timeline = ({
           toggleIsMiniTimelineOpen={toggleIsMiniTimelineOpen}
           isSpanTableOpen={isSpanTableOpen}
           toggleIsSpanTableOpen={toggleIsSpanTableOpen}
+          selectedSpan={selectedSpan}
+          rerootedSpanId={rerootedSpanId}
+          setRerootedSpanId={setRerootedSpanId}
         />
       </Box>
       <Box flex="1 1">

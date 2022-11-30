@@ -14,6 +14,7 @@
 
 import { Box, Button, ButtonGroup, makeStyles } from '@material-ui/core';
 import {
+  FilterCenterFocus as FilterCenterFocusIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
   KeyboardArrowLeft as KeyboardArrowLeftIcon,
   KeyboardArrowRight as KeyboardArrowRightIcon,
@@ -22,7 +23,8 @@ import {
   Visibility as VisibilityIcon,
 } from '@material-ui/icons';
 import { ToggleButton } from '@material-ui/lab';
-import React from 'react';
+import React, { useCallback } from 'react';
+import { AdjustedSpan } from '../../../models/AdjustedTrace';
 import { TickMarkers } from '../TickMarkers';
 
 const useStyles = makeStyles((theme) => ({
@@ -35,6 +37,10 @@ const useStyles = makeStyles((theme) => ({
     '& > :not(:last-child)': {
       marginRight: theme.spacing(1),
     },
+  },
+  button: {
+    height: 28,
+    textTransform: 'none',
   },
   iconButton: {
     minWidth: 0,
@@ -60,6 +66,9 @@ type TimelineHeaderProps = {
   toggleIsMiniTimelineOpen: () => void;
   isSpanTableOpen: boolean;
   toggleIsSpanTableOpen: () => void;
+  selectedSpan: AdjustedSpan;
+  rerootedSpanId?: string;
+  setRerootedSpanId: (value: string | undefined) => void;
 };
 
 export const TimelineHeader = ({
@@ -72,8 +81,19 @@ export const TimelineHeader = ({
   toggleIsMiniTimelineOpen,
   isSpanTableOpen,
   toggleIsSpanTableOpen,
+  selectedSpan,
+  rerootedSpanId,
+  setRerootedSpanId,
 }: TimelineHeaderProps) => {
   const classes = useStyles();
+
+  const handleRerootButtonClick = useCallback(() => {
+    setRerootedSpanId(selectedSpan.spanId);
+  }, [selectedSpan.spanId, setRerootedSpanId]);
+
+  const handleResetRerootButtonClick = useCallback(() => {
+    setRerootedSpanId(undefined);
+  }, [setRerootedSpanId]);
 
   return (
     <Box className={classes.root}>
@@ -95,6 +115,22 @@ export const TimelineHeader = ({
           </Button>
         </ButtonGroup>
         <Box className={classes.rightButtonsWrapper}>
+          <Button
+            variant="outlined"
+            className={classes.button}
+            onClick={handleRerootButtonClick}
+            startIcon={<FilterCenterFocusIcon fontSize="small" />}
+          >
+            Focus on selected span
+          </Button>
+          <Button
+            variant="outlined"
+            className={classes.button}
+            disabled={!rerootedSpanId}
+            onClick={handleResetRerootButtonClick}
+          >
+            Reset focus
+          </Button>
           <ToggleButton
             className={classes.iconButton}
             selected={isMiniTimelineOpen}

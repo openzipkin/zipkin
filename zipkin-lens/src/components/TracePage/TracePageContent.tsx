@@ -129,6 +129,8 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
               toggleIsMiniTimelineOpen={toggleIsMiniTimelineOpen}
               isSpanTableOpen={isSpanTableOpen}
               toggleIsSpanTableOpen={toggleIsSpanTableOpen}
+              rerootedSpanId={rerootedSpanId}
+              setRerootedSpanId={setRerootedSpanId}
             />
           </Box>
         </Box>
