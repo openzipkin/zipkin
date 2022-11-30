@@ -69,7 +69,7 @@ export const AnnotationViewer = ({
         </IconButton>
       </Box>
       <Collapse in={open}>
-        {span.timestamp && span.duration && (
+        {span.timestamp && span.duration ? (
           <Box mt={1.5} mb={1.5}>
             <TickMarkers
               minTimestamp={span.timestamp - minTimestamp}
@@ -98,7 +98,7 @@ export const AnnotationViewer = ({
                 ))}
             </Box>
           </Box>
-        )}
+        ) : null}
         <AnnotationTable span={span} />
       </Collapse>
     </Box>

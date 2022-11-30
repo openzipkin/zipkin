@@ -37,6 +37,7 @@ const useStyles = makeStyles((theme) => ({
   },
   labelCell: {
     color: theme.palette.text.secondary,
+    wordWrap: 'break-word',
   },
   valueCell: {
     wordWrap: 'break-word',

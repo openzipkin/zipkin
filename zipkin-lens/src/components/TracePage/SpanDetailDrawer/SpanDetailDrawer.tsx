@@ -23,9 +23,9 @@ import { TagList } from './TagList';
 const useStyles = makeStyles((theme) => ({
   root: {
     padding: theme.spacing(2),
-    height: '100%',
     backgroundColor: theme.palette.background.paper,
     borderLeft: `1px solid ${theme.palette.divider}`,
+    minHeight: '100%',
   },
   basicInfoLabel: {
     lineHeight: 1.2,
