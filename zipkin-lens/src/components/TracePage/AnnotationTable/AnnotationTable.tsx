@@ -22,7 +22,7 @@ import {
   TableRow,
 } from '@material-ui/core';
 import React from 'react';
-import { AdjustedSpan } from '../../../models/AdjustedTrace';
+import { AdjustedAnnotation } from '../../../models/AdjustedTrace';
 import { formatTimestamp } from '../../../util/timestamp';
 
 const useStyles = makeStyles((theme) => ({
@@ -47,17 +47,17 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 type AnnotationTableProps = {
-  span: AdjustedSpan;
+  annotations: AdjustedAnnotation[];
 };
 
-export const AnnotationTable = ({ span }: AnnotationTableProps) => {
+export const AnnotationTable = ({ annotations }: AnnotationTableProps) => {
   const classes = useStyles();
   const { i18n } = useLingui();
 
   return (
     <Table size="small" className={classes.table}>
       <TableBody>
-        {span.annotations.map((annotation) => (
+        {annotations.map((annotation) => (
           <TableRow
             key={`${annotation.value}-${annotation.timestamp}`}
             className={classes.tableRow}

@@ -28,8 +28,9 @@ import React from 'react';
 import { useToggle } from 'react-use';
 import { selectServiceColor } from '../../../constants/color';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
+import { AnnotationTable } from '../AnnotationTable';
+import { AnnotationTooltip } from '../AnnotationTooltip';
 import { TickMarkers } from '../TickMarkers';
-import { AnnotationTable } from './AnnotationTable';
 
 const useStyles = makeStyles<Theme, { serviceName: string }>((theme) => ({
   bar: {
@@ -84,22 +85,24 @@ export const AnnotationViewer = ({
                     annotation.timestamp <= span.timestamp + span.duration,
                 )
                 .map((annotation) => (
-                  <Box
-                    key={`${annotation.value}-${annotation.timestamp}`}
-                    className={classes.annotationMarker}
-                    style={{
-                      left: `calc(${
-                        ((annotation.timestamp - span.timestamp) /
-                          span.duration) *
-                        100
-                      }% - 1px)`,
-                    }}
-                  />
+                  <AnnotationTooltip annotation={annotation}>
+                    <Box
+                      key={`${annotation.value}-${annotation.timestamp}`}
+                      className={classes.annotationMarker}
+                      style={{
+                        left: `calc(${
+                          ((annotation.timestamp - span.timestamp) /
+                            span.duration) *
+                          100
+                        }% - 1px)`,
+                      }}
+                    />
+                  </AnnotationTooltip>
                 ))}
             </Box>
           </Box>
         ) : null}
-        <AnnotationTable span={span} />
+        <AnnotationTable annotations={span.annotations} />
       </Collapse>
     </Box>
   );
