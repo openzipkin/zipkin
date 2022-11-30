@@ -75,6 +75,7 @@ const useRangeHandler = (
 
   const onMouseUp = useCallback(
     (e: MouseEvent) => {
+      console.log('here');
       if (!rootEl.current) {
         return;
       }
@@ -127,7 +128,7 @@ const useRangeHandler = (
   return { currentX, mouseDownX, onMouseDown, isDragging };
 };
 
-type MiniTimelineRangeProps = {
+type MiniTimelineRangeSelectorProps = {
   rootEl: MutableRefObject<SVGSVGElement | null>;
   minTimestamp: number;
   maxTimestamp: number;
@@ -137,7 +138,7 @@ type MiniTimelineRangeProps = {
   setSelectedMaxTimestamp: (value: number) => void;
 };
 
-export const MiniTimelineRange = ({
+export const MiniTimelineRangeSelector = ({
   rootEl,
   minTimestamp,
   maxTimestamp,
@@ -145,7 +146,7 @@ export const MiniTimelineRange = ({
   selectedMaxTimestamp,
   setSelectedMinTimestamp,
   setSelectedMaxTimestamp,
-}: MiniTimelineRangeProps) => {
+}: MiniTimelineRangeSelectorProps) => {
   const theme = useTheme();
 
   const minRangeHandler = useRangeHandler(
@@ -191,6 +192,7 @@ export const MiniTimelineRange = ({
         height="100%"
         fill={theme.palette.grey[500]}
         fillOpacity="0.2"
+        pointerEvents="none"
       />
       <rect
         x={`${leftOnTheRight}%`}
@@ -199,6 +201,7 @@ export const MiniTimelineRange = ({
         height="100%"
         fill={theme.palette.grey[500]}
         fillOpacity="0.2"
+        pointerEvents="none"
       />
       <rect
         x={`${rightOnTheLeft}%`}
@@ -207,6 +210,7 @@ export const MiniTimelineRange = ({
         height="100%"
         fill={theme.palette.divider}
         transform="translate(-1)"
+        pointerEvents="none"
       />
       <rect
         x={`${leftOnTheRight}%`}
@@ -215,6 +219,7 @@ export const MiniTimelineRange = ({
         height="100%"
         fill={theme.palette.divider}
         transform="translate(-1)"
+        pointerEvents="none"
       />
       {minRangeHandler.mouseDownX !== undefined &&
         minRangeHandler.currentX !== undefined && (
