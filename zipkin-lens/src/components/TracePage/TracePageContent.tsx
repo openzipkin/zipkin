@@ -102,7 +102,7 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
       <Box flex="0 0">
         <Header trace={trace} />
       </Box>
-      <Box flex="1 1" display="flex">
+      <Box flex="1 1" display="flex" overflow="hidden">
         <Box flex="1 1" display="flex" flexDirection="column">
           {isSpanTableOpen && (
             <Box flex="0 0 260px">
@@ -135,7 +135,7 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
           </Box>
         </Box>
         {isSpanDetailDrawerOpen && (
-          <Box flex="0 0 500px" overflow="auto">
+          <Box flex="0 0 500px" height="100%" overflow="auto">
             {selectedSpan && (
               <SpanDetailDrawer
                 minTimestamp={minTimestamp}
