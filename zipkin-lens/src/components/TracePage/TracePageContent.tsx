@@ -16,7 +16,7 @@ import { Box } from '@material-ui/core';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useToggle } from 'react-use';
 import AdjustedTrace, { AdjustedSpan } from '../../models/AdjustedTrace';
-import { Header } from './Header';
+import { Header } from './Header/Header';
 import {
   convertSpansToSpanTree,
   convertSpanTreeToSpanRows,

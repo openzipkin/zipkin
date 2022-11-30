@@ -18,7 +18,7 @@ import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
 import { TickMarkers } from '../TickMarkers';
 import { SpanRow } from '../types';
-import { MiniTimeline } from './MiniTimeline';
+import { MiniTimeline } from '../MiniTimeline';
 import { TimelineHeader } from './TimelineHeader';
 import { TimelineRow } from './TimelineRow';
 

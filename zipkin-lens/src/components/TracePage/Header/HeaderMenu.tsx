@@ -15,8 +15,8 @@
 import { Button, makeStyles, Menu, MenuItem } from '@material-ui/core';
 import { Menu as MenuIcon } from '@material-ui/icons';
 import React from 'react';
-import AdjustedTrace from '../../models/AdjustedTrace';
-import { useUiConfig } from '../UiConfig';
+import AdjustedTrace from '../../../models/AdjustedTrace';
+import { useUiConfig } from '../../UiConfig';
 
 const useStyles = makeStyles(() => ({
   iconButton: {

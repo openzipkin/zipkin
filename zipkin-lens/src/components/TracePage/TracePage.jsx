@@ -17,7 +17,6 @@ import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 
-import TraceSummary from './TraceSummary';
 import { setAlert } from '../App/slice';
 import { LoadingIndicator } from '../common/LoadingIndicator';
 import { loadTrace } from '../../slices/tracesSlice';
@@ -76,7 +75,6 @@ export const TracePageImpl = React.memo(({ match }) => {
     return null;
   }
   return <TracePageContent trace={traceSummary} />;
-  return <TraceSummary traceSummary={traceSummary} />;
 });
 
 TracePageImpl.propTypes = propTypes;

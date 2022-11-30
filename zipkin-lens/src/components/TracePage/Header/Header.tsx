@@ -16,7 +16,7 @@ import { t } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import { Box, makeStyles, Typography } from '@material-ui/core';
 import React from 'react';
-import AdjustedTrace from '../../models/AdjustedTrace';
+import AdjustedTrace from '../../../models/AdjustedTrace';
 import { HeaderMenu } from './HeaderMenu';
 
 const useStyles = makeStyles((theme) => ({

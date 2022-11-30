@@ -128,7 +128,7 @@ const useRangeHandler = (
   return { currentX, mouseDownX, onMouseDown, isDragging };
 };
 
-type MiniTimelineRangeSelectorProps = {
+type TimeRangeSelectorProps = {
   rootEl: MutableRefObject<SVGSVGElement | null>;
   minTimestamp: number;
   maxTimestamp: number;
@@ -138,7 +138,7 @@ type MiniTimelineRangeSelectorProps = {
   setSelectedMaxTimestamp: (value: number) => void;
 };
 
-export const MiniTimelineRangeSelector = ({
+export const TimeRangeSelector = ({
   rootEl,
   minTimestamp,
   maxTimestamp,
@@ -146,7 +146,7 @@ export const MiniTimelineRangeSelector = ({
   selectedMaxTimestamp,
   setSelectedMinTimestamp,
   setSelectedMaxTimestamp,
-}: MiniTimelineRangeSelectorProps) => {
+}: TimeRangeSelectorProps) => {
   const theme = useTheme();
 
   const minRangeHandler = useRangeHandler(

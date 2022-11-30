@@ -33,19 +33,19 @@ const calculateRelativeX = (parentRect: DOMRect, x: number) => {
   return value;
 };
 
-type MiniTimelineOverlayRangeSelectorProps = {
+type OverlayTimeRangeSelectorProps = {
   minTimestamp: number;
   maxTimestamp: number;
   setSelectedMinTimestamp: (value: number) => void;
   setSelectedMaxTimestamp: (value: number) => void;
 };
 
-export const MiniTimelineOverlayRangeSelector = ({
+export const OverlayTimeRangeSelector = ({
   minTimestamp,
   maxTimestamp,
   setSelectedMinTimestamp,
   setSelectedMaxTimestamp,
-}: MiniTimelineOverlayRangeSelectorProps) => {
+}: OverlayTimeRangeSelectorProps) => {
   const theme = useTheme();
   const rootEl = useRef<SVGRectElement | null>(null);
   const [currentX, setCurrentX] = useState<number>();

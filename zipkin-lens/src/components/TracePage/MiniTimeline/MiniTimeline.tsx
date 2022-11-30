@@ -15,8 +15,8 @@
 import { makeStyles } from '@material-ui/core';
 import React, { useRef } from 'react';
 import { SpanRow } from '../types';
-import { MiniTimelineOverlayRangeSelector } from './MiniTimelineOverlayRangeSelector';
-import { MiniTimelineRangeSelector } from './MiniTimelineRangeSelector';
+import { OverlayTimeRangeSelector } from './OverlayTimeRangeSelector';
+import { TimeRangeSelector } from './TimeRangeSelector';
 import { MiniTimelineRow } from './MiniTimelineRow';
 
 const useStyles = makeStyles((theme) => ({
@@ -61,13 +61,13 @@ export const MiniTimeline = ({
           maxTimestamp={maxTimestamp}
         />
       ))}
-      <MiniTimelineOverlayRangeSelector
+      <OverlayTimeRangeSelector
         minTimestamp={minTimestamp}
         maxTimestamp={maxTimestamp}
         setSelectedMinTimestamp={setSelectedMinTimestamp}
         setSelectedMaxTimestamp={setSelectedMaxTimestamp}
       />
-      <MiniTimelineRangeSelector
+      <TimeRangeSelector
         rootEl={rootEl}
         minTimestamp={minTimestamp}
         maxTimestamp={maxTimestamp}
