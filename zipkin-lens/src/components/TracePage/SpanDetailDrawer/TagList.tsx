@@ -35,6 +35,11 @@ const useStyles = makeStyles((theme) => ({
   table: {
     tableLayout: 'fixed',
   },
+  tableRow: {
+    '&:last-child > *': {
+      borderBottom: 'none',
+    },
+  },
   labelCell: {
     color: theme.palette.text.secondary,
     wordWrap: 'break-word',
@@ -65,7 +70,7 @@ export const TagList = ({ span }: TagListProps) => {
           <Table size="small" className={classes.table}>
             <TableBody>
               {span.tags.map((tag) => (
-                <TableRow key={tag.key}>
+                <TableRow key={tag.key} className={classes.tableRow}>
                   <TableCell className={classes.labelCell}>{tag.key}</TableCell>
                   <TableCell className={classes.valueCell}>
                     {tag.value}

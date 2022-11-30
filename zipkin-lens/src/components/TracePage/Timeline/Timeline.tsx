@@ -55,6 +55,7 @@ type TimelineProps = {
   toggleIsSpanTableOpen: () => void;
   rerootedSpanId?: string;
   setRerootedSpanId: (value: string | undefined) => void;
+  toggleOpenSpan: (spanId: string) => void;
 };
 
 const rowHeight = 30;
@@ -77,6 +78,7 @@ export const Timeline = ({
   toggleIsSpanTableOpen,
   rerootedSpanId,
   setRerootedSpanId,
+  toggleOpenSpan,
 }: TimelineProps) => {
   const classes = useStyles();
 
@@ -98,6 +100,7 @@ export const Timeline = ({
             isSelected={selectedSpan.spanId === spanRow.spanId}
             selectedMinTimestamp={selectedMinTimestamp}
             selectedMaxTimestamp={selectedMaxTimestamp}
+            toggleOpenSpan={toggleOpenSpan}
           />
         </div>
       );
@@ -105,9 +108,10 @@ export const Timeline = ({
     [
       selectedMaxTimestamp,
       selectedMinTimestamp,
-      selectedSpan,
+      selectedSpan.spanId,
       setSelectedSpan,
       spanRows,
+      toggleOpenSpan,
     ],
   );
 

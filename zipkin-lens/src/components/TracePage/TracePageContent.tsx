@@ -49,6 +49,13 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
     [closedSpanIdMap, rerootedSpanId, roots],
   );
 
+  const toggleOpenSpan = useCallback((spanId: string) => {
+    setClosedSpanIdMap((prev) => ({
+      ...prev,
+      [spanId]: !prev[spanId],
+    }));
+  }, []);
+
   const [minTimestamp, maxTimestamp] = useMemo(
     () => [
       Math.min(
@@ -105,7 +112,7 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
       <Box flex="1 1" display="flex" overflow="hidden">
         <Box flex="1 1" display="flex" flexDirection="column">
           {isSpanTableOpen && (
-            <Box flex="0 0 260px">
+            <Box flex="0 0 250px">
               <SpanTable
                 spans={trace.spans}
                 setSelectedSpan={setSelectedSpan}
@@ -131,6 +138,7 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
               toggleIsSpanTableOpen={toggleIsSpanTableOpen}
               rerootedSpanId={rerootedSpanId}
               setRerootedSpanId={setRerootedSpanId}
+              toggleOpenSpan={toggleOpenSpan}
             />
           </Box>
         </Box>

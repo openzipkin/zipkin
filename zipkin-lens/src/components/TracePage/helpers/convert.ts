@@ -127,28 +127,36 @@ export const convertSpanTreeToSpanRows = (
       const node = siblings[index];
 
       let treeEdgeShape: TreeEdgeShapeType[] = [];
+
+      // If parentTreeEdgeShape is undefined, initialize treeEdgeShape with '-'.
       if (!parentTreeEdgeShape) {
         for (let i = 0; i < root.maxDepth; i += 1) {
           treeEdgeShape[i] = '-';
         }
+        // If the node has children, the first element will be 'B'.
         if (node.children) {
           treeEdgeShape[0] = 'B';
         }
       } else {
+        const relativeDepth = node.depth - root.depth;
         treeEdgeShape = [...parentTreeEdgeShape];
 
-        if (node.depth >= 2 && parentTreeEdgeShape[node.depth - 2] === 'E') {
-          treeEdgeShape[node.depth - 2] = '-';
+        if (
+          relativeDepth >= 2 &&
+          parentTreeEdgeShape[relativeDepth - 2] === 'E'
+        ) {
+          treeEdgeShape[relativeDepth - 2] = '-';
         }
-        if (node.depth >= 1) {
+
+        if (relativeDepth >= 1) {
           if (index === siblings.length - 1) {
-            treeEdgeShape[node.depth - 1] = 'E';
+            treeEdgeShape[relativeDepth - 1] = 'E';
           } else {
-            treeEdgeShape[node.depth - 1] = 'M';
+            treeEdgeShape[relativeDepth - 1] = 'M';
           }
         }
         if (node.children) {
-          treeEdgeShape[node.depth] = 'B';
+          treeEdgeShape[relativeDepth] = 'B';
         }
       }
 

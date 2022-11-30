@@ -25,6 +25,11 @@ const useStyles = makeStyles((theme) => ({
     pointerEvents: 'none',
     position: 'relative',
   },
+  buttonWrapper: {
+    position: 'absolute',
+    left: theme.spacing(2),
+    right: 0,
+  },
   button: {
     position: 'absolute',
     minWidth: 0,
@@ -50,6 +55,7 @@ type TimelineRowEdgeProps = {
   isClosed: boolean;
   isCollapsible: boolean;
   rowHeight: number;
+  onButtonClick: () => void;
 };
 
 const TimelineRowEdgeImpl = ({
@@ -57,6 +63,7 @@ const TimelineRowEdgeImpl = ({
   isClosed,
   isCollapsible,
   rowHeight,
+  onButtonClick,
 }: TimelineRowEdgeProps) => {
   const classes = useStyles();
 
@@ -70,13 +77,14 @@ const TimelineRowEdgeImpl = ({
               variant="contained"
               className={classes.button}
               style={{
-                left: `calc(${
-                  (100 / (treeEdgeShape.length + 2)) * (i + 1)
-                }% - ${buttonSizePx / 2}px)`,
+                left: `calc(${(100 / (treeEdgeShape.length + 1)) * i}% - ${
+                  buttonSizePx / 2
+                }px)`,
                 top: `${(rowHeight / 4) * 3 - buttonSizePx / 2}px`,
                 width: `${buttonSizePx}px`,
                 height: `${buttonSizePx}px`,
               }}
+              onClick={onButtonClick}
             >
               {isClosed ? (
                 <AddIcon fontSize="small" />
@@ -89,7 +97,14 @@ const TimelineRowEdgeImpl = ({
       }
     }
     return null;
-  }, [classes, isClosed, isCollapsible, rowHeight, treeEdgeShape]);
+  }, [
+    classes.button,
+    isClosed,
+    isCollapsible,
+    onButtonClick,
+    rowHeight,
+    treeEdgeShape,
+  ]);
 
   const content = useMemo(() => {
     const commonProps = {
@@ -144,7 +159,7 @@ const TimelineRowEdgeImpl = ({
   return (
     <Box className={classes.root}>
       {content}
-      {button}
+      <Box className={classes.buttonWrapper}>{button}</Box>
     </Box>
   );
 };

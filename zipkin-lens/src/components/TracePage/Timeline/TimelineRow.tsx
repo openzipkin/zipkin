@@ -26,11 +26,11 @@ const useStyles = makeStyles((theme) => ({
     display: 'flex',
     cursor: 'pointer',
     '&:hover': {
-      backgroundColor: theme.palette.grey[100],
+      backgroundColor: 'rgba(0, 0, 0, 0.1)',
     },
   },
   rootSelected: {
-    backgroundColor: theme.palette.grey.A100,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
   },
   text: {
     fontSize: theme.typography.caption.fontSize,
@@ -46,12 +46,14 @@ type TimelineRowProps = SpanRow & {
   setSelectedSpan: (span: AdjustedSpan) => void;
   selectedMinTimestamp: number;
   selectedMaxTimestamp: number;
+  toggleOpenSpan: (spanId: string) => void;
 };
 
 export const TimelineRow = (props: TimelineRowProps) => {
   const {
     isSelected,
     setSelectedSpan,
+    spanId,
     serviceName,
     spanName,
     treeEdgeShape,
@@ -61,6 +63,7 @@ export const TimelineRow = (props: TimelineRowProps) => {
     isCollapsible,
     selectedMinTimestamp,
     selectedMaxTimestamp,
+    toggleOpenSpan,
   } = props;
   const classes = useStyles();
 
@@ -69,6 +72,10 @@ export const TimelineRow = (props: TimelineRowProps) => {
   const handleClick = useCallback(() => {
     setSelectedSpan(props);
   }, [props, setSelectedSpan]);
+
+  const handleButtonClick = useCallback(() => {
+    toggleOpenSpan(spanId);
+  }, [spanId, toggleOpenSpan]);
 
   return (
     <Box
@@ -82,6 +89,7 @@ export const TimelineRow = (props: TimelineRowProps) => {
         isClosed={isClosed}
         isCollapsible={isCollapsible}
         rowHeight={rowHeight}
+        onButtonClick={handleButtonClick}
       />
       <Box position="relative" width="100%" flex="1 1">
         <Box pt={0.25} display="flex" justifyContent="space-between" pr={1}>
