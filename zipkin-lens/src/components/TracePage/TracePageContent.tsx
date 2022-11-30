@@ -94,10 +94,6 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
   }, []);
 
   useEffect(() => {
-    setSelectedSpan(spanRows[0]);
-  }, [spanRows]);
-
-  useEffect(() => {
     setSelectedTimeRange({
       minTimestamp,
       maxTimestamp,

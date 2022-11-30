@@ -21,7 +21,7 @@ import React, {
   useState,
 } from 'react';
 
-const calculateRelativeX = (parentRect: DOMRect, x: number) => {
+const calculateX = (parentRect: DOMRect, x: number) => {
   const value =
     ((x - parentRect.left) / (parentRect.right - parentRect.left)) * 100;
   if (value <= 0) {
@@ -33,23 +33,24 @@ const calculateRelativeX = (parentRect: DOMRect, x: number) => {
   return value;
 };
 
-type OverlayTimeRangeSelectorProps = {
+type MiniTimelineOverlayProps = {
   minTimestamp: number;
   maxTimestamp: number;
   setSelectedMinTimestamp: (value: number) => void;
   setSelectedMaxTimestamp: (value: number) => void;
 };
 
-export const OverlayTimeRangeSelector = ({
+export const MiniTimelineOverlay = ({
   minTimestamp,
   maxTimestamp,
   setSelectedMinTimestamp,
   setSelectedMaxTimestamp,
-}: OverlayTimeRangeSelectorProps) => {
+}: MiniTimelineOverlayProps) => {
   const theme = useTheme();
   const rootEl = useRef<SVGRectElement | null>(null);
   const [currentX, setCurrentX] = useState<number>();
   const [mouseDownX, setMouseDownX] = useState<number>();
+  const [hoverX, setHoverX] = useState<number>();
 
   const mouseDownXRef = useRef(mouseDownX);
   useEffect(() => {
@@ -60,28 +61,23 @@ export const OverlayTimeRangeSelector = ({
     if (!rootEl.current) {
       return;
     }
-    const x = calculateRelativeX(
-      rootEl.current.getBoundingClientRect(),
-      e.pageX,
-    );
+    const x = calculateX(rootEl.current.getBoundingClientRect(), e.pageX);
     setCurrentX(x);
   }, []);
 
   const onMouseUp = useCallback(
     (e: MouseEvent) => {
-      console.log('here', rootEl.current, mouseDownX);
       if (!rootEl.current || mouseDownXRef.current === undefined) {
         return;
       }
-      console.log('kokoko');
-      const x = calculateRelativeX(
-        rootEl.current.getBoundingClientRect(),
-        e.pageX,
-      );
+      const x = calculateX(rootEl.current.getBoundingClientRect(), e.pageX);
+      const adjustedX = Math.max(x - mouseDownXRef.current) < 1 ? x + 1 : x;
+
       const t1 =
         (mouseDownXRef.current / 100) * (maxTimestamp - minTimestamp) +
         minTimestamp;
-      const t2 = (x / 100) * (maxTimestamp - minTimestamp) + minTimestamp;
+      const t2 =
+        (adjustedX / 100) * (maxTimestamp - minTimestamp) + minTimestamp;
       const newMinTimestmap = Math.min(t1, t2);
       const newMaxTimestamp = Math.max(t1, t2);
       setSelectedMinTimestamp(newMinTimestmap);
@@ -96,7 +92,6 @@ export const OverlayTimeRangeSelector = ({
     [
       maxTimestamp,
       minTimestamp,
-      mouseDownX,
       onMouseMove,
       setSelectedMaxTimestamp,
       setSelectedMinTimestamp,
@@ -108,10 +103,7 @@ export const OverlayTimeRangeSelector = ({
       if (!rootEl.current) {
         return;
       }
-      const x = calculateRelativeX(
-        rootEl.current.getBoundingClientRect(),
-        e.pageX,
-      );
+      const x = calculateX(rootEl.current.getBoundingClientRect(), e.pageX);
       setCurrentX(x);
       setMouseDownX(x);
 
@@ -121,8 +113,20 @@ export const OverlayTimeRangeSelector = ({
     [onMouseMove, onMouseUp],
   );
 
+  const onMouseHover = useCallback((e: ReactMouseEvent<SVGRectElement>) => {
+    if (e.buttons !== 0 || !rootEl.current) {
+      return;
+    }
+    const x = calculateX(rootEl.current.getBoundingClientRect(), e.pageX);
+    setHoverX(x);
+  }, []);
+
+  const onMouseHoverLeave = useCallback(() => {
+    setHoverX(undefined);
+  }, []);
+
   return (
-    <>
+    <g>
       {mouseDownX !== undefined && currentX !== undefined && (
         <rect
           x={`${Math.min(mouseDownX, currentX)}%`}
@@ -131,6 +135,7 @@ export const OverlayTimeRangeSelector = ({
           height="100%"
           fill={theme.palette.secondary.light}
           fillOpacity="0.2"
+          pointerEvents="none"
         />
       )}
       <rect
@@ -140,9 +145,22 @@ export const OverlayTimeRangeSelector = ({
         width="100%"
         height="100%"
         onMouseDown={onMouseDown}
+        onMouseMove={onMouseHover}
+        onMouseLeave={onMouseHoverLeave}
         fillOpacity="0"
         cursor="col-resize"
       />
-    </>
+      {hoverX && (
+        <line
+          x1={`${hoverX}%`}
+          y1="0"
+          x2={`${hoverX}%`}
+          y2="100%"
+          stroke={theme.palette.secondary.main}
+          strokeWidth={1}
+          pointerEvents="none"
+        />
+      )}
+    </g>
   );
 };

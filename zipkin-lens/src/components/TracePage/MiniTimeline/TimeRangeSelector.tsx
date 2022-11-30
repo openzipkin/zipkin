@@ -21,7 +21,7 @@ import React, {
   useState,
 } from 'react';
 
-const calculateRelativeX = (
+const calculateX = (
   parentRect: DOMRect,
   x: number,
   opositeX: number,
@@ -62,7 +62,7 @@ const useRangeHandler = (
       if (!rootEl.current) {
         return;
       }
-      const x = calculateRelativeX(
+      const x = calculateX(
         rootEl.current.getBoundingClientRect(),
         e.pageX,
         opositeX,
@@ -75,11 +75,10 @@ const useRangeHandler = (
 
   const onMouseUp = useCallback(
     (e: MouseEvent) => {
-      console.log('here');
       if (!rootEl.current) {
         return;
       }
-      const x = calculateRelativeX(
+      const x = calculateX(
         rootEl.current.getBoundingClientRect(),
         e.pageX,
         opositeX,
@@ -109,7 +108,7 @@ const useRangeHandler = (
       if (!rootEl.current) {
         return;
       }
-      const x = calculateRelativeX(
+      const x = calculateX(
         rootEl.current.getBoundingClientRect(),
         e.currentTarget.getBoundingClientRect().x + 3,
         opositeX,
@@ -184,7 +183,7 @@ export const TimeRangeSelector = ({
   );
 
   return (
-    <>
+    <g>
       <rect
         x="0"
         y="0"
@@ -235,6 +234,7 @@ export const TimeRangeSelector = ({
             height="100%"
             fill={theme.palette.secondary.light}
             fillOpacity="0.2"
+            pointerEvents="none"
           />
         )}
       {maxRangeHandler.mouseDownX !== undefined &&
@@ -251,6 +251,7 @@ export const TimeRangeSelector = ({
             height="100%"
             fill={theme.palette.secondary.light}
             fillOpacity="0.2"
+            pointerEvents="none"
           />
         )}
       <rect
@@ -281,6 +282,6 @@ export const TimeRangeSelector = ({
         cursor="pointer"
         transform="translate(-3)"
       />
-    </>
+    </g>
   );
 };

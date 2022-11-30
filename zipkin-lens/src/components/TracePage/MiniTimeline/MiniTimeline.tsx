@@ -12,10 +12,10 @@
  * the License.
  */
 
-import { makeStyles } from '@material-ui/core';
-import React, { useRef } from 'react';
+import { makeStyles, useTheme } from '@material-ui/core';
+import React, { ReactNode, useMemo, useRef } from 'react';
 import { SpanRow } from '../types';
-import { OverlayTimeRangeSelector } from './OverlayTimeRangeSelector';
+import { MiniTimelineOverlay } from './MiniTimelineOverlay';
 import { TimeRangeSelector } from './TimeRangeSelector';
 import { MiniTimelineRow } from './MiniTimelineRow';
 
@@ -27,6 +27,8 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.background.paper,
   },
 }));
+
+const numOfTickMarkers = 3;
 
 type MiniTimelineProps = {
   spanRows: SpanRow[];
@@ -48,20 +50,43 @@ export const MiniTimeline = ({
   setSelectedMaxTimestamp,
 }: MiniTimelineProps) => {
   const classes = useStyles();
+  const theme = useTheme();
   const rootEl = useRef<SVGSVGElement | null>(null);
+
+  const ticks = useMemo(() => {
+    const result: ReactNode[] = [];
+    for (let i = 1; i < numOfTickMarkers; i += 1) {
+      const x = `${(i / numOfTickMarkers) * 100}%`;
+      result.push(
+        <line
+          key={i}
+          x1={x}
+          y1="0"
+          x2={x}
+          y2="100%"
+          stroke={theme.palette.divider}
+          strokeWidth={1}
+        />,
+      );
+    }
+    return result;
+  }, [theme.palette.divider]);
 
   return (
     <svg className={classes.root} ref={rootEl}>
-      {spanRows.map((spanRow, i) => (
-        <MiniTimelineRow
-          key={spanRow.spanId}
-          top={(100 / spanRows.length) * i}
-          spanRow={spanRow}
-          minTimestamp={minTimestamp}
-          maxTimestamp={maxTimestamp}
-        />
-      ))}
-      <OverlayTimeRangeSelector
+      <g>
+        {spanRows.map((spanRow, i) => (
+          <MiniTimelineRow
+            key={spanRow.spanId}
+            top={(100 / spanRows.length) * i}
+            spanRow={spanRow}
+            minTimestamp={minTimestamp}
+            maxTimestamp={maxTimestamp}
+          />
+        ))}
+      </g>
+      <g>{ticks}</g>
+      <MiniTimelineOverlay
         minTimestamp={minTimestamp}
         maxTimestamp={maxTimestamp}
         setSelectedMinTimestamp={setSelectedMinTimestamp}
