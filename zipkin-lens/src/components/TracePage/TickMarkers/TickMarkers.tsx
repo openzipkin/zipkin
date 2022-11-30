@@ -66,7 +66,12 @@ export const TickMarkers = ({
       }
 
       result.push(
-        <Box component="span" className={classes.tick} style={{ left, right }}>
+        <Box
+          key={i}
+          component="span"
+          className={classes.tick}
+          style={{ left, right }}
+        >
           {timestamp}
         </Box>,
       );

@@ -103,7 +103,7 @@ const TimelineRowEdgeImpl = ({
     let branch = true;
     const tree: ReactNode[] = [];
 
-    tree.push(<Box {...commonProps} className={classes.horizontal} />);
+    tree.push(<Box {...commonProps} className={classes.horizontal} key="-1" />);
     for (let i = treeEdgeShape.length - 1; i >= 0; i -= 1) {
       const shape = treeEdgeShape[i];
       const props = { ...commonProps, key: i };

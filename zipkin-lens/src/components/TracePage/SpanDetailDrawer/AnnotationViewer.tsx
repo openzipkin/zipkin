@@ -14,6 +14,8 @@
 
 import {
   Box,
+  Collapse,
+  IconButton,
   makeStyles,
   Table,
   TableBody,
@@ -22,7 +24,12 @@ import {
   Theme,
   Typography,
 } from '@material-ui/core';
+import {
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  KeyboardArrowUp as KeyboardArrowUpIcon,
+} from '@material-ui/icons';
 import React from 'react';
+import { useToggle } from 'react-use';
 import { selectServiceColor } from '../../../constants/color';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
 import { formatTimestamp } from '../../../util/timestamp';
@@ -67,44 +74,54 @@ export const AnnotationViewer = ({
   span,
 }: AnnotationViewerProps) => {
   const classes = useStyles({ serviceName: span.serviceName });
+  const [open, toggleOpen] = useToggle(true);
 
   return (
     <Box>
-      <Typography>Annotation</Typography>
-      {span.timestamp && span.duration && (
-        <Box mt={1.5} mb={1.5}>
-          <TickMarkers
-            minTimestamp={span.timestamp - minTimestamp}
-            maxTimestamp={span.timestamp + span.duration - minTimestamp}
-          />
-          <Box className={classes.bar}>
-            {span.annotations
-              .filter(
-                (annotation) =>
-                  annotation.timestamp &&
-                  annotation.timestamp >= span.timestamp &&
-                  annotation.timestamp <= span.timestamp + span.duration,
-              )
-              .map((annotation) => (
-                <Box
-                  className={classes.annotationMarker}
-                  style={{
-                    left: `calc(${
-                      ((annotation.timestamp - span.timestamp) /
-                        span.duration) *
-                      100
-                    }% - 1px)`,
-                  }}
-                />
-              ))}
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Typography>Annotation</Typography>
+        <IconButton onClick={toggleOpen} size="small">
+          {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+        </IconButton>
+      </Box>
+      <Collapse in={open}>
+        {span.timestamp && span.duration && (
+          <Box mt={1.5} mb={1.5}>
+            <TickMarkers
+              minTimestamp={span.timestamp - minTimestamp}
+              maxTimestamp={span.timestamp + span.duration - minTimestamp}
+            />
+            <Box className={classes.bar}>
+              {span.annotations
+                .filter(
+                  (annotation) =>
+                    annotation.timestamp &&
+                    annotation.timestamp >= span.timestamp &&
+                    annotation.timestamp <= span.timestamp + span.duration,
+                )
+                .map((annotation) => (
+                  <Box
+                    key={`${annotation.value}-${annotation.timestamp}`}
+                    className={classes.annotationMarker}
+                    style={{
+                      left: `calc(${
+                        ((annotation.timestamp - span.timestamp) /
+                          span.duration) *
+                        100
+                      }% - 1px)`,
+                    }}
+                  />
+                ))}
+            </Box>
           </Box>
-        </Box>
-      )}
-      <Box>
+        )}
         <Table size="small">
           <TableBody>
             {span.annotations.map((annotation) => (
-              <TableRow className={classes.tableRow}>
+              <TableRow
+                key={`${annotation.value}-${annotation.timestamp}`}
+                className={classes.tableRow}
+              >
                 <TableCell className={classes.relativeTimeCell}>
                   {annotation.relativeTime}
                 </TableCell>
@@ -119,7 +136,7 @@ export const AnnotationViewer = ({
                         { label: 'Value', value: annotation.value },
                         { label: 'Endpoint', value: annotation.endpoint },
                       ].map(({ label, value }) => (
-                        <TableRow className={classes.tableRow}>
+                        <TableRow key={label} className={classes.tableRow}>
                           <TableCell className={classes.labelCell}>
                             {label}
                           </TableCell>
@@ -133,7 +150,7 @@ export const AnnotationViewer = ({
             ))}
           </TableBody>
         </Table>
-      </Box>
+      </Collapse>
     </Box>
   );
 };

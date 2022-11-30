@@ -105,7 +105,7 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
       <Box flex="1 1" display="flex">
         <Box flex="1 1" display="flex" flexDirection="column">
           {isSpanTableOpen && (
-            <Box flex="0 0 200px">
+            <Box flex="0 0 260px">
               <SpanTable
                 spans={trace.spans}
                 setSelectedSpan={setSelectedSpan}

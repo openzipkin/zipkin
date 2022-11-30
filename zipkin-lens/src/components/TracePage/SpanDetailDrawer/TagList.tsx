@@ -16,6 +16,7 @@ import {
   Box,
   makeStyles,
   Table,
+  TableBody,
   TableCell,
   TableRow,
   Typography,
@@ -41,12 +42,14 @@ export const TagList = ({ span }: TagListProps) => {
       <Typography>Tags</Typography>
       <Box mt={1.5}>
         <Table size="small">
-          {span.tags.map((tag) => (
-            <TableRow>
-              <TableCell className={classes.labelCell}>{tag.key}</TableCell>
-              <TableCell>{tag.value}</TableCell>
-            </TableRow>
-          ))}
+          <TableBody>
+            {span.tags.map((tag) => (
+              <TableRow key={tag.key}>
+                <TableCell className={classes.labelCell}>{tag.key}</TableCell>
+                <TableCell>{tag.value}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
         </Table>
       </Box>
     </Box>

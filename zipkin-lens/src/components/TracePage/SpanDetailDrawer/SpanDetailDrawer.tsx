@@ -12,6 +12,8 @@
  * the License.
  */
 
+import { t } from '@lingui/macro';
+import { useLingui } from '@lingui/react';
 import { Box, Divider, Grid, makeStyles, Typography } from '@material-ui/core';
 import React from 'react';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
@@ -44,6 +46,7 @@ export const SpanDetailDrawer = ({
   minTimestamp,
 }: SpanDetailDrawerProps) => {
   const classes = useStyles();
+  const { i18n } = useLingui();
 
   return (
     <Box className={classes.root}>
@@ -51,10 +54,10 @@ export const SpanDetailDrawer = ({
         {[
           { label: 'Service name', value: span.serviceName },
           { label: 'Span name', value: span.spanName },
-          { label: 'Span ID', value: span.spanId },
-          { label: 'Parent ID', value: span.parentId || 'none' },
+          { label: i18n._(t`Span ID`), value: span.spanId },
+          { label: i18n._(t`Parent ID`), value: span.parentId || 'none' },
         ].map(({ label, value }) => (
-          <Grid item xs={6}>
+          <Grid key={label} item xs={6}>
             <Typography
               variant="caption"
               color="textSecondary"
@@ -66,10 +69,18 @@ export const SpanDetailDrawer = ({
           </Grid>
         ))}
       </Grid>
-      <Divider className={classes.divider} />
-      <AnnotationViewer minTimestamp={minTimestamp} span={span} />
-      <Divider className={classes.divider} />
-      <TagList span={span} />
+      {span.annotations.length > 0 && (
+        <>
+          <Divider className={classes.divider} />
+          <AnnotationViewer minTimestamp={minTimestamp} span={span} />
+        </>
+      )}
+      {span.tags.length > 0 && (
+        <>
+          <Divider className={classes.divider} />
+          <TagList span={span} />
+        </>
+      )}
     </Box>
   );
 };

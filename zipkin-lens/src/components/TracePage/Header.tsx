@@ -95,7 +95,7 @@ export const Header = ({ trace }: HeaderProps) => {
             value: `${trace.traceId}`,
           },
         ].map(({ key, value }) => (
-          <Box className={classes.infoCell}>
+          <Box key={key} className={classes.infoCell}>
             <Box className={classes.infoCellKey}>{key}</Box>
             <Box className={classes.infoCellValue}>{value}</Box>
           </Box>

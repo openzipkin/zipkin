@@ -141,6 +141,7 @@ export const MiniTimelineOverlayRangeSelector = ({
         height="100%"
         onMouseDown={onMouseDown}
         fillOpacity="0"
+        cursor="col-resize"
       />
     </>
   );
