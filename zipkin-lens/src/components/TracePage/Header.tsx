@@ -18,7 +18,6 @@ import { Box, makeStyles, Typography } from '@material-ui/core';
 import React from 'react';
 import AdjustedTrace from '../../models/AdjustedTrace';
 import { HeaderMenu } from './HeaderMenu';
-import { SpanSearcher } from './SpanSearcher';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -80,7 +79,6 @@ export const Header = ({ trace }: HeaderProps) => {
           {`${trace.rootSpan.serviceName}: ${trace.rootSpan.spanName}`}
         </Typography>
         <Box className={classes.titleRowRight}>
-          <SpanSearcher />
           <HeaderMenu trace={trace} />
         </Box>
       </Box>

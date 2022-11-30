@@ -21,9 +21,21 @@ import React, {
   useState,
 } from 'react';
 
-const calculateRelativeX = (parentRect: DOMRect, x: number) => {
-  const value =
+const calculateRelativeX = (
+  parentRect: DOMRect,
+  x: number,
+  opositeX: number,
+  isSmallerThanOpositeX: boolean,
+) => {
+  let value =
     ((x - parentRect.left) / (parentRect.right - parentRect.left)) * 100;
+  if (isSmallerThanOpositeX) {
+    if (value >= opositeX) {
+      value = opositeX - 1;
+    }
+  } else if (value <= opositeX) {
+    value = opositeX + 1;
+  }
   if (value <= 0) {
     return 0;
   }
@@ -37,6 +49,8 @@ const useRangeHandler = (
   rootEl: MutableRefObject<SVGSVGElement | null>,
   minTimestamp: number,
   maxTimestamp: number,
+  opositeX: number,
+  isSmallerThanOpositeX: boolean,
   setTimestamp: (value: number) => void,
 ) => {
   const [currentX, setCurrentX] = useState<number>();
@@ -51,10 +65,12 @@ const useRangeHandler = (
       const x = calculateRelativeX(
         rootEl.current.getBoundingClientRect(),
         e.pageX,
+        opositeX,
+        isSmallerThanOpositeX,
       );
       setCurrentX(x);
     },
-    [rootEl],
+    [isSmallerThanOpositeX, opositeX, rootEl],
   );
 
   const onMouseUp = useCallback(
@@ -65,6 +81,8 @@ const useRangeHandler = (
       const x = calculateRelativeX(
         rootEl.current.getBoundingClientRect(),
         e.pageX,
+        opositeX,
+        isSmallerThanOpositeX,
       );
       setTimestamp((x / 100) * (maxTimestamp - minTimestamp) + minTimestamp);
       setCurrentX(undefined);
@@ -74,7 +92,15 @@ const useRangeHandler = (
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     },
-    [maxTimestamp, minTimestamp, onMouseMove, rootEl, setTimestamp],
+    [
+      isSmallerThanOpositeX,
+      maxTimestamp,
+      minTimestamp,
+      onMouseMove,
+      opositeX,
+      rootEl,
+      setTimestamp,
+    ],
   );
 
   const onMouseDown = useCallback(
@@ -84,7 +110,9 @@ const useRangeHandler = (
       }
       const x = calculateRelativeX(
         rootEl.current.getBoundingClientRect(),
-        e.pageX,
+        e.currentTarget.getBoundingClientRect().x + 3,
+        opositeX,
+        isSmallerThanOpositeX,
       );
       setCurrentX(x);
       setMouseDownX(x);
@@ -93,7 +121,7 @@ const useRangeHandler = (
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     },
-    [onMouseMove, onMouseUp, rootEl],
+    [isSmallerThanOpositeX, onMouseMove, onMouseUp, opositeX, rootEl],
   );
 
   return { currentX, mouseDownX, onMouseDown, isDragging };
@@ -124,6 +152,9 @@ export const MiniTimelineRange = ({
     rootEl,
     minTimestamp,
     maxTimestamp,
+    ((selectedMaxTimestamp - minTimestamp) / (maxTimestamp - minTimestamp)) *
+      100,
+    true,
     setSelectedMinTimestamp,
   );
 
@@ -131,6 +162,9 @@ export const MiniTimelineRange = ({
     rootEl,
     minTimestamp,
     maxTimestamp,
+    ((selectedMinTimestamp - minTimestamp) / (maxTimestamp - minTimestamp)) *
+      100,
+    false,
     setSelectedMaxTimestamp,
   );
 
