@@ -135,7 +135,7 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
           </Box>
         </Box>
         {isSpanDetailDrawerOpen && (
-          <Box flex="0 0 500px">
+          <Box flex="0 0 500px" overflow="auto">
             {selectedSpan && (
               <SpanDetailDrawer
                 minTimestamp={minTimestamp}

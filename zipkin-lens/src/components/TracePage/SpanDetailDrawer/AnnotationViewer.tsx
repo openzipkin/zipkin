@@ -17,10 +17,6 @@ import {
   Collapse,
   IconButton,
   makeStyles,
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
   Theme,
   Typography,
 } from '@material-ui/core';
@@ -32,8 +28,8 @@ import React from 'react';
 import { useToggle } from 'react-use';
 import { selectServiceColor } from '../../../constants/color';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
-import { formatTimestamp } from '../../../util/timestamp';
 import { TickMarkers } from '../TickMarkers';
+import { AnnotationTable } from './AnnotationTable';
 
 const useStyles = makeStyles<Theme, { serviceName: string }>((theme) => ({
   bar: {
@@ -49,18 +45,6 @@ const useStyles = makeStyles<Theme, { serviceName: string }>((theme) => ({
     width: 2,
     top: 2,
     cursor: 'pointer',
-  },
-  tableRow: {
-    '&:last-child > *': {
-      borderBottom: 'none',
-    },
-  },
-  relativeTimeCell: {
-    width: 35,
-  },
-  labelCell: {
-    width: 35,
-    color: theme.palette.text.secondary,
   },
 }));
 
@@ -115,41 +99,7 @@ export const AnnotationViewer = ({
             </Box>
           </Box>
         )}
-        <Table size="small">
-          <TableBody>
-            {span.annotations.map((annotation) => (
-              <TableRow
-                key={`${annotation.value}-${annotation.timestamp}`}
-                className={classes.tableRow}
-              >
-                <TableCell className={classes.relativeTimeCell}>
-                  {annotation.relativeTime}
-                </TableCell>
-                <TableCell>
-                  <Table size="small">
-                    <TableBody>
-                      {[
-                        {
-                          label: 'Time',
-                          value: formatTimestamp(annotation.timestamp),
-                        },
-                        { label: 'Value', value: annotation.value },
-                        { label: 'Endpoint', value: annotation.endpoint },
-                      ].map(({ label, value }) => (
-                        <TableRow key={label} className={classes.tableRow}>
-                          <TableCell className={classes.labelCell}>
-                            {label}
-                          </TableCell>
-                          <TableCell>{value}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <AnnotationTable span={span} />
       </Collapse>
     </Box>
   );
