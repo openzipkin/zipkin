@@ -16,6 +16,7 @@ import { Box, makeStyles, Theme } from '@material-ui/core';
 import React, { useMemo } from 'react';
 import { selectServiceColor } from '../../../constants/color';
 import { SpanRow } from '../types';
+import { TimelineRowAnnotation } from './TimelineRowAnnotation';
 
 const useStyles = makeStyles<Theme, { rowHeight: number; serviceName: string }>(
   (theme) => ({
@@ -109,6 +110,14 @@ export const TimelineRowBar = ({
       {left !== undefined && width !== undefined ? (
         <Box className={classes.bar} left={`${left}%`} width={`${width}%`} />
       ) : null}
+      {spanRow.annotations.map((annotation) => (
+        <TimelineRowAnnotation
+          key={`${annotation.value}-${annotation.timestamp}`}
+          selectedMinTimestamp={selectedMinTimestamp}
+          selectedMaxTimestamp={selectedMaxTimestamp}
+          annotation={annotation}
+        />
+      ))}
     </Box>
   );
 };
