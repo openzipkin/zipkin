@@ -139,9 +139,13 @@ const TimelineRowEdgeImpl = ({
           tree.push(<Box {...props} className={classes.horizontal} />);
           break;
         case 'B':
-          tree.push(
-            <Box {...props} className={classes.horizontalAndVertical} />,
-          );
+          if (isClosed) {
+            tree.push(<Box {...props} className={classes.horizontal} />);
+          } else {
+            tree.push(
+              <Box {...props} className={classes.horizontalAndVertical} />,
+            );
+          }
           break;
         default:
           if (branch) {
@@ -154,7 +158,14 @@ const TimelineRowEdgeImpl = ({
     tree.reverse();
 
     return tree;
-  }, [classes, rowHeight, treeEdgeShape]);
+  }, [
+    classes.horizontal,
+    classes.horizontalAndVertical,
+    classes.vertical,
+    isClosed,
+    rowHeight,
+    treeEdgeShape,
+  ]);
 
   return (
     <Box className={classes.root}>
