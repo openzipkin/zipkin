@@ -85,7 +85,10 @@ export const AnnotationViewer = ({
                     annotation.timestamp <= span.timestamp + span.duration,
                 )
                 .map((annotation) => (
-                  <AnnotationTooltip annotation={annotation}>
+                  <AnnotationTooltip
+                    key={`${annotation.value}-${annotation.timestamp}`}
+                    annotation={annotation}
+                  >
                     <Box
                       key={`${annotation.value}-${annotation.timestamp}`}
                       className={classes.annotationMarker}

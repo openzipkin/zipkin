@@ -132,6 +132,7 @@ export const TimelineHeader = ({
             Reset focus
           </Button>
           <ToggleButton
+            value="openMiniTimeline"
             className={classes.iconButton}
             selected={isMiniTimelineOpen}
             onClick={toggleIsMiniTimelineOpen}
@@ -139,6 +140,7 @@ export const TimelineHeader = ({
             <VisibilityIcon fontSize="small" />
           </ToggleButton>
           <ToggleButton
+            value="openSpanTable"
             className={classes.iconButton}
             selected={isSpanTableOpen}
             onClick={toggleIsSpanTableOpen}
@@ -146,6 +148,7 @@ export const TimelineHeader = ({
             <ListIcon fontSize="small" />
           </ToggleButton>
           <ToggleButton
+            value="openSpanDetailDrawer"
             className={classes.iconButton}
             selected={isSpanDetailDrawerOpen}
             onClick={toggleIsSpanDetailDrawerOpen}

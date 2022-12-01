@@ -57,7 +57,7 @@ export const MiniTimelineOverlay = ({
     mouseDownXRef.current = mouseDownX;
   }, [mouseDownX]);
 
-  const onMouseMove = useCallback((e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!rootEl.current) {
       return;
     }
@@ -65,7 +65,7 @@ export const MiniTimelineOverlay = ({
     setCurrentX(x);
   }, []);
 
-  const onMouseUp = useCallback(
+  const handleMouseUp = useCallback(
     (e: MouseEvent) => {
       if (!rootEl.current || mouseDownXRef.current === undefined) {
         return;
@@ -86,19 +86,19 @@ export const MiniTimelineOverlay = ({
       setCurrentX(undefined);
       setMouseDownX(undefined);
 
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
     },
     [
       maxTimestamp,
       minTimestamp,
-      onMouseMove,
+      handleMouseMove,
       setSelectedMaxTimestamp,
       setSelectedMinTimestamp,
     ],
   );
 
-  const onMouseDown = useCallback(
+  const handleMouseDown = useCallback(
     (e: ReactMouseEvent<SVGRectElement>) => {
       if (!rootEl.current) {
         return;
@@ -107,21 +107,24 @@ export const MiniTimelineOverlay = ({
       setCurrentX(x);
       setMouseDownX(x);
 
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
     },
-    [onMouseMove, onMouseUp],
+    [handleMouseMove, handleMouseUp],
   );
 
-  const onMouseHover = useCallback((e: ReactMouseEvent<SVGRectElement>) => {
-    if (e.buttons !== 0 || !rootEl.current) {
-      return;
-    }
-    const x = calculateX(rootEl.current.getBoundingClientRect(), e.pageX);
-    setHoverX(x);
-  }, []);
+  const handleMouseHoverMove = useCallback(
+    (e: ReactMouseEvent<SVGRectElement>) => {
+      if (e.buttons !== 0 || !rootEl.current) {
+        return;
+      }
+      const x = calculateX(rootEl.current.getBoundingClientRect(), e.pageX);
+      setHoverX(x);
+    },
+    [],
+  );
 
-  const onMouseHoverLeave = useCallback(() => {
+  const handleMouseHoverLeave = useCallback(() => {
     setHoverX(undefined);
   }, []);
 
@@ -144,9 +147,9 @@ export const MiniTimelineOverlay = ({
         y="0"
         width="100%"
         height="100%"
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseHover}
-        onMouseLeave={onMouseHoverLeave}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseHoverMove}
+        onMouseLeave={handleMouseHoverLeave}
         fillOpacity="0"
         cursor="col-resize"
       />

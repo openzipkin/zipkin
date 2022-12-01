@@ -35,7 +35,7 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   relativeTimeCell: {
-    width: 80,
+    width: 120,
   },
   labelCell: {
     width: 120,
