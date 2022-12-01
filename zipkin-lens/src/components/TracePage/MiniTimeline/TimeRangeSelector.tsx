@@ -20,6 +20,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { adjustPercentValue } from '../helpers';
 
 const calculateX = (
   parentRect: DOMRect,
@@ -36,13 +37,7 @@ const calculateX = (
   } else if (value <= opositeX) {
     value = opositeX + 1;
   }
-  if (value <= 0) {
-    return 0;
-  }
-  if (value >= 100) {
-    return 100;
-  }
-  return value;
+  return adjustPercentValue(value);
 };
 
 const useRangeHandler = (
@@ -170,15 +165,21 @@ export const TimeRangeSelector = ({
 
   const rightOnTheLeft = useMemo(
     () =>
-      ((selectedMinTimestamp - minTimestamp) / (maxTimestamp - minTimestamp)) *
-      100,
+      adjustPercentValue(
+        ((selectedMinTimestamp - minTimestamp) /
+          (maxTimestamp - minTimestamp)) *
+          100,
+      ),
     [maxTimestamp, minTimestamp, selectedMinTimestamp],
   );
 
   const leftOnTheRight = useMemo(
     () =>
-      ((selectedMaxTimestamp - minTimestamp) / (maxTimestamp - minTimestamp)) *
-      100,
+      adjustPercentValue(
+        ((selectedMaxTimestamp - minTimestamp) /
+          (maxTimestamp - minTimestamp)) *
+          100,
+      ),
     [maxTimestamp, minTimestamp, selectedMaxTimestamp],
   );
 

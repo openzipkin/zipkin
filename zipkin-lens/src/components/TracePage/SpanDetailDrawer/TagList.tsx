@@ -36,8 +36,8 @@ const useStyles = makeStyles((theme) => ({
     tableLayout: 'fixed',
   },
   tableRow: {
-    '&:last-child > *': {
-      borderBottom: 'none',
+    '&:first-child > *': {
+      borderTop: `1px solid ${theme.palette.divider}`,
     },
   },
   labelCell: {

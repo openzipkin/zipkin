@@ -12,8 +12,8 @@
  * the License.
  */
 
-import { AdjustedSpan } from '../../../models/AdjustedTrace';
-import { SpanRow, TreeEdgeShapeType } from '../types';
+import { AdjustedSpan } from '../../models/AdjustedTrace';
+import { SpanRow, TreeEdgeShapeType } from './types';
 
 type SpanTreeNode = AdjustedSpan & {
   children?: SpanTreeNode[];
@@ -178,4 +178,14 @@ export const convertSpanTreeToSpanRows = (
 
     return spanRows;
   });
+};
+
+export const adjustPercentValue = (value: number) => {
+  if (value <= 0) {
+    return 0;
+  }
+  if (value >= 100) {
+    return 100;
+  }
+  return value;
 };

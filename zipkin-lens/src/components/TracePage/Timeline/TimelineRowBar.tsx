@@ -59,38 +59,44 @@ export const TimelineRowBar = ({
 }: TimelineRowBarProps) => {
   const classes = useStyles({ rowHeight, serviceName: spanRow.serviceName });
 
-  const left = useMemo(() => {
-    const result = spanRow.timestamp
+  const { left, width } = useMemo(() => {
+    const l = spanRow.timestamp
       ? ((spanRow.timestamp - selectedMinTimestamp) /
           (selectedMaxTimestamp - selectedMinTimestamp)) *
         100
       : 0;
-    if (result <= 0) {
-      return 0;
-    }
-    if (result >= 100) {
-      return 0;
-    }
-    return result;
-  }, [selectedMaxTimestamp, selectedMinTimestamp, spanRow.timestamp]);
 
-  const width = useMemo(() => {
-    const result =
-      left !== undefined && spanRow.duration && spanRow.timestamp
+    const w =
+      l !== undefined && spanRow.duration && spanRow.timestamp
         ? Math.max(
             ((spanRow.timestamp + spanRow.duration - selectedMinTimestamp) /
               (selectedMaxTimestamp - selectedMinTimestamp)) *
               100 -
-              left,
+              l,
             1,
           )
         : 1;
-    if (result + left >= 100) {
-      return 100 - left;
+
+    let rl: number | undefined;
+    let rw: number | undefined;
+    if (l <= 0 && l + w <= 0) {
+      rl = undefined;
+      rw = undefined;
+    } else if (l <= 0 && l + w > 0) {
+      rl = 0;
+      rw = w - l;
+    } else if (l >= 100) {
+      rl = undefined;
+      rw = undefined;
+    } else if (l + w >= 100) {
+      rl = l;
+      rw = 100 - rl;
+    } else {
+      rl = l;
+      rw = w;
     }
-    return result;
+    return { left: rl, width: rw };
   }, [
-    left,
     selectedMaxTimestamp,
     selectedMinTimestamp,
     spanRow.duration,
@@ -100,7 +106,9 @@ export const TimelineRowBar = ({
   return (
     <Box className={classes.root}>
       <Box className={classes.line} />
-      <Box className={classes.bar} left={`${left}%`} width={`${width}%`} />
+      {left !== undefined && width !== undefined ? (
+        <Box className={classes.bar} left={`${left}%`} width={`${width}%`} />
+      ) : null}
     </Box>
   );
 };

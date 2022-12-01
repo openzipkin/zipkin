@@ -17,10 +17,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useToggle } from 'react-use';
 import AdjustedTrace, { AdjustedSpan } from '../../models/AdjustedTrace';
 import { Header } from './Header/Header';
-import {
-  convertSpansToSpanTree,
-  convertSpanTreeToSpanRows,
-} from './helpers/convert';
+import { convertSpansToSpanTree, convertSpanTreeToSpanRows } from './helpers';
 import { SpanDetailDrawer } from './SpanDetailDrawer';
 import { SpanTable } from './SpanTable';
 import { Timeline } from './Timeline';
