@@ -39,7 +39,6 @@ const useStyles = makeStyles<Theme, { rowHeight: number; serviceName: string }>(
       position: 'absolute',
       height: 6,
       transform: `translateY(-3px)`,
-      borderRadius: 3,
       backgroundColor: ({ serviceName }) => selectServiceColor(serviceName),
     },
   }),

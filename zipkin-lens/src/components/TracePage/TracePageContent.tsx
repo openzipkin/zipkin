@@ -22,6 +22,9 @@ import { SpanDetailDrawer } from './SpanDetailDrawer';
 import { SpanTable } from './SpanTable';
 import { Timeline } from './Timeline';
 
+const SPAN_TABLE_HEIGHT = '250px';
+const SPAN_DETAIL_DRAWER_WIDTH = '480px';
+
 type TracePageContentProps = {
   trace: AdjustedTrace;
 };
@@ -73,28 +76,16 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
   );
 
   const [selectedSpan, setSelectedSpan] = useState<AdjustedSpan>(spanRows[0]);
-  const [selectedTimeRange, setSelectedTimeRange] = useState({
-    minTimestamp,
-    maxTimestamp,
-  });
-  const setSelectedMinTimestamp = useCallback((value: number) => {
-    setSelectedTimeRange((prev) => ({
-      ...prev,
-      minTimestamp: value,
-    }));
-  }, []);
-  const setSelectedMaxTimestamp = useCallback((value: number) => {
-    setSelectedTimeRange((prev) => ({
-      ...prev,
-      maxTimestamp: value,
-    }));
-  }, []);
 
+  const [selectedMinTimestamp, setSelectedMinTimestamp] = useState(
+    minTimestamp,
+  );
+  const [selectedMaxTimestamp, setSelectedMaxTimestamp] = useState(
+    maxTimestamp,
+  );
   useEffect(() => {
-    setSelectedTimeRange({
-      minTimestamp,
-      maxTimestamp,
-    });
+    setSelectedMinTimestamp(minTimestamp);
+    setSelectedMaxTimestamp(maxTimestamp);
   }, [maxTimestamp, minTimestamp]);
 
   return (
@@ -105,7 +96,7 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
       <Box flex="1 1" display="flex" overflow="hidden">
         <Box flex="1 1" display="flex" flexDirection="column">
           {isSpanTableOpen && (
-            <Box flex="0 0 250px">
+            <Box flex={`0 0 ${SPAN_TABLE_HEIGHT}`}>
               <SpanTable
                 spans={trace.spans}
                 setSelectedSpan={setSelectedSpan}
@@ -119,8 +110,8 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
               setSelectedSpan={setSelectedSpan}
               minTimestamp={minTimestamp}
               maxTimestamp={maxTimestamp}
-              selectedMinTimestamp={selectedTimeRange.minTimestamp}
-              selectedMaxTimestamp={selectedTimeRange.maxTimestamp}
+              selectedMinTimestamp={selectedMinTimestamp}
+              selectedMaxTimestamp={selectedMaxTimestamp}
               setSelectedMinTimestamp={setSelectedMinTimestamp}
               setSelectedMaxTimestamp={setSelectedMaxTimestamp}
               isSpanDetailDrawerOpen={isSpanDetailDrawerOpen}
@@ -136,7 +127,11 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
           </Box>
         </Box>
         {isSpanDetailDrawerOpen && (
-          <Box flex="0 0 500px" height="100%" overflow="auto">
+          <Box
+            flex={`0 0 ${SPAN_DETAIL_DRAWER_WIDTH}`}
+            height="100%"
+            overflow="auto"
+          >
             {selectedSpan && (
               <SpanDetailDrawer
                 minTimestamp={minTimestamp}
