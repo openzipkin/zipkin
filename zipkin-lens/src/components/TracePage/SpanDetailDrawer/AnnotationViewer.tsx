@@ -27,10 +27,24 @@ import {
 import React from 'react';
 import { useToggle } from 'react-use';
 import { selectServiceColor } from '../../../constants/color';
-import { AdjustedSpan } from '../../../models/AdjustedTrace';
+import {
+  AdjustedAnnotation,
+  AdjustedSpan,
+} from '../../../models/AdjustedTrace';
 import { AnnotationTable } from '../AnnotationTable';
 import { AnnotationTooltip } from '../AnnotationTooltip';
 import { TickMarkers } from '../TickMarkers';
+
+const calculateMarkerLeftPosition = (
+  annotation: AdjustedAnnotation,
+  span: AdjustedSpan,
+) => {
+  const p = ((annotation.timestamp - span.timestamp) / span.duration) * 100;
+  if (p >= 100) {
+    return 'calc(100% - 1px)';
+  }
+  return `${p}%`;
+};
 
 const useStyles = makeStyles<Theme, { serviceName: string }>((theme) => ({
   bar: {
@@ -41,10 +55,10 @@ const useStyles = makeStyles<Theme, { serviceName: string }>((theme) => ({
   },
   annotationMarker: {
     position: 'absolute',
-    backgroundColor: theme.palette.common.white,
-    height: 6,
-    width: 2,
-    top: 2,
+    backgroundColor: theme.palette.common.black,
+    height: 18,
+    width: 1,
+    top: -4,
     cursor: 'pointer',
   },
 }));
@@ -93,11 +107,7 @@ export const AnnotationViewer = ({
                       key={`${annotation.value}-${annotation.timestamp}`}
                       className={classes.annotationMarker}
                       style={{
-                        left: `calc(${
-                          ((annotation.timestamp - span.timestamp) /
-                            span.duration) *
-                          100
-                        }% - 1px)`,
+                        left: calculateMarkerLeftPosition(annotation, span),
                       }}
                     />
                   </AnnotationTooltip>

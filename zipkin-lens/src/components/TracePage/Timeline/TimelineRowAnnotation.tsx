@@ -20,10 +20,10 @@ import { AnnotationTooltip } from '../AnnotationTooltip';
 const useStyles = makeStyles((theme) => ({
   annotationMarker: {
     position: 'absolute',
-    backgroundColor: theme.palette.common.white,
-    height: 2,
-    width: 2,
-    top: -1,
+    backgroundColor: theme.palette.common.black,
+    height: 12,
+    width: 1,
+    top: -6,
     cursor: 'pointer',
     pointerEvents: 'auto',
   },
@@ -49,11 +49,14 @@ export const TimelineRowAnnotation = ({
     ) {
       return undefined;
     }
-    return (
+    const p =
       ((annotation.timestamp - selectedMinTimestamp) /
         (selectedMaxTimestamp - selectedMinTimestamp)) *
-      100
-    );
+      100;
+    if (p >= 100) {
+      return `calc(100% - 1px)`;
+    }
+    return `${p}%`;
   }, [annotation.timestamp, selectedMaxTimestamp, selectedMinTimestamp]);
 
   if (left === undefined) {
@@ -62,7 +65,7 @@ export const TimelineRowAnnotation = ({
 
   return (
     <AnnotationTooltip annotation={annotation}>
-      <Box left={`calc(${left}% - 1px)`} className={classes.annotationMarker} />
+      <Box left={left} className={classes.annotationMarker} />
     </AnnotationTooltip>
   );
 };
