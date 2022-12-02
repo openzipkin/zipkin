@@ -71,7 +71,8 @@ export const MiniTimelineOverlay = ({
         return;
       }
       const x = calculateX(rootEl.current.getBoundingClientRect(), e.pageX);
-      const adjustedX = Math.max(x - mouseDownXRef.current) < 1 ? x + 1 : x;
+      // Adjust to avoid overlapping minTimestamp and maxTimestamp;
+      const adjustedX = Math.abs(x - mouseDownXRef.current) < 1 ? x + 1 : x;
 
       const t1 =
         (mouseDownXRef.current / 100) * (maxTimestamp - minTimestamp) +
