@@ -15,7 +15,7 @@
 import { Box, makeStyles } from '@material-ui/core';
 import { ErrorOutline as ErrorOutlineIcon } from '@material-ui/icons';
 import classNames from 'classnames';
-import React, { useCallback } from 'react';
+import React, { MouseEvent, useCallback } from 'react';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
 import { SpanRow } from '../types';
 import { TimelineRowBar } from './TimelineRowBar';
@@ -73,9 +73,13 @@ export const TimelineRow = (props: TimelineRowProps) => {
     setSelectedSpan(props);
   }, [props, setSelectedSpan]);
 
-  const handleButtonClick = useCallback(() => {
-    toggleOpenSpan(spanId);
-  }, [spanId, toggleOpenSpan]);
+  const handleButtonClick = useCallback(
+    (e: MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      toggleOpenSpan(spanId);
+    },
+    [spanId, toggleOpenSpan],
+  );
 
   return (
     <Box

@@ -73,9 +73,9 @@ export const TimelineRowBar = ({
               (selectedMaxTimestamp - selectedMinTimestamp)) *
               100 -
               l,
-            1,
+            0.1,
           )
-        : 1;
+        : 0.1;
 
     let rl: number | undefined;
     let rw: number | undefined;

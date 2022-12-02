@@ -50,7 +50,6 @@ const useStyles = makeStyles((theme) => ({
   tickMarkersWrapper: {
     position: 'absolute',
     left: 120,
-    right: 0,
     bottom: 0,
     paddingRight: theme.spacing(1),
   },
@@ -69,6 +68,7 @@ type TimelineHeaderProps = {
   selectedSpan: AdjustedSpan;
   rerootedSpanId?: string;
   setRerootedSpanId: (value: string | undefined) => void;
+  absoluteListWidth: number;
 };
 
 export const TimelineHeader = ({
@@ -84,6 +84,7 @@ export const TimelineHeader = ({
   selectedSpan,
   rerootedSpanId,
   setRerootedSpanId,
+  absoluteListWidth,
 }: TimelineHeaderProps) => {
   const classes = useStyles();
 
@@ -161,7 +162,10 @@ export const TimelineHeader = ({
           </ToggleButton>
         </Box>
       </Box>
-      <Box className={classes.tickMarkersWrapper}>
+      <Box
+        className={classes.tickMarkersWrapper}
+        right={`calc(100% - ${absoluteListWidth}px)`}
+      >
         <TickMarkers
           minTimestamp={selectedMinTimestamp - minTimestamp}
           maxTimestamp={selectedMaxTimestamp - minTimestamp}

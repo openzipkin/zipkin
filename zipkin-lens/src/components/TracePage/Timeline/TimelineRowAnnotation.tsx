@@ -21,9 +21,9 @@ const useStyles = makeStyles((theme) => ({
   annotationMarker: {
     position: 'absolute',
     backgroundColor: theme.palette.common.white,
-    height: 4,
+    height: 2,
     width: 2,
-    top: -2,
+    top: -1,
     cursor: 'pointer',
     pointerEvents: 'auto',
   },

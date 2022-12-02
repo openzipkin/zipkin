@@ -13,7 +13,13 @@
  */
 
 import { Box, makeStyles } from '@material-ui/core';
-import React, { useCallback, useMemo } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { AutoSizer, List, ListRowProps } from 'react-virtualized';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
 import { TickMarkers } from '../TickMarkers';
@@ -87,6 +93,27 @@ export const Timeline = ({
     return index === -1 ? undefined : index;
   }, [selectedSpan, spanRows]);
 
+  // This is to prevent TickMarkers from shifting when the scroll bar
+  // appear in the list of TimelineRows.
+  // Find out innerScrollContainer of ReactVirtualized and get its width, and
+  // Pass that width as a prop to TimelineHeader.
+  const listWrapperRef = useRef<HTMLDivElement>(null);
+  const [absoluteListWidth, setAbsoluteListWidth] = useState(0);
+  useEffect(() => {
+    setTimeout(() => {
+      if (listWrapperRef.current) {
+        const innerScrollContainer = listWrapperRef.current.querySelector(
+          '.ReactVirtualized__Grid__innerScrollContainer',
+        );
+        if (innerScrollContainer) {
+          setAbsoluteListWidth(
+            innerScrollContainer.getBoundingClientRect().width,
+          );
+        }
+      }
+    }, 0);
+  });
+
   const rowRenderer = useCallback(
     (props: ListRowProps) => {
       const spanRow = spanRows[props.index];
@@ -148,19 +175,22 @@ export const Timeline = ({
           selectedSpan={selectedSpan}
           rerootedSpanId={rerootedSpanId}
           setRerootedSpanId={setRerootedSpanId}
+          absoluteListWidth={absoluteListWidth}
         />
       </Box>
       <Box flex="1 1">
         <AutoSizer>
           {({ width, height }) => (
-            <List
-              width={width}
-              height={height}
-              rowHeight={rowHeight}
-              rowCount={spanRows.length}
-              rowRenderer={rowRenderer}
-              scrollToIndex={scrollToIndex}
-            />
+            <div ref={listWrapperRef}>
+              <List
+                width={width}
+                height={height}
+                rowHeight={rowHeight}
+                rowCount={spanRows.length}
+                rowRenderer={rowRenderer}
+                scrollToIndex={scrollToIndex}
+              />
+            </div>
           )}
         </AutoSizer>
       </Box>

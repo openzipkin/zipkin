@@ -14,7 +14,7 @@
 
 import { Box, Button, makeStyles } from '@material-ui/core';
 import { Add as AddIcon, Remove as RemoveIcon } from '@material-ui/icons';
-import React, { memo, ReactNode, useMemo } from 'react';
+import React, { memo, MouseEvent, ReactNode, useMemo } from 'react';
 import { TreeEdgeShapeType } from '../types';
 
 const useStyles = makeStyles((theme) => ({
@@ -55,7 +55,7 @@ type TimelineRowEdgeProps = {
   isClosed: boolean;
   isCollapsible: boolean;
   rowHeight: number;
-  onButtonClick: () => void;
+  onButtonClick: (e: MouseEvent<HTMLButtonElement>) => void;
 };
 
 const TimelineRowEdgeImpl = ({
