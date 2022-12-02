@@ -163,6 +163,7 @@ export const Timeline = ({
       )}
       <Box flex="0 0">
         <TimelineHeader
+          spanRows={spanRows}
           minTimestamp={minTimestamp}
           selectedMinTimestamp={selectedMinTimestamp}
           selectedMaxTimestamp={selectedMaxTimestamp}

@@ -12,7 +12,13 @@
  * the License.
  */
 
-import { Box, Button, ButtonGroup, makeStyles } from '@material-ui/core';
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  makeStyles,
+  Tooltip,
+} from '@material-ui/core';
 import {
   FilterCenterFocus as FilterCenterFocusIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
@@ -26,6 +32,7 @@ import { ToggleButton } from '@material-ui/lab';
 import React, { useCallback } from 'react';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
 import { TickMarkers } from '../TickMarkers';
+import { SpanRow } from '../types';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -56,6 +63,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 type TimelineHeaderProps = {
+  spanRows: SpanRow[];
   minTimestamp: number;
   selectedMinTimestamp: number;
   selectedMaxTimestamp: number;
@@ -72,6 +80,7 @@ type TimelineHeaderProps = {
 };
 
 export const TimelineHeader = ({
+  spanRows,
   minTimestamp,
   selectedMinTimestamp,
   selectedMaxTimestamp,
@@ -121,6 +130,9 @@ export const TimelineHeader = ({
             className={classes.button}
             onClick={handleRerootButtonClick}
             startIcon={<FilterCenterFocusIcon fontSize="small" />}
+            disabled={
+              spanRows.length > 0 && spanRows[0].spanId === selectedSpan.spanId
+            }
           >
             Focus on selected span
           </Button>
@@ -132,34 +144,50 @@ export const TimelineHeader = ({
           >
             Reset focus
           </Button>
-          <ToggleButton
-            value="openMiniTimeline"
-            className={classes.iconButton}
-            selected={isMiniTimelineOpen}
-            onClick={toggleIsMiniTimelineOpen}
+          <Tooltip
+            title={
+              isMiniTimelineOpen ? 'Close mini timeline' : 'Open mini timeline'
+            }
           >
-            <VisibilityIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton
-            value="openSpanTable"
-            className={classes.iconButton}
-            selected={isSpanTableOpen}
-            onClick={toggleIsSpanTableOpen}
+            <ToggleButton
+              value="openMiniTimeline"
+              className={classes.iconButton}
+              selected={isMiniTimelineOpen}
+              onClick={toggleIsMiniTimelineOpen}
+            >
+              <VisibilityIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip
+            title={isSpanTableOpen ? 'Close span table' : 'Open span table'}
           >
-            <ListIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton
-            value="openSpanDetailDrawer"
-            className={classes.iconButton}
-            selected={isSpanDetailDrawerOpen}
-            onClick={toggleIsSpanDetailDrawerOpen}
+            <ToggleButton
+              value="openSpanTable"
+              className={classes.iconButton}
+              selected={isSpanTableOpen}
+              onClick={toggleIsSpanTableOpen}
+            >
+              <ListIcon fontSize="small" />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip
+            title={
+              isSpanDetailDrawerOpen ? 'Close span detail' : 'Open span detail'
+            }
           >
-            {isSpanDetailDrawerOpen ? (
-              <KeyboardArrowRightIcon fontSize="small" />
-            ) : (
-              <KeyboardArrowLeftIcon fontSize="small" />
-            )}
-          </ToggleButton>
+            <ToggleButton
+              value="openSpanDetailDrawer"
+              className={classes.iconButton}
+              selected={isSpanDetailDrawerOpen}
+              onClick={toggleIsSpanDetailDrawerOpen}
+            >
+              {isSpanDetailDrawerOpen ? (
+                <KeyboardArrowRightIcon fontSize="small" />
+              ) : (
+                <KeyboardArrowLeftIcon fontSize="small" />
+              )}
+            </ToggleButton>
+          </Tooltip>
         </Box>
       </Box>
       <Box
