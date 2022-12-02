@@ -48,7 +48,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const buttonSizePx = 16;
+const buttonSizePx = 14;
 
 type TimelineRowEdgeProps = {
   treeEdgeShape: TreeEdgeShapeType[];

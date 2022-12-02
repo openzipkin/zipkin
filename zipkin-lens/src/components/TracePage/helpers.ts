@@ -98,7 +98,7 @@ const extractPartialTree = (roots: SpanTreeNode[], rerootedSpanId: string) => {
   };
 };
 
-export const convertSpanTreeToSpanRows = (
+export const convertSpanTreeToSpanRowsAndTimestamps = (
   roots: SpanTreeNode[],
   closedSpanIdMap: { [spanId: string]: boolean },
   rerootedSpanId?: string,
@@ -112,72 +112,86 @@ export const convertSpanTreeToSpanRows = (
     partialRoots = roots;
   }
 
-  return partialRoots.flatMap((root) => {
+  let minTimestamp = Number.MAX_SAFE_INTEGER;
+  let maxTimestamp = Number.MIN_SAFE_INTEGER;
+
+  const rows = partialRoots.flatMap((root) => {
     const spanRows: SpanRow[] = [];
-    const openedDepth: boolean[] = [];
-    for (let i = 0; i < root.maxDepth; i += 1) {
-      openedDepth.push(false);
-    }
 
     function fn(
       index: number,
       siblings: SpanTreeNode[],
+      isParentClosed: boolean,
       parentTreeEdgeShape?: TreeEdgeShapeType[],
     ) {
       const node = siblings[index];
-
+      const isClosed = closedSpanIdMap[node.spanId] || false;
       let treeEdgeShape: TreeEdgeShapeType[] = [];
 
-      // If parentTreeEdgeShape is undefined, initialize treeEdgeShape with '-'.
-      if (!parentTreeEdgeShape) {
-        for (let i = 0; i < root.maxDepth; i += 1) {
-          treeEdgeShape[i] = '-';
-        }
-        // If the node has children, the first element will be 'B'.
-        if (node.children) {
-          treeEdgeShape[0] = 'B';
-        }
-      } else {
-        const relativeDepth = node.depth - root.depth;
-        treeEdgeShape = [...parentTreeEdgeShape];
-
-        if (
-          relativeDepth >= 2 &&
-          parentTreeEdgeShape[relativeDepth - 2] === 'E'
-        ) {
-          treeEdgeShape[relativeDepth - 2] = '-';
-        }
-
-        if (relativeDepth >= 1) {
-          if (index === siblings.length - 1) {
-            treeEdgeShape[relativeDepth - 1] = 'E';
-          } else {
-            treeEdgeShape[relativeDepth - 1] = 'M';
-          }
-        }
-        if (node.children) {
-          treeEdgeShape[relativeDepth] = 'B';
-        }
+      if (node.timestamp !== undefined) {
+        minTimestamp = Math.min(minTimestamp, node.timestamp);
+      }
+      if (node.timestamp !== undefined && node.duration !== undefined) {
+        maxTimestamp = Math.max(maxTimestamp, node.timestamp + node.duration);
       }
 
-      const isClosed = closedSpanIdMap[node.spanId] || false;
-      spanRows.push({
-        ...node,
-        treeEdgeShape,
-        isClosed,
-        isCollapsible: !!node.children,
-      });
+      if (!isParentClosed) {
+        // If parentTreeEdgeShape is undefined, initialize treeEdgeShape with '-'.
+        if (!parentTreeEdgeShape) {
+          for (let i = 0; i < root.maxDepth; i += 1) {
+            treeEdgeShape[i] = '-';
+          }
+          // If the node has children, the first element will be 'B'.
+          if (node.children) {
+            treeEdgeShape[0] = 'B';
+          }
+        } else {
+          const relativeDepth = node.depth - root.depth;
+          treeEdgeShape = [...parentTreeEdgeShape];
 
-      if (node.children && !isClosed) {
+          if (
+            relativeDepth >= 2 &&
+            parentTreeEdgeShape[relativeDepth - 2] === 'E'
+          ) {
+            treeEdgeShape[relativeDepth - 2] = '-';
+          }
+
+          if (relativeDepth >= 1) {
+            if (index === siblings.length - 1) {
+              treeEdgeShape[relativeDepth - 1] = 'E';
+            } else {
+              treeEdgeShape[relativeDepth - 1] = 'M';
+            }
+          }
+          if (node.children) {
+            treeEdgeShape[relativeDepth] = 'B';
+          }
+        }
+
+        spanRows.push({
+          ...node,
+          treeEdgeShape,
+          isClosed,
+          isCollapsible: !!node.children,
+        });
+      }
+
+      if (node.children) {
         for (let i = 0; i < node.children.length; i += 1) {
-          fn(i, node.children, treeEdgeShape);
+          fn(i, node.children, isClosed || isParentClosed, treeEdgeShape);
         }
       }
     }
-    fn(0, [root], undefined);
+    fn(0, [root], false, undefined);
 
     return spanRows;
   });
+
+  return {
+    minTimestamp,
+    maxTimestamp,
+    spanRows: rows,
+  };
 };
 
 export const adjustPercentValue = (value: number) => {

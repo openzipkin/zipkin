@@ -17,7 +17,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useToggle } from 'react-use';
 import AdjustedTrace, { AdjustedSpan } from '../../models/AdjustedTrace';
 import { Header } from './Header/Header';
-import { convertSpansToSpanTree, convertSpanTreeToSpanRows } from './helpers';
+import {
+  convertSpansToSpanTree,
+  convertSpanTreeToSpanRowsAndTimestamps,
+} from './helpers';
 import { SpanDetailDrawer } from './SpanDetailDrawer';
 import { SpanTable } from './SpanTable';
 import { Timeline } from './Timeline';
@@ -44,8 +47,13 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
     trace.spans,
   ]);
 
-  const spanRows = useMemo(
-    () => convertSpanTreeToSpanRows(roots, closedSpanIdMap, rerootedSpanId),
+  const { spanRows, minTimestamp, maxTimestamp } = useMemo(
+    () =>
+      convertSpanTreeToSpanRowsAndTimestamps(
+        roots,
+        closedSpanIdMap,
+        rerootedSpanId,
+      ),
     [closedSpanIdMap, rerootedSpanId, roots],
   );
 
@@ -55,25 +63,6 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
       [spanId]: !prev[spanId],
     }));
   }, []);
-
-  const [minTimestamp, maxTimestamp] = useMemo(
-    () => [
-      Math.min(
-        ...spanRows
-          .filter((spanRow) => spanRow.timestamp !== undefined)
-          .map((spanRow) => spanRow.timestamp),
-      ),
-      Math.max(
-        ...spanRows
-          .filter(
-            (spanRow) =>
-              spanRow.timestamp !== undefined && spanRow.duration !== undefined,
-          )
-          .map((spanRow) => spanRow.timestamp + spanRow.duration),
-      ),
-    ],
-    [spanRows],
-  );
 
   const [selectedSpan, setSelectedSpan] = useState<AdjustedSpan>(spanRows[0]);
 

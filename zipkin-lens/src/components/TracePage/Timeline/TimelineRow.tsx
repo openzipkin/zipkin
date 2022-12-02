@@ -34,10 +34,10 @@ const useStyles = makeStyles((theme) => ({
   },
   text: {
     fontSize: theme.typography.caption.fontSize,
-    color: theme.palette.text.secondary,
   },
   errorIcon: {
     marginRight: theme.spacing(0.5),
+    fontSize: '14px',
   },
 }));
 
@@ -99,11 +99,7 @@ export const TimelineRow = (props: TimelineRowProps) => {
         <Box pt={0.25} display="flex" justifyContent="space-between" pr={1}>
           <Box display="flex" alignItems="center">
             {errorType !== 'none' && (
-              <ErrorOutlineIcon
-                className={classes.errorIcon}
-                fontSize="small"
-                color="error"
-              />
+              <ErrorOutlineIcon className={classes.errorIcon} color="error" />
             )}
             <Box className={classes.text}>{`${serviceName}: ${spanName}`}</Box>
           </Box>
