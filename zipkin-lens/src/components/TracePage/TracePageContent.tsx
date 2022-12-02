@@ -112,6 +112,7 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
               rerootedSpanId={rerootedSpanId}
               setRerootedSpanId={setRerootedSpanId}
               toggleOpenSpan={toggleOpenSpan}
+              setClosedSpanIdMap={setClosedSpanIdMap}
             />
           </Box>
         </Box>

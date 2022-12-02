@@ -62,6 +62,7 @@ type TimelineProps = {
   rerootedSpanId?: string;
   setRerootedSpanId: (value: string | undefined) => void;
   toggleOpenSpan: (spanId: string) => void;
+  setClosedSpanIdMap: (value: { [spanId: string]: boolean }) => void;
 };
 
 const rowHeight = 30;
@@ -85,6 +86,7 @@ export const Timeline = ({
   rerootedSpanId,
   setRerootedSpanId,
   toggleOpenSpan,
+  setClosedSpanIdMap,
 }: TimelineProps) => {
   const classes = useStyles();
 
@@ -177,6 +179,7 @@ export const Timeline = ({
           rerootedSpanId={rerootedSpanId}
           setRerootedSpanId={setRerootedSpanId}
           absoluteListWidth={absoluteListWidth}
+          setClosedSpanIdMap={setClosedSpanIdMap}
         />
       </Box>
       <Box flex="1 1">

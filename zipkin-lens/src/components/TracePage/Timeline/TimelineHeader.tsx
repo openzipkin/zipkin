@@ -77,6 +77,7 @@ type TimelineHeaderProps = {
   rerootedSpanId?: string;
   setRerootedSpanId: (value: string | undefined) => void;
   absoluteListWidth: number;
+  setClosedSpanIdMap: (value: { [spanId: string]: boolean }) => void;
 };
 
 export const TimelineHeader = ({
@@ -94,6 +95,7 @@ export const TimelineHeader = ({
   rerootedSpanId,
   setRerootedSpanId,
   absoluteListWidth,
+  setClosedSpanIdMap,
 }: TimelineHeaderProps) => {
   const classes = useStyles();
 
@@ -104,6 +106,19 @@ export const TimelineHeader = ({
   const handleResetRerootButtonClick = useCallback(() => {
     setRerootedSpanId(undefined);
   }, [setRerootedSpanId]);
+
+  const handleCollapseAllButtonClick = useCallback(() => {
+    setClosedSpanIdMap(
+      spanRows.reduce<{ [spanId: string]: boolean }>((acc, cur) => {
+        acc[cur.spanId] = true;
+        return acc;
+      }, {}),
+    );
+  }, [setClosedSpanIdMap, spanRows]);
+
+  const handleExpandAllButtonClick = useCallback(() => {
+    setClosedSpanIdMap({});
+  }, [setClosedSpanIdMap]);
 
   return (
     <Box className={classes.root}>
@@ -117,12 +132,22 @@ export const TimelineHeader = ({
         alignItems="center"
       >
         <ButtonGroup>
-          <Button className={classes.iconButton}>
-            <KeyboardArrowUpIcon fontSize="small" />
-          </Button>
-          <Button className={classes.iconButton}>
-            <KeyboardArrowDownIcon fontSize="small" />
-          </Button>
+          <Tooltip title="Collapse all">
+            <Button
+              className={classes.iconButton}
+              onClick={handleCollapseAllButtonClick}
+            >
+              <KeyboardArrowUpIcon fontSize="small" />
+            </Button>
+          </Tooltip>
+          <Tooltip title="Expand all">
+            <Button
+              className={classes.iconButton}
+              onClick={handleExpandAllButtonClick}
+            >
+              <KeyboardArrowDownIcon fontSize="small" />
+            </Button>
+          </Tooltip>
         </ButtonGroup>
         <Box className={classes.rightButtonsWrapper}>
           <Button
