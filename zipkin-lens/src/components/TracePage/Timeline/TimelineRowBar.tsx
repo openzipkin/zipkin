@@ -66,34 +66,30 @@ export const TimelineRowBar = ({
         100
       : 0;
 
-    const w =
-      l !== undefined && spanRow.duration && spanRow.timestamp
-        ? Math.max(
-            ((spanRow.timestamp + spanRow.duration - selectedMinTimestamp) /
-              (selectedMaxTimestamp - selectedMinTimestamp)) *
-              100 -
-              l,
-            0.1,
-          )
-        : 0.1;
+    const r =
+      spanRow.duration && spanRow.timestamp
+        ? ((spanRow.timestamp + spanRow.duration - selectedMinTimestamp) /
+            (selectedMaxTimestamp - selectedMinTimestamp)) *
+          100
+        : 0;
 
     let rl: number | undefined;
     let rw: number | undefined;
-    if (l <= 0 && l + w <= 0) {
+    if (l <= 0 && r <= 0) {
       rl = undefined;
       rw = undefined;
-    } else if (l <= 0 && l + w > 0) {
+    } else if (l <= 0 && r > 0) {
       rl = 0;
-      rw = w - l;
+      rw = r;
     } else if (l >= 100) {
       rl = undefined;
       rw = undefined;
-    } else if (l + w >= 100) {
+    } else if (r >= 100) {
       rl = l;
       rw = 100 - rl;
     } else {
       rl = l;
-      rw = w;
+      rw = r - l;
     }
     return { left: rl, width: rw };
   }, [
