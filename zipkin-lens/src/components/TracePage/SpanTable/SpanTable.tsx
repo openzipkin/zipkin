@@ -13,8 +13,8 @@
  */
 
 import { Link, makeStyles } from '@material-ui/core';
-import { DataGrid, GridColDef, GridRowParams } from '@material-ui/data-grid';
-import React, { useCallback } from 'react';
+import { DataGrid, GridColDef } from '@material-ui/data-grid';
+import React, { useMemo } from 'react';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
 import { formatDuration, formatTimestamp } from '../../../util/timestamp';
 
@@ -35,48 +35,44 @@ type SpanTableProps = {
 export const SpanTable = ({ spans, setSelectedSpan }: SpanTableProps) => {
   const classes = useStyles();
 
-  const COLUMN_DEFS: GridColDef[] = [
-    {
-      field: 'spanId',
-      headerName: 'Span ID',
-      width: 200,
-      renderCell: (params) => {
-        const spanId = params.value!.toString();
-        return (
-          // eslint-disable-next-line jsx-a11y/anchor-is-valid
-          <Link
-            onClick={() => {
-              setSelectedSpan((params.row as unknown) as AdjustedSpan);
-            }}
-          >
-            {spanId}
-          </Link>
-        );
+  const COLUMN_DEFS = useMemo<GridColDef[]>(
+    () => [
+      {
+        field: 'spanId',
+        headerName: 'Span ID',
+        width: 200,
+        renderCell: (params) => {
+          const spanId = params.value!.toString();
+          return (
+            // eslint-disable-next-line jsx-a11y/anchor-is-valid
+            <Link
+              component="button"
+              onClick={() => {
+                setSelectedSpan((params.row as unknown) as AdjustedSpan);
+              }}
+            >
+              {spanId}
+            </Link>
+          );
+        },
       },
-    },
-    { field: 'serviceName', headerName: 'Service name', width: 200 },
-    { field: 'spanName', headerName: 'Span name', width: 200 },
-    {
-      field: 'timestamp',
-      headerName: 'Start time',
-      valueGetter: (params) =>
-        formatTimestamp(parseInt(params.value!.toString(), 10)),
-      width: 200,
-    },
-    {
-      field: 'duration',
-      headerName: 'Duration',
-      valueGetter: (params) =>
-        formatDuration(parseInt(params.value!.toString(), 10)),
-      width: 150,
-    },
-  ];
-
-  const handleRowClick = useCallback(
-    (params: GridRowParams) => {
-      const span = (params.row as unknown) as AdjustedSpan;
-      setSelectedSpan(span);
-    },
+      { field: 'serviceName', headerName: 'Service name', width: 200 },
+      { field: 'spanName', headerName: 'Span name', width: 200 },
+      {
+        field: 'timestamp',
+        headerName: 'Start time',
+        valueGetter: (params) =>
+          formatTimestamp(parseInt(params.value!.toString(), 10)),
+        width: 200,
+      },
+      {
+        field: 'duration',
+        headerName: 'Duration',
+        valueGetter: (params) =>
+          formatDuration(parseInt(params.value!.toString(), 10)),
+        width: 150,
+      },
+    ],
     [setSelectedSpan],
   );
 
@@ -87,7 +83,6 @@ export const SpanTable = ({ spans, setSelectedSpan }: SpanTableProps) => {
       rows={spans}
       columns={COLUMN_DEFS}
       getRowId={(span) => span.spanId}
-      onRowClick={handleRowClick}
       hideFooter
       pageSize={spans.length}
     />

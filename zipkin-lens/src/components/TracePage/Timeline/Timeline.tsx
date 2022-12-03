@@ -114,7 +114,7 @@ export const Timeline = ({
         }
       }
     }, 0);
-  });
+  }, []);
 
   const rowRenderer = useCallback(
     (props: ListRowProps) => {
