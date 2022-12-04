@@ -14,7 +14,8 @@
 
 import { t } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
-import { Box, makeStyles, Typography } from '@material-ui/core';
+import { Box, Button, makeStyles, Typography } from '@material-ui/core';
+import { List as ListIcon } from '@material-ui/icons';
 import React from 'react';
 import AdjustedTrace from '../../../models/AdjustedTrace';
 import { HeaderMenu } from './HeaderMenu';
@@ -66,9 +67,10 @@ const useStyles = makeStyles((theme) => ({
 
 type HeaderProps = {
   trace: AdjustedTrace;
+  toggleIsSpanTableOpen: () => void;
 };
 
-export const Header = ({ trace }: HeaderProps) => {
+export const Header = ({ trace, toggleIsSpanTableOpen }: HeaderProps) => {
   const classes = useStyles();
   const { i18n } = useLingui();
 
@@ -79,6 +81,14 @@ export const Header = ({ trace }: HeaderProps) => {
           {`${trace.rootSpan.serviceName}: ${trace.rootSpan.spanName}`}
         </Typography>
         <Box className={classes.titleRowRight}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={toggleIsSpanTableOpen}
+            startIcon={<ListIcon />}
+          >
+            Span table
+          </Button>
           <HeaderMenu trace={trace} />
         </Box>
       </Box>

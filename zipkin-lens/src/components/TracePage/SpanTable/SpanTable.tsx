@@ -30,9 +30,14 @@ const useStyles = makeStyles((theme) => ({
 type SpanTableProps = {
   spans: AdjustedSpan[];
   setSelectedSpan: (span: AdjustedSpan) => void;
+  toggleIsSpanTableOpen: () => void;
 };
 
-export const SpanTable = ({ spans, setSelectedSpan }: SpanTableProps) => {
+export const SpanTable = ({
+  spans,
+  setSelectedSpan,
+  toggleIsSpanTableOpen,
+}: SpanTableProps) => {
   const classes = useStyles();
 
   const COLUMN_DEFS = useMemo<GridColDef[]>(
@@ -49,6 +54,7 @@ export const SpanTable = ({ spans, setSelectedSpan }: SpanTableProps) => {
               component="button"
               onClick={() => {
                 setSelectedSpan((params.row as unknown) as AdjustedSpan);
+                toggleIsSpanTableOpen();
               }}
             >
               {spanId}
@@ -73,7 +79,7 @@ export const SpanTable = ({ spans, setSelectedSpan }: SpanTableProps) => {
         width: 150,
       },
     ],
-    [setSelectedSpan],
+    [setSelectedSpan, toggleIsSpanTableOpen],
   );
 
   return (

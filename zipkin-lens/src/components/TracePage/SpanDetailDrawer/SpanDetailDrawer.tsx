@@ -30,6 +30,9 @@ const useStyles = makeStyles((theme) => ({
   basicInfoLabel: {
     lineHeight: 1.2,
   },
+  basicInfoValue: {
+    wordWrap: 'break-word',
+  },
   divider: {
     marginTop: theme.spacing(1.5),
     marginBottom: theme.spacing(2.5),
@@ -65,7 +68,9 @@ export const SpanDetailDrawer = ({
             >
               {label}
             </Typography>
-            <Typography variant="body1">{value}</Typography>
+            <Typography variant="body1" className={classes.basicInfoValue}>
+              {value}
+            </Typography>
           </Grid>
         ))}
       </Grid>

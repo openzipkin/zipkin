@@ -57,8 +57,6 @@ type TimelineProps = {
   toggleIsSpanDetailDrawerOpen: () => void;
   isMiniTimelineOpen: boolean;
   toggleIsMiniTimelineOpen: () => void;
-  isSpanTableOpen: boolean;
-  toggleIsSpanTableOpen: () => void;
   rerootedSpanId?: string;
   setRerootedSpanId: (value: string | undefined) => void;
   toggleOpenSpan: (spanId: string) => void;
@@ -81,8 +79,6 @@ export const Timeline = ({
   toggleIsSpanDetailDrawerOpen,
   isMiniTimelineOpen,
   toggleIsMiniTimelineOpen,
-  isSpanTableOpen,
-  toggleIsSpanTableOpen,
   rerootedSpanId,
   setRerootedSpanId,
   toggleOpenSpan,
@@ -173,8 +169,6 @@ export const Timeline = ({
           toggleIsSpanDetailDrawerOpen={toggleIsSpanDetailDrawerOpen}
           isMiniTimelineOpen={isMiniTimelineOpen}
           toggleIsMiniTimelineOpen={toggleIsMiniTimelineOpen}
-          isSpanTableOpen={isSpanTableOpen}
-          toggleIsSpanTableOpen={toggleIsSpanTableOpen}
           selectedSpan={selectedSpan}
           rerootedSpanId={rerootedSpanId}
           setRerootedSpanId={setRerootedSpanId}

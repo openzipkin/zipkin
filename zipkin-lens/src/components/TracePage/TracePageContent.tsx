@@ -12,7 +12,7 @@
  * the License.
  */
 
-import { Box } from '@material-ui/core';
+import { Box, Drawer } from '@material-ui/core';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useToggle } from 'react-use';
 import AdjustedTrace, { AdjustedSpan } from '../../models/AdjustedTrace';
@@ -25,7 +25,6 @@ import { SpanDetailDrawer } from './SpanDetailDrawer';
 import { SpanTable } from './SpanTable';
 import { Timeline } from './Timeline';
 
-const SPAN_TABLE_HEIGHT = '250px';
 const SPAN_DETAIL_DRAWER_WIDTH = '480px';
 
 type TracePageContentProps = {
@@ -80,41 +79,29 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
   return (
     <Box display="flex" flexDirection="column" height="calc(100vh - 64px)">
       <Box flex="0 0">
-        <Header trace={trace} />
+        <Header trace={trace} toggleIsSpanTableOpen={toggleIsSpanTableOpen} />
       </Box>
       <Box flex="1 1" display="flex" overflow="hidden">
-        <Box flex="1 1" display="flex" flexDirection="column">
-          {isSpanTableOpen && (
-            <Box flex={`0 0 ${SPAN_TABLE_HEIGHT}`}>
-              <SpanTable
-                spans={trace.spans}
-                setSelectedSpan={setSelectedSpan}
-              />
-            </Box>
-          )}
-          <Box flex="1 1">
-            <Timeline
-              spanRows={spanRows}
-              selectedSpan={selectedSpan}
-              setSelectedSpan={setSelectedSpan}
-              minTimestamp={minTimestamp}
-              maxTimestamp={maxTimestamp}
-              selectedMinTimestamp={selectedMinTimestamp}
-              selectedMaxTimestamp={selectedMaxTimestamp}
-              setSelectedMinTimestamp={setSelectedMinTimestamp}
-              setSelectedMaxTimestamp={setSelectedMaxTimestamp}
-              isSpanDetailDrawerOpen={isSpanDetailDrawerOpen}
-              toggleIsSpanDetailDrawerOpen={toggleIsSpanDetailDrawerOpen}
-              isMiniTimelineOpen={isMiniTimelineOpen}
-              toggleIsMiniTimelineOpen={toggleIsMiniTimelineOpen}
-              isSpanTableOpen={isSpanTableOpen}
-              toggleIsSpanTableOpen={toggleIsSpanTableOpen}
-              rerootedSpanId={rerootedSpanId}
-              setRerootedSpanId={setRerootedSpanId}
-              toggleOpenSpan={toggleOpenSpan}
-              setClosedSpanIdMap={setClosedSpanIdMap}
-            />
-          </Box>
+        <Box flex="1 1">
+          <Timeline
+            spanRows={spanRows}
+            selectedSpan={selectedSpan}
+            setSelectedSpan={setSelectedSpan}
+            minTimestamp={minTimestamp}
+            maxTimestamp={maxTimestamp}
+            selectedMinTimestamp={selectedMinTimestamp}
+            selectedMaxTimestamp={selectedMaxTimestamp}
+            setSelectedMinTimestamp={setSelectedMinTimestamp}
+            setSelectedMaxTimestamp={setSelectedMaxTimestamp}
+            isSpanDetailDrawerOpen={isSpanDetailDrawerOpen}
+            toggleIsSpanDetailDrawerOpen={toggleIsSpanDetailDrawerOpen}
+            isMiniTimelineOpen={isMiniTimelineOpen}
+            toggleIsMiniTimelineOpen={toggleIsMiniTimelineOpen}
+            rerootedSpanId={rerootedSpanId}
+            setRerootedSpanId={setRerootedSpanId}
+            toggleOpenSpan={toggleOpenSpan}
+            setClosedSpanIdMap={setClosedSpanIdMap}
+          />
         </Box>
         {isSpanDetailDrawerOpen && (
           <Box
@@ -131,6 +118,19 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
           </Box>
         )}
       </Box>
+      <Drawer
+        anchor="right"
+        open={isSpanTableOpen}
+        onClose={toggleIsSpanTableOpen}
+      >
+        <Box width="70vw" height="100vh">
+          <SpanTable
+            spans={trace.spans}
+            setSelectedSpan={setSelectedSpan}
+            toggleIsSpanTableOpen={toggleIsSpanTableOpen}
+          />
+        </Box>
+      </Drawer>
     </Box>
   );
 };

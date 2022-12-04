@@ -25,7 +25,6 @@ import {
   KeyboardArrowLeft as KeyboardArrowLeftIcon,
   KeyboardArrowRight as KeyboardArrowRightIcon,
   KeyboardArrowUp as KeyboardArrowUpIcon,
-  List as ListIcon,
   Visibility as VisibilityIcon,
 } from '@material-ui/icons';
 import { ToggleButton } from '@material-ui/lab';
@@ -71,8 +70,6 @@ type TimelineHeaderProps = {
   toggleIsSpanDetailDrawerOpen: () => void;
   isMiniTimelineOpen: boolean;
   toggleIsMiniTimelineOpen: () => void;
-  isSpanTableOpen: boolean;
-  toggleIsSpanTableOpen: () => void;
   selectedSpan: AdjustedSpan;
   rerootedSpanId?: string;
   setRerootedSpanId: (value: string | undefined) => void;
@@ -89,8 +86,6 @@ export const TimelineHeader = ({
   toggleIsSpanDetailDrawerOpen,
   isMiniTimelineOpen,
   toggleIsMiniTimelineOpen,
-  isSpanTableOpen,
-  toggleIsSpanTableOpen,
   selectedSpan,
   rerootedSpanId,
   setRerootedSpanId,
@@ -181,18 +176,6 @@ export const TimelineHeader = ({
               onClick={toggleIsMiniTimelineOpen}
             >
               <VisibilityIcon fontSize="small" />
-            </ToggleButton>
-          </Tooltip>
-          <Tooltip
-            title={isSpanTableOpen ? 'Close span table' : 'Open span table'}
-          >
-            <ToggleButton
-              value="openSpanTable"
-              className={classes.iconButton}
-              selected={isSpanTableOpen}
-              onClick={toggleIsSpanTableOpen}
-            >
-              <ListIcon fontSize="small" />
             </ToggleButton>
           </Tooltip>
           <Tooltip
