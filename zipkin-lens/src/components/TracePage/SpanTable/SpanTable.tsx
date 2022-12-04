@@ -91,6 +91,7 @@ export const SpanTable = ({
       getRowId={(span) => span.spanId}
       hideFooter
       pageSize={spans.length}
+      disableColumnFilter
     />
   );
 };
