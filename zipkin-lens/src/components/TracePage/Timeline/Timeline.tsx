@@ -110,7 +110,7 @@ export const Timeline = ({
         }
       }
     }, 0);
-  }, []);
+  }, [spanRows]);
 
   const rowRenderer = useCallback(
     (props: ListRowProps) => {
