@@ -187,6 +187,7 @@ export const Timeline = ({
                 rowCount={spanRows.length}
                 rowRenderer={rowRenderer}
                 scrollToIndex={scrollToIndex}
+                scrollToAlignment="center"
               />
             </div>
           )}
