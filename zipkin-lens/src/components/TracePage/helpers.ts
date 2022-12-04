@@ -118,12 +118,14 @@ export const convertSpanTreeToSpanRowsAndTimestamps = (
   const rows = partialRoots.flatMap((root) => {
     const spanRows: SpanRow[] = [];
 
+    // This function creates and appends span rows recursively, and
+    // returns the number of nodes included.
     function fn(
       index: number,
       siblings: SpanTreeNode[],
       isParentClosed: boolean,
       parentTreeEdgeShape?: TreeEdgeShapeType[],
-    ) {
+    ): number {
       const node = siblings[index];
       const isClosed = closedSpanIdMap[node.spanId] || false;
       let treeEdgeShape: TreeEdgeShapeType[] = [];
@@ -135,6 +137,7 @@ export const convertSpanTreeToSpanRowsAndTimestamps = (
         maxTimestamp = Math.max(maxTimestamp, node.timestamp + node.duration);
       }
 
+      let spanRowIndex: number | undefined;
       if (!isParentClosed) {
         // If parentTreeEdgeShape is undefined, initialize treeEdgeShape with '-'.
         if (!parentTreeEdgeShape) {
@@ -167,20 +170,33 @@ export const convertSpanTreeToSpanRowsAndTimestamps = (
             treeEdgeShape[relativeDepth] = 'B';
           }
         }
-
-        spanRows.push({
-          ...node,
-          treeEdgeShape,
-          isClosed,
-          isCollapsible: !!node.children,
-        });
+        spanRowIndex =
+          spanRows.push({
+            ...node,
+            treeEdgeShape,
+            isClosed,
+            isCollapsible: !!node.children,
+            numOfChildren: 0,
+          }) - 1;
       }
 
+      let numOfChildren = 0;
       if (node.children) {
         for (let i = 0; i < node.children.length; i += 1) {
-          fn(i, node.children, isClosed || isParentClosed, treeEdgeShape);
+          numOfChildren += fn(
+            i,
+            node.children,
+            isClosed || isParentClosed,
+            treeEdgeShape,
+          );
         }
       }
+
+      if (spanRowIndex !== undefined) {
+        spanRows[spanRowIndex].numOfChildren = numOfChildren;
+      }
+
+      return numOfChildren + 1;
     }
     fn(0, [root], false, undefined);
 

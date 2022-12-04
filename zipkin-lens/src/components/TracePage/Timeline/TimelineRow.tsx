@@ -56,6 +56,7 @@ export const TimelineRow = (props: TimelineRowProps) => {
     spanId,
     serviceName,
     spanName,
+    numOfChildren,
     treeEdgeShape,
     durationStr,
     errorType,
@@ -89,6 +90,7 @@ export const TimelineRow = (props: TimelineRowProps) => {
       onClick={handleClick}
     >
       <TimelineRowEdge
+        numOfChildren={numOfChildren}
         treeEdgeShape={treeEdgeShape}
         isClosed={isClosed}
         isCollapsible={isCollapsible}

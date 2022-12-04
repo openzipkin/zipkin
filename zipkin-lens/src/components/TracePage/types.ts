@@ -47,6 +47,7 @@ export type SpanRow = AdjustedSpan & {
   treeEdgeShape: TreeEdgeShapeType[];
   isClosed: boolean;
   isCollapsible: boolean;
+  numOfChildren: number;
 };
 
 export type ServiceTreeNode = {

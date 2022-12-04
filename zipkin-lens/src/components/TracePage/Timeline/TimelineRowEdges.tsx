@@ -31,10 +31,18 @@ const useStyles = makeStyles((theme) => ({
     right: 0,
   },
   button: {
+    fontSize: theme.typography.pxToRem(11),
     position: 'absolute',
     minWidth: 0,
-    padding: 0,
+    lineHeight: 1.2,
+    padding: theme.spacing(0.25, 0.5),
     pointerEvents: 'auto',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  buttonIcon: {
+    marginLeft: theme.spacing(0.25),
+    fontSize: theme.typography.pxToRem(10),
   },
   horizontalAndVertical: {
     borderTop: `1px solid ${theme.palette.divider}`,
@@ -51,6 +59,7 @@ const useStyles = makeStyles((theme) => ({
 const buttonSizePx = 14;
 
 type TimelineRowEdgeProps = {
+  numOfChildren: number;
   treeEdgeShape: TreeEdgeShapeType[];
   isClosed: boolean;
   isCollapsible: boolean;
@@ -59,6 +68,7 @@ type TimelineRowEdgeProps = {
 };
 
 const TimelineRowEdgeImpl = ({
+  numOfChildren,
   treeEdgeShape,
   isClosed,
   isCollapsible,
@@ -77,19 +87,17 @@ const TimelineRowEdgeImpl = ({
               variant="contained"
               className={classes.button}
               style={{
-                left: `calc(${(100 / (treeEdgeShape.length + 1)) * i}% - ${
-                  buttonSizePx / 2
-                }px)`,
+                left: `${(100 / (treeEdgeShape.length + 1)) * i}%`,
                 top: `${(rowHeight / 4) * 3 - buttonSizePx / 2}px`,
-                width: `${buttonSizePx}px`,
-                height: `${buttonSizePx}px`,
+                transform: 'translate(-50%)',
               }}
               onClick={onButtonClick}
             >
+              {numOfChildren}
               {isClosed ? (
-                <AddIcon fontSize="small" />
+                <AddIcon className={classes.buttonIcon} />
               ) : (
-                <RemoveIcon fontSize="small" />
+                <RemoveIcon className={classes.buttonIcon} />
               )}
             </Button>
           );
@@ -98,9 +106,10 @@ const TimelineRowEdgeImpl = ({
     }
     return null;
   }, [
-    classes.button,
+    classes,
     isClosed,
     isCollapsible,
+    numOfChildren,
     onButtonClick,
     rowHeight,
     treeEdgeShape,
