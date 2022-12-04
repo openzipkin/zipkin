@@ -13,18 +13,14 @@
  */
 
 import { Box, makeStyles } from '@material-ui/core';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { AutoSizer, List, ListRowProps } from 'react-virtualized';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { AutoSizer } from 'react-virtualized';
+import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
+import { useMeasure } from 'react-use';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
+import { MiniTimeline } from '../MiniTimeline';
 import { TickMarkers } from '../TickMarkers';
 import { SpanRow } from '../types';
-import { MiniTimeline } from '../MiniTimeline';
 import { TimelineHeader } from './TimelineHeader';
 import { TimelineRow } from './TimelineRow';
 
@@ -86,40 +82,26 @@ export const Timeline = ({
 }: TimelineProps) => {
   const classes = useStyles();
 
-  const scrollToIndex = useMemo(() => {
-    const index = spanRows.findIndex((r) => r.spanId === selectedSpan.spanId);
-    return index === -1 ? undefined : index;
-  }, [selectedSpan, spanRows]);
+  const listRef = useRef<any>();
+  const [listInnerRef, listInnerMeasure] = useMeasure();
 
-  // This is to prevent TickMarkers from shifting when the scroll bar
-  // appear in the list of TimelineRows.
-  // Find out innerScrollContainer of ReactVirtualized and get its width, and
-  // Pass that width as a prop to TimelineHeader.
-  const listWrapperRef = useRef<HTMLDivElement>(null);
-  const [absoluteListWidth, setAbsoluteListWidth] = useState(0);
+  const prevSelectedSpanId = useRef(selectedSpan.spanId);
   useEffect(() => {
-    setTimeout(() => {
-      if (listWrapperRef.current) {
-        const innerScrollContainer = listWrapperRef.current.querySelector(
-          '.ReactVirtualized__Grid__innerScrollContainer',
-        );
-        if (innerScrollContainer) {
-          setAbsoluteListWidth(
-            innerScrollContainer.getBoundingClientRect().width,
-          );
-        }
-      }
-    }, 0);
-  }, [spanRows]);
+    if (selectedSpan.spanId !== prevSelectedSpanId.current) {
+      listRef.current.scrollToItem(
+        spanRows.findIndex((r) => r.spanId === selectedSpan.spanId),
+        'center',
+      );
+    }
+  }, [selectedSpan.spanId, spanRows]);
 
   const rowRenderer = useCallback(
-    (props: ListRowProps) => {
+    (props: ListChildComponentProps) => {
       const spanRow = spanRows[props.index];
 
       return (
-        <div key={props.key} style={props.style}>
+        <div style={props.style}>
           <TimelineRow
-            key={props.key}
             {...spanRow}
             setSelectedSpan={setSelectedSpan}
             isSelected={selectedSpan.spanId === spanRow.spanId}
@@ -172,24 +154,23 @@ export const Timeline = ({
           selectedSpan={selectedSpan}
           rerootedSpanId={rerootedSpanId}
           setRerootedSpanId={setRerootedSpanId}
-          absoluteListWidth={absoluteListWidth}
+          absoluteListWidth={listInnerMeasure.width}
           setClosedSpanIdMap={setClosedSpanIdMap}
         />
       </Box>
       <Box flex="1 1">
         <AutoSizer>
           {({ width, height }) => (
-            <div ref={listWrapperRef}>
-              <List
-                width={width}
-                height={height}
-                rowHeight={rowHeight}
-                rowCount={spanRows.length}
-                rowRenderer={rowRenderer}
-                scrollToIndex={scrollToIndex}
-                scrollToAlignment="center"
-              />
-            </div>
+            <List
+              ref={listRef}
+              width={width}
+              height={height}
+              itemSize={rowHeight}
+              itemCount={spanRows.length}
+              innerRef={listInnerRef}
+            >
+              {rowRenderer}
+            </List>
           )}
         </AutoSizer>
       </Box>
