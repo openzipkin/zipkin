@@ -47,6 +47,7 @@ type TimelineRowProps = SpanRow & {
   selectedMinTimestamp: number;
   selectedMaxTimestamp: number;
   toggleOpenSpan: (spanId: string) => void;
+  rowHeight: number;
 };
 
 export const TimelineRow = (props: TimelineRowProps) => {
@@ -65,10 +66,9 @@ export const TimelineRow = (props: TimelineRowProps) => {
     selectedMinTimestamp,
     selectedMaxTimestamp,
     toggleOpenSpan,
+    rowHeight,
   } = props;
   const classes = useStyles();
-
-  const rowHeight = 30;
 
   const handleClick = useCallback(() => {
     setSelectedSpan(props);

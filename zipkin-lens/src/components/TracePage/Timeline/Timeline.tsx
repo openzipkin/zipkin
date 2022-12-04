@@ -108,6 +108,7 @@ export const Timeline = ({
             selectedMinTimestamp={selectedMinTimestamp}
             selectedMaxTimestamp={selectedMaxTimestamp}
             toggleOpenSpan={toggleOpenSpan}
+            rowHeight={rowHeight}
           />
         </div>
       );
