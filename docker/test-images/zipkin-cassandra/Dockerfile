@@ -17,7 +17,8 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/java
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG java_version=15.0.5_p3
+# Note: Cassandra does not support Java 17 yet so use older JRE for testing
+ARG java_version=15.0.8_p4
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -34,7 +35,7 @@ FROM ghcr.io/openzipkin/java:${java_version} as install
 # Use latest stable version: https://cassandra.apache.org/download/
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG cassandra_version=3.11.9
+ARG cassandra_version=4.0.7
 ENV CASSANDRA_VERSION=$cassandra_version
 WORKDIR /install
 
@@ -44,7 +45,7 @@ RUN /tmp/install.sh && rm /tmp/install.sh
 
 FROM ghcr.io/openzipkin/java:${java_version}-jre as zipkin-cassandra
 LABEL org.opencontainers.image.description="Cassandra on OpenJDK and Alpine Linux with Zipkin keyspaces pre-installed"
-ARG cassandra_version=3.11.9
+ARG cassandra_version=4.0.7
 LABEL cassandra-version=$cassandra_version
 ENV CASSANDRA_VERSION=$cassandra_version
 

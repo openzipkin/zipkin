@@ -109,7 +109,6 @@ storage_port: 7000
 native_transport_port: 9042
 listen_address: 127.0.0.1
 start_native_transport: true
-start_rpc: false
 seed_provider:
     - class_name: org.apache.cassandra.locator.SimpleSeedProvider
       parameters:
@@ -186,9 +185,7 @@ is_cassandra_alive || exit 1
 
 echo "*** Installing cqlsh"
 # stuck on python2 for compatibility with cassandra 3.x
-apk add --update --no-cache python2 py2-setuptools
-# use pip version that is compatible with python2
-python2 -m easy_install pip==20.3.4
+apk add --update --no-cache python3 py3-pip
 pip install -Iq cqlsh
 function cql() {
   cqlsh --cqlversion=${cqlversion} "$@" 127.0.0.1 ${temp_native_transport_port}

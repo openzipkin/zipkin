@@ -56,7 +56,7 @@
     <netty.version>4.1.78.Final</netty.version>
 
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
-    <jackson.version>2.13.2.1</jackson.version>
+    <jackson.version>2.14.0</jackson.version>
 
     <java-driver.version>4.11.3</java-driver.version>
     <micrometer.version>1.9.3</micrometer.version>
@@ -66,7 +66,9 @@
 
     <!-- update together -->
     <spring-boot.version>2.5.14</spring-boot.version>
-    <spring.version>5.3.22</spring.version>
+    <spring.version>5.3.23</spring.version>
+    <!-- override spring dependency version, CVE-2022-25857 -->
+    <snakeyaml.version>1.33</snakeyaml.version>
 
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
@@ -101,12 +103,12 @@
     -->
     <license.skip>true</license.skip>
 
-    <animal-sniffer-maven-plugin.version>1.20</animal-sniffer-maven-plugin.version>
+    <animal-sniffer-maven-plugin.version>1.22</animal-sniffer-maven-plugin.version>
     <go-offline-maven-plugin.version>1.2.8</go-offline-maven-plugin.version>
     <!-- TODO: cleanup any redundant ignores now also in the 4.0 release (once final) -->
     <license-maven-plugin.version>4.0.rc2</license-maven-plugin.version>
     <maven-bundle-plugin.version>5.1.1</maven-bundle-plugin.version>
-    <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+    <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
     <!-- Use same version as https://github.com/openzipkin/docker-java -->
     <maven-dependency-plugin.version>3.1.2</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
@@ -119,7 +121,7 @@
     <maven-release-plugin.version>3.0.0-M1</maven-release-plugin.version>
     <maven-shade-plugin.version>3.2.4</maven-shade-plugin.version>
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-    <maven-surefire-plugin.version>3.0.0-M5</maven-surefire-plugin.version>
+    <maven-surefire-plugin.version>3.0.0-M7</maven-surefire-plugin.version>
     <nexus-staging-maven-plugin.version>1.6.8</nexus-staging-maven-plugin.version>
   </properties>
 
@@ -302,6 +304,7 @@
             <source>${main.java.version}</source>
             <target>${main.java.version}</target>
             <fork>true</fork>
+            <release>8</release>
             <showWarnings>true</showWarnings>
           </configuration>
         </plugin>

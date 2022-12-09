@@ -103,6 +103,13 @@
       </exclusions>
     </dependency>
 
+    <!-- Override Spring dependency to avoide CVE-2022-25857 -->
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>${snakeyaml.version}</version>
+    </dependency>
+
     <!-- Override log4j 2 version to avoid CVE-2021-44228 -->
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
