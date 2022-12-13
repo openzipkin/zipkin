@@ -114,7 +114,10 @@ function formatDate(timestamp, utc) {
 }
 
 export function mkDurationStr(duration) {
-  if (duration === 0 || typeof duration === 'undefined') {
+  if (duration === 0) {
+    return '0ms';
+  }
+  if (typeof duration === 'undefined') {
     return '';
   }
   if (duration < 1000) {

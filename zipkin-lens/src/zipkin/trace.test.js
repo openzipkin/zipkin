@@ -352,8 +352,8 @@ describe('traceSummariesToMustache', () => {
 });
 
 describe('mkDurationStr', () => {
-  it('should return empty string on zero duration', () => {
-    expect(mkDurationStr(0)).toBe('');
+  it('should return 0ms on zero duration', () => {
+    expect(mkDurationStr(0)).toBe('0ms');
   });
 
   it('should return empty string on undefined duration', () => {

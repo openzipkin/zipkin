@@ -20,6 +20,7 @@
     "@lingui/macro": "3.0.0-13",
     "@lingui/react": "3.0.0-13",
     "@material-ui/core": "^4.1.1",
+    "@material-ui/data-grid": "4.0.0-alpha.37",
     "@material-ui/icons": "^4.9.1",
     "@material-ui/lab": "^4.0.0-alpha.50",
     "@material-ui/pickers": "^3.1.1",
@@ -76,7 +77,8 @@
     "react-select": "^3.1.0",
     "react-spinners": "^0.9.0",
     "react-use": "^14.2.0",
-    "react-virtualized": "^9.21.1",
+    "react-virtualized": "^9.22.3",
+    "react-window": "^1.8.8",
     "recharts": "^1.8.5",
     "redux": "^4.0.0",
     "redux-mock-store": "^1.5.4",
@@ -106,5 +108,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/react-window": "^1.8.5"
   }
 }
