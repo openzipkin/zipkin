@@ -593,7 +593,9 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
                 searchTraces={searchTraces}
               />
             </Box>
-            <SearchButton onClick={searchTraces}>Run Query</SearchButton>
+            <SearchButton onClick={searchTraces}>
+              <Trans>Run Query</Trans>
+            </SearchButton>
             <SettingsButton
               onClick={handleSettingsButtonClick}
               isOpening={isOpeningSettings}

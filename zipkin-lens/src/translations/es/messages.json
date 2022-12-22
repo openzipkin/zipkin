@@ -24,6 +24,7 @@
   "Relative Time": "Tiempo Relativo",
   "Repository": "Repositorio",
   "Root": "Raíz",
+  "Run query": "Ejecutar Consulta",
   "Search Dependencies": "Buscar Dependencias",
   "Search Traces": "Buscar Trazas",
   "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right.": "",
