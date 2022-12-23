@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2022 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -43,7 +43,7 @@ const List = styled.ul`
   list-style-type: none;
   margin: 0px;
   padding: 0px;
-  font-size: 1.1rem;
+  font-size: 1rem;
 `;
 
 const ListItem = styled.li<{ isFocused: boolean }>`

@@ -103,7 +103,7 @@
       </exclusions>
     </dependency>
 
-    <!-- Override Spring dependency to avoide CVE-2022-25857 -->
+    <!-- Override Spring dependency to avoid CVE-2022-25857 -->
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
