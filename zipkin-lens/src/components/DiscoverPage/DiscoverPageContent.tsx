@@ -559,14 +559,16 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     );
   } else {
     content = (
-      <Paper elevation={3}>
-        <TraceSummaryTable
-          traceSummaries={filteredTraceSummaries}
-          toggleFilter={toggleFilter}
-          traceSummaryOpenMap={traceSummaryOpenMap}
-          toggleTraceSummaryOpen={toggleTraceSummaryOpen}
-        />
-      </Paper>
+      <Container>
+        <Paper elevation={3}>
+          <TraceSummaryTable
+            traceSummaries={filteredTraceSummaries}
+            toggleFilter={toggleFilter}
+            traceSummaryOpenMap={traceSummaryOpenMap}
+            toggleTraceSummaryOpen={toggleTraceSummaryOpen}
+          />
+        </Paper>
+      </Container>
     );
   }
 
@@ -694,7 +696,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
         )}
       </Box>
       <Box flexGrow={1} overflow="auto" pt={3} pb={3}>
-        <Container>{content}</Container>
+        {content}
       </Box>
     </Box>
   );

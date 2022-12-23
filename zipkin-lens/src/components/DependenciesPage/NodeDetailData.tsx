@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2022 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,11 +17,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   Box,
   Button,
-  Paper,
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableRow,
   Theme,
   Typography,
@@ -30,41 +28,36 @@ import {
 } from '@material-ui/core';
 import React, { useCallback } from 'react';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-
-import Edge from './Edge';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { Edge } from './types';
 import { selectServiceColor } from '../../constants/color';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     title: {
-      overflowWrap: 'break-word',
-      flexGrow: 1,
-      minWidth: 10, // break-word in flex-box
+      wordWrap: 'break-word',
+      flex: '1 1',
+      minWidth: 0,
     },
-    searchTracesButton: {
-      display: 'flex',
+    table: {
+      tableLayout: 'fixed',
     },
-    noDataMessage: {
-      opacity: 0.8,
-    },
-    tablePaper: {
-      marginRight: theme.spacing(2),
-      marginLeft: theme.spacing(2),
-      maxHeight: 180,
-      overflowY: 'auto',
-      borderRadius: 3,
-    },
-    tableHeadCell: {
-      top: 0,
-      position: 'sticky',
-      padding: `${theme.spacing(1)}px ${theme.spacing(2)}px`,
-      backgroundColor: theme.palette.grey[200],
-      zIndex: 1,
+    tableRow: {
+      '&:first-child > *': {
+        borderTop: `1px solid ${theme.palette.divider}`,
+      },
     },
     tableCell: {
-      wordBreak: 'break-all',
-      padding: `${theme.spacing(1)}px ${theme.spacing(2)}px`,
+      wordWrap: 'break-word',
+    },
+    contentWrapper: {
+      flex: '1 1',
+      borderTop: `1px solid ${theme.palette.divider}`,
+      overflow: 'auto',
+      '& > :not(:last-child)': {
+        marginBottom: theme.spacing(2),
+      },
+      paddingBottom: theme.spacing(2),
     },
   }),
 );
@@ -121,69 +114,34 @@ const NodeDetailDataImpl: React.FC<NodeDetailDataProps> = ({
 
   return (
     <Box height="100%" display="flex" flexDirection="column">
-      <Box
-        pt={2}
-        pb={1}
-        pr={2}
-        pl={2}
-        bgcolor="grey.200"
-        color="text.secondary"
-        display="flex"
-        justifyContent="space-between"
-      >
-        <Box display="flex" alignItems="center">
-          <Box mr={0.75}>
-            <FontAwesomeIcon
-              icon={faSquare}
-              size="lg"
-              color={selectServiceColor(serviceName)}
-            />
-          </Box>
-          <Typography variant="h5" className={classes.title}>
-            {serviceName}
-          </Typography>
-        </Box>
-        <Button
-          variant="outlined"
-          onClick={handleSearchTracesButtonClick}
-          data-testid="search-traces-button"
-        >
-          <FontAwesomeIcon icon={faSearch} />
-          <Box component="span" ml={0.75}>
+      <Box px={2} py={1} display="flex" flex="0 0" alignItems="center">
+        <Typography variant="h6" className={classes.title}>
+          {serviceName}
+        </Typography>
+        <Box flex="0 0" ml={0.5}>
+          <Button
+            variant="outlined"
+            onClick={handleSearchTracesButtonClick}
+            data-testid="search-traces-button"
+            startIcon={<FontAwesomeIcon icon={faSearch} />}
+          >
             Traces
-          </Box>
-        </Button>
+          </Button>
+        </Box>
       </Box>
-      <Box
-        height={100}
-        flexGrow={1}
-        bgcolor="background.paper"
-        borderColor="divider"
-        borderTop={1}
-        paddingBottom={2}
-        overflow="auto"
-      >
+      <Box className={classes.contentWrapper}>
         {shownDataList.map((d) => (
-          <Box display="flex" flexDirection="column">
-            <Box height={180} position="relative">
-              <Box
-                position="absolute"
-                top={15}
-                left={15}
-                display="flex"
-                alignItems="center"
-              >
-                <Box color="text.secondary">
-                  <Typography variant="h6">{d.title}</Typography>
-                </Box>
-                <Box color="text.hint" ml={1}>
-                  (traced requests)
-                </Box>
+          <Box key={d.title}>
+            <Box height={240} position="relative">
+              <Box position="absolute" top={15} left={15}>
+                <Typography variant="body1">
+                  {d.title} (traced requests)
+                </Typography>
               </Box>
-              <Box position="absolute" bottom={10} right={15}>
-                <Box color="text.hint" ml={1}>
+              <Box position="absolute" bottom={15} right={15}>
+                <Typography variant="body2" color="textSecondary">
                   {d.formatter(d.edges.length)}
-                </Box>
+                </Typography>
               </Box>
               <ResponsiveContainer>
                 <PieChart>
@@ -194,7 +152,7 @@ const NodeDetailDataImpl: React.FC<NodeDetailDataProps> = ({
                     }))}
                     nameKey="name"
                     dataKey="value"
-                    outerRadius={60}
+                    outerRadius={70}
                   >
                     {d.edges.map((edge) => (
                       <Cell
@@ -203,27 +161,18 @@ const NodeDetailDataImpl: React.FC<NodeDetailDataProps> = ({
                       />
                     ))}
                   </Pie>
+                  <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
             </Box>
-            <Paper className={classes.tablePaper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell className={classes.tableHeadCell}>
-                      Service Name
-                    </TableCell>
-                    <TableCell className={classes.tableHeadCell}>
-                      Call
-                    </TableCell>
-                    <TableCell className={classes.tableHeadCell}>
-                      Error
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
+            <Box px={2}>
+              <Table size="small" className={classes.table}>
                 <TableBody>
                   {d.edges.map((edge) => (
-                    <TableRow>
+                    <TableRow
+                      key={`${edge.source}---${edge.target}`}
+                      className={classes.tableRow}
+                    >
                       <TableCell className={classes.tableCell}>
                         <FontAwesomeIcon
                           icon={faSquare}
@@ -233,17 +182,17 @@ const NodeDetailDataImpl: React.FC<NodeDetailDataProps> = ({
                           {d.selectNodeName(edge)}
                         </Box>
                       </TableCell>
-                      <TableCell className={classes.tableCell}>
+                      <TableCell className={classes.tableCell} align="right">
                         {edge.metrics.normal}
                       </TableCell>
-                      <TableCell className={classes.tableCell}>
+                      <TableCell className={classes.tableCell} align="right">
                         {edge.metrics.danger}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-            </Paper>
+            </Box>
           </Box>
         ))}
       </Box>
