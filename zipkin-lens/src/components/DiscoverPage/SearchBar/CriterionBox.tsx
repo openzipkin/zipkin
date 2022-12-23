@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2022 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -27,10 +27,10 @@ import React, {
 } from 'react';
 import { useMount } from 'react-use';
 import styled, { keyframes } from 'styled-components';
-
+import Criterion, { newCriterion } from '../Criterion';
+import { CRITERION_BOX_HEIGHT } from './constants';
 import HowToUse from './HowToUse';
 import SuggestionList from './SuggestionList';
-import Criterion, { newCriterion } from '../Criterion';
 
 const fadeIn = keyframes`
   0% { opacity: 0 }
@@ -41,12 +41,11 @@ const fadeIn = keyframes`
 
 const Root = styled(Box)`
   display: flex;
-  height: 40px;
+  height: ${CRITERION_BOX_HEIGHT}px;
   border-radius: 3px;
   box-shadow: ${({ theme }) => theme.shadows[1]};
   overflow: hidden;
-  margin-right: ${({ theme }) => theme.spacing(1)}px;
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: ${({ theme }) => theme.palette.common.white};
   cursor: pointer;
   & > *:hover {
@@ -78,10 +77,10 @@ const Input = styled.input.attrs(() => ({
   'data-testid': 'criterion-input',
 }))`
   width: 350px;
-  height: 40px;
+  height: ${CRITERION_BOX_HEIGHT}px;
   padding: 10px;
   box-sizing: border-box;
-  font-size: 1.1rem;
+  font-size: 1rem;
 `;
 
 interface CriterionBoxProps {
@@ -432,10 +431,11 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
           maxWidth={150}
           height="100%"
           bgcolor="primary.dark"
-          p={1}
           overflow="hidden"
           whiteSpace="nowrap"
           textOverflow="ellipsis"
+          lineHeight={`${CRITERION_BOX_HEIGHT}px`}
+          px={1}
         >
           {criterion.key}
         </Box>
@@ -444,10 +444,11 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
             maxWidth={200}
             height="100%"
             bgcolor="primary.main"
-            p={1}
             overflow="hidden"
             whiteSpace="nowrap"
             textOverflow="ellipsis"
+            lineHeight={`${CRITERION_BOX_HEIGHT}px`}
+            px={1}
           >
             {criterion.value}
           </Box>

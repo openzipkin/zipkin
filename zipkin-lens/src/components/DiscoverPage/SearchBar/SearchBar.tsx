@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 The OpenZipkin Authors
+ * Copyright 2015-2022 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -26,20 +26,30 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk';
-
-import Criterion, { newCriterion } from '../Criterion';
-import CriterionBox from './CriterionBox';
 import { loadAutocompleteValues } from '../../../slices/autocompleteValuesSlice';
 import { loadRemoteServices } from '../../../slices/remoteServicesSlice';
 import { loadSpans } from '../../../slices/spansSlice';
 import { RootState } from '../../../store';
+import Criterion, { newCriterion } from '../Criterion';
+import { CRITERION_BOX_HEIGHT } from './constants';
+import CriterionBox from './CriterionBox';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
+    root: {
+      display: 'flex',
+      gap: `${theme.spacing(1)}px`,
+      alignItems: 'center',
+      padding: theme.spacing(1),
+      borderRadius: 3,
+      backgroundColor: theme.palette.background.paper,
+      flexWrap: 'wrap',
+      border: `1px solid ${theme.palette.divider}`,
+    },
     addButton: {
-      height: 40,
-      width: 40,
-      minWidth: 40,
+      height: CRITERION_BOX_HEIGHT,
+      width: CRITERION_BOX_HEIGHT,
+      minWidth: 0,
       color: theme.palette.common.white,
     },
   }),
@@ -172,20 +182,7 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
   }, [handleKeyDown]);
 
   return (
-    <Box
-      minHeight={60}
-      display="flex"
-      alignItems="center"
-      pr={2}
-      pl={2}
-      pt={1}
-      pb={1}
-      borderRadius={3}
-      bgcolor="background.paper"
-      flexWrap="wrap"
-      borderColor="grey.400"
-      border={1}
-    >
+    <Box className={classes.root}>
       {criteria.map((criterion, index) => (
         <CriterionBox
           key={criterion.id}

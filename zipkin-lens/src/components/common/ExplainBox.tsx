@@ -26,17 +26,13 @@ interface ExplainBoxProps {
 const ExplainBox = React.memo<ExplainBoxProps>(({ icon, headerText, text }) => {
   return (
     <Box
-      top={64}
-      left={0}
-      right={0}
-      bottom={0}
-      position="fixed"
+      height="100%"
+      width="100%"
       display="flex"
       alignItems="center"
       justifyContent="center"
       flexDirection="column"
       color="text.secondary"
-      zIndex={-1}
     >
       <FontAwesomeIcon icon={icon} size="10x" />
       <Box mt={3} mb={2}>

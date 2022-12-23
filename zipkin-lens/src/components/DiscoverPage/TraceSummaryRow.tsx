@@ -27,7 +27,6 @@ import moment from 'moment';
 import React, { useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-
 import { selectColorByInfoClass } from '../../constants/color';
 import TraceSummary from '../../models/TraceSummary';
 import { formatDuration } from '../../util/timestamp';
@@ -70,12 +69,7 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({
         </TableCell>
         <TableCell>
           <Box display="flex" alignItems="center">
-            <ServiceNameTypography variant="body1">
-              {traceSummary.root.serviceName}
-            </ServiceNameTypography>
-            <Typography variant="body2" color="textSecondary">
-              {traceSummary.root.spanName}
-            </Typography>
+            {`${traceSummary.root.serviceName}: ${traceSummary.root.spanName}`}
           </Box>
         </TableCell>
         <TableCell>
@@ -106,7 +100,7 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({
         </TableCell>
         <TableCell>
           <Button
-            variant="contained"
+            variant="outlined"
             size="small"
             component={Link}
             to={`traces/${traceSummary.traceId}`}
@@ -119,15 +113,10 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({
         <CollapsibleTableCell>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box margin={1}>
-              <Box display="flex" alignItems="center">
-                <Typography variant="body1" color="textSecondary">
-                  Trace ID:
-                </Typography>
-                <TraceIdTypography>{traceSummary.traceId}</TraceIdTypography>
-              </Box>
               <BadgesWrapper>
                 {sortedServiceSummaries.map((serviceSummary) => (
                   <ServiceBadge
+                    key={serviceSummary.serviceName}
                     serviceName={serviceSummary.serviceName}
                     count={serviceSummary.spanCount}
                     onClick={toggleFilter}
@@ -147,15 +136,6 @@ export default TraceSummaryRow;
 const Root = styled(TableRow)`
   & > * {
     border-bottom: unset;
-  }
-`;
-
-const ServiceNameTypography = styled(Typography).attrs({
-  variant: 'body1',
-})`
-  margin-right: ${({ theme }) => theme.spacing(1)}px;
-  &::after {
-    content: ':';
   }
 `;
 
@@ -185,16 +165,8 @@ const CollapsibleTableCell = styled(TableCell).attrs({
   padding-top: 0;
 `;
 
-const TraceIdTypography = styled(Typography).attrs({
-  variant: 'body1',
-})`
-  margin-left: ${({ theme }) => theme.spacing(0.5)}px;
-`;
-
 const BadgesWrapper = styled.div`
   display: flex;
   flex-wrap: wrap;
-  & > * {
-    margin: ${({ theme }) => theme.spacing(0.5)}px;
-  }
+  gap: ${({ theme }) => theme.spacing(0.5)}px;
 `;
