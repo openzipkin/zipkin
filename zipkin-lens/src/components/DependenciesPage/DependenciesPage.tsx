@@ -44,7 +44,7 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     searchWrapper: {
       backgroundColor: theme.palette.background.paper,
-      padding: theme.spacing(2),
+      padding: theme.spacing(1.5),
       flex: '0 0',
       borderBottom: `1px solid ${theme.palette.divider}`,
     },
@@ -204,7 +204,7 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
     >
       <Box className={classes.searchWrapper}>
         <Box display="flex" justifyContent="center" alignItems="center">
-          <Box display="flex" mr={0.5} alignItems="center">
+          <Box display="flex" alignItems="center">
             <KeyboardDateTimePicker
               label={i18n._(t`Start Time`)}
               inputVariant="outlined"
