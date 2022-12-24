@@ -225,7 +225,7 @@ const DependenciesGraph: React.FC<DependenciesGraphProps> = ({
             },
           ]}
         />
-        <Box position="absolute" left={20} top={20} width={200}>
+        <Box position="absolute" left={20} top={20} width={300}>
           <Autocomplete
             value={filter}
             onChange={handleFilterChange}
