@@ -68,7 +68,6 @@
     "node-fetch": "^2.6.1",
     "prettier": "^2.0.4",
     "prop-types": "^15.6.2",
-    "query-string": "^6.1.0",
     "react": "^16.13.0",
     "react-dom": "^16.13.0",
     "react-redux": "^7.1.0",
