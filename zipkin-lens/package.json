@@ -74,7 +74,6 @@
     "react-router-dom": "^5.0.1",
     "react-scripts": "^3.4.3",
     "react-select": "^3.1.0",
-    "react-spinners": "^0.9.0",
     "react-use": "^14.2.0",
     "react-virtualized": "^9.22.3",
     "react-window": "^1.8.8",
