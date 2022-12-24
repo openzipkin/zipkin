@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2022 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,7 +16,6 @@
 
 import {
   Box,
-  Grid,
   Theme,
   createStyles,
   makeStyles,
@@ -25,12 +24,10 @@ import {
 import moment from 'moment';
 import React, { CSSProperties, useState, useCallback, useMemo } from 'react';
 import ReactSelect, { ValueType, ActionMeta } from 'react-select';
-import { AutoSizer } from 'react-virtualized';
-
-import Edge from './Edge';
-import NodeDetailData from './NodeDetailData';
-import VizceralWrapper from './VizceralWrapper';
 import Dependencies from '../../models/Dependencies';
+import NodeDetailData from './NodeDetailData';
+import { Edge } from './types';
+import VizceralWrapper from './VizceralWrapper';
 
 // These filter functions use any type because they are passed directly to untyped JS code.
 const filterConnections = (object: any, value: any) => {
@@ -108,22 +105,10 @@ const reactSelectStyles = {
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
-    containerGrid: {
-      height: '100%',
-    },
-    graphItemGrid: {
-      height: '100%',
-    },
-    nodeDetailDataItemGrid: {
-      height: '100%',
-      boxShadow: theme.shadows[10],
-      zIndex: 1,
-    },
-    vizceralWrapper: {
-      // In Firefox, 100% height does not work...
-      '& .vizceral': {
-        height: '99%',
-      },
+    detailWrapper: {
+      flex: '0 0 420px',
+      width: 420,
+      borderLeft: `1px solid ${theme.palette.divider}`,
     },
   }),
 );
@@ -238,82 +223,70 @@ const DependenciesGraph: React.FC<DependenciesGraphProps> = ({
   );
 
   return (
-    <Box width="100%" height="100%" data-testid="dependencies-graph">
-      <Grid container className={classes.containerGrid}>
-        <Grid
-          item
-          xs={focusedNodeName ? 7 : 12}
-          className={classes.graphItemGrid}
-        >
-          <AutoSizer>
-            {({ width, height }) => (
-              <Box
-                width={width}
-                height={height}
-                position="relative"
-                className={classes.vizceralWrapper}
-              >
-                <VizceralWrapper
-                  allowDraggingOfNodes
-                  targetFramerate={30}
-                  traffic={{
-                    renderer: 'region',
-                    layout: 'ltrTree',
-                    name: 'dependencies-graph',
-                    maxVolume: maxVolume * 50,
-                    nodes,
-                    connections: edges,
-                    updated: createdTs,
-                  }}
-                  objectHighlighted={handleObjectHighlight}
-                  styles={vizStyle}
-                  key={
-                    // Normally, when updating filters, Vizsceral will show and hide nodes without relaying
-                    // them out. For a large dependency graph, this often won't let us see well the
-                    // information about the filtered nodes, so we prefer to force a relayout any time we
-                    // update the filter. Changing the key based on the filter like this causes react to
-                    // destroy and reconstruct the component from scratch, which will have a layout zooming
-                    // in on the filtered nodes.
-                    filter
-                  }
-                  filters={[
-                    {
-                      name: 'shownConnections',
-                      type: 'connection',
-                      passes: filterConnections,
-                      value: filter,
-                    },
-                    {
-                      name: 'shownNodes',
-                      type: 'node',
-                      passes: filterNodes,
-                      value: filter,
-                    },
-                  ]}
-                />
-              </Box>
-            )}
-          </AutoSizer>
-          <Box position="absolute" left={30} top={30}>
-            <ReactSelect
-              isClearable
-              options={filterOptions}
-              onChange={handleFilterChange}
-              value={!filter ? undefined : { value: filter, label: filter }}
-              styles={reactSelectStyles}
-            />
-          </Box>
-        </Grid>
-        {focusedNodeName ? (
-          <Grid item xs={5} className={classes.nodeDetailDataItemGrid}>
-            <NodeDetailData
-              serviceName={focusedNodeName}
-              targetEdges={targetEdges}
-              sourceEdges={sourceEdges}
-            />
-          </Grid>
-        ) : null}
-      </Grid>
+    <Box
+      width="100%"
+      height="100%"
+      data-testid="dependencies-graph"
+      display="flex"
+    >
+      <Box flex="1 1" position="relative">
+        <VizceralWrapper
+          allowDraggingOfNodes
+          targetFramerate={30}
+          traffic={{
+            renderer: 'region',
+            layout: 'ltrTree',
+            name: 'dependencies-graph',
+            maxVolume: maxVolume * 50,
+            nodes,
+            connections: edges,
+            updated: createdTs,
+          }}
+          objectHighlighted={handleObjectHighlight}
+          styles={vizStyle}
+          key={
+            // Normally, when updating filters, Vizsceral will show and hide nodes without relaying
+            // them out. For a large dependency graph, this often won't let us see well the
+            // information about the filtered nodes, so we prefer to force a relayout any time we
+            // update the filter. Changing the key based on the filter like this causes react to
+            // destroy and reconstruct the component from scratch, which will have a layout zooming
+            // in on the filtered nodes.
+            filter
+          }
+          filters={[
+            {
+              name: 'shownConnections',
+              type: 'connection',
+              passes: filterConnections,
+              value: filter,
+            },
+            {
+              name: 'shownNodes',
+              type: 'node',
+              passes: filterNodes,
+              value: filter,
+            },
+          ]}
+        />
+        <Box position="absolute" left={20} top={20}>
+          <ReactSelect
+            isClearable
+            options={filterOptions}
+            onChange={handleFilterChange}
+            value={!filter ? undefined : { value: filter, label: filter }}
+            styles={reactSelectStyles}
+          />
+        </Box>
+      </Box>
+      {focusedNodeName ? (
+        <Box className={classes.detailWrapper}>
+          <NodeDetailData
+            serviceName={focusedNodeName}
+            targetEdges={targetEdges}
+            sourceEdges={sourceEdges}
+          />
+        </Box>
+      ) : null}
     </Box>
   );
 };
