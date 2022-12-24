@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2022 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,7 +12,7 @@
  * the License.
  */
 
-import { faSearch, faProjectDiagram } from '@fortawesome/free-solid-svg-icons';
+import { faProjectDiagram, faSync } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { t, Trans } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
@@ -30,34 +30,27 @@ import moment from 'moment';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
-
-import DependenciesGraph from './DependenciesGraph';
-import { clearAlert, setAlert } from '../App/slice';
-import ExplainBox from '../common/ExplainBox';
 import {
   clearDependencies,
   loadDependencies,
 } from '../../slices/dependenciesSlice';
 import { RootState } from '../../store';
+import { clearAlert, setAlert } from '../App/slice';
+import ExplainBox from '../common/ExplainBox';
 import { LoadingIndicator } from '../common/LoadingIndicator';
+import DependenciesGraph from './DependenciesGraph';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
+    searchWrapper: {
+      backgroundColor: theme.palette.background.paper,
+      padding: theme.spacing(2),
+      flex: '0 0',
+      borderBottom: `1px solid ${theme.palette.divider}`,
+    },
     dateTimePicker: {
       marginLeft: theme.spacing(1),
       marginRight: theme.spacing(1),
-    },
-    dateTimePickerInput: {
-      fontSize: '1rem',
-      height: '1.8rem',
-      padding: `${theme.spacing(0.4)}px ${theme.spacing(0.6)}px`,
-    },
-    searchButton: {
-      fontSize: '1.2rem',
-      padding: theme.spacing(1),
-      minWidth: 0,
-      width: 32,
-      height: 32,
     },
   }),
 );
@@ -209,39 +202,41 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
       display="flex"
       flexDirection="column"
     >
-      <Box bgcolor="background.paper" boxShadow={3} p={3}>
+      <Box className={classes.searchWrapper}>
         <Box display="flex" justifyContent="center" alignItems="center">
-          <KeyboardDateTimePicker
-            label={i18n._(t`Start Time`)}
-            inputVariant="outlined"
-            value={tempTimeRange.startTime}
-            onChange={handleStartTimeChange}
-            format="MM/DD/YYYY HH:mm:ss"
-            className={classes.dateTimePicker}
-            InputProps={{ classes: { input: classes.dateTimePickerInput } }}
-          />
-          -
-          <KeyboardDateTimePicker
-            label={i18n._(t`End Time`)}
-            inputVariant="outlined"
-            value={tempTimeRange.endTime}
-            onChange={handleEndTimeChange}
-            format="MM/DD/YYYY HH:mm:ss"
-            className={classes.dateTimePicker}
-            InputProps={{ classes: { input: classes.dateTimePickerInput } }}
-          />
+          <Box display="flex" mr={0.5} alignItems="center">
+            <KeyboardDateTimePicker
+              label={i18n._(t`Start Time`)}
+              inputVariant="outlined"
+              value={tempTimeRange.startTime}
+              onChange={handleStartTimeChange}
+              format="MM/DD/YYYY HH:mm:ss"
+              className={classes.dateTimePicker}
+              size="small"
+            />
+            -
+            <KeyboardDateTimePicker
+              label={i18n._(t`End Time`)}
+              inputVariant="outlined"
+              value={tempTimeRange.endTime}
+              onChange={handleEndTimeChange}
+              format="MM/DD/YYYY HH:mm:ss"
+              className={classes.dateTimePicker}
+              size="small"
+            />
+          </Box>
           <Button
             color="primary"
             variant="contained"
             onClick={handleSearchButtonClick}
-            className={classes.searchButton}
             data-testid="search-button"
+            startIcon={<FontAwesomeIcon icon={faSync} />}
           >
-            <FontAwesomeIcon icon={faSearch} />
+            <Trans>Run Query</Trans>
           </Button>
         </Box>
       </Box>
-      <Box m={4} flexGrow={1}>
+      <Box flex="1 1" bgcolor="background.paper" overflow="hidden">
         {content}
       </Box>
     </Box>
