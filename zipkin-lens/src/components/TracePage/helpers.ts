@@ -22,6 +22,7 @@ type SpanTreeNode = AdjustedSpan & {
 
 export const convertSpansToSpanTree = (
   spans: AdjustedSpan[],
+  traceId: string,
 ): SpanTreeNode[] => {
   const idToSpan = spans.reduce<{ [id: string]: AdjustedSpan }>((acc, cur) => {
     acc[cur.spanId] = cur;
@@ -29,7 +30,12 @@ export const convertSpansToSpanTree = (
   }, {});
   const unconsumedSpans = { ...idToSpan };
 
-  const roots = spans.filter((span) => !span.parentId);
+  let roots = spans.filter((span) => !span.parentId);
+  // There are cases where the parentId of the root span is not empty but traceId.
+  // As a fallback, will address that case.
+  if (roots.length === 0) {
+    roots = spans.filter((span) => span.parentId === traceId);
+  }
   roots.forEach((root) => {
     delete unconsumedSpans[root.spanId];
   });

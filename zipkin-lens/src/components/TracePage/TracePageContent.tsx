@@ -42,9 +42,10 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
   const [isMiniTimelineOpen, toggleIsMiniTimelineOpen] = useToggle(true);
   const [isSpanTableOpen, toggleIsSpanTableOpen] = useToggle(false);
 
-  const roots = useMemo(() => convertSpansToSpanTree(trace.spans), [
-    trace.spans,
-  ]);
+  const roots = useMemo(
+    () => convertSpansToSpanTree(trace.spans, trace.traceId),
+    [trace.spans, trace.traceId],
+  );
 
   const { spanRows, minTimestamp, maxTimestamp } = useMemo(
     () =>
