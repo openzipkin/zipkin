@@ -14,7 +14,7 @@
 
 import { Box, makeStyles } from '@material-ui/core';
 import React, { useCallback, useEffect, useRef } from 'react';
-import { AutoSizer } from 'react-virtualized';
+import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 import { useMeasure } from 'react-use';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';

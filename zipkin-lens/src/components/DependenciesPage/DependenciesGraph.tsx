@@ -20,10 +20,11 @@ import {
   createStyles,
   makeStyles,
   useTheme,
+  TextField,
 } from '@material-ui/core';
+import { Autocomplete } from '@material-ui/lab';
 import moment from 'moment';
-import React, { CSSProperties, useState, useCallback, useMemo } from 'react';
-import ReactSelect, { ValueType, ActionMeta } from 'react-select';
+import React, { useState, useCallback, useMemo } from 'react';
 import Dependencies from '../../models/Dependencies';
 import NodeDetailData from './NodeDetailData';
 import { Edge } from './types';
@@ -82,27 +83,6 @@ export const getNodesAndEdges = (dependencies: Dependencies) => {
   return { nodes, edges };
 };
 
-// IntelliJ may miss on "Unused property" analysis. Double-check here as we don't test CSS:
-// https://github.com/JedWatson/react-select/blob/cba15309c4d7523ab6a785c8d5c0c7ec1048e22f/packages/react-select/src/styles.js#L38-L61
-const reactSelectStyles = {
-  control: (base: CSSProperties) => ({
-    ...base,
-    width: '15rem',
-  }),
-  option: (base: CSSProperties) => ({
-    ...base,
-    cursor: 'pointer',
-  }),
-  clearIndicator: (base: CSSProperties) => ({
-    ...base,
-    cursor: 'pointer',
-  }),
-  dropdownIndicator: (base: CSSProperties) => ({
-    ...base,
-    cursor: 'pointer',
-  }),
-};
-
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     detailWrapper: {
@@ -142,22 +122,10 @@ const DependenciesGraph: React.FC<DependenciesGraphProps> = ({
 
   const [focusedNodeName, setFocusedNodeName] = useState('');
 
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState<string | null>();
   const handleFilterChange = useCallback(
-    (
-      selected: ValueType<{ value: string }>,
-      actionMeta: ActionMeta<{ value: string; label: string }>,
-    ) => {
-      setFocusedNodeName('');
-      if (actionMeta.action === 'clear') {
-        setFilter('');
-        return;
-      }
-      if (actionMeta.action === 'select-option') {
-        if (selected && 'value' in selected /* Type refinement */) {
-          setFilter(selected.value);
-        }
-      }
+    (_event: any, value: string | null) => {
+      setFilter(value);
     },
     [],
   );
@@ -211,17 +179,6 @@ const DependenciesGraph: React.FC<DependenciesGraphProps> = ({
     return 0;
   }, [edges]);
 
-  const filterOptions = useMemo(
-    () =>
-      nodes
-        .map((node) => ({
-          value: node.name,
-          label: node.name,
-        }))
-        .sort((a, b) => a.value.localeCompare(b.value)),
-    [nodes],
-  );
-
   return (
     <Box
       width="100%"
@@ -268,13 +225,21 @@ const DependenciesGraph: React.FC<DependenciesGraphProps> = ({
             },
           ]}
         />
-        <Box position="absolute" left={20} top={20}>
-          <ReactSelect
-            isClearable
-            options={filterOptions}
+        <Box position="absolute" left={20} top={20} width={300}>
+          <Autocomplete
+            value={filter}
             onChange={handleFilterChange}
-            value={!filter ? undefined : { value: filter, label: filter }}
-            styles={reactSelectStyles}
+            options={nodes.map((node) => node.name)}
+            fullWidth
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="outlined"
+                label="Filter"
+                placeholder="Select..."
+                size="small"
+              />
+            )}
           />
         </Box>
       </Box>

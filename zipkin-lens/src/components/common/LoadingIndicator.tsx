@@ -12,22 +12,16 @@
  * the License.
  */
 
-import { Box, useTheme } from '@material-ui/core';
+import { Box, CircularProgress } from '@material-ui/core';
 import React from 'react';
-import { ScaleLoader } from 'react-spinners';
 
-export const LoadingIndicator: React.FC = () => {
-  const theme = useTheme();
-
-  return (
-    <Box
-      display="flex"
-      justifyContent="center"
-      mt={10}
-      mb={10}
-      data-testid="loading-indicator"
-    >
-      <ScaleLoader color={theme.palette.primary.light} />
-    </Box>
-  );
-};
+export const LoadingIndicator = () => (
+  <Box
+    display="flex"
+    justifyContent="center"
+    mt={10}
+    data-testid="loading-indicator"
+  >
+    <CircularProgress />
+  </Box>
+);
