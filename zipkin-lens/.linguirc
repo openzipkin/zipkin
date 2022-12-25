@@ -6,7 +6,9 @@
     "zh-cn"
   ],
   "sourceLocale": "en",
-  "fallbackLocale": "en",
+  "fallbackLocales": {
+    "default": "en"
+  },
   "catalogs": [
     {
       "path": "src/translations/{locale}/messages",

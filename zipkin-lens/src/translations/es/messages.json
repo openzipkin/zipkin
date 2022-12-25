@@ -24,6 +24,7 @@
   "Relative Time": "Tiempo Relativo",
   "Repository": "Repositorio",
   "Root": "Raíz",
+  "Run Query": "",
   "Run query": "Ejecutar Consulta",
   "Search Dependencies": "Buscar Dependencias",
   "Search Traces": "Buscar Trazas",
@@ -44,5 +45,6 @@
   "Zipkin Home": "Zipkin Inicio",
   "hide annotations": "ocultar anotaciones",
   "show all annotations": "mostrar todas las anotaciones",
+  "{0}": "",
   "{0} Results": "{0} Resultados"
 }

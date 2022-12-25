@@ -16,6 +16,7 @@
   "Please select the start and end time. Then, click the search button.": "S'il vous plaît sélectionnez la date de début et de fin. Puis cliquez sur le bouton de recherche",
   "Relative Time": "Temps Relatif",
   "Root": "Racine",
+  "Run Query": "",
   "Search Dependencies": "Rechercher les dépendances",
   "Search Traces": "Rechercher les traces",
   "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right.": "La recherche a été désactivée via la propriété searchEnabled. Vous pouvez toujours afficher des traces spécifiques dont vous connaissez l'identifiant de trace en le saisissant dans la zone de texte \"ID Trace ... \" en haut à droite.",
@@ -32,5 +33,6 @@
   "Zipkin": "Zipkin",
   "hide annotations": "masquer les annotations",
   "show all annotations": "afficher toutes les annotations",
+  "{0}": "",
   "{0} Results": "{0} Résultats"
 }

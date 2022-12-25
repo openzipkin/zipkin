@@ -24,6 +24,7 @@
   "Relative Time": "",
   "Repository": "",
   "Root": "",
+  "Run Query": "Run Query",
   "Search Dependencies": "",
   "Search Traces": "",
   "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right.": "",
@@ -43,5 +44,6 @@
   "Zipkin Home": "",
   "hide annotations": "",
   "show all annotations": "",
+  "{0}": "{0}",
   "{0} Results": ""
 }
