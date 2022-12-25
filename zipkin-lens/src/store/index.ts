@@ -11,6 +11,11 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { configureStore } from '@reduxjs/toolkit';
 import createReducer from '../reducers';
 
 export type RootState = ReturnType<ReturnType<typeof createReducer>>;
+
+export const store = configureStore({
+  reducer: createReducer(),
+});
