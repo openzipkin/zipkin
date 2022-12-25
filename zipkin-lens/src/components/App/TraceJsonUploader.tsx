@@ -13,9 +13,8 @@ import { Trans } from '@lingui/macro';
  * the License.
  */
 
-import { faUpload } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconButton, Tooltip } from '@material-ui/core';
+import { Publish as PublishIcon } from '@material-ui/icons';
 import { unwrapResult } from '@reduxjs/toolkit';
 import React, { useCallback, useRef } from 'react';
 import { useDispatch } from 'react-redux';
@@ -63,7 +62,7 @@ const TraceJsonUploader: React.FC = () => {
       <FileInput ref={inputEl} onChange={handleFileChange} />
       <Tooltip title={<Trans>Upload JSON</Trans>}>
         <IconButton onClick={handleClick}>
-          <FontAwesomeIcon icon={faUpload} size="sm" />
+          <PublishIcon />
         </IconButton>
       </Tooltip>
     </>

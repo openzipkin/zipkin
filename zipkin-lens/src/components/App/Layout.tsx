@@ -11,12 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import {
-  faProjectDiagram,
-  faSearch,
-  faQuestionCircle,
-} from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+
 import { t } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import {
@@ -29,6 +24,11 @@ import {
   IconButton as MuiIconButton,
   Tooltip,
 } from '@material-ui/core';
+import {
+  AccountTree as AccountTreeIcon,
+  Search as SearchIcon,
+  HelpOutline as HelpOutlineIcon,
+} from '@material-ui/icons';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -72,13 +72,13 @@ const Layout: React.FC = ({ children }) => {
                 <HeaderMenuItem
                   title={i18n._(t`Find a trace`)}
                   path="/"
-                  icon={faSearch}
+                  icon={<SearchIcon />}
                 />
                 {config.dependency.enabled && (
                   <HeaderMenuItem
                     title={i18n._(t`Dependencies`)}
                     path="/dependency"
-                    icon={faProjectDiagram}
+                    icon={<AccountTreeIcon />}
                   />
                 )}
               </Box>
@@ -94,7 +94,7 @@ const Layout: React.FC = ({ children }) => {
                   <Box ml={1}>
                     <Tooltip title={i18n._(t`Support`)}>
                       <MuiIconButton href={config.supportUrl}>
-                        <FontAwesomeIcon icon={faQuestionCircle} />
+                        <HelpOutlineIcon />
                       </MuiIconButton>
                     </Tooltip>
                   </Box>

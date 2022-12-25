@@ -32,15 +32,4 @@ describe('<ServiceBadge />', () => {
       );
     });
   });
-
-  it('should render delete button when onDelete is set', () => {
-    const { getAllByTestId } = render(
-      <ServiceBadge
-        serviceName="serviceA"
-        onClick={() => {}}
-        onDelete={() => {}}
-      />,
-    );
-    expect(getAllByTestId('ServiceBadge--delete-button').length).toBe(1);
-  });
 });

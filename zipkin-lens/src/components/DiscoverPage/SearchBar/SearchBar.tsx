@@ -14,8 +14,6 @@
 
 /* eslint-disable no-shadow */
 
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   Box,
   Button,
@@ -23,6 +21,7 @@ import {
   createStyles,
   makeStyles,
 } from '@material-ui/core';
+import { Add as AddIcon } from '@material-ui/icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk';
@@ -214,7 +213,7 @@ export const SearchBarImpl: React.FC<SearchBarProps> = ({
         className={classes.addButton}
         data-testid="add-button"
       >
-        <FontAwesomeIcon icon={faPlus} size="lg" />
+        <AddIcon />
       </Button>
     </Box>
   );

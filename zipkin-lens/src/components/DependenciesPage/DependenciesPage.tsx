@@ -12,8 +12,6 @@
  * the License.
  */
 
-import { faProjectDiagram, faSync } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { t, Trans } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import {
@@ -23,6 +21,10 @@ import {
   createStyles,
   makeStyles,
 } from '@material-ui/core';
+import {
+  AccountTree as AccountTreeIcon,
+  PlayArrow as PlayArrowIcon,
+} from '@material-ui/icons';
 import { KeyboardDateTimePicker } from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
 import { History, Location } from 'history';
@@ -184,7 +186,7 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
   } else {
     content = (
       <ExplainBox
-        icon={faProjectDiagram}
+        icon={<AccountTreeIcon fontSize="inherit" />}
         headerText={<Trans>Search Dependencies</Trans>}
         text={
           <Trans>
@@ -230,7 +232,7 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
             variant="contained"
             onClick={handleSearchButtonClick}
             data-testid="search-button"
-            startIcon={<FontAwesomeIcon icon={faSync} />}
+            startIcon={<PlayArrowIcon />}
           >
             <Trans>Run Query</Trans>
           </Button>

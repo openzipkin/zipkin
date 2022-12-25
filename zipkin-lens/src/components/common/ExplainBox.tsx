@@ -12,13 +12,11 @@
  * the License.
  */
 
-import { IconDefinition } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Box, Typography } from '@material-ui/core';
-import React from 'react';
+import React, { ReactNode } from 'react';
 
 interface ExplainBoxProps {
-  icon: IconDefinition;
+  icon: ReactNode;
   headerText: React.ReactNode;
   text: React.ReactNode;
 }
@@ -34,8 +32,10 @@ const ExplainBox = React.memo<ExplainBoxProps>(({ icon, headerText, text }) => {
       flexDirection="column"
       color="text.secondary"
     >
-      <FontAwesomeIcon icon={icon} size="10x" />
-      <Box mt={3} mb={2}>
+      <Box fontSize="12rem" lineHeight="1">
+        {icon}
+      </Box>
+      <Box mb={2}>
         <Typography variant="h4">{headerText}</Typography>
       </Box>
       <Typography variant="body1">{text}</Typography>

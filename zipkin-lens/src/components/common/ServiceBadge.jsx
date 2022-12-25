@@ -13,8 +13,6 @@
  */
 import PropTypes from 'prop-types';
 import React, { useMemo, useCallback } from 'react';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles, ThemeProvider } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
@@ -51,16 +49,14 @@ const propTypes = {
   serviceName: PropTypes.string.isRequired,
   count: PropTypes.number,
   onClick: PropTypes.func,
-  onDelete: PropTypes.func,
 };
 
 const defaultProps = {
   count: null,
   onClick: null,
-  onDelete: null,
 };
 
-const ServiceBadgeImpl = ({ serviceName, count, onClick, onDelete }) => {
+const ServiceBadgeImpl = ({ serviceName, count, onClick }) => {
   const classes = useStyles();
 
   const label = useMemo(() => `${serviceName}${count ? ` (${count})` : ''}`, [
@@ -83,15 +79,6 @@ const ServiceBadgeImpl = ({ serviceName, count, onClick, onDelete }) => {
       >
         {label}
       </Box>
-      {onDelete ? (
-        <Box
-          className={`${classes.buttonBase} ${classes.clickableButton}`}
-          onClick={onDelete}
-          data-testid="ServiceBadge--delete-button"
-        >
-          <FontAwesomeIcon icon={faTimes} />
-        </Box>
-      ) : null}
     </Paper>
   );
 };

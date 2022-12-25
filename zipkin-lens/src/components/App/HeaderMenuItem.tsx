@@ -12,11 +12,9 @@
  * the License.
  */
 
-import { IconProp } from '@fortawesome/fontawesome-svg-core';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Theme, Typography, createStyles, makeStyles } from '@material-ui/core';
 import classNames from 'classnames';
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -46,7 +44,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 interface HeaderMenuItemProps {
-  icon: IconProp;
+  icon: ReactNode;
   title: string;
   path: string;
 }
@@ -67,7 +65,7 @@ const HeaderMenuItem: React.FC<HeaderMenuItemProps> = ({
         [classes['root--selected']]: isSelected,
       })}
     >
-      <FontAwesomeIcon icon={icon} size="lg" />
+      {icon}
       <Title>{title}</Title>
     </Link>
   );

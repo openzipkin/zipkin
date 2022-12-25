@@ -14,9 +14,8 @@
 
 /* eslint-disable no-shadow */
 
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Box, ClickAwayListener } from '@material-ui/core';
+import { Clear as ClearIcon } from '@material-ui/icons';
 import React, {
   useCallback,
   useEffect,
@@ -62,8 +61,8 @@ const FocusedRoot = styled(Box)`
 `;
 
 const DeleteButton = styled.button`
-  height: 100%;
-  width: 30;
+  display: flex;
+  align-items: center;
   color: ${({ theme }) => theme.palette.common.white};
   background-color: ${({ theme }) => theme.palette.primary.main};
   cursor: pointer;
@@ -454,7 +453,7 @@ const CriterionBox: React.FC<CriterionBoxProps> = ({
           </Box>
         )}
         <DeleteButton type="button" onClick={handleDeleteButtonClick}>
-          <FontAwesomeIcon icon={faTimes} size="lg" />
+          <ClearIcon fontSize="small" />
         </DeleteButton>
       </Root>
     );

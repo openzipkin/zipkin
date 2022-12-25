@@ -12,8 +12,6 @@
  * the License.
  */
 
-import { faSquare, faSearch } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   Box,
   Button,
@@ -26,6 +24,7 @@ import {
   createStyles,
   makeStyles,
 } from '@material-ui/core';
+import { Stop as StopIcon, Search as SearchIcon } from '@material-ui/icons';
 import React, { useCallback } from 'react';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -123,7 +122,7 @@ const NodeDetailDataImpl: React.FC<NodeDetailDataProps> = ({
             variant="outlined"
             onClick={handleSearchTracesButtonClick}
             data-testid="search-traces-button"
-            startIcon={<FontAwesomeIcon icon={faSearch} />}
+            startIcon={<SearchIcon />}
           >
             Traces
           </Button>
@@ -174,9 +173,10 @@ const NodeDetailDataImpl: React.FC<NodeDetailDataProps> = ({
                       className={classes.tableRow}
                     >
                       <TableCell className={classes.tableCell}>
-                        <FontAwesomeIcon
-                          icon={faSquare}
-                          color={selectServiceColor(d.selectNodeName(edge))}
+                        <StopIcon
+                          style={{
+                            color: selectServiceColor(d.selectNodeName(edge)),
+                          }}
                         />
                         <Box component="span" ml={0.5}>
                           {d.selectNodeName(edge)}

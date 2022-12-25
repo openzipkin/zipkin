@@ -14,8 +14,6 @@
 
 /* eslint-disable no-shadow */
 
-import { faHistory, faSync, faSearch } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Trans } from '@lingui/macro';
 import {
   Box,
@@ -30,6 +28,9 @@ import {
 } from '@material-ui/core';
 import ExpandLessIcon from '@material-ui/icons/ExpandLess';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import HistoryIcon from '@material-ui/icons/History';
+import PlayArrowIcon from '@material-ui/icons/PlayArrow';
+import SearchIcon from '@material-ui/icons/Search';
 import SettingsIcon from '@material-ui/icons/Settings';
 import { Autocomplete } from '@material-ui/lab';
 import moment from 'moment';
@@ -567,7 +568,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   } else if (traceSummaries.length === 0) {
     content = (
       <ExplainBox
-        icon={faSearch}
+        icon={<SearchIcon fontSize="inherit" />}
         headerText={<Trans>Search Traces</Trans>}
         text={
           <Trans>
@@ -699,7 +700,7 @@ const LookbackButton = styled(
   }: { isShowingLookbackMenu: boolean } & ButtonProps) => (
     <Button
       variant="outlined"
-      startIcon={<FontAwesomeIcon icon={faHistory} />}
+      startIcon={<HistoryIcon />}
       endIcon={isShowingLookbackMenu ? <ExpandLessIcon /> : <ExpandMoreIcon />}
       {...rest}
     />
@@ -713,7 +714,7 @@ const LookbackButton = styled(
 const SearchButton = styled(Button).attrs({
   variant: 'contained',
   color: 'primary',
-  startIcon: <FontAwesomeIcon icon={faSync} />,
+  startIcon: <PlayArrowIcon />,
 })`
   flex-shrink: 0;
   color: ${({ theme }) => theme.palette.common.white};
