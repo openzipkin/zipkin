@@ -58,7 +58,7 @@
     "history": "^4.10.1",
     "http-proxy-middleware": "^1.0.3",
     "jest-environment-jsdom-sixteen": "^1.0.3",
-    "lodash": "^4.17.20",
+    "lodash": "4.17.21",
     "moment": "^2.24.0",
     "node-fetch": "^2.6.1",
     "prettier": "^2.0.4",
