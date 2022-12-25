@@ -30,11 +30,11 @@ import DependenciesPage from '../DependenciesPage';
 import DiscoverPage from '../DiscoverPage';
 import TracePage from '../TracePage';
 import { UiConfig, UiConfigConsumer } from '../UiConfig';
+import configureStore from '../../store/configure-store';
 import { theme } from '../../constants/color';
 import { i18n } from '../../util/locale';
 import { BASE_PATH } from '../../constants/api';
 import AlertSnackbar from './AlertSnackbar';
-import { store } from '../../store';
 
 const App: React.FC = () => {
   useTitle('Zipkin');
@@ -47,7 +47,7 @@ const App: React.FC = () => {
             <MuiThemeProvider theme={theme}>
               <UiConfigConsumer>
                 {(config) => (
-                  <Provider store={store}>
+                  <Provider store={configureStore(config)}>
                     <AlertSnackbar />
                     <I18nProvider i18n={i18n}>
                       <BrowserRouter basename={BASE_PATH}>
