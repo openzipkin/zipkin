@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2022 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,35 +11,36 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
-import { mount } from 'enzyme';
 
+import { render } from '@testing-library/react';
+import React from 'react';
 import ServiceBadge from './ServiceBadge';
 
 describe('<ServiceBadge />', () => {
   describe('should render a label correctly', () => {
     it('only serviceName', () => {
-      const wrapper = mount(<ServiceBadge serviceName="serviceA" />);
-      const item = wrapper.find('[data-test="badge"]').first();
-      expect(item.text()).toBe('serviceA');
+      const { getByTestId } = render(<ServiceBadge serviceName="serviceA" />);
+      expect(getByTestId('ServiceBadge--label').textContent).toBe('serviceA');
     });
 
     it('with count', () => {
-      const wrapper = mount(<ServiceBadge serviceName="serviceA" count={8} />);
-      const item = wrapper.find('[data-test="badge"]').first();
-      expect(item.text()).toBe('serviceA (8)');
+      const { getByTestId } = render(
+        <ServiceBadge serviceName="serviceA" count={8} />,
+      );
+      expect(getByTestId('ServiceBadge--label').textContent).toBe(
+        'serviceA (8)',
+      );
     });
   });
 
   it('should render delete button when onDelete is set', () => {
-    const wrapper = mount(
+    const { getAllByTestId } = render(
       <ServiceBadge
         serviceName="serviceA"
         onClick={() => {}}
         onDelete={() => {}}
       />,
     );
-    const items = wrapper.find('[data-test="delete-button"]');
-    expect(items.hostNodes().length).toBe(1);
+    expect(getAllByTestId('ServiceBadge--delete-button').length).toBe(1);
   });
 });

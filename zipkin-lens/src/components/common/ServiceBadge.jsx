@@ -79,7 +79,7 @@ const ServiceBadgeImpl = ({ serviceName, count, onClick, onDelete }) => {
           onClick ? classes.clickableButton : ''
         }`}
         onClick={handleClick}
-        data-test="badge"
+        data-testid="ServiceBadge--label"
       >
         {label}
       </Box>
@@ -87,7 +87,7 @@ const ServiceBadgeImpl = ({ serviceName, count, onClick, onDelete }) => {
         <Box
           className={`${classes.buttonBase} ${classes.clickableButton}`}
           onClick={onDelete}
-          data-test="delete-button"
+          data-testid="ServiceBadge--delete-button"
         >
           <FontAwesomeIcon icon={faTimes} />
         </Box>
