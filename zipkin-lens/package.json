@@ -61,7 +61,7 @@
     "moment": "^2.24.0",
     "node-fetch": "^2.6.1",
     "prettier": "^2.0.4",
-    "prop-types": "^15.6.2",
+    "prop-types": "15.8.1",
     "react": "^16.13.0",
     "react-dom": "^16.13.0",
     "react-redux": "8.0.5",
