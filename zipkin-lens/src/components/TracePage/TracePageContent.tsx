@@ -16,6 +16,7 @@ import { Box, Drawer } from '@material-ui/core';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useToggle } from 'react-use';
 import AdjustedTrace, { AdjustedSpan } from '../../models/AdjustedTrace';
+import Span from '../../models/Span';
 import { Header } from './Header/Header';
 import {
   convertSpansToSpanTree,
@@ -29,9 +30,13 @@ const SPAN_DETAIL_DRAWER_WIDTH = '480px';
 
 type TracePageContentProps = {
   trace: AdjustedTrace;
+  rawTrace: Span[];
 };
 
-export const TracePageContent = ({ trace }: TracePageContentProps) => {
+export const TracePageContent = ({
+  trace,
+  rawTrace,
+}: TracePageContentProps) => {
   const [rerootedSpanId, setRerootedSpanId] = useState<string>();
   const [closedSpanIdMap, setClosedSpanIdMap] = useState<{
     [spanId: string]: boolean;
@@ -79,7 +84,11 @@ export const TracePageContent = ({ trace }: TracePageContentProps) => {
   return (
     <Box display="flex" flexDirection="column" height="calc(100vh - 64px)">
       <Box flex="0 0">
-        <Header trace={trace} toggleIsSpanTableOpen={toggleIsSpanTableOpen} />
+        <Header
+          trace={trace}
+          rawTrace={rawTrace}
+          toggleIsSpanTableOpen={toggleIsSpanTableOpen}
+        />
       </Box>
       <Box flex="1 1" display="flex" overflow="hidden">
         <Box flex="1 1">

@@ -33,9 +33,10 @@ const propTypes = {
 export const TracePageImpl = React.memo(({ match }) => {
   const { traceId } = match.params;
 
-  const { isLoading, traceSummary, error } = useSelector((state) => ({
+  const { isLoading, traceSummary, error, rawTrace } = useSelector((state) => ({
     isLoading: state.traces.traces[traceId]?.isLoading || false,
     traceSummary: state.traces.traces[traceId]?.adjustedTrace || undefined,
+    rawTrace: state.traces.traces[traceId]?.rawTrace || undefined,
     error: state.traces.traces[traceId]?.error || undefined,
   }));
 
@@ -71,10 +72,10 @@ export const TracePageImpl = React.memo(({ match }) => {
     return <LoadingIndicator />;
   }
 
-  if (!traceSummary) {
+  if (!traceSummary || !rawTrace) {
     return null;
   }
-  return <TracePageContent trace={traceSummary} />;
+  return <TracePageContent trace={traceSummary} rawTrace={rawTrace} />;
 });
 
 TracePageImpl.propTypes = propTypes;

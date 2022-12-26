@@ -19,6 +19,7 @@ import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import * as api from '../../../constants/api';
 import AdjustedTrace from '../../../models/AdjustedTrace';
+import Span from '../../../models/Span';
 import { setAlert } from '../../App/slice';
 import { useUiConfig } from '../../UiConfig';
 
@@ -32,9 +33,10 @@ const useStyles = makeStyles(() => ({
 
 type HeaderMenuProps = {
   trace: AdjustedTrace;
+  rawTrace: Span[];
 };
 
-export const HeaderMenu = ({ trace }: HeaderMenuProps) => {
+export const HeaderMenu = ({ trace, rawTrace }: HeaderMenuProps) => {
   const classes = useStyles();
   const config = useUiConfig();
   const dispatch = useDispatch();
@@ -126,6 +128,20 @@ export const HeaderMenu = ({ trace }: HeaderMenuProps) => {
       });
   }, [archivePostUrl, archiveUrl, dispatch, trace.traceId]);
 
+  const handleDownloadJsonButtonClick = useCallback(() => {
+    const url = window.URL.createObjectURL(
+      new Blob([JSON.stringify(rawTrace)], { type: 'text/json' }),
+    );
+    const a = document.createElement('a');
+    a.download = `${trace.traceId}.json`;
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    a.parentNode?.removeChild(a);
+
+    handleMenuClose();
+  }, [rawTrace, trace.traceId]);
+
   return (
     <>
       <Button
@@ -142,13 +158,7 @@ export const HeaderMenu = ({ trace }: HeaderMenuProps) => {
         onClose={handleMenuClose}
       >
         {traceJsonUrl && (
-          <MenuItem
-            onClick={handleMenuClose}
-            component="a"
-            href={traceJsonUrl}
-            target="_blank"
-            rel="noopener"
-          >
+          <MenuItem onClick={handleDownloadJsonButtonClick}>
             <Trans>Download JSON</Trans>
           </MenuItem>
         )}
