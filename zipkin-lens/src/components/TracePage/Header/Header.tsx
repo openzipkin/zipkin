@@ -18,6 +18,7 @@ import { Box, Button, makeStyles, Typography } from '@material-ui/core';
 import { List as ListIcon } from '@material-ui/icons';
 import React from 'react';
 import AdjustedTrace from '../../../models/AdjustedTrace';
+import Span from '../../../models/Span';
 import { HeaderMenu } from './HeaderMenu';
 
 const useStyles = makeStyles((theme) => ({
@@ -67,10 +68,15 @@ const useStyles = makeStyles((theme) => ({
 
 type HeaderProps = {
   trace: AdjustedTrace;
+  rawTrace: Span[];
   toggleIsSpanTableOpen: () => void;
 };
 
-export const Header = ({ trace, toggleIsSpanTableOpen }: HeaderProps) => {
+export const Header = ({
+  trace,
+  rawTrace,
+  toggleIsSpanTableOpen,
+}: HeaderProps) => {
   const classes = useStyles();
   const { i18n } = useLingui();
 
@@ -89,7 +95,7 @@ export const Header = ({ trace, toggleIsSpanTableOpen }: HeaderProps) => {
           >
             Span table
           </Button>
-          <HeaderMenu trace={trace} />
+          <HeaderMenu trace={trace} rawTrace={rawTrace} />
         </Box>
       </Box>
       <Box className={classes.infoRow}>
