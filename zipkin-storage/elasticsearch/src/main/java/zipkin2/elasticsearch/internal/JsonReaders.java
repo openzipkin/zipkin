@@ -66,7 +66,6 @@ public final class JsonReaders {
   }
 
   static void visitObject(JsonParser parser, String name, Set<String> result) throws IOException {
-    checkStartObject(parser, true);
     JsonToken value;
     while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
       if (value == null) {
@@ -91,7 +90,9 @@ public final class JsonReaders {
             // End of input so ignore.
             return;
           }
-          visitObject(parser, name, result);
+          if (checkStartObject(parser, false)) {
+            visitObject(parser, name, result);
+          }
         }
         break;
       case START_OBJECT:

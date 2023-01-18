@@ -117,7 +117,7 @@ public final class JsonSerializers {
           result.shared(parser.getBooleanValue());
           break;
         default:
-          // Skip
+          skipUnknownValue(parser);
       }
     }
 
@@ -153,7 +153,7 @@ public final class JsonSerializers {
           port = parser.getIntValue();
           break;
         default:
-          // Skip
+          skipUnknownValue(parser);
       }
     }
 
@@ -184,7 +184,7 @@ public final class JsonSerializers {
           value = parser.getValueAsString();
           break;
         default:
-          // Skip
+          skipUnknownValue(parser);
       }
     }
 
@@ -192,6 +192,19 @@ public final class JsonSerializers {
       throw new IllegalArgumentException("Incomplete annotation at " + parser.currentToken());
     }
     return Annotation.create(timestamp, value);
+  }
+
+  private static void skipUnknownValue(JsonParser parser) throws IOException {
+    JsonToken value = parser.getCurrentToken();
+    if (value == JsonToken.START_OBJECT) {
+      while (parser.nextValue() != JsonToken.END_OBJECT) {
+        skipUnknownValue(parser);
+      }
+    } else if (value == JsonToken.START_ARRAY) {
+      while (parser.nextValue() != JsonToken.END_ARRAY) {
+        skipUnknownValue(parser);
+      }
+    }
   }
 
   public static final ObjectParser<DependencyLink> DEPENDENCY_LINK_PARSER = parser -> {
