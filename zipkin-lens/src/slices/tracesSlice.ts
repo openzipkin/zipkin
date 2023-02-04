@@ -26,12 +26,12 @@ import Span from '../models/Span';
 import TraceSummary from '../models/TraceSummary';
 import { ensureV2TraceData } from '../util/trace';
 
-const {
+import {
   treeCorrectedForClockSkew,
-  traceSummary: buildTraceSummary,
-  traceSummaries: buildTraceSummaries,
-  detailedTraceSummary: buildDetailedTraceSummary,
-} = require('../zipkin');
+  traceSummary as buildTraceSummary,
+  traceSummaries as buildTraceSummaries,
+  detailedTraceSummary as buildDetailedTraceSummary,
+} from '../zipkin';
 
 export const searchTraces = createAsyncThunk(
   'traces/search',
@@ -106,7 +106,9 @@ export const loadTrace = createAsyncThunk(
         return traces[traceId];
       }
       if (skewCorrectedTrace) {
-        adjustedTrace = buildDetailedTraceSummary(skewCorrectedTrace);
+        adjustedTrace = buildDetailedTraceSummary(
+          skewCorrectedTrace,
+        ) as unknown as AdjustedTrace;
         return {
           rawTrace,
           skewCorrectedTrace,
@@ -121,8 +123,9 @@ export const loadTrace = createAsyncThunk(
     }
     const rawTrace: Span[] = await resp.json();
     const skewCorrectedTrace = treeCorrectedForClockSkew(rawTrace);
-    const adjustedTrace: AdjustedTrace =
-      buildDetailedTraceSummary(skewCorrectedTrace);
+    const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(
+      skewCorrectedTrace,
+    ) as unknown as AdjustedTrace;
     return {
       rawTrace,
       skewCorrectedTrace,
@@ -152,8 +155,9 @@ export const loadJsonTrace = createAsyncThunk(
     ensureV2TraceData(rawTrace);
     const [{ traceId }] = rawTrace;
     const skewCorrectedTrace = treeCorrectedForClockSkew(rawTrace);
-    const adjustedTrace: AdjustedTrace =
-      buildDetailedTraceSummary(skewCorrectedTrace);
+    const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(
+      skewCorrectedTrace,
+    ) as unknown as AdjustedTrace;
     return {
       traceId,
       trace: {

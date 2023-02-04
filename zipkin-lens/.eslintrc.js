@@ -36,6 +36,11 @@ module.exports = {
     'react/no-unescaped-entities': 'off',
     'react-hooks/exhaustive-deps': 'warn',
   },
+  plugins: [
+    '@typescript-eslint',
+    'jest',
+    'react-hooks'
+  ],
   globals: {
     fetch: false,
     document: false,

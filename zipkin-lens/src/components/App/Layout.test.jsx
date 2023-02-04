@@ -12,11 +12,14 @@
  * the License.
  */
 import React from 'react';
-import { screen } from '@testing-library/react';
+
+import { describe, it, expect, afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
 import render from '../../test/util/render-with-default-settings';
 import Layout from './Layout';
 
 describe('<Layout />', () => {
+  afterEach(cleanup);
   it('does not render help link with default config', () => {
     // children is required so avoid warning by passing dummy children
     render(
@@ -25,7 +28,7 @@ describe('<Layout />', () => {
         <span>Test</span>
       </Layout>,
     );
-    expect(screen.queryByTitle('Support')).not.toBeInTheDocument();
+    expect(queryByTitle('Support')).toBeNull();
   });
 
   it('does render help link when defined', () => {
@@ -41,8 +44,8 @@ describe('<Layout />', () => {
         },
       },
     );
-    const helpLink = screen.queryByTitle('Support');
-    expect(helpLink).toBeInTheDocument();
+    const helpLink = queryByTitle('Support');
+    expect(helpLink).toBeDefined();
     expect(helpLink.href).toEqual('https://gitter.im/openzipkin/zipkin');
   });
 
@@ -54,7 +57,7 @@ describe('<Layout />', () => {
         <span>Test</span>
       </Layout>,
     );
-    expect(screen.getByText('Dependencies')).toBeInTheDocument();
+    expect(queryByText('Dependencies')).toBeDefined();
   });
 
   it('does not render Dependencies Page when disabled', () => {
@@ -72,6 +75,6 @@ describe('<Layout />', () => {
         },
       },
     );
-    expect(screen.queryByTitle('Dependencies')).not.toBeInTheDocument();
+    expect(queryByTitle('Dependencies')).toBeNull();
   });
 });

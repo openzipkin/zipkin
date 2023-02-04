@@ -12,10 +12,9 @@
  * the License.
  */
 
-import { msg } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
 import { Box, Divider, Grid, makeStyles, Typography } from '@material-ui/core';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
 import { AnnotationViewer } from './AnnotationViewer';
 import { TagList } from './TagList';
@@ -49,7 +48,7 @@ export const SpanDetailDrawer = ({
   minTimestamp,
 }: SpanDetailDrawerProps) => {
   const classes = useStyles();
-  const { _ } = useLingui();
+  const { t } = useTranslation();
 
   return (
     <Box className={classes.root}>
@@ -57,8 +56,8 @@ export const SpanDetailDrawer = ({
         {[
           { label: 'Service name', value: span.serviceName },
           { label: 'Span name', value: span.spanName },
-          { label: _(msg`Span ID`), value: span.spanId },
-          { label: _(msg`Parent ID`), value: span.parentId || 'none' },
+          { label: t(`Span ID`), value: span.spanId },
+          { label: t(`Parent ID`), value: span.parentId || 'none' },
         ].map(({ label, value }) => (
           <Grid key={label} item xs={6}>
             <Typography

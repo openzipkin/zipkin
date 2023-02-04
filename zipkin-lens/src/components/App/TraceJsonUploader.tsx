@@ -1,4 +1,3 @@
-import { Trans } from '@lingui/macro';
 /*
  * Copyright 2015-2020 The OpenZipkin Authors
  *
@@ -22,6 +21,7 @@ import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import styled from 'styled-components';
 
+import { Trans, useTranslation } from 'react-i18next';
 import { setAlert } from './slice';
 import { loadJsonTrace } from '../../slices/tracesSlice';
 
@@ -29,6 +29,7 @@ const TraceJsonUploader: React.FC = () => {
   const dispatch = useDispatch();
   const history = useHistory();
   const inputEl = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
 
   const handleClick = useCallback(() => {
     if (inputEl.current) {
@@ -61,7 +62,7 @@ const TraceJsonUploader: React.FC = () => {
   return (
     <>
       <FileInput ref={inputEl} onChange={handleFileChange} />
-      <Tooltip title={<Trans>Upload JSON</Trans>}>
+      <Tooltip title={<Trans t={t}>Upload JSON</Trans>}>
         <IconButton onClick={handleClick}>
           <FontAwesomeIcon icon={faUpload} size="sm" />
         </IconButton>

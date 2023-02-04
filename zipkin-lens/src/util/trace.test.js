@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { describe, it, expect } from 'vitest';
 import { ensureV2TraceData } from './trace';
 import v2Trace from '../../testdata/yelp.json';
 

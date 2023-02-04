@@ -53,7 +53,7 @@ type TimelineProps = {
   toggleIsSpanDetailDrawerOpen: () => void;
   isMiniTimelineOpen: boolean;
   toggleIsMiniTimelineOpen: () => void;
-  rerootedSpanId?: string;
+  rerootedSpanId: string | undefined;
   setRerootedSpanId: (value: string | undefined) => void;
   toggleOpenSpan: (spanId: string) => void;
   setClosedSpanIdMap: (value: { [spanId: string]: boolean }) => void;

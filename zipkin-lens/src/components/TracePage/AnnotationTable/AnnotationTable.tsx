@@ -12,7 +12,6 @@
  * the License.
  */
 
-import { msg } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import {
   makeStyles,
@@ -22,6 +21,7 @@ import {
   TableRow,
 } from '@material-ui/core';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { AdjustedAnnotation } from '../../../models/AdjustedTrace';
 import { formatTimestamp } from '../../../util/timestamp';
 
@@ -52,7 +52,7 @@ type AnnotationTableProps = {
 
 export const AnnotationTable = ({ annotations }: AnnotationTableProps) => {
   const classes = useStyles();
-  const { _ } = useLingui();
+  const { t } = useTranslation();
 
   return (
     <Table size="small" className={classes.table}>
@@ -70,11 +70,11 @@ export const AnnotationTable = ({ annotations }: AnnotationTableProps) => {
                 <TableBody>
                   {[
                     {
-                      label: _(msg`Start Time`),
+                      label: t(`Start Time`),
                       value: formatTimestamp(annotation.timestamp),
                     },
                     { label: 'Value', value: annotation.value },
-                    { label: _(msg`Address`), value: annotation.endpoint },
+                    { label: t(`Address`), value: annotation.endpoint },
                   ].map(({ label, value }) => (
                     <TableRow key={label} className={classes.tableRow}>
                       <TableCell className={classes.labelCell}>

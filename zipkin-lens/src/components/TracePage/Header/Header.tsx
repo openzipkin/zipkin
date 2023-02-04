@@ -11,15 +11,16 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { msg } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
+
 import { Box, Button, makeStyles, Typography } from '@material-ui/core';
 import { List as ListIcon } from '@material-ui/icons';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import AdjustedTrace from '../../../models/AdjustedTrace';
 import Span from '../../../models/Span';
 import { HeaderMenu } from './HeaderMenu';
 
+// @ts-ignore
 const useStyles = makeStyles((theme) => ({
   root: {
     borderBottom: `1px solid ${theme.palette.divider}`,
@@ -77,8 +78,8 @@ export const Header = ({
   rawTrace,
   toggleIsSpanTableOpen,
 }: HeaderProps) => {
-  const classes = useStyles();
-  const { _ } = useLingui();
+  const classes: any = useStyles();
+  const { t } = useTranslation();
 
   return (
     <Box className={classes.root}>
@@ -100,14 +101,14 @@ export const Header = ({
       </Box>
       <Box className={classes.infoRow}>
         {[
-          { key: _(msg`Duration`), value: trace.durationStr },
+          { key: t(`Duration`), value: trace.durationStr },
           {
-            key: _(msg`Services`),
+            key: t(`Services`),
             value: trace.serviceNameAndSpanCounts.length,
           },
-          { key: _(msg`Total Spans`), value: trace.spans.length },
+          { key: t(`Total Spans`), value: trace.spans.length },
           {
-            key: _(msg`Trace ID`),
+            key: t(`Trace ID`),
             value: `${trace.traceId}`,
           },
         ].map(({ key, value }) => (

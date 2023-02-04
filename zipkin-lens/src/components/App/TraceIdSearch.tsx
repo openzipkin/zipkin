@@ -12,14 +12,13 @@
  * the License.
  */
 
-import { msg } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
 import { TextField } from '@material-ui/core';
 import React, { useCallback, useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const TraceIdSearch: React.FC = () => {
-  const { _ } = useLingui();
+  const { t } = useTranslation();
   const history = useHistory();
 
   const [traceId, setTraceId] = useState('');
@@ -50,7 +49,7 @@ const TraceIdSearch: React.FC = () => {
       onKeyDown={handleKeyDown}
       variant="outlined"
       size="small"
-      placeholder={`${_(msg`Trace ID`)}...`}
+      placeholder={t(`Trace ID`).toString()}
     />
   );
 };

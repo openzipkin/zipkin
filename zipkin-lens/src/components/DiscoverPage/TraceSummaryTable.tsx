@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { Trans } from '@lingui/macro';
+
 import {
   Table,
   TableBody,
@@ -21,6 +21,7 @@ import {
   TableSortLabel,
 } from '@material-ui/core';
 import React, { useState, useCallback } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import TraceSummary from '../../models/TraceSummary';
 import TraceSummaryRow from './TraceSummaryRow';
 
@@ -41,6 +42,7 @@ const TraceSummaryTable: React.FC<TraceSummaryTableProps> = ({
   const [orderBy, setOrderBy] = useState<
     'duration' | 'timestamp' | 'spanCount'
   >('duration');
+  const { t } = useTranslation();
 
   const handleSortButtonClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -73,12 +75,12 @@ const TraceSummaryTable: React.FC<TraceSummaryTableProps> = ({
         <TableRow>
           <TableCell />
           <TableCell>
-            <Trans>Root</Trans>
+            <Trans t={t}>Root</Trans>
           </TableCell>
           {[
-            { label: <Trans>Start Time</Trans>, key: 'timestamp' },
-            { label: <Trans>Spans</Trans>, key: 'spanCount' },
-            { label: <Trans>Duration</Trans>, key: 'duration' },
+            { label: <Trans t={t}>Start Time</Trans>, key: 'timestamp' },
+            { label: <Trans t={t}>Spans</Trans>, key: 'spanCount' },
+            { label: <Trans t={t}>Duration</Trans>, key: 'duration' },
           ].map(({ label, key }) => (
             <TableCell
               key={key}

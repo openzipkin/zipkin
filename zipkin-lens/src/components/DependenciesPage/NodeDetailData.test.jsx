@@ -11,8 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
-import { fireEvent, screen } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { fireEvent } from '@testing-library/react';
 import { createMemoryHistory } from 'history';
 import React from 'react';
 

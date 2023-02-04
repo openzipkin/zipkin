@@ -13,9 +13,10 @@
  */
 
 /* eslint-disable no-shadow */
-
-import { fireEvent, screen } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { cleanup, fireEvent, waitForElement } from '@testing-library/react';
 import fetchMock from 'fetch-mock';
+// @ts-ignore
 import { createMemoryHistory } from 'history';
 import moment from 'moment';
 import React from 'react';
@@ -23,7 +24,7 @@ import React from 'react';
 import DependenciesPage from './DependenciesPage';
 import render from '../../test/util/render-with-default-settings';
 
-jest.mock('@material-ui/pickers', () => {
+vi.mock('@material-ui/pickers', () => {
   // eslint-disable-next-line global-require
   const moment = require('moment');
   return {
@@ -42,11 +43,14 @@ jest.mock('@material-ui/pickers', () => {
 // vizceral uses setTimeout internally, so if you use jest.runAllTimers
 // in the test, problems will occur.
 // To avoid it, mock Vizceral (VizceralWrapper).
-jest.mock('./VizceralWrapper', () => () => <div />);
+vi.mock('./VizceralWrapper', () => ({
+  default: () => <div />,
+}));
 
-jest.useFakeTimers();
+vi.useFakeTimers();
 
 describe('<DependenciesPage />', () => {
+  afterEach(cleanup);
   it('should manage the temporary time range with DateTimePicker and reflect it in the URL when the search button is clicked', () => {
     const history = createMemoryHistory();
     render(<DependenciesPage />, {
@@ -106,7 +110,7 @@ describe('<DependenciesPage />', () => {
 
     // Because setTimeout is used in the action creator that fetches dependencies,
     // use jest.runAllTimers to complete all timers.
-    jest.runAllTimers();
+    vi.runAllTimers();
     // If wait a while after loading-indicator is displayed,
     // dependencies-graph will appear.
     const components = await screen.findAllByTestId('dependencies-graph');

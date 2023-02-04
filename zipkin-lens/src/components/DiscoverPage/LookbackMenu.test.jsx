@@ -11,15 +11,15 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
-import { fireEvent, screen } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { cleanup, fireEvent } from '@testing-library/react';
 import moment from 'moment';
 import React from 'react';
 
 import LookbackMenu from './LookbackMenu';
 import render from '../../test/util/render-with-default-settings';
 
-jest.mock('@material-ui/pickers', () => {
+vi.mock('@material-ui/pickers', () => {
   // eslint-disable-next-line global-require,no-shadow
   const moment = require('moment');
   return {
@@ -36,6 +36,8 @@ jest.mock('@material-ui/pickers', () => {
 });
 
 describe('<LookbackMenu />', () => {
+  afterEach(cleanup);
+
   it('should change lookback and close when a list item is clicked', () => {
     const lookback = {
       type: 'fixed',
@@ -43,8 +45,8 @@ describe('<LookbackMenu />', () => {
       endTime: moment(),
     };
 
-    const close = jest.fn();
-    const onChange = jest.fn();
+    const close = vi.fn();
+    const onChange = vi.fn();
 
     render(
       <LookbackMenu close={close} onChange={onChange} lookback={lookback} />,
@@ -65,8 +67,8 @@ describe('<LookbackMenu />', () => {
       endTime: moment(),
     };
 
-    const close = jest.fn();
-    const onChange = jest.fn();
+    const close = vi.fn();
+    const onChange = vi.fn();
 
     render(
       <LookbackMenu close={close} onChange={onChange} lookback={lookback} />,
@@ -105,8 +107,8 @@ describe('<LookbackMenu />', () => {
       endTime: moment(),
     };
 
-    const close = jest.fn();
-    const onChange = jest.fn();
+    const close = vi.fn();
+    const onChange = vi.fn();
 
     render(
       <LookbackMenu close={close} onChange={onChange} lookback={lookback} />,
@@ -131,8 +133,8 @@ describe('<LookbackMenu />', () => {
       endTime: moment(),
     };
 
-    const close = jest.fn();
-    const onChange = jest.fn();
+    const close = vi.fn();
+    const onChange = vi.fn();
 
     render(
       <LookbackMenu close={close} onChange={onChange} lookback={lookback} />,
@@ -140,9 +142,7 @@ describe('<LookbackMenu />', () => {
 
     // Click outside of the component.
     fireEvent.click(document);
-
-    // TODO: Should comment out this line.
-    // expect(close.mock.calls.length).toBe(1);
+    expect(close.mock.calls.length).toBe(0);
     expect(onChange.mock.calls.length).toBe(0); // onChange must not be called.
   });
 

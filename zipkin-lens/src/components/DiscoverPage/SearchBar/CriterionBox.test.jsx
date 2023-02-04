@@ -12,13 +12,15 @@
  * the License.
  */
 
-import { fireEvent, screen } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { cleanup, fireEvent } from '@testing-library/react';
 import React from 'react';
 
 import CriterionBox from './CriterionBox';
 import render from '../../../test/util/render-with-default-settings';
 
 describe('<CriterionBox />', () => {
+  afterEach(cleanup);
   const commonProps = {
     criteria: [],
     criterion: { key: '', value: '' },
@@ -31,12 +33,12 @@ describe('<CriterionBox />', () => {
     isLoadingSpanNames: false,
     isLoadingAutocompleteValues: false,
     isFocused: true,
-    onFocus: jest.fn(),
-    onBlur: jest.fn(),
-    onDecide: jest.fn(),
-    onChange: jest.fn(),
-    onDelete: jest.fn(),
-    loadAutocompleteValues: jest.fn(),
+    onFocus: vi.fn(),
+    onBlur: vi.fn(),
+    onDecide: vi.fn(),
+    onChange: vi.fn(),
+    onDelete: vi.fn(),
+    loadAutocompleteValues: vi.fn(),
   };
 
   it('should show an input element when focused', () => {
@@ -147,9 +149,11 @@ describe('<CriterionBox />', () => {
   });
 
   it('should decide when Enter key is down while entering value', () => {
-    const onDecide = jest.fn();
-    render(<CriterionBox {...commonProps} onDecide={onDecide} />);
-    const items = screen.getAllByTestId('criterion-input');
+    const onDecide = vi.fn();
+    const { getAllByTestId } = render(
+      <CriterionBox {...commonProps} onDecide={onDecide} />,
+    );
+    const items = getAllByTestId('criterion-input');
     fireEvent.change(items[0], { target: { value: 'serviceName=serviceA' } });
     fireEvent.keyDown(items[0], { key: 'Enter' });
     expect(onDecide.call.length).toBe(1);

@@ -14,12 +14,12 @@
 
 /* eslint-disable no-shadow */
 
-import { Trans } from '@lingui/macro';
 import { Box, CircularProgress, Typography } from '@material-ui/core';
 import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk';
 
+import { Trans, useTranslation } from 'react-i18next';
 import DiscoverPageContent from './DiscoverPageContent';
 import { useUiConfig } from '../UiConfig';
 import { loadAutocompleteKeys } from '../../slices/autocompleteKeysSlice';
@@ -42,6 +42,7 @@ const DiscoverPageImpl: React.FC<DiscoverPageImplProps> = ({
   loadServices,
 }) => {
   const config = useUiConfig();
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadAutocompleteKeys();
@@ -52,7 +53,7 @@ const DiscoverPageImpl: React.FC<DiscoverPageImplProps> = ({
   if (!config.searchEnabled) {
     return (
       <Typography variant="body1">
-        <Trans>
+        <Trans t={t}>
           Searching has been disabled via the searchEnabled property. You can
           still view specific traces of which you know the trace id by entering
           it in the "Trace ID..." textbox on the top-right.

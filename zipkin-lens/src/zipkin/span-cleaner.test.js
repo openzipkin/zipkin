@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { describe, it, expect } from 'vitest';
 import { clean, cleanupComparator, merge, mergeV2ById } from './span-cleaner';
 import yelpTrace from '../../testdata/yelp.json';
 

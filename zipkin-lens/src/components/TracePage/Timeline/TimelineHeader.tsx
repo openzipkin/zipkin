@@ -71,7 +71,7 @@ type TimelineHeaderProps = {
   isMiniTimelineOpen: boolean;
   toggleIsMiniTimelineOpen: () => void;
   selectedSpan: AdjustedSpan;
-  rerootedSpanId?: string;
+  rerootedSpanId: string | undefined;
   setRerootedSpanId: (value: string | undefined) => void;
   absoluteListWidth: number;
   setClosedSpanIdMap: (value: { [spanId: string]: boolean }) => void;

@@ -13,7 +13,6 @@
  */
 
 import MomentUtils from '@date-io/moment';
-import { I18nProvider } from '@lingui/react';
 import {
   CircularProgress,
   ThemeProvider as MuiThemeProvider,
@@ -32,8 +31,6 @@ import TracePage from '../TracePage';
 import { UiConfig, UiConfigConsumer } from '../UiConfig';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../constants/color';
-import { i18n } from '../../util/locale';
-import { BASE_PATH } from '../../constants/api';
 import AlertSnackbar from './AlertSnackbar';
 
 const App: React.FC = () => {
@@ -49,25 +46,23 @@ const App: React.FC = () => {
                 {(config) => (
                   <Provider store={configureStore(config)}>
                     <AlertSnackbar />
-                    <I18nProvider i18n={i18n}>
-                      <BrowserRouter basename={BASE_PATH}>
-                        <Layout>
-                          <Route exact path="/" component={DiscoverPage} />
-                          {config.dependency.enabled && (
-                            <Route
-                              exact
-                              path="/dependency"
-                              component={DependenciesPage}
-                            />
-                          )}
+                    <BrowserRouter basename={import.meta.env.VITE_UI_URL}>
+                      <Layout>
+                        <Route exact path="/" component={DiscoverPage} />
+                        {config.dependency.enabled && (
                           <Route
                             exact
-                            path={['/traces/:traceId', '/traceViewer']}
-                            component={TracePage}
+                            path="/dependency"
+                            component={DependenciesPage}
                           />
-                        </Layout>
-                      </BrowserRouter>
-                    </I18nProvider>
+                        )}
+                        <Route
+                          exact
+                          path={['/traces/:traceId', '/traceViewer']}
+                          component={TracePage}
+                        />
+                      </Layout>
+                    </BrowserRouter>
                   </Provider>
                 )}
               </UiConfigConsumer>

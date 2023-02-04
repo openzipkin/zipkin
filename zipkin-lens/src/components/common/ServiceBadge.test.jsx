@@ -11,34 +11,39 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { describe, it, expect, afterEach } from 'vitest';
 import React from 'react';
-
+import { render, cleanup } from '@testing-library/react';
 import ServiceBadge from './ServiceBadge';
 import { render, screen } from '@testing-library/react';
 
 describe('<ServiceBadge />', () => {
+  afterEach(cleanup);
   describe('should render a label correctly', () => {
     it('only serviceName', () => {
-      render(<ServiceBadge serviceName="serviceA" />);
-      const item = screen.getByTestId('badge');
-      expect(item).toHaveTextContent('serviceA');
+      const { getByTestId } = render(<ServiceBadge serviceName="serviceA" />);
+      const item = getByTestId('badge');
+      expect(item.textContent).toBe('serviceA');
     });
 
     it('with count', () => {
-      render(<ServiceBadge serviceName="serviceA" count={8} />);
-      const item = screen.getByTestId('badge');
-      expect(item).toHaveTextContent('serviceA (8)');
+      const { getByTestId } = render(
+        <ServiceBadge serviceName="serviceA" count={8} />,
+      );
+      const item = getByTestId('badge');
+      expect(item.textContent).toBe('serviceA (8)');
     });
   });
 
   it('should render delete button when onDelete is set', () => {
-    render(
+    const { getByTestId } = render(
       <ServiceBadge
         serviceName="serviceA"
         onClick={() => {}}
         onDelete={() => {}}
       />,
     );
-    expect(screen.getByTestId('delete-button')).toBeInTheDocument();
+    const items = getByTestId('delete-button');
+    expect(items.children.length).toBe(1);
   });
 });

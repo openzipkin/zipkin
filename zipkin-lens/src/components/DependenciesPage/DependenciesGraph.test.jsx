@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { it, expect } from 'vitest';
 import { getNodesAndEdges } from './DependenciesGraph';
 
 //     10:3           20:7

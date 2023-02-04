@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { describe, it, expect, beforeEach } from 'vitest';
 import { DependencyLinker } from './dependency-linker';
 import { SpanNodeBuilder } from './span-node';
 

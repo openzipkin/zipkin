@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
+import { describe, it, expect } from 'vitest';
 import slice, { clearAlert, setAlert } from './slice';
 
 describe('<App /> slice', () => {

@@ -11,16 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-const extractBasePath = () => {
-  const base = document.getElementsByTagName('base');
-  if (base.length === 0) {
-    return '/zipkin';
-  }
-  return base[0].getAttribute('href').replace(/\/+$/, '');
-};
-
-export const BASE_PATH = extractBasePath();
-
+export const BASE_PATH = import.meta.env.VITE_API_URL;
 export const ZIPKIN_API = `${BASE_PATH}/api/v2`;
 export const UI_CONFIG = `${BASE_PATH}/config.json`;
 export const SERVICES = `${ZIPKIN_API}/services`;
