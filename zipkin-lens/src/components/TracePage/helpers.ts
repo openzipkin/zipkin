@@ -29,7 +29,9 @@ export const convertSpansToSpanTree = (
   }, {});
   const unconsumedSpans = { ...idToSpan };
 
-  const roots = spans.filter((span) => !span.parentId);
+  const roots = spans.filter((span) => {
+    return !span.parentId || !spans.find((p) => p.spanId === span.parentId);
+  });
   roots.forEach((root) => {
     delete unconsumedSpans[root.spanId];
   });
