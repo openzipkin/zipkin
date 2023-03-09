@@ -110,7 +110,10 @@ public final class JsonSerializers {
             throw new IOException("Invalid span, expecting tags object, got: " + value);
           }
           while (parser.nextValue() != JsonToken.END_OBJECT) {
-            result.putTag(parser.currentName(), parser.getValueAsString());
+            String parserCurrentName = parser.currentName();
+            String parserValue = parser.getValueAsString();
+            if (parserCurrentName == null || parserValue == null) continue;
+            result.putTag(parserCurrentName, parserValue);
           }
           break;
         case "debug":
