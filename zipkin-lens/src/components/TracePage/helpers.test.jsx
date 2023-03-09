@@ -21,72 +21,76 @@
 import { convertSpansToSpanTree } from './helpers';
 
 describe('convertSpansToSpanTree', () => {
+  it('should return an empty array when there are no spans', () => {
+    const spans = [];
+    const result = convertSpansToSpanTree(spans);
+    expect(result).toEqual([]);
+  });
 
-    it('should return an empty array when there are no spans', () => {
-        const spans = [];
-        const result = convertSpansToSpanTree(spans);
-        expect(result).toEqual([]);
-    });
+  it('should return an array with correct root span', () => {
+    const spans = [
+      {
+        spanId: 'a',
+        spanName: 'root',
+        parentId: null,
+        childIds: ['b'],
+      },
+      {
+        spanId: 'b',
 
-    it('should return an array with correct root span', () => {
-        const spans = [{
-            spanId: 'a',
-            spanName: 'root',
-            parentId: null,
-            childIds: ['b'],
-        },
-        {
-            spanId: 'b',
-            
-            spanName: 'child',
-            parentId: 'a',
-            childIds: [],
-        }];
+        spanName: 'child',
+        parentId: 'a',
+        childIds: [],
+      },
+    ];
 
-        const result = convertSpansToSpanTree(spans);
-        expect(result.length).toEqual(1);
-        expect(result[0].spanId).toEqual('a');
-    });
+    const result = convertSpansToSpanTree(spans);
+    expect(result.length).toEqual(1);
+    expect(result[0].spanId).toEqual('a');
+  });
 
-    // This test is consistent with 'should work when missing root span' in
-    // span-cleaner.test.js
-    it('should return an array with the root element which is missing parent', () => {
-        const spans = [{
-            spanId: 'a',
-            spanName: 'missing parent',
-            parentId: 'm',
-            childIds: ['b'],
-        },
-        {
-            spanId: 'b',
-            spanName: 'child',
-            parentId: 'a',
-            childIds: [],
-        }];
+  // This test is consistent with 'should work when missing root span' in
+  // span-cleaner.test.js
+  it('should return an array with the root element which is missing parent', () => {
+    const spans = [
+      {
+        spanId: 'a',
+        spanName: 'missing parent',
+        parentId: 'm',
+        childIds: ['b'],
+      },
+      {
+        spanId: 'b',
+        spanName: 'child',
+        parentId: 'a',
+        childIds: [],
+      },
+    ];
 
-        const result = convertSpansToSpanTree(spans);
-        expect(result.length).toEqual(1);
-        expect(result[0].spanId).toEqual('a');
-    });
+    const result = convertSpansToSpanTree(spans);
+    expect(result.length).toEqual(1);
+    expect(result[0].spanId).toEqual('a');
+  });
 
-    it('should return an array with two root elements which are missing parent', () => {
-        const spans = [{
-            spanId: 'a',
-            spanName: 'missing parent',
-            parentId: 'm',
-            childIds: [],
-        },
-        {
-            spanId: 'b',
-            spanName: 'missing parent',
-            parentId: 'm',
-            childIds: [],
-        }];
+  it('should return an array with two root elements which are missing parent', () => {
+    const spans = [
+      {
+        spanId: 'a',
+        spanName: 'missing parent',
+        parentId: 'm',
+        childIds: [],
+      },
+      {
+        spanId: 'b',
+        spanName: 'missing parent',
+        parentId: 'm',
+        childIds: [],
+      },
+    ];
 
-        const result = convertSpansToSpanTree(spans);
-        expect(result.length).toEqual(2);
-        expect(result[0].spanId).toEqual('a');
-        expect(result[1].spanId).toEqual('b');
-
-    });
+    const result = convertSpansToSpanTree(spans);
+    expect(result.length).toEqual(2);
+    expect(result[0].spanId).toEqual('a');
+    expect(result[1].spanId).toEqual('b');
+  });
 });
