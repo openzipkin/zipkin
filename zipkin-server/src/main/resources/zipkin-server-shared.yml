@@ -280,7 +280,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: '*'
+        include: 'health'
   # Below are served directly without actuator.
   endpoint:
     health:
