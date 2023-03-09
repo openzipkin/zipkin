@@ -64,7 +64,10 @@ public final class JsonSerializers {
       if (value == JsonToken.VALUE_NULL) {
         continue;
       }
+      System.out.println("current Name " + parser.currentName());
+      System.out.println("value " + value);
       if (parser.currentName() == null) {
+        System.out.println("parser current name " + parser.currentName());
         continue;
       }
       switch (parser.currentName()) {
