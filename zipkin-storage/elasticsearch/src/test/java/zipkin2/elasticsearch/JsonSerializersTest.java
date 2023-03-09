@@ -103,6 +103,34 @@ public class JsonSerializersTest {
   }
 
   @Test
+  public void span_ignoreArray_value() {
+    String json =
+      "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"nums\": [1, 2, 3]"
+        + "}";
+
+    parse(SPAN_PARSER, json);
+  }
+
+  @Test
+  public void span_tag_ignoreArray_value() {
+    String json =
+      "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"tags\": {"
+        + "      \"nums\": [1, 2, 3]"
+        + "  }"
+        + "}";
+
+    parse(SPAN_PARSER, json);
+  }
+
+  @Test
   public void span_tag_long_read() {
     String json =
       "{\n"
