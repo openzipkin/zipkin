@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -64,6 +64,9 @@ public final class JsonSerializers {
       if (value == JsonToken.VALUE_NULL) {
         continue;
       }
+      if (parser.currentName() == null) {
+        continue;
+      }
       switch (parser.currentName()) {
         case "traceId":
           result.traceId(parser.getText());
@@ -107,7 +110,10 @@ public final class JsonSerializers {
             throw new IOException("Invalid span, expecting tags object, got: " + value);
           }
           while (parser.nextValue() != JsonToken.END_OBJECT) {
-            result.putTag(parser.currentName(), parser.getValueAsString());
+            String parserCurrentName = parser.currentName();
+            String parserValue = parser.getValueAsString();
+            if (parserCurrentName == null || parserValue == null) continue;
+            result.putTag(parserCurrentName, parserValue);
           }
           break;
         case "debug":
