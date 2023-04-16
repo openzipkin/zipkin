@@ -40,15 +40,7 @@ export HEALTHCHECK_IP=${IP}
 export HEALTHCHECK_PORT=9042
 export HEALTHCHECK_KIND=tcp
 
-echo Starting Cassandra
-# -cp 'classes:lib/*' allows layers to patch the image without packaging or overwriting jars
-#
-# We also add exports and opens from Cassandra 4, except RMI, which isn't in our JRE image.
-# See https://github.com/apache/cassandra/blob/cassandra-4.0-beta3/conf/jvm11-server.options
-exec java -cp 'classes:lib/*' ${JAVA_OPTS} \
-  -Xbootclasspath/a:${JAMM_JAR} -javaagent:${JAMM_JAR} \
-  -Djdk.attach.allowAttachSelf=true \
-  --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+jdk11_modules="--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
   --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
   --add-exports java.base/sun.nio.ch=ALL-UNNAMED \
   --add-exports java.sql/java.sql=ALL-UNNAMED \
@@ -59,7 +51,25 @@ exec java -cp 'classes:lib/*' ${JAVA_OPTS} \
   --add-opens java.base/jdk.internal.math=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.module=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.util.jar=ALL-UNNAMED \
-  --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED \
+  --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED"
+
+jdk17_modules="--add-opens java.base/java.io=ALL-UNNAMED \
+  --add-opens java.base/java.nio=ALL-UNNAMED \
+  --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
+  --add-opens java.base/java.util=ALL-UNNAMED \
+  --add-opens java.base/java.util.concurrent=ALL-UNNAMED \
+  --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED"
+
+echo Starting Cassandra
+# -cp 'classes:lib/*' allows layers to patch the image without packaging or overwriting jars
+#
+# We also add exports and opens from Cassandra 4, except RMI, which isn't in our JRE image.
+# See https://github.com/apache/cassandra/blob/cassandra-4.0-beta3/conf/jvm11-server.options
+exec java -cp 'classes:lib/*' ${JAVA_OPTS} \
+  -Xbootclasspath/a:${JAMM_JAR} -javaagent:${JAMM_JAR} \
+  -Djdk.attach.allowAttachSelf=true \
+  ${jdk11_modules} \
+  ${jdk17_modules} \
   -Djava.io.tmpdir=/tmp \
   -Dcassandra-foreground=yes \
   -Dcassandra.storagedir=${PWD} \
