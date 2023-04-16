@@ -145,12 +145,7 @@ case ${CASSANDRA_VERSION} in
     ;;
 esac
 
-# Run cassandra on a different port temporarily in order to setup the schema.
-# We also add exports and opens from Cassandra 4, except RMI, which isn't in our JRE image.
-# See https://github.com/apache/cassandra/blob/cassandra-4.0-beta3/conf/jvm11-server.options
-java -cp 'classes:lib/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc \
-  -Djdk.attach.allowAttachSelf=true \
-  --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+jdk11_modules="--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
   --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
   --add-exports java.base/sun.nio.ch=ALL-UNNAMED \
   --add-exports java.sql/java.sql=ALL-UNNAMED \
@@ -161,7 +156,22 @@ java -cp 'classes:lib/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc
   --add-opens java.base/jdk.internal.math=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.module=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.util.jar=ALL-UNNAMED \
-  --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED \
+  --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED"
+
+jdk17_modules="--add-opens java.base/java.io=ALL-UNNAMED \
+  --add-opens java.base/java.nio=ALL-UNNAMED \
+  --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
+  --add-opens java.base/java.util=ALL-UNNAMED \
+  --add-opens java.base/java.util.concurrent=ALL-UNNAMED \
+  --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED"
+
+# Run cassandra on a different port temporarily in order to setup the schema.
+# We also add exports and opens from Cassandra 4, except RMI, which isn't in our JRE image.
+# See https://github.com/apache/cassandra/blob/cassandra-4.0.9/conf/jvm11-server.options
+java -cp 'classes:lib/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc \
+  -Djdk.attach.allowAttachSelf=true \
+  ${jdk11_modules} \
+  ${jdk17_modules} \
   -Dcassandra.storage_port=${temp_storage_port} \
   -Dcassandra.native_transport_port=${temp_native_transport_port} \
   -Dcassandra.storagedir=${PWD} \
@@ -184,7 +194,6 @@ function is_cassandra_alive() {
 is_cassandra_alive || exit 1
 
 echo "*** Installing cqlsh"
-# stuck on python2 for compatibility with cassandra 3.x
 apk add --update --no-cache python3 py3-pip
 pip install -Iq cqlsh
 function cql() {
