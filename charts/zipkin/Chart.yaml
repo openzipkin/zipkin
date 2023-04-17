@@ -14,7 +14,7 @@ appVersion: 2.24.0
 name: zipkin
 description: A Zipkin helm chart for kubernetes
 type: application
-version: 0.5.0
+version: 0.6.0
 maintainers:
   - name: openzipkin
     email: zipkin-dev@googlegroups.com

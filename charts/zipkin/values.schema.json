@@ -79,6 +79,9 @@
         "podSecurityContext": {
             "type": "object"
         },
+        "priorityClassName": {
+            "type": "string"
+        },
         "replicaCount": {
             "type": "integer"
         },
