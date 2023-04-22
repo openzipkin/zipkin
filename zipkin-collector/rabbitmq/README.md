@@ -11,6 +11,7 @@ The following configuration can be set for the RabbitMQ Collector.
 Property | Environment Variable | Description
 --- | --- | ---
 `zipkin.collector.rabbitmq.concurrency` | `RABBIT_CONCURRENCY` | Number of concurrent consumers. Defaults to `1`
+`zipkin.collector.rabbitmq.prefetchCount` | `RABBIT_PREFETCH_COUNT` | Channel prefetch count. Defaults to `0` (infinite)
 `zipkin.collector.rabbitmq.connection-timeout` | `RABBIT_CONNECTION_TIMEOUT` | Milliseconds to wait establishing a connection. Defaults to `60000` (1 minute)
 `zipkin.collector.rabbitmq.queue` | `RABBIT_QUEUE` | Queue from which to collect span messages. Defaults to `zipkin`
 `zipkin.collector.rabbitmq.uri` | `RABBIT_URI` | [RabbitMQ URI spec](https://www.rabbitmq.com/uri-spec.html)-compliant URI, ex. `amqp://user:pass@host:10000/vhost`
@@ -58,7 +59,7 @@ $ RABBIT_ADDRESSES=localhost java -jar zipkin.jar
 ```json
 [{"traceId":"9032b04972e475c5","id":"9032b04972e475c5","kind":"SERVER","name":"get","timestamp":1505990621526000,"duration":612898,"localEndpoint":{"serviceName":"brave-webmvc-example","ipv4":"192.168.1.113"},"remoteEndpoint":{"serviceName":"","ipv4":"127.0.0.1","port":60149},"tags":{"error":"500 Internal Server Error","http.path":"/a"}}]
 ```
-4. Publish them using the CLI 
+4. Publish them using the CLI
 ```bash
 $ rabbitmqadmin publish exchange=amq.default routing_key=zipkin < sample-spans.json
 ```

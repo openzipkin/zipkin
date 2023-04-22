@@ -37,13 +37,6 @@ import zipkin2.storage.StorageComponent;
 
 /** This collector consumes encoded binary messages from a RabbitMQ queue. */
 public final class RabbitMQCollector extends CollectorComponent {
-  static final Callback<Void> NOOP = new Callback<Void>() {
-    @Override public void onSuccess(Void value) {
-    }
-
-    @Override public void onError(Throwable t) {
-    }
-  };
 
   public static Builder builder() {
     return new Builder();
@@ -57,6 +50,7 @@ public final class RabbitMQCollector extends CollectorComponent {
     ConnectionFactory connectionFactory = new ConnectionFactory();
     Address[] addresses;
     int concurrency = 1;
+    int prefetchCount = 0;
 
     @Override
     public Builder storage(StorageComponent storage) {
@@ -85,6 +79,11 @@ public final class RabbitMQCollector extends CollectorComponent {
 
     public Builder concurrency(int concurrency) {
       this.concurrency = concurrency;
+      return this;
+    }
+
+    public Builder prefetchCount(int prefetchCount) {
+      this.prefetchCount = prefetchCount;
       return this;
     }
 
@@ -199,8 +198,9 @@ public final class RabbitMQCollector extends CollectorComponent {
           // this sets up a channel for each consumer thread.
           // We don't track channels, as the connection will close its channels implicitly
           Channel channel = connection.createChannel();
+          channel.basicQos(builder.prefetchCount);
           RabbitMQSpanConsumer consumer = new RabbitMQSpanConsumer(channel, collector, metrics);
-          channel.basicConsume(builder.queue, true, consumerTag, consumer);
+          channel.basicConsume(builder.queue, false, consumerTag, consumer);
         } catch (IOException e) {
           throw new IllegalStateException("Failed to start RabbitMQ consumer " + consumerTag, e);
         }
@@ -248,7 +248,7 @@ public final class RabbitMQCollector extends CollectorComponent {
 
       if (body.length == 0) return; // lenient on empty messages
 
-      collector.acceptSpans(body, NOOP);
+      collector.acceptSpans(body, new ConsumerAcknowledgementCallback(getChannel(), envelope));
     }
   }
 
@@ -267,4 +267,34 @@ public final class RabbitMQCollector extends CollectorComponent {
     }
     return addressArray;
   }
+
+  static class ConsumerAcknowledgementCallback implements Callback<Void> {
+
+    private final Channel channel;
+    private final Envelope envelope;
+
+    public ConsumerAcknowledgementCallback(Channel channel, Envelope envelope) {
+      this.channel = channel;
+      this.envelope = envelope;
+    }
+
+    @Override
+    public void onSuccess(Void value) {
+      try {
+        channel.basicAck(envelope.getDeliveryTag(), false);
+      } catch (IOException e) {
+        throw new UncheckedIOException("Unable to ack a message", e);
+      }
+    }
+
+    @Override
+    public void onError(Throwable t) {
+      try {
+        channel.basicNack(envelope.getDeliveryTag(), false, false);
+      } catch (IOException e) {
+        throw new UncheckedIOException("Unable to nack a message", e);
+      }
+    }
+  }
+
 }
