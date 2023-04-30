@@ -12,7 +12,7 @@ or implied. See the License for the specific language governing permissions and 
 the License.
 */}}
 {{- if .Values.autoscaling.enabled }}
-apiVersion: autoscaling/v2beta1
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ include "zipkin.fullname" . }}
