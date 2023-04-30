@@ -36,6 +36,7 @@ You can then run `helm search repo openzipkin` to see the charts.
 | nodeSelector | object | `{}` |  |
 | podAnnotations."sidecar.istio.io/inject" | string | `"false"` |  |
 | podSecurityContext | object | `{}` |  |
+| priorityClassName | string | `""` | priority class name for the Pod |
 | replicaCount | int | `1` |  |
 | resources.limits | object | `{"cpu":"500m","memory":"4096Mi"}` |  choice for the user. This also increases chances charts run on environments with little resources, such as Minikube. If you do want to specify resources, uncomment the following lines, adjust them as necessary, and remove the curly braces after 'resources:'. limits:   cpu: 100m   memory: 128Mi requests:   cpu: 100m   memory: 128Mi |
 | resources.requests.cpu | string | `"100m"` |  |

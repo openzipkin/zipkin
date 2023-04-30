@@ -97,6 +97,8 @@ tolerations: []
 
 affinity: {}
 
+priorityClassName: ""
+
 zipkin:
   storage:
     type: mem
