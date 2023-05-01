@@ -10,11 +10,11 @@
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
 apiVersion: v2
-appVersion: 2.24.0
+appVersion: 2.24.1
 name: zipkin
 description: A Zipkin helm chart for kubernetes
 type: application
-version: 0.6.0
+version: 0.6.1
 maintainers:
   - name: openzipkin
     email: zipkin-dev@googlegroups.com
