@@ -45,6 +45,13 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
+Create chart namespaces.
+*/}}
+{{- define "zipkin.namespace" -}}
+{{- default .Release.Namespace .Values.namespaceOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
 Common labels
 */}}
 {{- define "zipkin.labels" -}}

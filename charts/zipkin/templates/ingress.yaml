@@ -24,6 +24,7 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: {{ $fullName }}
+  namespace: {{ include "zipkin.namespace" . }}
   labels:
     {{- include "zipkin.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}

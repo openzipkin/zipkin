@@ -16,6 +16,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ include "zipkin.fullname" . }}
+  namespace: {{ include "zipkin.namespace" . }}
   labels:
     {{- include "zipkin.labels" . | nindent 4 }}
 rules:

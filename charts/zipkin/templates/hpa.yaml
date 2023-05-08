@@ -16,6 +16,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ include "zipkin.fullname" . }}
+  namespace: {{ include "zipkin.namespace" . }}
   labels:
     {{- include "zipkin.labels" . | nindent 4 }}
 spec:

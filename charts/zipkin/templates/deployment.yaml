@@ -15,6 +15,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "zipkin.fullname" . }}
+  namespace: {{ include "zipkin.namespace" . }}
   labels:
     {{- include "zipkin.labels" . | nindent 4 }}
 spec:

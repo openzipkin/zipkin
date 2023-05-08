@@ -19,6 +19,7 @@ metadata:
   labels:
     {{- include "zipkin.labels" . | nindent 4 }}
   name: {{ include "zipkin.fullname" . }}
+  namespace: {{ include "zipkin.namespace" . }}
   annotations:
     seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'docker/default,runtime/default'
     apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
