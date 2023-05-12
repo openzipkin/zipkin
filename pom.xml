@@ -67,7 +67,7 @@
 
     <!-- update together -->
     <spring-boot.version>2.5.14</spring-boot.version>
-    <spring.version>5.3.23</spring.version>
+    <spring.version>5.3.27</spring.version>
     <!-- override spring dependency version, CVE-2022-25857 -->
     <snakeyaml.version>1.33</snakeyaml.version>
 
