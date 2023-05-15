@@ -18,7 +18,7 @@
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
 # Note: Cassandra does not support Java 17 yet so use older JRE for testing
-ARG java_version=17.0.5_p8
+ARG java_version=17.0.7_p7
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.

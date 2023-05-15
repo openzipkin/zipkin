@@ -15,7 +15,7 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/alpine
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG alpine_version=3.16.3
+ARG alpine_version=3.18.0
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -37,7 +37,7 @@ HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthche
 ENTRYPOINT ["start-mysql"]
 
 # Use latest from https://pkgs.alpinelinux.org/packages?name=mysql
-ARG mysql_version=10.11.2
+ARG mysql_version=10.11.3
 LABEL mysql-version=$mysql_version
 ENV MYSQL_VERSION=$mysql_version
 
