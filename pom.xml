@@ -69,7 +69,7 @@
     <spring-boot.version>2.5.14</spring-boot.version>
     <spring.version>5.3.27</spring.version>
     <!-- override spring dependency version, CVE-2022-25857 -->
-    <snakeyaml.version>1.33</snakeyaml.version>
+    <snakeyaml.version>2.0</snakeyaml.version>
 
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
