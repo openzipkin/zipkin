@@ -45,8 +45,7 @@ jobs:
         run: echo "tag=$(echo ${GITHUB_REF} | cut -d/ -f 3)" >> $GITHUB_OUTPUT
 
       - name: Removes trigger target
-        uses: dev-drprasad/delete-tag-and-release@v0.2.0
+        uses: dev-drprasad/delete-tag-and-release@v1.0
         with:
           tag_name: ${{ steps.trigger-tag.outputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
