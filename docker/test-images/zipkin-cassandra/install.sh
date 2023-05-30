@@ -194,7 +194,7 @@ function is_cassandra_alive() {
 is_cassandra_alive || exit 1
 
 echo "*** Installing cqlsh"
-apk add --update --no-cache python3 py3-pip gcc
+apk add --update --no-cache python3 py3-pip py3-cffi
 pip install -Iq cqlsh
 function cql() {
   cqlsh --cqlversion=${cqlversion} "$@" 127.0.0.1 ${temp_native_transport_port}
