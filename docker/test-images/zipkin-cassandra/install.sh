@@ -196,8 +196,8 @@ is_cassandra_alive || exit 1
 echo "*** Installing cqlsh"
 apk add --update --no-cache python3 py3-pip
 # Installing cqlsh requires cffi package. Normally this doesn't need
-# to be compiled, but something isn't right with aarch64 and when installing
-# cqlsh it needs to build cffi. To unblock test support for aarch64, adding
+# to be compiled, but something isn't right with aarch64 when installing
+# cqlsh it needs to build cffi. To unblock support for aarch64, adding
 # the following are necessary for compiling cffi. If pip someday changes and
 # doesn't compile cffi on arrch64 then we can remove these dependencies.
 apk add --update --no-cache gcc python3-dev musl-dev libffi-dev
