@@ -201,6 +201,9 @@ apk add --update --no-cache python3 py3-pip
 # the following are necessary for compiling cffi. If pip someday changes and
 # doesn't compile cffi on arrch64 then we can remove these dependencies.
 apk add --update --no-cache gcc python3-dev musl-dev libffi-dev
+# PEP 668 protects against mixing system and pip packages. Setup virtual env to avoid this.
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -Iq cqlsh
 function cql() {
   cqlsh --cqlversion=${cqlversion} "$@" 127.0.0.1 ${temp_native_transport_port}
