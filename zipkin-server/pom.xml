@@ -110,6 +110,13 @@
       <version>${snakeyaml.version}</version>
     </dependency>
 
+    <!-- Override to avoid CVE-2023-34455 -->
+    <dependency>
+      <groupId>org.xerial.snappy</groupId>
+      <artifactId>snappy-java</artifactId>
+      <version>${snappy.version}</version>
+    </dependency>
+
     <!-- Override log4j 2 version to avoid CVE-2021-44228 -->
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
