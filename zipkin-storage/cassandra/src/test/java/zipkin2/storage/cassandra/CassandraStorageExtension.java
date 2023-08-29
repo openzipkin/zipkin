@@ -160,6 +160,7 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
       if ("true".equals(System.getProperty("docker.skip"))) {
         throw new TestAbortedException("${docker.skip} == true");
       }
+      addExposedPort(9042);
       waitStrategy = Wait.forHealthcheck();
       withLogConsumer(new Slf4jLogConsumer(LOGGER));
     }

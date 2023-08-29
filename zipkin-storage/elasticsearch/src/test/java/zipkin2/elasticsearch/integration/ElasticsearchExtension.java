@@ -131,6 +131,7 @@ class ElasticsearchExtension implements BeforeAllCallback, AfterAllCallback {
       if ("true".equals(System.getProperty("docker.skip"))) {
         throw new TestAbortedException("${docker.skip} == true");
       }
+      addExposedPort(9200);
       waitStrategy = Wait.forHealthcheck();
       withLogConsumer(new Slf4jLogConsumer(LOGGER));
     }
