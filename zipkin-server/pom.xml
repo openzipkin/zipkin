@@ -35,6 +35,18 @@
     <brave.version>5.13.2</brave.version>
     <log4j2.version>2.17.1</log4j2.version>
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
+
+    <!-- OTLP -->
+    <build-helper-maven-plugin.version>3.4.0</build-helper-maven-plugin.version>
+    <exec-maven-plugin.version>3.1.0</exec-maven-plugin.version>
+    <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
+    <protoc.version>24.1</protoc.version>
+    <otlp-proto.version>1.0.0</otlp-proto.version>
+    <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
+    <grpc.version>1.57.2</grpc.version>
+    <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
+    <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
+    <ant-contrib.version>1.0b3</ant-contrib.version>
   </properties>
 
   <dependencyManagement>
@@ -318,6 +330,26 @@
 <!--      <optional>true</optional>-->
 <!--    </dependency>-->
 
+    <!-- OTLP -->
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-protobuf</artifactId>
+      <version>${grpc.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-stub</artifactId>
+      <version>${grpc.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <version>${javax.annotation-api.version}</version>
+      <scope>compile</scope>
+    </dependency>
+
     <!-- Test dependencies -->
     <!-- to test the experimental grpc endpoint with the square/wire library -->
     <dependency>
@@ -461,6 +493,13 @@
   </profiles>
 
   <build>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>${os-maven-plugin.version}</version>
+      </extension>
+    </extensions>
     <resources>
       <resource>
         <directory>src/main/resources</directory>
@@ -471,6 +510,27 @@
       <!-- wire-maven-plugin cannot get proto definitions from dependencies, so we will -->
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>io.grpc</groupId>
+                  <artifactId>protoc-gen-grpc-java</artifactId>
+                  <version>${protoc-gen-grpc-java.version}</version>
+                  <type>exe</type>
+                  <classifier>${os.detected.classifier}</classifier>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.directory}/grpc-java-plugin/</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>com.squareup.wire</groupId>
@@ -494,6 +554,18 @@
         <version>3.2.0</version>
         <executions>
           <execution>
+            <phase>generate-sources</phase>
+            <id>add-source</id>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/java/</source>
+              </sources>
+            </configuration>
+          </execution>
+          <execution>
             <id>add-test-source</id>
             <phase>generate-test-sources</phase>
             <goals>
@@ -504,6 +576,185 @@
                 <source>${proto.generatedSourceDirectory}</source>
               </sources>
             </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>${maven-antrun-plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>ant-contrib</groupId>
+            <artifactId>ant-contrib</artifactId>
+            <version>${ant-contrib.version}</version>
+            <exclusions>
+              <exclusion>
+                <groupId>ant</groupId>
+                <artifactId>ant</artifactId>
+              </exclusion>
+            </exclusions>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>download-protoc</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <taskdef resource="net/sf/antcontrib/antcontrib.properties" />
+                <if>
+                  <available file="${project.build.directory}/protoc/"/>
+                  <then>
+                    <echo>Files already downloaded, won't do anything</echo>
+                  </then>
+                  <else>
+                    <mkdir dir="${project.build.directory}/protoc"/>
+                    <echo message="Download protoc"/>
+                    <get
+                      src="https://github.com/protocolbuffers/protobuf/releases/download/v${protoc.version}/protoc-${protoc.version}-${os.detected.classifier}.zip"
+                      dest="${project.build.directory}/protoc/"/>
+                    <echo message="Unzipping file"/>
+                    <unzip
+                      src="${project.build.directory}/protoc/protoc-${protoc.version}-${os.detected.classifier}.zip"
+                      dest="${project.build.directory}/protoc/"/>
+                    <echo message="Making protoc related files executable"/>
+                    <chmod perm="777">
+                      <fileset dir="${project.build.directory}/protoc/"/>
+                    </chmod>
+                    <echo message="Making grpc related files executable"/>
+                    <chmod perm="777">
+                      <fileset dir="${project.build.directory}/grpc-java-plugin/"/>
+                    </chmod>
+                  </else>
+                </if>
+              </target>
+            </configuration>
+          </execution>
+          <execution>
+            <id>download-otlp</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <taskdef resource="net/sf/antcontrib/antcontrib.properties" />
+                <if>
+                  <available file="${project.build.directory}/generated-sources/java/io/"/>
+                  <then>
+                    <echo>Files already generated, won't do anything</echo>
+                  </then>
+                  <else>
+                    <mkdir dir="${project.build.directory}/otlp"/>
+                    <echo message="Download otlp proto"/>
+                    <get
+                      src="https://github.com/open-telemetry/opentelemetry-proto/archive/refs/tags/v${otlp-proto.version}.zip"
+                      dest="${project.build.directory}/otlp/"/>
+                    <echo message="Unzipping file"/>
+                    <unzip src="${project.build.directory}/otlp/v${otlp-proto.version}.zip"
+                           dest="${project.build.directory}/otlp/"/>
+                    <echo message="Creating output directory"/>
+                    <mkdir dir="${project.build.directory}/generated-sources/java"/>
+                  </else>
+                </if>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${exec-maven-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>generate-otlp-proto-common-java</id>
+            <phase>generate-sources</phase>
+            <configuration>
+              <executable>${project.build.directory}/protoc/bin/protoc</executable>
+              <arguments>
+                <argument>
+                  -I=${project.build.directory}/otlp/opentelemetry-proto-${otlp-proto.version}/
+                </argument>
+                <argument>--java_out=${project.build.directory}/generated-sources/java
+                </argument>
+                <argument>
+                  ${project.build.directory}/otlp/opentelemetry-proto-${otlp-proto.version}/opentelemetry/proto/common/v1/common.proto
+                </argument>
+              </arguments>
+            </configuration>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>generate-otlp-proto-resource-java</id>
+            <phase>generate-sources</phase>
+            <configuration>
+              <executable>${project.build.directory}/protoc/bin/protoc</executable>
+              <arguments>
+                <argument>
+                  -I=${project.build.directory}/otlp/opentelemetry-proto-${otlp-proto.version}/
+                </argument>
+                <argument>--java_out=${project.build.directory}/generated-sources/java
+                </argument>
+                <argument>
+                  ${project.build.directory}/otlp/opentelemetry-proto-${otlp-proto.version}/opentelemetry/proto/resource/v1/resource.proto
+                </argument>
+              </arguments>
+            </configuration>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>generate-otlp-proto-collector-trace-java</id>
+            <phase>generate-sources</phase>
+            <configuration>
+              <executable>${project.build.directory}/protoc/bin/protoc</executable>
+              <arguments>
+                <argument>
+                  --plugin=protoc-gen-grpc-java=${project.build.directory}/grpc-java-plugin/protoc-gen-grpc-java-${protoc-gen-grpc-java.version}-${os.detected.classifier}.exe
+                </argument>
+                <argument>
+                  -I=${project.build.directory}/otlp/opentelemetry-proto-${otlp-proto.version}/
+                </argument>
+                <argument>--grpc-java_out=${project.build.directory}/generated-sources/java
+                </argument>
+                <argument>--java_out=${project.build.directory}/generated-sources/java
+                </argument>
+                <argument>
+                  ${project.build.directory}/otlp/opentelemetry-proto-${otlp-proto.version}/opentelemetry/proto/collector/trace/v1/trace_service.proto
+                </argument>
+              </arguments>
+            </configuration>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>generate-otlp-proto-trace-java</id>
+            <phase>generate-sources</phase>
+            <configuration>
+              <executable>${project.build.directory}/protoc/bin/protoc</executable>
+              <arguments>
+                <argument>
+                  -I=${project.build.directory}/otlp/opentelemetry-proto-${otlp-proto.version}/
+                </argument>
+                <argument>--java_out=${project.build.directory}/generated-sources/java
+                </argument>
+                <argument>
+                  ${project.build.directory}/otlp/opentelemetry-proto-${otlp-proto.version}/opentelemetry/proto/trace/v1/trace.proto
+                </argument>
+              </arguments>
+            </configuration>
+            <goals>
+              <goal>exec</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
