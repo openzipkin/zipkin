@@ -33,9 +33,9 @@ jobs:
       # Setup latest JDK. We do this to ensure users don't need to use the same version as our
       # release process. Release uses JDK 11, the last version that can target 1.6 bytecode.
       - name: Setup java
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v3
         with:
-          java-version: 15
+          java-version: 17
       - name: Cache NPM Packages
         uses: actions/cache@v2
         with:
@@ -65,9 +65,9 @@ jobs:
       # Setup latest JDK. We do this to ensure users don't need to use the same version as our
       # release process. Release uses JDK 11, the last version that can target 1.6 bytecode.
       - name: Setup java
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v3
         with:
-          java-version: 15
+          java-version: 17
       # We can't cache Docker without using buildx because GH actions restricts /var/lib/docker
       # That's ok because DOCKER_PARENT_IMAGE is always ghcr.io and local anyway.
       - name: Cache NPM Packages
