@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <artifactId>zipkin-server-parent</artifactId>
+    <groupId>io.zipkin</groupId>
+    <version>2.24.4-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>zipkin-server</artifactId>
+  <name>Zipkin Server</name>
+
+  <properties>
+    <generateGitPropertiesFilename>${project.basedir}/src/main/resources/version.properties
+    </generateGitPropertiesFilename>
+  </properties>
+
+  <dependencies>
+    <!-- server core -->
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>zipkin-server-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- cluster -->
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>cluster-standalone-plugin</artifactId>
+      <version>${skywalking.version}</version>
+    </dependency>
+    <!-- telemetry -->
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>telemetry-prometheus</artifactId>
+      <version>${skywalking.version}</version>
+    </dependency>
+
+    <!-- storage -->
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>storage-jdbc-hikaricp-plugin</artifactId>
+      <version>${skywalking.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>storage-banyandb-plugin</artifactId>
+      <version>${skywalking.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>storage-elasticsearch-plugin</artifactId>
+      <version>${skywalking.version}</version>
+    </dependency>
+
+    <!-- zipkin receiver -->
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>zipkin-receiver-plugin</artifactId>
+      <version>${skywalking.version}</version>
+    </dependency>
+
+    <!-- zipkin query -->
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>zipkin-query-plugin</artifactId>
+      <version>${skywalking.version}</version>
+    </dependency>
+
+    <!-- library -->
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>library-server</artifactId>
+      <version>${skywalking.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>${gson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+    <plugins>
+      <!-- wire-maven-plugin cannot get proto definitions from dependencies, so we will -->
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>com.squareup.wire</groupId>
+        <artifactId>wire-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>generate-sources</goal>
+            </goals>
+            <configuration>
+              <generatedSourceDirectory>${proto.generatedSourceDirectory}</generatedSourceDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Adds the output directory from proto source generation for the test compiler -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <id>add-test-source</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${proto.generatedSourceDirectory}</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>pl.project13.maven</groupId>
+        <artifactId>git-commit-id-plugin</artifactId>
+        <version>${git-commit-id.version}</version>
+        <executions>
+          <execution>
+            <id>extract-git-info</id>
+            <goals>
+              <goal>revision</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <failOnNoGitDirectory>false</failOnNoGitDirectory>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${spring-boot.version}</version>
+        <configuration>
+          <mainClass>zipkin.server.ZipkinServer</mainClass>
+          <executable>true</executable>
+        </configuration>
+        <executions>
+          <execution>
+            <id>exec</id>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+            <configuration>
+              <classifier>exec</classifier>
+              <excludes>
+                <dependency>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>slf4j-simple</artifactId>
+                </dependency>
+              </excludes>
+            </configuration>
+          </execution>
+          <!-- Make a jar less than half the size, which only supports armeria-native features -->
+          <execution>
+            <id>slim</id>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+            <configuration>
+              <classifier>slim</classifier>
+              <!-- https://github.com/spring-projects/spring-boot/issues/3426 transitive exclude doesn't work -->
+              <excludeGroupIds>
+                com.google.auto.value,io.dropwizard.metrics,com.datastax.oss,com.github.jnr,org.ow2.asm,org.jooq,javax.xml.bind,org.mariadb.jdbc,org.apache.activemq,org.apache.geronimo.specs,org.fusesource.hawtbuf,org.apache.kafka,com.github.luben,org.lz4,org.xerial.snappy,com.rabbitmq,jakarta.annotation,org.apache.thrift,org.apache.skywalking.banyandb,org.postgresql
+              </excludeGroupIds>
+              <excludes>
+                <dependency>
+                  <groupId>com.fasterxml.jackson.datatype</groupId>
+                  <artifactId>jackson-datatype-jsr310</artifactId>
+                </dependency>
+
+                <!-- Unnecessary netty deps -->
+                <dependency>
+                  <groupId>io.netty</groupId>
+                  <artifactId>netty-tcnative-boringssl-static</artifactId>
+                </dependency>
+                <dependency>
+                  <groupId>io.netty</groupId>
+                  <artifactId>netty-codec-haproxy</artifactId>
+                </dependency>
+              </excludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>pl.project13.maven</groupId>
+        <artifactId>git-commit-id-plugin</artifactId>
+        <version>4.9.10</version>
+        <executions>
+          <execution>
+            <id>get-the-git-information</id>
+            <goals>
+              <goal>revision</goal>
+            </goals>
+            <phase>initialize</phase>
+          </execution>
+        </executions>
+        <configuration>
+          <verbose>false</verbose>
+          <generateGitPropertiesFile>true</generateGitPropertiesFile>
+          <generateGitPropertiesFilename>${generateGitPropertiesFilename}</generateGitPropertiesFilename>
+          <dateFormatTimeZone>UTC</dateFormatTimeZone>
+          <dateFormat>yyyyMMddHHmmss</dateFormat>
+          <failOnNoGitDirectory>false</failOnNoGitDirectory>
+          <includeOnlyProperties>
+            <includeOnlyProperty>^git.build.version$</includeOnlyProperty>
+            <includeOnlyProperty>^git.commit.id$</includeOnlyProperty>
+          </includeOnlyProperties>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

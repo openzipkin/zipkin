@@ -23,6 +23,7 @@ jobs:
           # We push Javadocs to the gh-pages branch on commit.
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0  # allow build-bin/idl_to_gh_pages to get the full history
+          submodules: true
       - name: Cache local Maven repository
         uses: actions/cache@v2
         with:

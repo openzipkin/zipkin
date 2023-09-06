@@ -79,7 +79,7 @@ LABEL org.opencontainers.image.description="Zipkin slim distribution on OpenJDK 
 
 COPY --from=install --chown=${USER} /install/zipkin-slim/ /zipkin/
 
-EXPOSE 9411
+EXPOSE 9411 9412
 
 FROM base-server as zipkin
 LABEL org.opencontainers.image.description="Zipkin full distribution on OpenJDK and Alpine Linux"
@@ -90,4 +90,4 @@ ENV MODULE_OPTS=
 COPY --from=install --chown=${USER} /install/zipkin/ /zipkin/
 
 # Zipkin's full distribution includes Scribe support (albeit disabled)
-EXPOSE 9410 9411
+EXPOSE 9411 9412

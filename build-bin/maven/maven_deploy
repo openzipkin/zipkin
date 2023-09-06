@@ -20,4 +20,4 @@ export MAVEN_OPTS="$($(dirname "$0")/maven_opts)"
 # This script deploys a SNAPSHOT or release version to Sonatype.
 #
 # Note: In CI, `configure_maven_deploy` must be called before invoking this.
-./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests clean deploy $@
+./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests -Dcheckstyle.skip=true clean deploy $@

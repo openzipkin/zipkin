@@ -25,10 +25,6 @@
   <modules>
     <module>zipkin</module>
     <module>zipkin-tests</module>
-    <module>zipkin-junit</module>
-    <module>zipkin-junit5</module>
-    <module>zipkin-storage</module>
-    <module>zipkin-collector</module>
     <module>zipkin-server</module>
   </modules>
 
@@ -522,7 +518,7 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[1.8,16)</version>
+                  <version>[1.8,18)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
