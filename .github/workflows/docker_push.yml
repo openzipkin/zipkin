@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 1  # only needed to get the sha label
+          submodules: true
       # We can't cache Docker without using buildx because GH actions restricts /var/lib/docker
       # That's ok because DOCKER_PARENT_IMAGE is always ghcr.io and local anyway.
       - name: Docker Push

@@ -1,0 +1,185 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+core:
+  selector: zipkin
+  zipkin:
+    # The max length of service + instance names should be less than 200
+    serviceNameMaxLength: ${ZIPKIN_SERVICE_NAME_MAX_LENGTH:70}
+    # The period(in seconds) of refreshing the service cache. Default value is 10s.
+    serviceCacheRefreshInterval: ${ZIPKIN_SERVICE_CACHE_REFRESH_INTERVAL:10}
+    instanceNameMaxLength: ${ZIPKIN_INSTANCE_NAME_MAX_LENGTH:70}
+    # The max length of service + endpoint names should be less than 240
+    endpointNameMaxLength: ${ZIPKIN_ENDPOINT_NAME_MAX_LENGTH:150}
+    recordDataTTL: ${ZIPKIN_CORE_RECORD_DATA_TTL:3} # Unit is day
+    metricsDataTTL: ${ZIPKIN_CORE_METRICS_DATA_TTL:7} # Unit is day
+    # The period of L1 aggregation flush to L2 aggregation. Unit is ms.
+    l1FlushPeriod: ${ZIPKIN_CORE_L1_AGGREGATION_FLUSH_PERIOD:500}
+    # The threshold of session time. Unit is ms. Default value is 70s.
+    storageSessionTimeout: ${ZIPKIN_CORE_STORAGE_SESSION_TIMEOUT:70000}
+
+storage:
+  selector: ${ZIPKIN_STORAGE:h2}
+  elasticsearch:
+    namespace: ${ZIPKIN_NAMESPACE:""}
+    clusterNodes: ${ZIPKIN_STORAGE_ES_CLUSTER_NODES:localhost:9200}
+    protocol: ${ZIPKIN_STORAGE_ES_HTTP_PROTOCOL:"http"}
+    connectTimeout: ${ZIPKIN_STORAGE_ES_CONNECT_TIMEOUT:3000}
+    socketTimeout: ${ZIPKIN_STORAGE_ES_SOCKET_TIMEOUT:30000}
+    responseTimeout: ${ZIPKIN_STORAGE_ES_RESPONSE_TIMEOUT:15000}
+    numHttpClientThread: ${ZIPKIN_STORAGE_ES_NUM_HTTP_CLIENT_THREAD:0}
+    user: ${ZIPKIN_ES_USER:""}
+    password: ${ZIPKIN_ES_PASSWORD:""}
+    trustStorePath: ${ZIPKIN_STORAGE_ES_SSL_JKS_PATH:""}
+    trustStorePass: ${ZIPKIN_STORAGE_ES_SSL_JKS_PASS:""}
+    secretsManagementFile: ${ZIPKIN_ES_SECRETS_MANAGEMENT_FILE:""} # Secrets management file in the properties format includes the username, password, which are managed by 3rd party tool.
+    dayStep: ${ZIPKIN_STORAGE_DAY_STEP:1} # Represent the number of days in the one minute/hour/day index.
+    indexShardsNumber: ${ZIPKIN_STORAGE_ES_INDEX_SHARDS_NUMBER:1} # Shard number of new indexes
+    indexReplicasNumber: ${ZIPKIN_STORAGE_ES_INDEX_REPLICAS_NUMBER:1} # Replicas number of new indexes
+    # Specify the settings for each index individually.
+    # If configured, this setting has the highest priority and overrides the generic settings.
+    specificIndexSettings: ${ZIPKIN_STORAGE_ES_SPECIFIC_INDEX_SETTINGS:""}
+    # Super data set has been defined in the codes, such as trace segments.The following 3 config would be improve es performance when storage super size data in es.
+    superDatasetDayStep: ${ZIPKIN_STORAGE_ES_SUPER_DATASET_DAY_STEP:-1} # Represent the number of days in the super size dataset record index, the default value is the same as dayStep when the value is less than 0
+    superDatasetIndexShardsFactor: ${ZIPKIN_STORAGE_ES_SUPER_DATASET_INDEX_SHARDS_FACTOR:5} #  This factor provides more shards for the super data set, shards number = indexShardsNumber * superDatasetIndexShardsFactor. Also, this factor effects Zipkin traces.
+    superDatasetIndexReplicasNumber: ${ZIPKIN_STORAGE_ES_SUPER_DATASET_INDEX_REPLICAS_NUMBER:0} # Represent the replicas number in the super size dataset record index, the default value is 0.
+    indexTemplateOrder: ${ZIPKIN_STORAGE_ES_INDEX_TEMPLATE_ORDER:0} # the order of index template
+    bulkActions: ${ZIPKIN_STORAGE_ES_BULK_ACTIONS:5000} # Execute the async bulk record data every ${ZIPKIN_STORAGE_ES_BULK_ACTIONS} requests
+    batchOfBytes: ${ZIPKIN_STORAGE_ES_BATCH_OF_BYTES:10485760} # A threshold to control the max body size of ElasticSearch Bulk flush.
+    # flush the bulk every 5 seconds whatever the number of requests
+    flushInterval: ${ZIPKIN_STORAGE_ES_FLUSH_INTERVAL:5}
+    concurrentRequests: ${ZIPKIN_STORAGE_ES_CONCURRENT_REQUESTS:2} # the number of concurrent requests
+    resultWindowMaxSize: ${ZIPKIN_STORAGE_ES_QUERY_MAX_WINDOW_SIZE:10000}
+    metadataQueryMaxSize: ${ZIPKIN_STORAGE_ES_QUERY_MAX_SIZE:10000}
+    scrollingBatchSize: ${ZIPKIN_STORAGE_ES_SCROLLING_BATCH_SIZE:5000}
+    segmentQueryMaxSize: ${ZIPKIN_STORAGE_ES_QUERY_SEGMENT_SIZE:200}
+    profileTaskQueryMaxSize: ${ZIPKIN_STORAGE_ES_QUERY_PROFILE_TASK_SIZE:200}
+    profileDataQueryBatchSize: ${ZIPKIN_STORAGE_ES_QUERY_PROFILE_DATA_BATCH_SIZE:100}
+    oapAnalyzer: ${ZIPKIN_STORAGE_ES_OAP_ANALYZER:"{\"analyzer\":{\"oap_analyzer\":{\"type\":\"stop\"}}}"} # the oap analyzer.
+    oapLogAnalyzer: ${ZIPKIN_STORAGE_ES_OAP_LOG_ANALYZER:"{\"analyzer\":{\"oap_log_analyzer\":{\"type\":\"standard\"}}}"} # the oap log analyzer. It could be customized by the ES analyzer configuration to support more language log formats, such as Chinese log, Japanese log and etc.
+    advanced: ${ZIPKIN_STORAGE_ES_ADVANCED:""}
+    # Enable shard metrics and records indices into multi-physical indices, one index template per metric/meter aggregation function or record.
+    logicSharding: ${ZIPKIN_STORAGE_ES_LOGIC_SHARDING:false}
+    # Custom routing can reduce the impact of searches. Instead of having to fan out a search request to all the shards in an index, the request can be sent to just the shard that matches the specific routing value (or values).
+    enableCustomRouting: ${ZIPKIN_STORAGE_ES_ENABLE_CUSTOM_ROUTING:false}
+  h2:
+    properties:
+      jdbcUrl: ${ZIPKIN_STORAGE_H2_URL:jdbc:h2:mem:skywalking-oap-db;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=FALSE}
+      dataSource.user: ${ZIPKIN_STORAGE_H2_USER:sa}
+    metadataQueryMaxSize: ${ZIPKIN_STORAGE_H2_QUERY_MAX_SIZE:5000}
+    maxSizeOfBatchSql: ${ZIPKIN_STORAGE_MAX_SIZE_OF_BATCH_SQL:100}
+    asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_ASYNC_BATCH_PERSISTENT_POOL_SIZE:1}
+  mysql:
+    properties:
+      jdbcUrl: ${ZIPKIN_JDBC_URL:"jdbc:mysql://localhost:3306/swtest?rewriteBatchedStatements=true&allowMultiQueries=true"}
+      dataSource.user: ${ZIPKIN_DATA_SOURCE_USER:root}
+      dataSource.password: ${ZIPKIN_DATA_SOURCE_PASSWORD:root@1234}
+      dataSource.cachePrepStmts: ${ZIPKIN_DATA_SOURCE_CACHE_PREP_STMTS:true}
+      dataSource.prepStmtCacheSize: ${ZIPKIN_DATA_SOURCE_PREP_STMT_CACHE_SQL_SIZE:250}
+      dataSource.prepStmtCacheSqlLimit: ${ZIPKIN_DATA_SOURCE_PREP_STMT_CACHE_SQL_LIMIT:2048}
+      dataSource.useServerPrepStmts: ${ZIPKIN_DATA_SOURCE_USE_SERVER_PREP_STMTS:true}
+    metadataQueryMaxSize: ${ZIPKIN_STORAGE_MYSQL_QUERY_MAX_SIZE:5000}
+    maxSizeOfBatchSql: ${ZIPKIN_STORAGE_MAX_SIZE_OF_BATCH_SQL:2000}
+    asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_ASYNC_BATCH_PERSISTENT_POOL_SIZE:4}
+  postgresql:
+    properties:
+      jdbcUrl: ${ZIPKIN_JDBC_URL:"jdbc:postgresql://localhost:5432/skywalking"}
+      dataSource.user: ${ZIPKIN_DATA_SOURCE_USER:postgres}
+      dataSource.password: ${ZIPKIN_DATA_SOURCE_PASSWORD:123456}
+      dataSource.cachePrepStmts: ${ZIPKIN_DATA_SOURCE_CACHE_PREP_STMTS:true}
+      dataSource.prepStmtCacheSize: ${ZIPKIN_DATA_SOURCE_PREP_STMT_CACHE_SQL_SIZE:250}
+      dataSource.prepStmtCacheSqlLimit: ${ZIPKIN_DATA_SOURCE_PREP_STMT_CACHE_SQL_LIMIT:2048}
+      dataSource.useServerPrepStmts: ${ZIPKIN_DATA_SOURCE_USE_SERVER_PREP_STMTS:true}
+    metadataQueryMaxSize: ${ZIPKIN_STORAGE_MYSQL_QUERY_MAX_SIZE:5000}
+    maxSizeOfBatchSql: ${ZIPKIN_STORAGE_MAX_SIZE_OF_BATCH_SQL:2000}
+    asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_ASYNC_BATCH_PERSISTENT_POOL_SIZE:4}
+  banyandb:
+    host: ${ZIPKIN_STORAGE_BANYANDB_HOST:127.0.0.1}
+    port: ${ZIPKIN_STORAGE_BANYANDB_PORT:17912}
+    maxBulkSize: ${ZIPKIN_STORAGE_BANYANDB_MAX_BULK_SIZE:5000}
+    flushInterval: ${ZIPKIN_STORAGE_BANYANDB_FLUSH_INTERVAL:15}
+    metricsShardsNumber: ${ZIPKIN_STORAGE_BANYANDB_METRICS_SHARDS_NUMBER:1}
+    recordShardsNumber: ${ZIPKIN_STORAGE_BANYANDB_RECORD_SHARDS_NUMBER:1}
+    superDatasetShardsFactor: ${ZIPKIN_STORAGE_BANYANDB_SUPERDATASET_SHARDS_FACTOR:2}
+    concurrentWriteThreads: ${ZIPKIN_STORAGE_BANYANDB_CONCURRENT_WRITE_THREADS:15}
+    profileTaskQueryMaxSize: ${ZIPKIN_STORAGE_BANYANDB_PROFILE_TASK_QUERY_MAX_SIZE:200} # the max number of fetch task in a request
+    blockIntervalHours: ${ZIPKIN_STORAGE_BANYANDB_BLOCK_INTERVAL_HOURS:24} # Unit is hour
+    segmentIntervalDays: ${ZIPKIN_STORAGE_BANYANDB_SEGMENT_INTERVAL_DAYS:1} # Unit is day
+    superDatasetBlockIntervalHours: ${ZIPKIN_STORAGE_BANYANDB_SUPER_DATASET_BLOCK_INTERVAL_HOURS:4} # Unit is hour
+    superDatasetSegmentIntervalDays: ${ZIPKIN_STORAGE_BANYANDB_SUPER_DATASET_SEGMENT_INTERVAL_DAYS:1} # Unit is day
+    specificGroupSettings: ${ZIPKIN_STORAGE_BANYANDB_SPECIFIC_GROUP_SETTINGS:""} # For example, {"group1": {"blockIntervalHours": 4, "segmentIntervalDays": 1}}
+
+receiver-zipkin:
+  selector: ${ZIPKIN_RECEIVER_ZIPKIN:default}
+  default:
+    # Defines a set of span tag keys which are searchable.
+    # The max length of key=value should be less than 256 or will be dropped.
+    searchableTracesTags: ${ZIPKIN_ZIPKIN_SEARCHABLE_TAG_KEYS:http.method}
+    # The sample rate precision is 1/10000, should be between 0 and 10000
+    sampleRate: ${ZIPKIN_ZIPKIN_SAMPLE_RATE:10000}
+    ## The below configs are for OAP collect zipkin trace from HTTP
+    enableHttpCollector: ${ZIPKIN_ZIPKIN_HTTP_COLLECTOR_ENABLED:true}
+    restHost: ${ZIPKIN_RECEIVER_ZIPKIN_REST_HOST:0.0.0.0}
+    restPort: ${ZIPKIN_RECEIVER_ZIPKIN_REST_PORT:9411}
+    restContextPath: ${ZIPKIN_RECEIVER_ZIPKIN_REST_CONTEXT_PATH:/}
+    restMaxThreads: ${ZIPKIN_RECEIVER_ZIPKIN_REST_MAX_THREADS:200}
+    restIdleTimeOut: ${ZIPKIN_RECEIVER_ZIPKIN_REST_IDLE_TIMEOUT:30000}
+    restAcceptQueueSize: ${ZIPKIN_RECEIVER_ZIPKIN_REST_QUEUE_SIZE:0}
+    ## The below configs are for OAP collect zipkin trace from kafka
+    enableKafkaCollector: ${ZIPKIN_ZIPKIN_KAFKA_COLLECTOR_ENABLED:false}
+    kafkaBootstrapServers: ${ZIPKIN_ZIPKIN_KAFKA_SERVERS:localhost:9092}
+    kafkaGroupId: ${ZIPKIN_ZIPKIN_KAFKA_GROUP_ID:zipkin}
+    kafkaTopic: ${ZIPKIN_ZIPKIN_KAFKA_TOPIC:zipkin}
+    # Kafka consumer config, JSON format as Properties. If it contains the same key with above, would override.
+    kafkaConsumerConfig: ${ZIPKIN_ZIPKIN_KAFKA_CONSUMER_CONFIG:"{\"auto.offset.reset\":\"earliest\",\"enable.auto.commit\":true}"}
+    # The Count of the topic consumers
+    kafkaConsumers: ${ZIPKIN_ZIPKIN_KAFKA_CONSUMERS:1}
+    kafkaHandlerThreadPoolSize: ${ZIPKIN_ZIPKIN_KAFKA_HANDLER_THREAD_POOL_SIZE:-1}
+    kafkaHandlerThreadPoolQueueSize: ${ZIPKIN_ZIPKIN_KAFKA_HANDLER_THREAD_POOL_QUEUE_SIZE:-1}
+
+## This module is for Zipkin query API and support zipkin-lens UI
+query-zipkin:
+  selector: ${ZIPKIN_QUERY_ZIPKIN:default}
+  default:
+    # For HTTP server
+    restHost: ${ZIPKIN_QUERY_ZIPKIN_REST_HOST:0.0.0.0}
+    restPort: ${ZIPKIN_QUERY_ZIPKIN_REST_PORT:9412}
+    restContextPath: ${ZIPKIN_QUERY_ZIPKIN_REST_CONTEXT_PATH:/zipkin}
+    restMaxThreads: ${ZIPKIN_QUERY_ZIPKIN_REST_MAX_THREADS:200}
+    restIdleTimeOut: ${ZIPKIN_QUERY_ZIPKIN_REST_IDLE_TIMEOUT:30000}
+    restAcceptQueueSize: ${ZIPKIN_QUERY_ZIPKIN_REST_QUEUE_SIZE:0}
+    # Default look back for traces and autocompleteTags, 1 day in millis
+    lookback: ${ZIPKIN_QUERY_ZIPKIN_LOOKBACK:86400000}
+    # The Cache-Control max-age (seconds) for serviceNames, remoteServiceNames and spanNames
+    namesMaxAge: ${ZIPKIN_QUERY_ZIPKIN_NAMES_MAX_AGE:300}
+    ## The below config are OAP support for zipkin-lens UI
+    # Default traces query max size
+    uiQueryLimit: ${ZIPKIN_QUERY_ZIPKIN_UI_QUERY_LIMIT:10}
+    # Default look back on the UI for search traces, 15 minutes in millis
+    uiDefaultLookback: ${ZIPKIN_QUERY_ZIPKIN_UI_DEFAULT_LOOKBACK:900000}
+
+telemetry:
+  selector: ${ZIPKIN_TELEMETRY:none}
+  none:
+  prometheus:
+    host: ${ZIPKIN_TELEMETRY_PROMETHEUS_HOST:0.0.0.0}
+    port: ${ZIPKIN_TELEMETRY_PROMETHEUS_PORT:1234}
+    sslEnabled: ${ZIPKIN_TELEMETRY_PROMETHEUS_SSL_ENABLED:false}
+    sslKeyPath: ${ZIPKIN_TELEMETRY_PROMETHEUS_SSL_KEY_PATH:""}
+    sslCertChainPath: ${ZIPKIN_TELEMETRY_PROMETHEUS_SSL_CERT_CHAIN_PATH:""}
+
+cluster:
+  selector: standalone
+  standalone:

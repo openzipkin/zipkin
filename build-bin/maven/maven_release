@@ -30,6 +30,7 @@ release_branch=${2:-master}
 # Checkout master, as we release from master, not a tag ref
 git fetch --no-tags --prune --depth=1 origin +refs/heads/${release_branch}:refs/remotes/origin/${release_branch}
 git checkout ${release_branch}
+git submodule update --init --recursive
 
 # Ensure no one pushed commits since this release tag as it would fail later commands
 commit_local_release_branch=$(git show --pretty='format:%H' ${release_branch})
@@ -40,4 +41,4 @@ if [ "$commit_local_release_branch" != "$commit_remote_release_branch" ]; then
 fi
 
 # Prepare and push release commits and the version tag (N.N.N), which triggers deployment.
-./mvnw --batch-mode -nsu -DreleaseVersion=${release_version} -Denforcer.fail=false -Darguments="-DskipTests -Denforcer.fail=false" release:prepare
+./mvnw --batch-mode -nsu -DreleaseVersion=${release_version} -Denforcer.fail=false -Darguments="-DskipTests -Denforcer.fail=false -Dcheckstyle.skip=true" release:prepare

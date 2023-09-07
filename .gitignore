@@ -26,3 +26,5 @@ _site/
 # This project does not use Yarn but some developers may use it to e.g., start zipkin-lens dev server.
 # It doesn't hurt to just exclude it here.
 yarn.lock
+
+zipkin-server/server-starter/src/main/resources/version.properties
