@@ -19,6 +19,7 @@ import { messages as frMessages } from '../translations/fr/messages';
 import { messages as zhCnMessages } from '../translations/zh-cn/messages';
 
 const localeStorageKey = 'localeOverride';
+const localeThemeKey = 'zipkinThemeOverride';
 
 const allMessages = {
   en: enMessages,
@@ -65,3 +66,17 @@ export const i18n = setupI18n({
     zh: {},
   },
 });
+
+
+
+export function getTheme(): string {
+  const override = localStorage.getItem(localeThemeKey);
+  if (override) {
+    return override;
+  }
+  return 'light';
+}
+
+export function setTheme(theme: string) {
+  localStorage.setItem(localeThemeKey, theme);
+}

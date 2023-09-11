@@ -34,6 +34,7 @@ import styled from 'styled-components';
 
 import HeaderMenuItem from './HeaderMenuItem';
 import LanguageSelector from './LanguageSelector';
+import ThemeSelector from './ThemeSelector'
 import TraceIdSearch from './TraceIdSearch';
 import TraceJsonUploader from './TraceJsonUploader';
 import { useUiConfig } from '../UiConfig';
@@ -86,6 +87,7 @@ const Layout: React.FC = ({ children }) => {
             <ThemeProvider theme={darkTheme}>
               <Box display="flex" alignItems="center">
                 <LanguageSelector />
+                <ThemeSelector />
                 <Box mr={2} ml={2}>
                   <TraceJsonUploader />
                 </Box>
