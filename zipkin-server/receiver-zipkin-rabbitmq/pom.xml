@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>zipkin-server-parent</artifactId>
+    <groupId>io.zipkin</groupId>
+    <version>2.24.4-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>receiver-zipkin-rabbitmq</artifactId>
+  <name>Zipkin RabbitMQ Receiver</name>
+
+  <properties>
+    <amqp-client.version>4.12.0</amqp-client.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>zipkin-server-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>zipkin-receiver-plugin</artifactId>
+      <version>${skywalking.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.rabbitmq</groupId>
+      <artifactId>amqp-client</artifactId>
+      <version>${amqp-client.version}</version>
+    </dependency>
+  </dependencies>
+
+</project>

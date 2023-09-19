@@ -48,7 +48,7 @@
 
     <!-- This allows you to test feature branches with jitpack -->
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>1.17.2</armeria.version>
+    <armeria.version>1.24.3</armeria.version>
     <!-- Match Armeria version to avoid conflicts including running tests in the IDE -->
     <netty.version>4.1.95.Final</netty.version>
 
@@ -83,7 +83,8 @@
     <!-- Test only dependencies -->
     <junit.version>4.13.1</junit.version>
     <junit-jupiter.version>5.9.2</junit-jupiter.version>
-    <mockito.version>3.6.28</mockito.version>
+    <mockito-core.version>4.11.0</mockito-core.version>
+    <powermock.version>2.0.9</powermock.version>
     <assertj.version>3.18.1</assertj.version>
     <awaitility.version>4.0.3</awaitility.version>
     <hamcrest.version>1.3</hamcrest.version>
@@ -207,6 +208,30 @@
       <version>${junit-jupiter.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito-core.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-inline</artifactId>
+      <version>${mockito-core.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <version>${mockito-core.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-reflect</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
 
     <!-- Current versions of JUnit5 provide the above junit-jupiter artifact for convenience, but we
          may still have transitive dependencies on these older artifacts and have to make sure
@@ -232,12 +257,6 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>${mockito.version}</version>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-core</artifactId>

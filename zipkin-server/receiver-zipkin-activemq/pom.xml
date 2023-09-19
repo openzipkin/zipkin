@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>zipkin-server-parent</artifactId>
+    <groupId>io.zipkin</groupId>
+    <version>2.24.4-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>receiver-zipkin-activemq</artifactId>
+  <name>Zipkin ActiveMQ Receiver</name>
+
+  <properties>
+    <activemq.version>5.16.3</activemq.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>zipkin-server-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>zipkin-receiver-plugin</artifactId>
+      <version>${skywalking.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>activemq-client</artifactId>
+      <version>${activemq.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>activemq-broker</artifactId>
+      <version>${activemq.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.activemq.tooling</groupId>
+      <artifactId>activemq-junit</artifactId>
+      <version>${activemq.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+
+</project>

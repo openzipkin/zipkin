@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <artifactId>zipkin-server-parent</artifactId>
+    <groupId>io.zipkin</groupId>
+    <version>2.24.4-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>receiver-zipkin-scribe</artifactId>
+  <name>Zipkin Scribe Receiver</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>zipkin-server-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>zipkin-receiver-plugin</artifactId>
+      <version>${skywalking.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>${armeria.groupId}</groupId>
+      <artifactId>armeria-thrift0.15</artifactId>
+      <version>${armeria.version}</version>
+    </dependency>
+
+    <!-- for Generated annotations on Scribe types -->
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <version>${javax-annotation-api.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>${armeria.groupId}</groupId>
+      <artifactId>armeria-junit4</artifactId>
+      <version>${armeria.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>${awaitility.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+</project>

@@ -19,6 +19,11 @@
       <artifactId>server-core</artifactId>
       <version>${skywalking.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>zipkin-receiver-plugin</artifactId>
+      <version>${skywalking.version}</version>
+    </dependency>
   </dependencies>
 
 </project>
