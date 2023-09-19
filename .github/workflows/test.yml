@@ -7,13 +7,13 @@ on:
   # We run tests on non-tagged pushes to master that aren't a commit made by the release plugin
   push:
     tags: ""
-    branches: master, zipkin-v3
+    branches: master,zipkin-v3
     paths-ignore:
       - "**/*.md"
       - "charts/**"
   # We also run tests on pull requests targeted at the master branch.
   pull_request:
-    branches: master, zipkin-v3
+    branches: master,zipkin-v3
     paths-ignore:
       - "**/*.md"
       - "charts/**"
