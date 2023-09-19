@@ -58,9 +58,29 @@
 
     <!-- zipkin receiver -->
     <dependency>
-      <groupId>org.apache.skywalking</groupId>
-      <artifactId>zipkin-receiver-plugin</artifactId>
-      <version>${skywalking.version}</version>
+      <groupId>io.zipkin</groupId>
+      <artifactId>receiver-zipkin-http</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>receiver-zipkin-kafka</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>receiver-zipkin-activemq</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>receiver-zipkin-rabbitmq</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>receiver-zipkin-scribe</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <!-- zipkin query -->

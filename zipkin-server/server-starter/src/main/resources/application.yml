@@ -29,6 +29,11 @@ core:
     l1FlushPeriod: ${ZIPKIN_CORE_L1_AGGREGATION_FLUSH_PERIOD:500}
     # The threshold of session time. Unit is ms. Default value is 70s.
     storageSessionTimeout: ${ZIPKIN_CORE_STORAGE_SESSION_TIMEOUT:70000}
+    # Defines a set of span tag keys which are searchable.
+    # The max length of key=value should be less than 256 or will be dropped.
+    searchableTracesTags: ${ZIPKIN_SEARCHABLE_TAG_KEYS:http.method}
+    # The trace sample rate precision is 1/10000, should be between 0 and 10000
+    traceSampleRate: ${ZIPKIN_SAMPLE_RATE:10000}
 
 storage:
   selector: ${ZIPKIN_STORAGE:h2}
@@ -121,33 +126,63 @@ storage:
     superDatasetSegmentIntervalDays: ${ZIPKIN_STORAGE_BANYANDB_SUPER_DATASET_SEGMENT_INTERVAL_DAYS:1} # Unit is day
     specificGroupSettings: ${ZIPKIN_STORAGE_BANYANDB_SPECIFIC_GROUP_SETTINGS:""} # For example, {"group1": {"blockIntervalHours": 4, "segmentIntervalDays": 1}}
 
-receiver-zipkin:
-  selector: ${ZIPKIN_RECEIVER_ZIPKIN:default}
+receiver-zipkin-http:
+  selector: ${ZIPKIN_RECEIVER_ZIPKIN_HTTP:default}
   default:
-    # Defines a set of span tag keys which are searchable.
-    # The max length of key=value should be less than 256 or will be dropped.
-    searchableTracesTags: ${ZIPKIN_ZIPKIN_SEARCHABLE_TAG_KEYS:http.method}
-    # The sample rate precision is 1/10000, should be between 0 and 10000
-    sampleRate: ${ZIPKIN_ZIPKIN_SAMPLE_RATE:10000}
-    ## The below configs are for OAP collect zipkin trace from HTTP
-    enableHttpCollector: ${ZIPKIN_ZIPKIN_HTTP_COLLECTOR_ENABLED:true}
     restHost: ${ZIPKIN_RECEIVER_ZIPKIN_REST_HOST:0.0.0.0}
     restPort: ${ZIPKIN_RECEIVER_ZIPKIN_REST_PORT:9411}
     restContextPath: ${ZIPKIN_RECEIVER_ZIPKIN_REST_CONTEXT_PATH:/}
     restMaxThreads: ${ZIPKIN_RECEIVER_ZIPKIN_REST_MAX_THREADS:200}
     restIdleTimeOut: ${ZIPKIN_RECEIVER_ZIPKIN_REST_IDLE_TIMEOUT:30000}
     restAcceptQueueSize: ${ZIPKIN_RECEIVER_ZIPKIN_REST_QUEUE_SIZE:0}
-    ## The below configs are for OAP collect zipkin trace from kafka
-    enableKafkaCollector: ${ZIPKIN_ZIPKIN_KAFKA_COLLECTOR_ENABLED:false}
-    kafkaBootstrapServers: ${ZIPKIN_ZIPKIN_KAFKA_SERVERS:localhost:9092}
-    kafkaGroupId: ${ZIPKIN_ZIPKIN_KAFKA_GROUP_ID:zipkin}
-    kafkaTopic: ${ZIPKIN_ZIPKIN_KAFKA_TOPIC:zipkin}
+
+receiver-zipkin-kafka:
+  selector: ${ZIPKIN_RECEIVER_ZIPKIN_KAFKA:-}
+  default:
+    kafkaBootstrapServers: ${ZIPKIN_KAFKA_SERVERS:localhost:9092}
+    kafkaGroupId: ${ZIPKIN_KAFKA_GROUP_ID:zipkin}
+    kafkaTopic: ${ZIPKIN_KAFKA_TOPIC:zipkin}
     # Kafka consumer config, JSON format as Properties. If it contains the same key with above, would override.
-    kafkaConsumerConfig: ${ZIPKIN_ZIPKIN_KAFKA_CONSUMER_CONFIG:"{\"auto.offset.reset\":\"earliest\",\"enable.auto.commit\":true}"}
+    kafkaConsumerConfig: ${ZIPKIN_KAFKA_CONSUMER_CONFIG:"{\"auto.offset.reset\":\"earliest\",\"enable.auto.commit\":true}"}
     # The Count of the topic consumers
-    kafkaConsumers: ${ZIPKIN_ZIPKIN_KAFKA_CONSUMERS:1}
-    kafkaHandlerThreadPoolSize: ${ZIPKIN_ZIPKIN_KAFKA_HANDLER_THREAD_POOL_SIZE:-1}
-    kafkaHandlerThreadPoolQueueSize: ${ZIPKIN_ZIPKIN_KAFKA_HANDLER_THREAD_POOL_QUEUE_SIZE:-1}
+    kafkaConsumers: ${ZIPKIN_KAFKA_CONSUMERS:1}
+    kafkaHandlerThreadPoolSize: ${ZIPKIN_KAFKA_HANDLER_THREAD_POOL_SIZE:-1}
+    kafkaHandlerThreadPoolQueueSize: ${ZIPKIN_KAFKA_HANDLER_THREAD_POOL_QUEUE_SIZE:-1}
+
+receiver-zipkin-activemq:
+  selector: ${ZIPKIN_RECEIVER_ZIPKIN_ACTIVEMQ:-}
+  default:
+    # ActiveMQ broker url. Ex. tcp://localhost:61616 or failover:(tcp://localhost:61616,tcp://remotehost:61616)
+    url: ${ZIPKIN_ACTIVEMQ_URL:}
+    # Queue from which to collect span messages.
+    queue: ${ZIPKIN_ACTIVEMQ_QUEUE:zipkin}
+    # Number of concurrent span consumers.
+    concurrency: ${ZIPKIN_ACTIVEMQ_CONCURRENCY:1}
+    # Optional username to connect to the broker
+    username: ${ZIPKIN_ACTIVEMQ_USERNAME:}
+    # Optional password to connect to the broker
+    password: ${ZIPKIN_ACTIVEMQ_PASSWORD:}
+
+receiver-zipkin-rabbitmq:
+  selector: ${ZIPKIN_RECEIVER_ZIPKIN_rabbitmq:-}
+  default:
+    # RabbitMQ server address list (comma-separated list of host:port)
+    addresses: ${ZIPKIN_RECEIVER_RABBIT_ADDRESSES:}
+    concurrency: ${ZIPKIN_RECEIVER_RABBIT_CONCURRENCY:1}
+    # TCP connection timeout in milliseconds
+    connection-timeout: ${ZIPKIN_RECEIVER_RABBIT_CONNECTION_TIMEOUT:60000}
+    password: ${ZIPKIN_RECEIVER_RABBIT_PASSWORD:guest}
+    queue: ${ZIPKIN_RECEIVER_RABBIT_QUEUE:zipkin}
+    username: ${ZIPKIN_RECEIVER_RABBIT_USER:guest}
+    virtual-host: ${ZIPKIN_RECEIVER_RABBIT_VIRTUAL_HOST:/}
+    useSsl: ${ZIPKIN_RECEIVER_RABBIT_USE_SSL:false}
+    uri: ${ZIPKIN_RECEIVER_RABBIT_URI:}
+
+receiver-zipkin-scribe:
+  selector: ${ZIPKIN_RECEIVER_ZIPKIN_SCRIBE:-}
+  default:
+    category: ${ZIPKIN_SCRIBE_CATEGORY:zipkin}
+    port: ${ZIPKIN_COLLECTOR_PORT:9410}
 
 ## This module is for Zipkin query API and support zipkin-lens UI
 query-zipkin:
