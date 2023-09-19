@@ -1,24 +1,24 @@
 # yamllint --format github .github/workflows/test.yml
-#---
-#name: test
-#
-## We don't test documentation-only commits.
-#on:
-#  # We run tests on non-tagged pushes to master that aren't a commit made by the release plugin
-#  push:
-#    tags: ""
-#    branches: master
-#    paths-ignore:
-#      - "**/*.md"
-#      - "charts/**"
-#  # We also run tests on pull requests targeted at the master branch.
-#  pull_request:
-#    branches: master
-#    paths-ignore:
-#      - "**/*.md"
-#      - "charts/**"
-#
-#jobs:
+---
+name: test
+
+# We don't test documentation-only commits.
+on:
+  # We run tests on non-tagged pushes to master that aren't a commit made by the release plugin
+  push:
+    tags: ""
+    branches: master
+    paths-ignore:
+      - "**/*.md"
+      - "charts/**"
+  # We also run tests on pull requests targeted at the master branch.
+  pull_request:
+    branches: master
+    paths-ignore:
+      - "**/*.md"
+      - "charts/**"
+
+jobs:
 #  test:
 #    runs-on: ubuntu-20.04 # newest available distribution, aka focal
 #    if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
