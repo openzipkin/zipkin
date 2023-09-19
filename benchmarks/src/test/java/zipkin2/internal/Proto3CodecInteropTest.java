@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import okio.ByteString;
 import org.assertj.core.data.MapEntry;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.internal.Proto3ZipkinFields.TagField;

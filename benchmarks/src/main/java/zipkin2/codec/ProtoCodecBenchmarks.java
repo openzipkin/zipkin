@@ -36,7 +36,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import zipkin2.Span;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static zipkin2.storage.cassandra.internal.Resources.resourceToString;
+import static zipkin2.codec.Resources.resourceToString;
 
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
