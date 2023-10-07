@@ -73,7 +73,6 @@ import zipkin.server.core.services.EmptyComponentLibraryCatalogService;
 import zipkin.server.core.services.EmptyGRPCHandlerRegister;
 import zipkin.server.core.services.EmptyHTTPHandlerRegister;
 import zipkin.server.core.services.EmptyNetworkAddressAliasCache;
-import zipkin.server.core.services.SelfSenderService;
 import zipkin.server.core.services.ZipkinConfigService;
 
 import java.io.IOException;
