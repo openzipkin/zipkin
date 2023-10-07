@@ -74,6 +74,11 @@ public class CoreModuleConfig extends ModuleConfig {
    */
   private int persistentPeriod = 25;
 
+  /**
+   * Timeout for cluster internal communication, in seconds.
+   */
+  private int remoteTimeout = 20;
+
   private static final String DEFAULT_SEARCHABLE_TAG_KEYS = String.join(
       Const.COMMA,
       "http.method"
@@ -181,5 +186,13 @@ public class CoreModuleConfig extends ModuleConfig {
 
   public void setPersistentPeriod(int persistentPeriod) {
     this.persistentPeriod = persistentPeriod;
+  }
+
+  public int getRemoteTimeout() {
+    return remoteTimeout;
+  }
+
+  public void setRemoteTimeout(int remoteTimeout) {
+    this.remoteTimeout = remoteTimeout;
   }
 }

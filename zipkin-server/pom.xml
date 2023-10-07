@@ -47,6 +47,11 @@
     <module>../skywalking/oap-server/server-receiver-plugin/receiver-proto</module>
     <module>../skywalking/oap-server/server-receiver-plugin/zipkin-receiver-plugin</module>
     <module>../skywalking/oap-server/server-cluster-plugin/cluster-standalone-plugin</module>
+    <module>../skywalking/oap-server/server-cluster-plugin/cluster-consul-plugin</module>
+    <module>../skywalking/oap-server/server-cluster-plugin/cluster-etcd-plugin</module>
+    <module>../skywalking/oap-server/server-cluster-plugin/cluster-kubernetes-plugin</module>
+    <module>../skywalking/oap-server/server-cluster-plugin/cluster-nacos-plugin</module>
+    <module>../skywalking/oap-server/server-cluster-plugin/cluster-zookeeper-plugin</module>
     <module>../skywalking/oap-server/server-storage-plugin</module>
     <module>../skywalking/oap-server/server-library</module>
     <module>../skywalking/oap-server/server-query-plugin/zipkin-query-plugin</module>

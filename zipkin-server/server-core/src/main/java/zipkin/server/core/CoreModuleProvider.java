@@ -53,7 +53,6 @@ import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegister;
 import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
 import org.apache.skywalking.oap.server.core.source.DefaultScopeDefine;
 import org.apache.skywalking.oap.server.core.source.SourceReceiver;
-import org.apache.skywalking.oap.server.core.source.SourceReceiverImpl;
 import org.apache.skywalking.oap.server.core.status.ServerStatusService;
 import org.apache.skywalking.oap.server.core.storage.PersistenceTimer;
 import org.apache.skywalking.oap.server.core.storage.StorageException;
@@ -152,8 +151,7 @@ public class CoreModuleProvider extends ModuleProvider {
     final WorkerInstancesService instancesService = new WorkerInstancesService();
     this.registerServiceImplementation(IWorkerInstanceGetter.class, instancesService);
     this.registerServiceImplementation(IWorkerInstanceSetter.class, instancesService);
-    // no cluster mode for zipkin, for sending the streaming data to the local
-    this.registerServiceImplementation(RemoteSenderService.class, new SelfSenderService(getManager()));
+    this.registerServiceImplementation(RemoteSenderService.class, new RemoteSenderService(getManager()));
     this.registerServiceImplementation(ModelCreator.class, storageModels);
     this.registerServiceImplementation(IModelManager.class, storageModels);
     this.registerServiceImplementation(ModelManipulator.class, storageModels);
@@ -180,7 +178,7 @@ public class CoreModuleProvider extends ModuleProvider {
     this.registerServiceImplementation(ContinuousProfilingQueryService.class, new ContinuousProfilingQueryService(getManager()));
     this.registerServiceImplementation(CommandService.class, new CommandService(getManager()));
     this.registerServiceImplementation(OALEngineLoaderService.class, new OALEngineLoaderService(getManager()));
-    this.registerServiceImplementation(RemoteClientManager.class, new RemoteClientManager(getManager(), 0));
+    this.registerServiceImplementation(RemoteClientManager.class, new RemoteClientManager(getManager(), moduleConfig.getRemoteTimeout()));
     this.registerServiceImplementation(UITemplateManagementService.class, new UITemplateManagementService(getManager()));
     this.registerServiceImplementation(UIMenuManagementService.class, new UIMenuManagementService(getManager(), swConfig));
 
