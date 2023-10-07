@@ -55,6 +55,11 @@
       <artifactId>storage-elasticsearch-plugin</artifactId>
       <version>${skywalking.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>storage-cassandra</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- zipkin receiver -->
     <dependency>

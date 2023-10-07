@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <artifactId>zipkin-server-parent</artifactId>
+    <groupId>io.zipkin</groupId>
+    <version>2.24.4-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>storage-cassandra</artifactId>
+  <name>Storage: Cassandra</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>zipkin-server-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>storage-jdbc-hikaricp-plugin</artifactId>
+      <version>${skywalking.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>zipkin-server-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.auto.value</groupId>
+      <artifactId>auto-value-annotations</artifactId>
+      <version>${auto-value.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.auto.value</groupId>
+      <artifactId>auto-value</artifactId>
+      <version>${auto-value.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.datastax.oss</groupId>
+      <artifactId>java-driver-core</artifactId>
+      <version>${java-driver.version}</version>
+      <!-- Exclude unused graph and geo dependencies -->
+      <exclusions>
+        <exclusion>
+          <groupId>com.esri.geometry</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.tinkerpop</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <!-- We retain reactivestreams even though we don't use it because
+             Mockito dies trying to mock CqlSession without it. -->
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>cluster-standalone-plugin</artifactId>
+      <version>${skywalking.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+</project>

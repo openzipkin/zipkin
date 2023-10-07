@@ -62,6 +62,7 @@
     <module>receiver-zipkin-activemq</module>
     <module>receiver-zipkin-rabbitmq</module>
     <module>receiver-zipkin-scribe</module>
+    <module>storage-cassandra</module>
   </modules>
 
   <dependencyManagement>

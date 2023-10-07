@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -64,6 +64,16 @@ public class CoreModuleConfig extends ModuleConfig {
    */
   private int traceSampleRate = 10000;
 
+  /**
+   * The number of threads used to prepare metrics data to the storage.
+   */
+  private int prepareThreads = 2;
+
+  /**
+   * The period of doing data persistence. Unit is second.
+   */
+  private int persistentPeriod = 25;
+
   private static final String DEFAULT_SEARCHABLE_TAG_KEYS = String.join(
       Const.COMMA,
       "http.method"
@@ -72,6 +82,8 @@ public class CoreModuleConfig extends ModuleConfig {
   public org.apache.skywalking.oap.server.core.CoreModuleConfig toSkyWalkingConfig() {
     final org.apache.skywalking.oap.server.core.CoreModuleConfig result = new org.apache.skywalking.oap.server.core.CoreModuleConfig();
     result.setServiceCacheRefreshInterval(serviceCacheRefreshInterval);
+    result.setPrepareThreads(prepareThreads);
+    result.setPersistentPeriod(persistentPeriod);
     return result;
   }
 
@@ -153,5 +165,21 @@ public class CoreModuleConfig extends ModuleConfig {
 
   public void setTraceSampleRate(int traceSampleRate) {
     this.traceSampleRate = traceSampleRate;
+  }
+
+  public int getPrepareThreads() {
+    return prepareThreads;
+  }
+
+  public void setPrepareThreads(int prepareThreads) {
+    this.prepareThreads = prepareThreads;
+  }
+
+  public int getPersistentPeriod() {
+    return persistentPeriod;
+  }
+
+  public void setPersistentPeriod(int persistentPeriod) {
+    this.persistentPeriod = persistentPeriod;
   }
 }
