@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package zipkin.server.core;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.analysis.meter.MeterSystem;
 import org.apache.skywalking.oap.server.core.analysis.worker.MetricsStreamProcessor;
+import org.apache.skywalking.oap.server.core.annotation.AnnotationScan;
 import org.apache.skywalking.oap.server.core.cache.NetworkAddressAliasCache;
 import org.apache.skywalking.oap.server.core.cache.ProfileTaskCache;
 import org.apache.skywalking.oap.server.core.command.CommandService;
@@ -50,13 +51,16 @@ import org.apache.skywalking.oap.server.core.remote.RemoteSenderService;
 import org.apache.skywalking.oap.server.core.remote.client.RemoteClientManager;
 import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegister;
 import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
+import org.apache.skywalking.oap.server.core.source.DefaultScopeDefine;
 import org.apache.skywalking.oap.server.core.source.SourceReceiver;
-import org.apache.skywalking.oap.server.core.source.SourceReceiverImpl;
 import org.apache.skywalking.oap.server.core.status.ServerStatusService;
+import org.apache.skywalking.oap.server.core.storage.PersistenceTimer;
+import org.apache.skywalking.oap.server.core.storage.StorageException;
 import org.apache.skywalking.oap.server.core.storage.model.IModelManager;
 import org.apache.skywalking.oap.server.core.storage.model.ModelCreator;
 import org.apache.skywalking.oap.server.core.storage.model.ModelManipulator;
 import org.apache.skywalking.oap.server.core.storage.model.StorageModels;
+import org.apache.skywalking.oap.server.core.storage.ttl.DataTTLKeeperTimer;
 import org.apache.skywalking.oap.server.core.worker.IWorkerInstanceGetter;
 import org.apache.skywalking.oap.server.core.worker.IWorkerInstanceSetter;
 import org.apache.skywalking.oap.server.core.worker.WorkerInstancesService;
@@ -71,17 +75,20 @@ import zipkin.server.core.services.EmptyHTTPHandlerRegister;
 import zipkin.server.core.services.EmptyNetworkAddressAliasCache;
 import zipkin.server.core.services.ZipkinConfigService;
 
+import java.io.IOException;
 import java.util.Collections;
 
 public class CoreModuleProvider extends ModuleProvider {
   private CoreModuleConfig moduleConfig;
 
   private EndpointNameGrouping endpointNameGrouping;
-  private final SourceReceiverImpl receiver;
+  private final ZipkinSourceReceiverImpl receiver;
+  private final AnnotationScan annotationScan;
   private final StorageModels storageModels;
 
   public CoreModuleProvider() {
-    this.receiver = new SourceReceiverImpl();
+    this.annotationScan = new AnnotationScan();
+    this.receiver = new ZipkinSourceReceiverImpl();
     this.storageModels = new StorageModels();
   }
 
@@ -121,6 +128,16 @@ public class CoreModuleProvider extends ModuleProvider {
     );
     this.registerServiceImplementation(NamingControl.class, namingControl);
 
+    annotationScan.registerListener(new ZipkinStreamAnnotationListener(getManager()));
+
+    AnnotationScan scopeScan = new AnnotationScan();
+    scopeScan.registerListener(new DefaultScopeDefine.Listener());
+    try {
+      scopeScan.scan();
+    } catch (Exception e) {
+      throw new ModuleStartException(e.getMessage(), e);
+    }
+
     final org.apache.skywalking.oap.server.core.CoreModuleConfig swConfig = this.moduleConfig.toSkyWalkingConfig();
     this.registerServiceImplementation(MeterSystem.class, new MeterSystem(getManager()));
     this.registerServiceImplementation(ConfigService.class, new ZipkinConfigService(moduleConfig, this));
@@ -133,7 +150,6 @@ public class CoreModuleProvider extends ModuleProvider {
     final WorkerInstancesService instancesService = new WorkerInstancesService();
     this.registerServiceImplementation(IWorkerInstanceGetter.class, instancesService);
     this.registerServiceImplementation(IWorkerInstanceSetter.class, instancesService);
-    this.registerServiceImplementation(RemoteSenderService.class, new RemoteSenderService(getManager()));
     this.registerServiceImplementation(RemoteSenderService.class, new RemoteSenderService(getManager()));
     this.registerServiceImplementation(ModelCreator.class, storageModels);
     this.registerServiceImplementation(IModelManager.class, storageModels);
@@ -161,7 +177,7 @@ public class CoreModuleProvider extends ModuleProvider {
     this.registerServiceImplementation(ContinuousProfilingQueryService.class, new ContinuousProfilingQueryService(getManager()));
     this.registerServiceImplementation(CommandService.class, new CommandService(getManager()));
     this.registerServiceImplementation(OALEngineLoaderService.class, new OALEngineLoaderService(getManager()));
-    this.registerServiceImplementation(RemoteClientManager.class, new RemoteClientManager(getManager(), 0));
+    this.registerServiceImplementation(RemoteClientManager.class, new RemoteClientManager(getManager(), moduleConfig.getRemoteTimeout()));
     this.registerServiceImplementation(UITemplateManagementService.class, new UITemplateManagementService(getManager()));
     this.registerServiceImplementation(UIMenuManagementService.class, new UIMenuManagementService(getManager(), swConfig));
 
@@ -182,12 +198,19 @@ public class CoreModuleProvider extends ModuleProvider {
 
   @Override
   public void start() throws ServiceNotProvidedException, ModuleStartException {
-
+    try {
+      receiver.scan();
+      annotationScan.scan();
+    } catch (IOException | IllegalAccessException | InstantiationException | StorageException e) {
+      throw new ModuleStartException(e.getMessage(), e);
+    }
   }
 
   @Override
   public void notifyAfterCompleted() throws ServiceNotProvidedException, ModuleStartException {
-
+    final org.apache.skywalking.oap.server.core.CoreModuleConfig swConfig = this.moduleConfig.toSkyWalkingConfig();
+    PersistenceTimer.INSTANCE.start(getManager(), swConfig);
+    DataTTLKeeperTimer.INSTANCE.start(getManager(), swConfig);
   }
 
   @Override
