@@ -17,6 +17,17 @@ import org.apache.skywalking.oap.server.core.Const;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 
 public class CoreModuleConfig extends ModuleConfig {
+  private String gRPCHost;
+  private int gRPCPort;
+  private boolean gRPCSslEnabled = false;
+  private String gRPCSslKeyPath;
+  private String gRPCSslCertChainPath;
+  private String gRPCSslTrustedCAPath;
+  private int gRPCThreadPoolSize;
+  private int gRPCThreadPoolQueueSize;
+  private int gRPCMaxConcurrentCallsPerConnection;
+  private int gRPCMaxMessageSize;
+  
   /**
    * The max length of the service name.
    */
@@ -194,5 +205,85 @@ public class CoreModuleConfig extends ModuleConfig {
 
   public void setRemoteTimeout(int remoteTimeout) {
     this.remoteTimeout = remoteTimeout;
+  }
+
+  public String getGRPCHost() {
+    return gRPCHost;
+  }
+
+  public void setGRPCHost(String gRPCHost) {
+    this.gRPCHost = gRPCHost;
+  }
+
+  public int getGRPCPort() {
+    return gRPCPort;
+  }
+
+  public void setGRPCPort(int gRPCPort) {
+    this.gRPCPort = gRPCPort;
+  }
+
+  public boolean getGRPCSslEnabled() {
+    return gRPCSslEnabled;
+  }
+
+  public void setGRPCSslEnabled(boolean gRPCSslEnabled) {
+    this.gRPCSslEnabled = gRPCSslEnabled;
+  }
+
+  public String getGRPCSslKeyPath() {
+    return gRPCSslKeyPath;
+  }
+
+  public void setGRPCSslKeyPath(String gRPCSslKeyPath) {
+    this.gRPCSslKeyPath = gRPCSslKeyPath;
+  }
+
+  public String getGRPCSslCertChainPath() {
+    return gRPCSslCertChainPath;
+  }
+
+  public void setGRPCSslCertChainPath(String gRPCSslCertChainPath) {
+    this.gRPCSslCertChainPath = gRPCSslCertChainPath;
+  }
+
+  public String getGRPCSslTrustedCAPath() {
+    return gRPCSslTrustedCAPath;
+  }
+
+  public void setGRPCSslTrustedCAPath(String gRPCSslTrustedCAPath) {
+    this.gRPCSslTrustedCAPath = gRPCSslTrustedCAPath;
+  }
+
+  public int getGRPCThreadPoolSize() {
+    return gRPCThreadPoolSize;
+  }
+
+  public void setGRPCThreadPoolSize(int gRPCThreadPoolSize) {
+    this.gRPCThreadPoolSize = gRPCThreadPoolSize;
+  }
+
+  public int getGRPCThreadPoolQueueSize() {
+    return gRPCThreadPoolQueueSize;
+  }
+
+  public void setGRPCThreadPoolQueueSize(int gRPCThreadPoolQueueSize) {
+    this.gRPCThreadPoolQueueSize = gRPCThreadPoolQueueSize;
+  }
+
+  public int getGRPCMaxConcurrentCallsPerConnection() {
+    return gRPCMaxConcurrentCallsPerConnection;
+  }
+
+  public void setGRPCMaxConcurrentCallsPerConnection(int gRPCMaxConcurrentCallsPerConnection) {
+    this.gRPCMaxConcurrentCallsPerConnection = gRPCMaxConcurrentCallsPerConnection;
+  }
+
+  public int getGRPCMaxMessageSize() {
+    return gRPCMaxMessageSize;
+  }
+
+  public void setGRPCMaxMessageSize(int gRPCMaxMessageSize) {
+    this.gRPCMaxMessageSize = gRPCMaxMessageSize;
   }
 }
