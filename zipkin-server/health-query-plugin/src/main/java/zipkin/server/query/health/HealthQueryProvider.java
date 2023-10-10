@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,50 +12,40 @@
  * the License.
  */
 
-package zipkin.server.receiver.zipkin.http;
+package zipkin.server.query.health;
 
 import com.linecorp.armeria.common.HttpMethod;
 import org.apache.skywalking.oap.server.core.CoreModule;
-import org.apache.skywalking.oap.server.core.config.ConfigService;
 import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
-import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
-import org.apache.skywalking.oap.server.receiver.zipkin.handler.ZipkinSpanHTTPHandler;
-import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
-import zipkin.server.core.services.ZipkinConfigService;
 
-import java.util.Arrays;
+import java.util.Collections;
 
-public class ZipkinHTTPReceiverProvider extends ModuleProvider {
-  private ZipkinHTTPReceiverConfig moduleConfig;
-  private SpanForward spanForward;
-  private HTTPServer httpServer;
-
+public class HealthQueryProvider extends ModuleProvider {
   @Override
   public String name() {
-    return "default";
+    return "zipkin";
   }
 
   @Override
   public Class<? extends ModuleDefine> module() {
-    return ZipkinHTTPReceiverModule.class;
+    return HealthQueryModule.class;
   }
 
   @Override
   public ConfigCreator<? extends ModuleConfig> newConfigCreator() {
-    return new ConfigCreator<ZipkinHTTPReceiverConfig>() {
+    return new ConfigCreator<HealthQueryConfig>() {
       @Override
-      public Class<ZipkinHTTPReceiverConfig> type() {
-        return ZipkinHTTPReceiverConfig.class;
+      public Class<HealthQueryConfig> type() {
+        return HealthQueryConfig.class;
       }
 
       @Override
-      public void onInitialized(ZipkinHTTPReceiverConfig initialized) {
-        moduleConfig = initialized;
+      public void onInitialized(HealthQueryConfig initialized) {
       }
     };
   }
@@ -66,21 +56,19 @@ public class ZipkinHTTPReceiverProvider extends ModuleProvider {
 
   @Override
   public void start() throws ServiceNotProvidedException, ModuleStartException {
-    final ConfigService service = getManager().find(CoreModule.NAME).provider().getService(ConfigService.class);
-    this.spanForward = new SpanForward(((ZipkinConfigService)service).toZipkinReceiverConfig(), getManager());
+    getManager().find(CoreModule.NAME).provider()
+        .getService(HTTPHandlerRegister.class).addHandler(
+            new ZipkinHealthController(getManager()),
+            Collections.singletonList(HttpMethod.GET)
+        );
   }
 
   @Override
   public void notifyAfterCompleted() throws ServiceNotProvidedException, ModuleStartException {
-    final HTTPHandlerRegister httpRegister = getManager().find(CoreModule.NAME).provider().getService(HTTPHandlerRegister.class);
-    httpRegister.addHandler(new ZipkinSpanHTTPHandler(this.spanForward, getManager()),
-        Arrays.asList(HttpMethod.POST, HttpMethod.GET));
   }
 
   @Override
   public String[] requiredModules() {
-    return new String[] {
-        CoreModule.NAME,
-    };
+    return new String[0];
   }
 }

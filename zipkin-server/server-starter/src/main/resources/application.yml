@@ -32,8 +32,8 @@ core:
     # Defines a set of span tag keys which are searchable.
     # The max length of key=value should be less than 256 or will be dropped.
     searchableTracesTags: ${ZIPKIN_SEARCHABLE_TAG_KEYS:http.method}
-    # The trace sample rate precision is 1/10000, should be between 0 and 10000
-    traceSampleRate: ${ZIPKIN_SAMPLE_RATE:10000}
+    # The trace sample rate precision is 0.0001, should be between 0 and 1
+    traceSampleRate: ${ZIPKIN_SAMPLE_RATE:1}
     # The number of threads used to prepare metrics data to the storage.
     prepareThreads: ${ZIPKIN_PREPARE_THREADS:2}
     # The period of doing data persistence. Unit is second.Default value is 25s
@@ -48,6 +48,13 @@ core:
     gRPCSslTrustedCAPath: ${ZIPKIN_GRPC_SSL_TRUSTED_CA_PATH:""}
     gRPCMaxConcurrentCallsPerConnection: ${ZIPKIN_GRPC_MAX_CONCURRENT_CALL:0}
     gRPCMaxMessageSize: ${ZIPKIN_GRPC_MAX_MESSAGE_SIZE:0}
+    restHost: ${ZIPKIN_REST_HOST:0.0.0.0}
+    restPort: ${ZIPKIN_REST_PORT:9412}
+    restContextPath: ${ZIPKIN_REST_CONTEXT_PATH:/zipkin}
+    restMaxThreads: ${ZIPKIN_REST_MAX_THREADS:200}
+    restIdleTimeOut: ${ZIPKIN_REST_IDLE_TIMEOUT:30000}
+    restAcceptQueueSize: ${ZIPKIN_REST_QUEUE_SIZE:0}
+    restMaxRequestHeaderSize: ${ZIPKIN_REST_MAX_REQUEST_HEADER_SIZE:8192}
 
 storage:
   selector: ${ZIPKIN_STORAGE:h2}
@@ -200,24 +207,22 @@ receiver-zipkin-scribe:
 
 ## This module is for Zipkin query API and support zipkin-lens UI
 query-zipkin:
-  selector: ${ZIPKIN_QUERY_ZIPKIN:default}
-  default:
-    # For HTTP server
-    restHost: ${ZIPKIN_QUERY_ZIPKIN_REST_HOST:0.0.0.0}
-    restPort: ${ZIPKIN_QUERY_ZIPKIN_REST_PORT:9412}
-    restContextPath: ${ZIPKIN_QUERY_ZIPKIN_REST_CONTEXT_PATH:/zipkin}
-    restMaxThreads: ${ZIPKIN_QUERY_ZIPKIN_REST_MAX_THREADS:200}
-    restIdleTimeOut: ${ZIPKIN_QUERY_ZIPKIN_REST_IDLE_TIMEOUT:30000}
-    restAcceptQueueSize: ${ZIPKIN_QUERY_ZIPKIN_REST_QUEUE_SIZE:0}
+  selector: ${ZIPKIN_QUERY_ZIPKIN:zipkin}
+  zipkin:
+    strictTraceId: ${ZIPKIN_QUERY_STRICT_TRACE_ID:true}
     # Default look back for traces and autocompleteTags, 1 day in millis
-    lookback: ${ZIPKIN_QUERY_ZIPKIN_LOOKBACK:86400000}
+    lookback: ${ZIPKIN_QUERY_LOOKBACK:86400000}
     # The Cache-Control max-age (seconds) for serviceNames, remoteServiceNames and spanNames
-    namesMaxAge: ${ZIPKIN_QUERY_ZIPKIN_NAMES_MAX_AGE:300}
+    namesMaxAge: ${ZIPKIN_QUERY_NAMES_MAX_AGE:300}
     ## The below config are OAP support for zipkin-lens UI
     # Default traces query max size
-    uiQueryLimit: ${ZIPKIN_QUERY_ZIPKIN_UI_QUERY_LIMIT:10}
+    uiQueryLimit: ${ZIPKIN_QUERY_UI_QUERY_LIMIT:10}
     # Default look back on the UI for search traces, 15 minutes in millis
-    uiDefaultLookback: ${ZIPKIN_QUERY_ZIPKIN_UI_DEFAULT_LOOKBACK:900000}
+    uiDefaultLookback: ${ZIPKIN_QUERY_UI_DEFAULT_LOOKBACK:900000}
+
+query-health:
+  selector: ${ZIPKIN_QUERY_HEALTH:zipkin}
+  zipkin:
 
 telemetry:
   selector: ${ZIPKIN_TELEMETRY:none}

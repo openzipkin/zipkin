@@ -59,6 +59,7 @@ import org.apache.skywalking.oap.server.core.remote.health.HealthCheckServiceHan
 import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegister;
 import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegisterImpl;
 import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
+import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegisterImpl;
 import org.apache.skywalking.oap.server.core.source.DefaultScopeDefine;
 import org.apache.skywalking.oap.server.core.source.SourceReceiver;
 import org.apache.skywalking.oap.server.core.status.ServerStatusService;
@@ -79,6 +80,8 @@ import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
 import org.apache.skywalking.oap.server.library.server.ServerException;
 import org.apache.skywalking.oap.server.library.server.grpc.GRPCServer;
+import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
+import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
 import org.apache.skywalking.oap.server.telemetry.api.TelemetryRelatedContext;
 import zipkin.server.core.services.EmptyComponentLibraryCatalogService;
 import zipkin.server.core.services.EmptyHTTPHandlerRegister;
@@ -97,6 +100,7 @@ public class CoreModuleProvider extends ModuleProvider {
   private final StorageModels storageModels;
   private RemoteClientManager remoteClientManager;
   private GRPCServer grpcServer;
+  private HTTPServer httpServer;
 
   public CoreModuleProvider() {
     this.annotationScan = new AnnotationScan();
@@ -150,6 +154,21 @@ public class CoreModuleProvider extends ModuleProvider {
       throw new ModuleStartException(e.getMessage(), e);
     }
 
+    HTTPServerConfig httpServerConfig = HTTPServerConfig.builder()
+        .host(moduleConfig.getRestHost())
+        .port(moduleConfig.getRestPort())
+        .contextPath(moduleConfig.getRestContextPath())
+        .idleTimeOut(moduleConfig.getRestIdleTimeOut())
+        .maxThreads(moduleConfig.getRestMaxThreads())
+        .acceptQueueSize(
+            moduleConfig.getRestAcceptQueueSize())
+        .maxRequestHeaderSize(
+            moduleConfig.getRestMaxRequestHeaderSize())
+        .build();
+    httpServer = new HTTPServer(httpServerConfig);
+    httpServer.initialize();
+
+    // grpc
     if (moduleConfig.getGRPCSslEnabled()) {
       grpcServer = new GRPCServer(moduleConfig.getGRPCHost(), moduleConfig.getGRPCPort(),
           moduleConfig.getGRPCSslCertChainPath(),
@@ -187,7 +206,7 @@ public class CoreModuleProvider extends ModuleProvider {
     this.registerServiceImplementation(ServerStatusService.class, new ServerStatusService(getManager()));
     this.registerServiceImplementation(DownSamplingConfigService.class, new DownSamplingConfigService(Collections.emptyList()));
     this.registerServiceImplementation(GRPCHandlerRegister.class, new GRPCHandlerRegisterImpl(grpcServer));
-    this.registerServiceImplementation(HTTPHandlerRegister.class, new EmptyHTTPHandlerRegister());
+    this.registerServiceImplementation(HTTPHandlerRegister.class, new HTTPHandlerRegisterImpl(httpServer));
     this.registerServiceImplementation(IComponentLibraryCatalogService.class, new EmptyComponentLibraryCatalogService());
     this.registerServiceImplementation(SourceReceiver.class, receiver);
     final WorkerInstancesService instancesService = new WorkerInstancesService();
@@ -268,6 +287,7 @@ public class CoreModuleProvider extends ModuleProvider {
     try {
       if (!RunningMode.isInitMode()) {
         grpcServer.start();
+        httpServer.start();
         remoteClientManager.start();
       }
     } catch (ServerException e) {
