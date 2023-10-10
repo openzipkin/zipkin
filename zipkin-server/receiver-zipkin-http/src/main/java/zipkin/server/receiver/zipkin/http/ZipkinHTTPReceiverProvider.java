@@ -23,7 +23,6 @@ import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
-import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
 import org.apache.skywalking.oap.server.receiver.zipkin.handler.ZipkinSpanHTTPHandler;
 import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
 import zipkin.server.core.services.ZipkinConfigService;
@@ -32,8 +31,7 @@ import java.util.Arrays;
 
 public class ZipkinHTTPReceiverProvider extends ModuleProvider {
   private ZipkinHTTPReceiverConfig moduleConfig;
-  private SpanForward spanForward;
-  private HTTPServer httpServer;
+  private ZipkinSpanHTTPHandler httpHandler;
 
   @Override
   public String name() {
@@ -67,14 +65,15 @@ public class ZipkinHTTPReceiverProvider extends ModuleProvider {
   @Override
   public void start() throws ServiceNotProvidedException, ModuleStartException {
     final ConfigService service = getManager().find(CoreModule.NAME).provider().getService(ConfigService.class);
-    this.spanForward = new SpanForward(((ZipkinConfigService)service).toZipkinReceiverConfig(), getManager());
+    final SpanForward spanForward = new SpanForward(((ZipkinConfigService)service).toZipkinReceiverConfig(), getManager());
+    httpHandler = new ZipkinSpanHTTPHandler(spanForward, getManager());
+
+    final HTTPHandlerRegister httpRegister = getManager().find(CoreModule.NAME).provider().getService(HTTPHandlerRegister.class);
+    httpRegister.addHandler(httpHandler, Arrays.asList(HttpMethod.POST, HttpMethod.GET));
   }
 
   @Override
   public void notifyAfterCompleted() throws ServiceNotProvidedException, ModuleStartException {
-    final HTTPHandlerRegister httpRegister = getManager().find(CoreModule.NAME).provider().getService(HTTPHandlerRegister.class);
-    httpRegister.addHandler(new ZipkinSpanHTTPHandler(this.spanForward, getManager()),
-        Arrays.asList(HttpMethod.POST, HttpMethod.GET));
   }
 
   @Override
@@ -82,5 +81,9 @@ public class ZipkinHTTPReceiverProvider extends ModuleProvider {
     return new String[] {
         CoreModule.NAME,
     };
+  }
+
+  public ZipkinSpanHTTPHandler getHttpHandler() {
+    return httpHandler;
   }
 }

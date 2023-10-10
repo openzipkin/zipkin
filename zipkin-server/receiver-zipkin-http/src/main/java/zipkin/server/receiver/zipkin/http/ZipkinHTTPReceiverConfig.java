@@ -17,58 +17,5 @@ package zipkin.server.receiver.zipkin.http;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 
 public class ZipkinHTTPReceiverConfig extends ModuleConfig {
-  private String restHost;
-  private int restPort;
-  private String restContextPath;
-  private int restMaxThreads = 200;
-  private long restIdleTimeOut = 30000;
-  private int restAcceptQueueSize = 0;
 
-  public String getRestHost() {
-    return restHost;
-  }
-
-  public void setRestHost(String restHost) {
-    this.restHost = restHost;
-  }
-
-  public int getRestPort() {
-    return restPort;
-  }
-
-  public void setRestPort(int restPort) {
-    this.restPort = restPort;
-  }
-
-  public String getRestContextPath() {
-    return restContextPath;
-  }
-
-  public void setRestContextPath(String restContextPath) {
-    this.restContextPath = restContextPath;
-  }
-
-  public int getRestMaxThreads() {
-    return restMaxThreads;
-  }
-
-  public void setRestMaxThreads(int restMaxThreads) {
-    this.restMaxThreads = restMaxThreads;
-  }
-
-  public long getRestIdleTimeOut() {
-    return restIdleTimeOut;
-  }
-
-  public void setRestIdleTimeOut(long restIdleTimeOut) {
-    this.restIdleTimeOut = restIdleTimeOut;
-  }
-
-  public int getRestAcceptQueueSize() {
-    return restAcceptQueueSize;
-  }
-
-  public void setRestAcceptQueueSize(int restAcceptQueueSize) {
-    this.restAcceptQueueSize = restAcceptQueueSize;
-  }
 }

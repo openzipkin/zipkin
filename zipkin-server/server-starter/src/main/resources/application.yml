@@ -49,7 +49,7 @@ core:
     gRPCMaxConcurrentCallsPerConnection: ${ZIPKIN_GRPC_MAX_CONCURRENT_CALL:0}
     gRPCMaxMessageSize: ${ZIPKIN_GRPC_MAX_MESSAGE_SIZE:0}
     restHost: ${ZIPKIN_REST_HOST:0.0.0.0}
-    restPort: ${ZIPKIN_REST_PORT:9412}
+    restPort: ${ZIPKIN_REST_PORT:9411}
     restContextPath: ${ZIPKIN_REST_CONTEXT_PATH:/zipkin}
     restMaxThreads: ${ZIPKIN_REST_MAX_THREADS:200}
     restIdleTimeOut: ${ZIPKIN_REST_IDLE_TIMEOUT:30000}
@@ -150,12 +150,6 @@ storage:
 receiver-zipkin-http:
   selector: ${ZIPKIN_RECEIVER_ZIPKIN_HTTP:default}
   default:
-    restHost: ${ZIPKIN_RECEIVER_ZIPKIN_REST_HOST:0.0.0.0}
-    restPort: ${ZIPKIN_RECEIVER_ZIPKIN_REST_PORT:9411}
-    restContextPath: ${ZIPKIN_RECEIVER_ZIPKIN_REST_CONTEXT_PATH:/}
-    restMaxThreads: ${ZIPKIN_RECEIVER_ZIPKIN_REST_MAX_THREADS:200}
-    restIdleTimeOut: ${ZIPKIN_RECEIVER_ZIPKIN_REST_IDLE_TIMEOUT:30000}
-    restAcceptQueueSize: ${ZIPKIN_RECEIVER_ZIPKIN_REST_QUEUE_SIZE:0}
 
 receiver-zipkin-kafka:
   selector: ${ZIPKIN_RECEIVER_ZIPKIN_KAFKA:-}
