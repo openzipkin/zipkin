@@ -32,7 +32,7 @@ import java.io.StringWriter;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class ZipkinHealthController {
+public class ZipkinHealthHandler {
   static final String STATUS_UP = "UP", STATUS_DOWN = "DOWN";
 
   final MetricsCollector collector;
@@ -41,7 +41,7 @@ public class ZipkinHealthController {
   public static final MediaType MEDIA_TYPE_ACTUATOR =
       MediaType.parse("application/vnd.spring-boot.actuator.v2+json;charset=UTF-8");
 
-  public ZipkinHealthController(ModuleManager moduleManager) {
+  public ZipkinHealthHandler(ModuleManager moduleManager) {
     ModuleServiceHolder telemetry = moduleManager.find(TelemetryModule.NAME).provider();
     metricsCreator = telemetry.getService(MetricsCreator.class);
     collector = telemetry.getService(MetricsCollector.class);

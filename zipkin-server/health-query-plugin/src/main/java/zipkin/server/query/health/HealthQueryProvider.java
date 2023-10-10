@@ -58,7 +58,7 @@ public class HealthQueryProvider extends ModuleProvider {
   public void start() throws ServiceNotProvidedException, ModuleStartException {
     getManager().find(CoreModule.NAME).provider()
         .getService(HTTPHandlerRegister.class).addHandler(
-            new ZipkinHealthController(getManager()),
+            new ZipkinHealthHandler(getManager()),
             Collections.singletonList(HttpMethod.GET)
         );
   }
