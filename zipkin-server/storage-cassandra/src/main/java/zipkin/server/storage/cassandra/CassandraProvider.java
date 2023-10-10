@@ -56,6 +56,7 @@ import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsTag;
 import zipkin.server.storage.cassandra.dao.CassandraBatchDAO;
 import zipkin.server.storage.cassandra.dao.CassandraHistoryDeleteDAO;
+import zipkin.server.storage.cassandra.dao.CassandraSpanAttachedEventRecordDAO;
 import zipkin.server.storage.cassandra.dao.CassandraStorageDAO;
 import zipkin.server.storage.cassandra.dao.CassandraTagAutocompleteDAO;
 import zipkin.server.storage.cassandra.dao.CassandraZipkinQueryDAO;
@@ -134,8 +135,7 @@ public class CassandraProvider extends ModuleProvider {
     this.registerServiceImplementation(IEBPFProfilingDataDAO.class, emptyDAO);
     this.registerServiceImplementation(IContinuousProfilingPolicyDAO.class, emptyDAO);
     this.registerServiceImplementation(IServiceLabelDAO.class, emptyDAO);
-    this.registerServiceImplementation(ITagAutoCompleteQueryDAO.class, emptyDAO);
-    this.registerServiceImplementation(ISpanAttachedEventQueryDAO.class, emptyDAO);
+    this.registerServiceImplementation(ISpanAttachedEventQueryDAO.class, new CassandraSpanAttachedEventRecordDAO());
 
     this.registerServiceImplementation(IHistoryDeleteDAO.class, new CassandraHistoryDeleteDAO(client, tableHelper, modelInstaller, Clock.systemDefaultZone()));
     this.registerServiceImplementation(IZipkinQueryDAO.class, new CassandraZipkinQueryDAO(client, tableHelper));

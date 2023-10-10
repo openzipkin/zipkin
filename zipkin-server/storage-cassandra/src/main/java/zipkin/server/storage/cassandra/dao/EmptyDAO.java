@@ -121,369 +121,350 @@ public class EmptyDAO implements
     IEBPFProfilingScheduleDAO,
     IEBPFProfilingDataDAO,
     IContinuousProfilingPolicyDAO,
-    IServiceLabelDAO,
-    ITagAutoCompleteQueryDAO,
-    ISpanAttachedEventQueryDAO
+    IServiceLabelDAO
 {
   @Override
   public List<NetworkAddressAlias> loadLastUpdate(long timeBucket) {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public InsertRequest prepareBatchInsert(Model model, Record record) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public UIMenu getMenu(String id) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public void saveMenu(UIMenu menu) throws IOException {
-
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public DashboardConfiguration getTemplate(String id) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<DashboardConfiguration> getAllTemplates(Boolean includingDisabled) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public TemplateChangeStatus addTemplate(DashboardSetting setting) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public TemplateChangeStatus changeTemplate(DashboardSetting setting) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public TemplateChangeStatus disableTemplate(String id) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public void savePolicy(ContinuousProfilingPolicy policy) throws IOException {
-
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<ContinuousProfilingPolicy> queryPolicies(List<String> serviceIdList) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<EBPFProfilingDataRecord> queryData(List<String> scheduleIdList, long beginTime, long endTime) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<EBPFProfilingSchedule> querySchedules(String taskId) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<EBPFProfilingTaskRecord> queryTasksByServices(List<String> serviceIdList, EBPFProfilingTriggerType triggerType, long taskStartTime, long latestUpdateTime) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<EBPFProfilingTaskRecord> queryTasksByTargets(String serviceId, String serviceInstanceId, List<EBPFProfilingTargetType> targetTypes, EBPFProfilingTriggerType triggerType, long taskStartTime, long latestUpdateTime) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<EBPFProfilingTaskRecord> getTaskRecord(String id) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<String> queryAllLabels(String serviceId) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<ProfileTaskLog> getTaskLogList() throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<String> queryProfiledSegmentIdList(String taskId) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public int queryMinSequence(String segmentId, long start, long end) throws IOException {
-    return 0;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public int queryMaxSequence(String segmentId, long start, long end) throws IOException {
-    return 0;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<ProfileThreadSnapshotRecord> queryRecords(String segmentId, int minSequence, int maxSequence) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<SelectedRecord> sortMetrics(TopNCondition condition, String valueColumnName, Duration duration, List<KeyValue> additionalConditions) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public Alarms getAlarm(Integer scopeId, String keyword, int limit, int from, Duration duration, List<Tag> tags) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public void parserDataBinaryBase64(String dataBinaryBase64, List<KeyValue> tags) {
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public BrowserErrorLogs queryBrowserErrorLogs(String serviceId, String serviceVersionId, String pagePathId, BrowserErrorCategory category, Duration duration, int limit, int from) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public BrowserErrorLog parserDataBinary(String dataBinaryBase64) {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public BrowserErrorLog parserDataBinary(byte[] dataBinary) {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public Events queryEvents(EventQueryCondition condition) throws Exception {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public Events queryEvents(List<EventQueryCondition> conditionList) throws Exception {
-    return null;
-  }
-
-  @Override
-  public List<SpanAttachedEventRecord> querySpanAttachedEvents(SpanAttachedEventTraceType type, List<String> traceIds) throws IOException {
-    return Collections.emptyList();
-  }
-
-  @Override
-  public Set<String> queryTagAutocompleteKeys(TagType tagType, int limit, Duration duration) throws IOException {
-    return null;
-  }
-
-  @Override
-  public Set<String> queryTagAutocompleteValues(TagType tagType, String tagKey, int limit, Duration duration) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Call.CallDetail> loadServiceRelationsDetectedAtServerSide(Duration duration, List<String> serviceIds) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Call.CallDetail> loadServiceRelationDetectedAtClientSide(Duration duration, List<String> serviceIds) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Call.CallDetail> loadServiceRelationsDetectedAtServerSide(Duration duration) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Call.CallDetail> loadServiceRelationDetectedAtClientSide(Duration duration) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Call.CallDetail> loadInstanceRelationDetectedAtServerSide(String clientServiceId, String serverServiceId, Duration duration) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Call.CallDetail> loadInstanceRelationDetectedAtClientSide(String clientServiceId, String serverServiceId, Duration duration) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Call.CallDetail> loadEndpointRelation(Duration duration, String destEndpointId) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Call.CallDetail> loadProcessRelationDetectedAtClientSide(String serviceInstanceId, Duration duration) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Call.CallDetail> loadProcessRelationDetectedAtServerSide(String serviceInstanceId, Duration duration) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public TraceBrief queryBasicTraces(Duration duration, long minDuration, long maxDuration, String serviceId, String serviceInstanceId, String endpointId, String traceId, int limit, int from, TraceState traceState, QueryOrder queryOrder, List<Tag> tags) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<SegmentRecord> queryByTraceId(String traceId) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<SegmentRecord> queryBySegmentIdList(List<String> segmentIdList) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<SegmentRecord> queryByTraceIdWithInstanceId(List<String> traceIdList, List<String> instanceIdList) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Span> doFlexibleTraceQuery(String traceId) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<ProfileTask> getTaskList(String serviceId, String endpointName, Long startTimeBucket, Long endTimeBucket, Integer limit) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public ProfileTask getById(String id) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Metrics> multiGet(Model model, List<Metrics> metrics) throws Exception {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public InsertRequest prepareBatchInsert(Model model, Metrics metrics, SessionCacheCallback callback) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public UpdateRequest prepareBatchUpdate(Model model, Metrics metrics, SessionCacheCallback callback) throws IOException {
-    return null;
-  }
-
-  @Override
-  public boolean isExpiredCache(Model model, Metrics cachedValue, long currentTimeMillis, int ttl) {
-    return IMetricsDAO.super.isExpiredCache(model, cachedValue, currentTimeMillis, ttl);
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Service> listServices() throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<ServiceInstance> listInstances(Duration duration, String serviceId) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public ServiceInstance getInstance(String instanceId) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<ServiceInstance> getInstances(List<String> instanceIds) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Endpoint> findEndpoint(String keyword, String serviceId, int limit) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Process> listProcesses(String serviceId, ProfilingSupportStatus supportStatus, long lastPingStartTimeBucket, long lastPingEndTimeBucket) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Process> listProcesses(String serviceInstanceId, Duration duration, boolean includeVirtual) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<Process> listProcesses(String agentId) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public long getProcessCount(String serviceId, ProfilingSupportStatus profilingSupportStatus, long lastPingStartTimeBucket, long lastPingEndTimeBucket) throws IOException {
-    return 0;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public long getProcessCount(String instanceId) throws IOException {
-    return 0;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public Process getProcess(String processId) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<org.apache.skywalking.oap.server.core.query.type.Record> readRecords(RecordCondition condition, String valueColumnName, Duration duration) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public NullableValue readMetricsValue(MetricsCondition condition, String valueColumnName, Duration duration) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public MetricsValues readMetricsValues(MetricsCondition condition, String valueColumnName, Duration duration) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public List<MetricsValues> readLabeledMetricsValues(MetricsCondition condition, String valueColumnName, List<String> labels, Duration duration) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public HeatMap readHeatMap(MetricsCondition condition, String valueColumnName, Duration duration) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public boolean supportQueryLogsByKeywords() {
-    return false;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public Logs queryLogs(String serviceId, String serviceInstanceId, String endpointId, TraceScopeCondition relatedTrace, Order queryOrder, int from, int limit, Duration duration, List<Tag> tags, List<String> keywordsOfContent, List<String> excludingKeywordsOfContent) throws IOException {
-    return null;
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public void parserDataBinary(String dataBinaryBase64, List<KeyValue> tags) {
+    throw new IllegalStateException("Not implemented");
   }
 
   @Override
   public void parserDataBinary(byte[] dataBinary, List<KeyValue> tags) {
+    throw new IllegalStateException("Not implemented");
   }
 }
