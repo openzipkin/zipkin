@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,11 +12,10 @@
  * the License.
  */
 
-package zipkin.server.receiver.zipkin.http;
+package zipkin.server.query.health;
 
 import com.linecorp.armeria.common.HttpMethod;
 import org.apache.skywalking.oap.server.core.CoreModule;
-import org.apache.skywalking.oap.server.core.config.ConfigService;
 import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
@@ -25,37 +24,32 @@ import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
-import org.apache.skywalking.oap.server.receiver.zipkin.handler.ZipkinSpanHTTPHandler;
-import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
-import zipkin.server.core.services.ZipkinConfigService;
 
-import java.util.Arrays;
+import java.util.Collections;
 
-public class ZipkinHTTPReceiverProvider extends ModuleProvider {
-  private ZipkinHTTPReceiverConfig moduleConfig;
-  private ZipkinSpanHTTPHandler httpHandler;
+public class HealthQueryProvider extends ModuleProvider {
+  private HealthQueryConfig moduleConfig;
   private HTTPServer httpServer;
-
   @Override
   public String name() {
-    return "default";
+    return "zipkin";
   }
 
   @Override
   public Class<? extends ModuleDefine> module() {
-    return ZipkinHTTPReceiverModule.class;
+    return HealthQueryModule.class;
   }
 
   @Override
   public ConfigCreator<? extends ModuleConfig> newConfigCreator() {
-    return new ConfigCreator<ZipkinHTTPReceiverConfig>() {
+    return new ConfigCreator<HealthQueryConfig>() {
       @Override
-      public Class<ZipkinHTTPReceiverConfig> type() {
-        return ZipkinHTTPReceiverConfig.class;
+      public Class<HealthQueryConfig> type() {
+        return HealthQueryConfig.class;
       }
 
       @Override
-      public void onInitialized(ZipkinHTTPReceiverConfig initialized) {
+      public void onInitialized(HealthQueryConfig initialized) {
         moduleConfig = initialized;
       }
     };
@@ -80,15 +74,15 @@ public class ZipkinHTTPReceiverProvider extends ModuleProvider {
 
   @Override
   public void start() throws ServiceNotProvidedException, ModuleStartException {
-    final ConfigService service = getManager().find(CoreModule.NAME).provider().getService(ConfigService.class);
-    final SpanForward spanForward = new SpanForward(((ZipkinConfigService)service).toZipkinReceiverConfig(), getManager());
-    httpHandler = new ZipkinSpanHTTPHandler(spanForward, getManager());
-
     if (httpServer != null) {
-      httpServer.addHandler(httpHandler, Arrays.asList(HttpMethod.POST, HttpMethod.GET));
+      httpServer.addHandler(new ZipkinHealthHandler(getManager()),
+          Collections.singletonList(HttpMethod.GET));
     } else {
-      final HTTPHandlerRegister httpRegister = getManager().find(CoreModule.NAME).provider().getService(HTTPHandlerRegister.class);
-      httpRegister.addHandler(httpHandler, Arrays.asList(HttpMethod.POST, HttpMethod.GET));
+      getManager().find(CoreModule.NAME).provider()
+          .getService(HTTPHandlerRegister.class).addHandler(
+              new ZipkinHealthHandler(getManager()),
+              Collections.singletonList(HttpMethod.GET)
+          );
     }
   }
 
@@ -101,12 +95,6 @@ public class ZipkinHTTPReceiverProvider extends ModuleProvider {
 
   @Override
   public String[] requiredModules() {
-    return new String[] {
-        CoreModule.NAME,
-    };
-  }
-
-  public ZipkinSpanHTTPHandler getHttpHandler() {
-    return httpHandler;
+    return new String[0];
   }
 }

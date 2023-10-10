@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,11 +12,12 @@
  * the License.
  */
 
-package zipkin.server.receiver.zipkin.http;
+package zipkin.server.query.http;
 
+import org.apache.skywalking.oap.query.zipkin.ZipkinQueryConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 
-public class ZipkinHTTPReceiverConfig extends ModuleConfig {
+public class HTTPQueryConfig extends ModuleConfig {
   private String restHost;
   private int restPort;
   private String restContextPath;
@@ -28,6 +29,81 @@ public class ZipkinHTTPReceiverConfig extends ModuleConfig {
    * Use -1 to disable it.
    */
   private int restMaxRequestHeaderSize = 8192;
+
+  private boolean strictTraceId = true;
+  private long lookback = 86400000L;
+  private int namesMaxAge = 300;
+  private int uiQueryLimit = 10;
+  private String uiEnvironment = "";
+  private long uiDefaultLookback = 900000L;
+  private boolean uiSearchEnabled = true;
+
+  public ZipkinQueryConfig toSkyWalkingConfig() {
+    final ZipkinQueryConfig result = new ZipkinQueryConfig();
+    result.setLookback(lookback);
+    result.setNamesMaxAge(namesMaxAge);
+    result.setUiQueryLimit(uiQueryLimit);
+    result.setUiEnvironment(uiEnvironment);
+    result.setUiDefaultLookback(uiDefaultLookback);
+    result.setUiSearchEnabled(uiSearchEnabled);
+    return result;
+  }
+
+  public long getLookback() {
+    return lookback;
+  }
+
+  public void setLookback(long lookback) {
+    this.lookback = lookback;
+  }
+
+  public int getNamesMaxAge() {
+    return namesMaxAge;
+  }
+
+  public void setNamesMaxAge(int namesMaxAge) {
+    this.namesMaxAge = namesMaxAge;
+  }
+
+  public int getUiQueryLimit() {
+    return uiQueryLimit;
+  }
+
+  public void setUiQueryLimit(int uiQueryLimit) {
+    this.uiQueryLimit = uiQueryLimit;
+  }
+
+  public String getUiEnvironment() {
+    return uiEnvironment;
+  }
+
+  public void setUiEnvironment(String uiEnvironment) {
+    this.uiEnvironment = uiEnvironment;
+  }
+
+  public long getUiDefaultLookback() {
+    return uiDefaultLookback;
+  }
+
+  public void setUiDefaultLookback(long uiDefaultLookback) {
+    this.uiDefaultLookback = uiDefaultLookback;
+  }
+
+  public boolean getUiSearchEnabled() {
+    return uiSearchEnabled;
+  }
+
+  public void setUiSearchEnabled(boolean uiSearchEnabled) {
+    this.uiSearchEnabled = uiSearchEnabled;
+  }
+
+  public boolean getStrictTraceId() {
+    return strictTraceId;
+  }
+
+  public void setStrictTraceId(boolean strictTraceId) {
+    this.strictTraceId = strictTraceId;
+  }
 
   public String getRestHost() {
     return restHost;

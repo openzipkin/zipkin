@@ -17,8 +17,12 @@ package zipkin.server.receiver.zipkin.http;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.CoreModuleProvider;
 import org.apache.skywalking.oap.server.core.config.ConfigService;
+import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
+import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegisterImpl;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
+import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
+import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
 import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
 import org.apache.skywalking.oap.server.telemetry.TelemetryModule;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
@@ -66,26 +70,23 @@ public class ITHTTPReceiver {
 
   @BeforeEach
   public void setup() throws ModuleStartException {
-    final ZipkinHTTPReceiverConfig config = new ZipkinHTTPReceiverConfig();
-    config.setRestHost("0.0.0.0");
-    config.setRestPort(port);
-    config.setRestContextPath("/");
-    config.setRestIdleTimeOut(1000);
-    config.setRestMaxThreads(2);
-    config.setRestAcceptQueueSize(10);
-
-    moduleManager = setupModuleManager();
+    final HTTPServer httpServer = new HTTPServer(HTTPServerConfig.builder().host("0.0.0.0").port(port).contextPath("/").build());
+    httpServer.initialize();
+    moduleManager = setupModuleManager(httpServer);
 
     final ZipkinHTTPReceiverProvider provider = new ZipkinHTTPReceiverProvider();
     provider.setManager(moduleManager);
+    final ZipkinHTTPReceiverConfig config = new ZipkinHTTPReceiverConfig();
+    config.setRestPort(-1);
     Whitebox.setInternalState(provider, ZipkinHTTPReceiverConfig.class, config);
     provider.prepare();
     provider.start();
+    httpServer.start();
     doAnswer(invocationOnMock -> {
       spans.add(invocationOnMock.getArgument(0, ArrayList.class));
       return null;
     }).when(forward).send(any());
-    Whitebox.setInternalState(provider, SpanForward.class, forward);
+    Whitebox.setInternalState(provider.getHttpHandler(), SpanForward.class, forward);
     provider.notifyAfterCompleted();
   }
 
@@ -115,13 +116,14 @@ public class ITHTTPReceiver {
     assertThat(spans.take()).containsExactly(CLIENT_SPAN);
   }
 
-  private ModuleManager setupModuleManager() {
+  private ModuleManager setupModuleManager(HTTPServer httpServer) {
     ModuleManager moduleManager = Mockito.mock(ModuleManager.class);
 
     CoreModule coreModule = Mockito.spy(CoreModule.class);
     CoreModuleProvider moduleProvider = Mockito.mock(CoreModuleProvider.class);
     Whitebox.setInternalState(coreModule, "loadedProvider", moduleProvider);
     Mockito.when(moduleManager.find(CoreModule.NAME)).thenReturn(coreModule);
+    Mockito.when(coreModule.provider().getService(HTTPHandlerRegister.class)).thenReturn(new HTTPHandlerRegisterImpl(httpServer));
 
     TelemetryModule telemetryModule = Mockito.spy(TelemetryModule.class);
     NoneTelemetryProvider noneTelemetryProvider = Mockito.mock(NoneTelemetryProvider.class);

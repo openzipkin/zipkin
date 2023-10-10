@@ -20,11 +20,7 @@
 <Configuration status="DEBUG">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout>
-                <LevelPatternSelector defaultPattern="%d %c %L [%t] %-5p %x - %m%n">
-                    <PatternMatch key="ERROR" pattern="%d %c %L [%t] %-5p %x - [%swversion] %m%n" />
-                </LevelPatternSelector>
-            </PatternLayout>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight{%5p} ${PID:-} --- [%15.15t] %c{1.} : %m%n" />
         </Console>
     </Appenders>
     <Loggers>

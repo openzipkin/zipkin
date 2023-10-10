@@ -27,6 +27,18 @@ public class CoreModuleConfig extends ModuleConfig {
   private int gRPCThreadPoolQueueSize;
   private int gRPCMaxConcurrentCallsPerConnection;
   private int gRPCMaxMessageSize;
+
+  private String restHost;
+  private int restPort;
+  private String restContextPath;
+  private int restMaxThreads = 200;
+  private long restIdleTimeOut = 30000;
+  private int restAcceptQueueSize = 0;
+  /**
+   * The maximum size in bytes allowed for request headers.
+   * Use -1 to disable it.
+   */
+  private int restMaxRequestHeaderSize = 8192;
   
   /**
    * The max length of the service name.
@@ -71,9 +83,9 @@ public class CoreModuleConfig extends ModuleConfig {
   private String searchableTracesTags = DEFAULT_SEARCHABLE_TAG_KEYS;
 
   /**
-   * The trace sample rate precision is 1/10000, should be between 0 and 10000.
+   * The trace sample rate precision is 0.0001, should be between 0 and 1.
    */
-  private int traceSampleRate = 10000;
+  private double traceSampleRate = 1.0f;
 
   /**
    * The number of threads used to prepare metrics data to the storage.
@@ -175,11 +187,11 @@ public class CoreModuleConfig extends ModuleConfig {
     this.searchableTracesTags = searchableTracesTags;
   }
 
-  public int getTraceSampleRate() {
+  public double getTraceSampleRate() {
     return traceSampleRate;
   }
 
-  public void setTraceSampleRate(int traceSampleRate) {
+  public void setTraceSampleRate(double traceSampleRate) {
     this.traceSampleRate = traceSampleRate;
   }
 
@@ -285,5 +297,61 @@ public class CoreModuleConfig extends ModuleConfig {
 
   public void setGRPCMaxMessageSize(int gRPCMaxMessageSize) {
     this.gRPCMaxMessageSize = gRPCMaxMessageSize;
+  }
+
+  public String getRestHost() {
+    return restHost;
+  }
+
+  public void setRestHost(String restHost) {
+    this.restHost = restHost;
+  }
+
+  public int getRestPort() {
+    return restPort;
+  }
+
+  public void setRestPort(int restPort) {
+    this.restPort = restPort;
+  }
+
+  public String getRestContextPath() {
+    return restContextPath;
+  }
+
+  public void setRestContextPath(String restContextPath) {
+    this.restContextPath = restContextPath;
+  }
+
+  public int getRestMaxThreads() {
+    return restMaxThreads;
+  }
+
+  public void setRestMaxThreads(int restMaxThreads) {
+    this.restMaxThreads = restMaxThreads;
+  }
+
+  public long getRestIdleTimeOut() {
+    return restIdleTimeOut;
+  }
+
+  public void setRestIdleTimeOut(long restIdleTimeOut) {
+    this.restIdleTimeOut = restIdleTimeOut;
+  }
+
+  public int getRestAcceptQueueSize() {
+    return restAcceptQueueSize;
+  }
+
+  public void setRestAcceptQueueSize(int restAcceptQueueSize) {
+    this.restAcceptQueueSize = restAcceptQueueSize;
+  }
+
+  public int getRestMaxRequestHeaderSize() {
+    return restMaxRequestHeaderSize;
+  }
+
+  public void setRestMaxRequestHeaderSize(int restMaxRequestHeaderSize) {
+    this.restMaxRequestHeaderSize = restMaxRequestHeaderSize;
   }
 }
