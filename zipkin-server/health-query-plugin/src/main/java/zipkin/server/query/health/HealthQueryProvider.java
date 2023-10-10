@@ -22,10 +22,14 @@ import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
+import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
+import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
 
 import java.util.Collections;
 
 public class HealthQueryProvider extends ModuleProvider {
+  private HealthQueryConfig moduleConfig;
+  private HTTPServer httpServer;
   @Override
   public String name() {
     return "zipkin";
@@ -46,25 +50,47 @@ public class HealthQueryProvider extends ModuleProvider {
 
       @Override
       public void onInitialized(HealthQueryConfig initialized) {
+        moduleConfig = initialized;
       }
     };
   }
 
   @Override
   public void prepare() throws ServiceNotProvidedException, ModuleStartException {
+    if (moduleConfig.getRestPort() > 0) {
+      HTTPServerConfig httpServerConfig = HTTPServerConfig.builder()
+          .host(moduleConfig.getRestHost())
+          .port(moduleConfig.getRestPort())
+          .contextPath(moduleConfig.getRestContextPath())
+          .idleTimeOut(moduleConfig.getRestIdleTimeOut())
+          .maxThreads(moduleConfig.getRestMaxThreads())
+          .acceptQueueSize(moduleConfig.getRestAcceptQueueSize())
+          .maxRequestHeaderSize(moduleConfig.getRestMaxRequestHeaderSize())
+          .build();
+      httpServer = new HTTPServer(httpServerConfig);
+      httpServer.initialize();
+    }
   }
 
   @Override
   public void start() throws ServiceNotProvidedException, ModuleStartException {
-    getManager().find(CoreModule.NAME).provider()
-        .getService(HTTPHandlerRegister.class).addHandler(
-            new ZipkinHealthHandler(getManager()),
-            Collections.singletonList(HttpMethod.GET)
-        );
+    if (httpServer != null) {
+      httpServer.addHandler(new ZipkinHealthHandler(getManager()),
+          Collections.singletonList(HttpMethod.GET));
+    } else {
+      getManager().find(CoreModule.NAME).provider()
+          .getService(HTTPHandlerRegister.class).addHandler(
+              new ZipkinHealthHandler(getManager()),
+              Collections.singletonList(HttpMethod.GET)
+          );
+    }
   }
 
   @Override
   public void notifyAfterCompleted() throws ServiceNotProvidedException, ModuleStartException {
+    if (httpServer != null) {
+      httpServer.start();
+    }
   }
 
   @Override

@@ -76,6 +76,9 @@ public class ITHTTPReceiver {
 
     final ZipkinHTTPReceiverProvider provider = new ZipkinHTTPReceiverProvider();
     provider.setManager(moduleManager);
+    final ZipkinHTTPReceiverConfig config = new ZipkinHTTPReceiverConfig();
+    config.setRestPort(-1);
+    Whitebox.setInternalState(provider, ZipkinHTTPReceiverConfig.class, config);
     provider.prepare();
     provider.start();
     httpServer.start();

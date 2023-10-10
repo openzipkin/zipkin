@@ -18,6 +18,18 @@ import org.apache.skywalking.oap.query.zipkin.ZipkinQueryConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 
 public class HTTPQueryConfig extends ModuleConfig {
+  private String restHost;
+  private int restPort;
+  private String restContextPath;
+  private int restMaxThreads = 200;
+  private long restIdleTimeOut = 30000;
+  private int restAcceptQueueSize = 0;
+  /**
+   * The maximum size in bytes allowed for request headers.
+   * Use -1 to disable it.
+   */
+  private int restMaxRequestHeaderSize = 8192;
+
   private boolean strictTraceId = true;
   private long lookback = 86400000L;
   private int namesMaxAge = 300;
@@ -91,5 +103,61 @@ public class HTTPQueryConfig extends ModuleConfig {
 
   public void setStrictTraceId(boolean strictTraceId) {
     this.strictTraceId = strictTraceId;
+  }
+
+  public String getRestHost() {
+    return restHost;
+  }
+
+  public void setRestHost(String restHost) {
+    this.restHost = restHost;
+  }
+
+  public int getRestPort() {
+    return restPort;
+  }
+
+  public void setRestPort(int restPort) {
+    this.restPort = restPort;
+  }
+
+  public String getRestContextPath() {
+    return restContextPath;
+  }
+
+  public void setRestContextPath(String restContextPath) {
+    this.restContextPath = restContextPath;
+  }
+
+  public int getRestMaxThreads() {
+    return restMaxThreads;
+  }
+
+  public void setRestMaxThreads(int restMaxThreads) {
+    this.restMaxThreads = restMaxThreads;
+  }
+
+  public long getRestIdleTimeOut() {
+    return restIdleTimeOut;
+  }
+
+  public void setRestIdleTimeOut(long restIdleTimeOut) {
+    this.restIdleTimeOut = restIdleTimeOut;
+  }
+
+  public int getRestAcceptQueueSize() {
+    return restAcceptQueueSize;
+  }
+
+  public void setRestAcceptQueueSize(int restAcceptQueueSize) {
+    this.restAcceptQueueSize = restAcceptQueueSize;
+  }
+
+  public int getRestMaxRequestHeaderSize() {
+    return restMaxRequestHeaderSize;
+  }
+
+  public void setRestMaxRequestHeaderSize(int restMaxRequestHeaderSize) {
+    this.restMaxRequestHeaderSize = restMaxRequestHeaderSize;
   }
 }

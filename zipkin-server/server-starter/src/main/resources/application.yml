@@ -50,7 +50,7 @@ core:
     gRPCMaxMessageSize: ${ZIPKIN_GRPC_MAX_MESSAGE_SIZE:0}
     restHost: ${ZIPKIN_REST_HOST:0.0.0.0}
     restPort: ${ZIPKIN_REST_PORT:9411}
-    restContextPath: ${ZIPKIN_REST_CONTEXT_PATH:/zipkin}
+    restContextPath: ${ZIPKIN_REST_CONTEXT_PATH:/}
     restMaxThreads: ${ZIPKIN_REST_MAX_THREADS:200}
     restIdleTimeOut: ${ZIPKIN_REST_IDLE_TIMEOUT:30000}
     restAcceptQueueSize: ${ZIPKIN_REST_QUEUE_SIZE:0}
@@ -150,6 +150,14 @@ storage:
 receiver-zipkin-http:
   selector: ${ZIPKIN_RECEIVER_ZIPKIN_HTTP:default}
   default:
+    restHost: ${ZIPKIN_RECEIVER_HTTP_REST_HOST:0.0.0.0}
+    # The port number of the HTTP service, the default HTTP service in the core would be used if the value is smaller than 0.
+    restPort: ${ZIPKIN_RECEIVER_HTTP_REST_PORT:-1}
+    restContextPath: ${ZIPKIN_RECEIVER_HTTP_REST_CONTEXT_PATH:/}
+    restMaxThreads: ${ZIPKIN_RECEIVER_HTTP_REST_MAX_THREADS:200}
+    restIdleTimeOut: ${ZIPKIN_RECEIVER_HTTP_REST_IDLE_TIMEOUT:30000}
+    restAcceptQueueSize: ${ZIPKIN_RECEIVER_HTTP_REST_QUEUE_SIZE:0}
+    restMaxRequestHeaderSize: ${ZIPKIN_RECEIVER_HTTP_REST_MAX_REQUEST_HEADER_SIZE:8192}
 
 receiver-zipkin-kafka:
   selector: ${ZIPKIN_RECEIVER_ZIPKIN_KAFKA:-}
@@ -203,6 +211,14 @@ receiver-zipkin-scribe:
 query-zipkin:
   selector: ${ZIPKIN_QUERY_ZIPKIN:zipkin}
   zipkin:
+    restHost: ${ZIPKIN_QUERY_REST_HOST:0.0.0.0}
+    # The port number of the HTTP service, the default HTTP service in the core would be used if the value is smaller than 0.
+    restPort: ${ZIPKIN_QUERY_REST_PORT:-1}
+    restContextPath: ${ZIPKIN_QUERY_REST_CONTEXT_PATH:/}
+    restMaxThreads: ${ZIPKIN_QUERY_REST_MAX_THREADS:200}
+    restIdleTimeOut: ${ZIPKIN_QUERY_REST_IDLE_TIMEOUT:30000}
+    restAcceptQueueSize: ${ZIPKIN_QUERY_REST_QUEUE_SIZE:0}
+    restMaxRequestHeaderSize: ${ZIPKIN_QUERY_REST_MAX_REQUEST_HEADER_SIZE:8192}
     strictTraceId: ${ZIPKIN_QUERY_STRICT_TRACE_ID:true}
     # Default look back for traces and autocompleteTags, 1 day in millis
     lookback: ${ZIPKIN_QUERY_LOOKBACK:86400000}
@@ -217,6 +233,14 @@ query-zipkin:
 query-health:
   selector: ${ZIPKIN_QUERY_HEALTH:zipkin}
   zipkin:
+    restHost: ${ZIPKIN_QUERY_HEALTH_REST_HOST:0.0.0.0}
+    # The port number of the HTTP service, the default HTTP service in the core would be used if the value is smaller than 0.
+    restPort: ${ZIPKIN_QUERY_HEALTH_REST_PORT:-1}
+    restContextPath: ${ZIPKIN_QUERY_HEALTH_REST_CONTEXT_PATH:/}
+    restMaxThreads: ${ZIPKIN_QUERY_HEALTH_REST_MAX_THREADS:200}
+    restIdleTimeOut: ${ZIPKIN_QUERY_HEALTH_REST_IDLE_TIMEOUT:30000}
+    restAcceptQueueSize: ${ZIPKIN_QUERY_HEALTH_REST_QUEUE_SIZE:0}
+    restMaxRequestHeaderSize: ${ZIPKIN_QUERY_HEALTH_REST_MAX_REQUEST_HEADER_SIZE:8192}
 
 telemetry:
   selector: ${ZIPKIN_TELEMETRY:none}
