@@ -34,9 +34,9 @@
     </dependency>
     <!-- telemetry -->
     <dependency>
-      <groupId>org.apache.skywalking</groupId>
-      <artifactId>telemetry-prometheus</artifactId>
-      <version>${skywalking.version}</version>
+      <groupId>io.zipkin</groupId>
+      <artifactId>telemetry-zipkin</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <!-- storage -->
@@ -113,6 +113,25 @@
       <version>${slf4j.version}</version>
     </dependency>
   </dependencies>
+
+  <profiles>
+    <profile>
+      <id>include-lens</id>
+      <activation>
+        <property>
+          <name>!skipLens</name>
+        </property>
+      </activation>
+      <dependencies>
+        <!-- Static content for the Lens UI -->
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>zipkin-lens</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 
   <build>
     <resources>

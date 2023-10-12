@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,11 +12,11 @@
  * the License.
  */
 
-package zipkin.server.receiver.zipkin.http;
+package zipkin.server.telemetry;
 
 import com.linecorp.armeria.common.HttpMethod;
+import io.prometheus.client.hotspot.DefaultExports;
 import org.apache.skywalking.oap.server.core.CoreModule;
-import org.apache.skywalking.oap.server.core.config.ConfigService;
 import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
@@ -25,38 +25,38 @@ import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
-import org.apache.skywalking.oap.server.receiver.zipkin.handler.ZipkinSpanHTTPHandler;
-import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
+import org.apache.skywalking.oap.server.telemetry.TelemetryModule;
+import org.apache.skywalking.oap.server.telemetry.api.MetricsCollector;
+import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
+import org.apache.skywalking.oap.server.telemetry.prometheus.PrometheusMetricsCollector;
+import org.apache.skywalking.oap.server.telemetry.prometheus.PrometheusMetricsCreator;
 import zipkin.server.core.services.HTTPConfigurableServer;
-import zipkin.server.core.services.ZipkinConfigService;
 
 import java.util.Arrays;
 
-public class ZipkinHTTPReceiverProvider extends ModuleProvider {
-  private ZipkinHTTPReceiverConfig moduleConfig;
-  private ZipkinSpanHTTPHandler httpHandler;
+public class ZipkinTelemetryProvider extends ModuleProvider {
+  private ZipkinTelemetryConfig moduleConfig;
   private HTTPServer httpServer;
-
   @Override
   public String name() {
-    return "default";
+    return "zipkin";
   }
 
   @Override
   public Class<? extends ModuleDefine> module() {
-    return ZipkinHTTPReceiverModule.class;
+    return TelemetryModule.class;
   }
 
   @Override
   public ConfigCreator<? extends ModuleConfig> newConfigCreator() {
-    return new ConfigCreator<ZipkinHTTPReceiverConfig>() {
+    return new ConfigCreator<ZipkinTelemetryConfig>() {
       @Override
-      public Class<ZipkinHTTPReceiverConfig> type() {
-        return ZipkinHTTPReceiverConfig.class;
+      public Class<ZipkinTelemetryConfig> type() {
+        return ZipkinTelemetryConfig.class;
       }
 
       @Override
-      public void onInitialized(ZipkinHTTPReceiverConfig initialized) {
+      public void onInitialized(ZipkinTelemetryConfig initialized) {
         moduleConfig = initialized;
       }
     };
@@ -64,6 +64,9 @@ public class ZipkinHTTPReceiverProvider extends ModuleProvider {
 
   @Override
   public void prepare() throws ServiceNotProvidedException, ModuleStartException {
+    this.registerServiceImplementation(MetricsCreator.class, new PrometheusMetricsCreator());
+    this.registerServiceImplementation(MetricsCollector.class, new PrometheusMetricsCollector());
+
     if (moduleConfig.getRestPort() > 0) {
       HTTPServerConfig httpServerConfig = HTTPServerConfig.builder()
           .host(moduleConfig.getRestHost())
@@ -77,20 +80,20 @@ public class ZipkinHTTPReceiverProvider extends ModuleProvider {
       httpServer = new HTTPConfigurableServer(httpServerConfig);
       httpServer.initialize();
     }
+
+    DefaultExports.initialize();
   }
 
   @Override
   public void start() throws ServiceNotProvidedException, ModuleStartException {
-    final ConfigService service = getManager().find(CoreModule.NAME).provider().getService(ConfigService.class);
-    final SpanForward spanForward = new SpanForward(((ZipkinConfigService)service).toZipkinReceiverConfig(), getManager());
-    httpHandler = new ZipkinSpanHTTPHandler(spanForward, getManager());
-
+    final ZipkinTelemetryHandler handler = new ZipkinTelemetryHandler();
     if (httpServer != null) {
-      httpServer.addHandler(httpHandler, Arrays.asList(HttpMethod.POST, HttpMethod.GET));
-    } else {
-      final HTTPHandlerRegister httpRegister = getManager().find(CoreModule.NAME).provider().getService(HTTPHandlerRegister.class);
-      httpRegister.addHandler(httpHandler, Arrays.asList(HttpMethod.POST, HttpMethod.GET));
+      httpServer.addHandler(handler, Arrays.asList(HttpMethod.GET, HttpMethod.POST));
+      return;
     }
+    final HTTPHandlerRegister httpRegister = getManager().find(CoreModule.NAME).provider()
+        .getService(HTTPHandlerRegister.class);
+    httpRegister.addHandler(handler, Arrays.asList(HttpMethod.GET, HttpMethod.POST));
   }
 
   @Override
@@ -102,12 +105,6 @@ public class ZipkinHTTPReceiverProvider extends ModuleProvider {
 
   @Override
   public String[] requiredModules() {
-    return new String[] {
-        CoreModule.NAME,
-    };
-  }
-
-  public ZipkinSpanHTTPHandler getHttpHandler() {
-    return httpHandler;
+    return new String[0];
   }
 }

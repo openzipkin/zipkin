@@ -9,13 +9,13 @@
     <version>2.24.4-SNAPSHOT</version>
   </parent>
 
-  <artifactId>http-query-plugin</artifactId>
-  <name>Zipkin HTTP Query</name>
+  <name>Telemetry Zipkin</name>
+  <artifactId>telemetry-zipkin</artifactId>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.skywalking</groupId>
-      <artifactId>zipkin-query-plugin</artifactId>
+      <artifactId>telemetry-prometheus</artifactId>
       <version>${skywalking.version}</version>
     </dependency>
     <dependency>

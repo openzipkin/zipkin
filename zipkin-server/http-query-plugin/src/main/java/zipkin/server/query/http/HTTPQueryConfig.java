@@ -37,6 +37,10 @@ public class HTTPQueryConfig extends ModuleConfig {
   private String uiEnvironment = "";
   private long uiDefaultLookback = 900000L;
   private boolean uiSearchEnabled = true;
+  private String allowedOrigins = "*";
+
+  private boolean uiEnable = true;
+  private String uiBasePath = "/zipkin";
 
   public ZipkinQueryConfig toSkyWalkingConfig() {
     final ZipkinQueryConfig result = new ZipkinQueryConfig();
@@ -159,5 +163,29 @@ public class HTTPQueryConfig extends ModuleConfig {
 
   public void setRestMaxRequestHeaderSize(int restMaxRequestHeaderSize) {
     this.restMaxRequestHeaderSize = restMaxRequestHeaderSize;
+  }
+
+  public String getUiBasePath() {
+    return uiBasePath;
+  }
+
+  public void setUiBasePath(String uiBasePath) {
+    this.uiBasePath = uiBasePath;
+  }
+
+  public boolean getUiEnable() {
+    return uiEnable;
+  }
+
+  public void setUiEnable(boolean uiEnable) {
+    this.uiEnable = uiEnable;
+  }
+
+  public String getAllowedOrigins() {
+    return allowedOrigins;
+  }
+
+  public void setAllowedOrigins(String allowedOrigins) {
+    this.allowedOrigins = allowedOrigins;
   }
 }
