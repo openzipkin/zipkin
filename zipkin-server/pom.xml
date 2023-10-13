@@ -68,6 +68,8 @@
     <module>receiver-zipkin-rabbitmq</module>
     <module>receiver-zipkin-scribe</module>
     <module>storage-cassandra</module>
+    <module>http-query-plugin</module>
+    <module>health-query-plugin</module>
   </modules>
 
   <dependencyManagement>

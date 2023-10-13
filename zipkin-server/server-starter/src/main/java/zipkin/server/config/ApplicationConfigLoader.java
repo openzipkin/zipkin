@@ -119,7 +119,12 @@ public class ApplicationConfigLoader implements ConfigLoader<ApplicationConfigur
     private Object convertValueString(String valueString) {
         try {
             Object replaceValue = yaml.load(valueString);
-            if (replaceValue instanceof String || replaceValue instanceof Integer || replaceValue instanceof Long || replaceValue instanceof Boolean || replaceValue instanceof ArrayList) {
+            if (replaceValue instanceof String ||
+                replaceValue instanceof Integer ||
+                replaceValue instanceof Long ||
+                replaceValue instanceof Boolean ||
+                replaceValue instanceof Double ||
+                replaceValue instanceof ArrayList) {
                 return replaceValue;
             } else {
                 return valueString;

@@ -13,8 +13,30 @@
  */
 package zipkin.server;
 
+import com.google.common.io.CharStreams;
+import org.apache.skywalking.oap.server.core.version.Version;
+import org.apache.skywalking.oap.server.library.util.ResourceUtils;
+
+import java.io.Reader;
+
 public class ZipkinServer {
   public static void main(String[] args) {
+    printBanner();
     ZipkinServerBootstrap.start();
+  }
+
+  private static void printBanner() {
+    try (Reader applicationReader = ResourceUtils.read("zipkin.txt")) {
+      String banner = CharStreams.toString(applicationReader);
+
+      banner = banner.replace("${AnsiOrange}", "\u001b[38;5;208m"); // Ansi 256 color code 208 (orange)
+      banner = banner.replace("${AnsiNormal}", "\u001b[0m");
+      banner = banner.replace("${ProjectVersion}", Version.CURRENT.getBuildVersion());
+      banner = banner.replace("${GitCommitID}", Version.CURRENT.getCommitId());
+
+      System.out.println(banner);
+    } catch (Exception ex) {
+      // who cares
+    }
   }
 }

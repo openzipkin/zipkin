@@ -90,9 +90,14 @@
 
     <!-- zipkin query -->
     <dependency>
-      <groupId>org.apache.skywalking</groupId>
-      <artifactId>zipkin-query-plugin</artifactId>
-      <version>${skywalking.version}</version>
+      <groupId>io.zipkin</groupId>
+      <artifactId>http-query-plugin</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>health-query-plugin</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <!-- library -->
