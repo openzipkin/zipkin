@@ -102,7 +102,7 @@ public class ITHTTPReceiver {
     }
 
     int responseCode = connection.getResponseCode();
-    if (responseCode != HttpURLConnection.HTTP_ACCEPTED) { // success
+    if (responseCode != HttpURLConnection.HTTP_OK) { // success
       BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
       String inputLine;
       StringBuffer response = new StringBuffer();
