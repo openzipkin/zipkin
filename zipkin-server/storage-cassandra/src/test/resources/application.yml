@@ -31,7 +31,7 @@ core:
     storageSessionTimeout: ${ZIPKIN_CORE_STORAGE_SESSION_TIMEOUT:70000}
     # Defines a set of span tag keys which are searchable.
     # The max length of key=value should be less than 256 or will be dropped.
-    searchableTracesTags: ${ZIPKIN_SEARCHABLE_TAG_KEYS:http.method}
+    searchableTracesTags: ${ZIPKIN_SEARCHABLE_TAG_KEYS:http.path}
     # The trace sample rate precision is 1/10000, should be between 0 and 10000
     traceSampleRate: ${ZIPKIN_SAMPLE_RATE:10000}
     # The number of threads used to prepare metrics data to the storage.
@@ -48,6 +48,13 @@ core:
     gRPCSslTrustedCAPath: ${ZIPKIN_GRPC_SSL_TRUSTED_CA_PATH:""}
     gRPCMaxConcurrentCallsPerConnection: ${ZIPKIN_GRPC_MAX_CONCURRENT_CALL:0}
     gRPCMaxMessageSize: ${ZIPKIN_GRPC_MAX_MESSAGE_SIZE:0}
+    restHost: ${ZIPKIN_REST_HOST:0.0.0.0}
+    restPort: ${ZIPKIN_REST_PORT:9411}
+    restContextPath: ${ZIPKIN_REST_CONTEXT_PATH:/}
+    restMaxThreads: ${ZIPKIN_REST_MAX_THREADS:200}
+    restIdleTimeOut: ${ZIPKIN_REST_IDLE_TIMEOUT:30000}
+    restAcceptQueueSize: ${ZIPKIN_REST_QUEUE_SIZE:0}
+    restMaxRequestHeaderSize: ${ZIPKIN_REST_MAX_REQUEST_HEADER_SIZE:8192}
 
 storage:
   selector: ${ZIPKIN_STORAGE:cassandra}

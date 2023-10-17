@@ -14,57 +14,71 @@
 
 package zipkin.server.storage.cassandra.dao;
 
+import org.apache.skywalking.oap.server.core.Const;
+import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.analysis.manual.searchtag.TagAutocompleteData;
 import org.apache.skywalking.oap.server.core.analysis.manual.searchtag.TagType;
+import org.apache.skywalking.oap.server.core.config.ConfigService;
 import org.apache.skywalking.oap.server.core.query.input.Duration;
-import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.SQLAndParameters;
-import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.TableHelper;
+import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.dao.JDBCTagAutoCompleteQueryDAO;
+import zipkin.server.core.services.ZipkinConfigService;
 import zipkin.server.storage.cassandra.CassandraClient;
+import zipkin.server.storage.cassandra.CassandraTableHelper;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.Objects.nonNull;
 
 public class CassandraTagAutocompleteDAO extends JDBCTagAutoCompleteQueryDAO {
   private final CassandraClient client;
-  private final TableHelper tableHelper;
+  private final CassandraTableHelper tableHelper;
+  private final ModuleManager moduleManager;
+  private Set<String> tagAutocompleteKeys;
 
-  public CassandraTagAutocompleteDAO(CassandraClient client, TableHelper tableHelper) {
+  public CassandraTagAutocompleteDAO(CassandraClient client, CassandraTableHelper tableHelper, ModuleManager moduleManager) {
     super(null, tableHelper);
     this.client = client;
     this.tableHelper = tableHelper;
+    this.moduleManager = moduleManager;
+    this.tagAutocompleteKeys = null;
+  }
+
+  private Set<String> getTagAutocompleteKeys() {
+    if (tagAutocompleteKeys != null) {
+      return tagAutocompleteKeys;
+    }
+    final ConfigService service = moduleManager.find(CoreModule.NAME).provider().getService(ConfigService.class);
+    tagAutocompleteKeys = Stream.of((((ZipkinConfigService) service).toZipkinReceiverConfig().getSearchableTracesTags())
+        .split(Const.COMMA)).collect(Collectors.toSet());
+    return tagAutocompleteKeys;
   }
 
   @Override
   public Set<String> queryTagAutocompleteKeys(TagType tagType, int limit, Duration duration) {
-    final Set<String> results = new HashSet<>();
-
-    for (String table : tableHelper.getTablesForRead(
-        TagAutocompleteData.INDEX_NAME,
-        duration.getStartTimeBucket(),
-        duration.getEndTimeBucket()
-    )) {
-      final SQLAndParameters sqlAndParameters = buildSQLForQueryKeys(tagType, Integer.MAX_VALUE, duration, table);
-      results.addAll(client.executeQuery(sqlAndParameters.sql().replaceAll("(1=1\\s+and)|(distinct)", "") + " ALLOW FILTERING",
-          row -> row.getString(TagAutocompleteData.TAG_KEY), sqlAndParameters.parameters()));
-    }
-    return results.stream().distinct().limit(limit).collect(Collectors.toSet());
+    return getTagAutocompleteKeys().stream().limit(limit).collect(Collectors.toSet());
   }
 
   @Override
   public Set<String> queryTagAutocompleteValues(TagType tagType, String tagKey, int limit, Duration duration) {
-    final Set<String> results = new HashSet<>();
+    String cql = "select " + TagAutocompleteData.TAG_VALUE + " from " + tableHelper.getTableForRead(TagAutocompleteData.INDEX_NAME)
+        + " where " + TagAutocompleteData.TAG_KEY + " = ? and "
+        + TagAutocompleteData.TIME_BUCKET + " >= ? and " + TagAutocompleteData.TIME_BUCKET + " <= ? limit ?";
 
-    for (String table : tableHelper.getTablesForRead(
-        TagAutocompleteData.INDEX_NAME,
-        duration.getStartTimeBucket(),
-        duration.getEndTimeBucket()
-    )) {
-      final SQLAndParameters sqlAndParameters = buildSQLForQueryValues(tagType, tagKey, limit, duration, table);
-      results.addAll(client.executeQuery(sqlAndParameters.sql() + " ALLOW FILTERING",
-          row -> row.getString(TagAutocompleteData.TAG_VALUE), sqlAndParameters.parameters()));
+    long startSecondTB = 0;
+    long endSecondTB = 0;
+    if (nonNull(duration)) {
+      startSecondTB = duration.getStartTimeBucketInSec();
+      endSecondTB = duration.getEndTimeBucketInSec();
     }
-    return results;
+
+    long startTB = startSecondTB / 1000000 * 10000;
+    long endTB = endSecondTB / 1000000 * 10000 + 2359;
+
+    return new HashSet<>(client.executeQuery(cql,
+        row -> row.getString(TagAutocompleteData.TAG_VALUE), tagKey, startTB, endTB, limit));
   }
 }

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.opentest4j.TestAbortedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.InternetProtocol;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -63,6 +64,7 @@ public class CassandraExtension implements BeforeAllCallback, AfterAllCallback {
       }
       waitStrategy = Wait.forSuccessfulCommand("cqlsh -e \"describe keyspaces\"").withStartupTimeout(Duration.ofMinutes(5));
       addFixedExposedPort(CASSANDRA_PORT, CASSANDRA_PORT, InternetProtocol.TCP);
+      addFileSystemBind("src/test/resources/cassandra.yaml", "/etc/cassandra/cassandra.yaml", BindMode.READ_WRITE);
       withLogConsumer(new Slf4jLogConsumer(LOGGER));
     }
   }

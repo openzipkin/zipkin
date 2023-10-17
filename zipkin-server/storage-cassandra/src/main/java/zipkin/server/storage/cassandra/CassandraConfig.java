@@ -26,6 +26,8 @@ public class CassandraConfig extends ModuleConfig {
   private String username;
   private String password;
 
+  private boolean ensureSchema = true;
+
   /**
    * The maximum size of batch size of CQL execution
    */
@@ -105,5 +107,13 @@ public class CassandraConfig extends ModuleConfig {
 
   public void setAsyncBatchPersistentPoolSize(int asyncBatchPersistentPoolSize) {
     this.asyncBatchPersistentPoolSize = asyncBatchPersistentPoolSize;
+  }
+
+  public boolean getEnsureSchema() {
+    return ensureSchema;
+  }
+
+  public void setEnsureSchema(boolean ensureSchema) {
+    this.ensureSchema = ensureSchema;
   }
 }

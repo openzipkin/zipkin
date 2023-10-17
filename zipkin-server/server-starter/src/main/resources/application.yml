@@ -155,6 +155,8 @@ storage:
     # Will throw an exception on startup if authentication fails.
     username: ${ZIPKIN_STORAGE_CASSANDRA_USERNAME:}
     password: ${ZIPKIN_STORAGE_CASSANDRA_PASSWORD:}
+    # Ensuring that schema exists, if enabled tries to execute script /zipkin-server/storage-cassandra/resources/zipkin-schemas.cql.
+    ensureSchema: ${ZIPKIN_STORAGE_CASSANDRA_ENSURE_SCHEMA:true}
     # Max pooled connections per datacenter-local host.
     maxConnections: ${ZIPKIN_STORAGE_CASSANDRA_MAX_CONNECTIONS:8}
     # Using ssl for connection, rely on Keystore

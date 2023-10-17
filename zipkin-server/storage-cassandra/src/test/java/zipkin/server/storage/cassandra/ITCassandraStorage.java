@@ -40,6 +40,7 @@ import zipkin2.TestObjects;
 import zipkin2.storage.QueryRequest;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -95,6 +96,7 @@ public class ITCassandraStorage {
         .lookback(86400000L)
         .endTs(System.currentTimeMillis())
         .minDuration(1000L)
+        .annotationQuery(Collections.singletonMap("http.path", "/api"))
         .limit(10).build();
     Duration duration = new Duration();
     duration.setStep(Step.SECOND);

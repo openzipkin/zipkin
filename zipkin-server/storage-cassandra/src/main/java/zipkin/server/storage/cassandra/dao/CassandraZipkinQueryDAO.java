@@ -14,9 +14,8 @@
 
 package zipkin.server.storage.cassandra.dao;
 
-import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.uuid.Uuids;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -28,7 +27,6 @@ import org.apache.skywalking.oap.server.core.zipkin.ZipkinServiceTraffic;
 import org.apache.skywalking.oap.server.core.zipkin.ZipkinSpanRecord;
 import org.apache.skywalking.oap.server.library.util.CollectionUtils;
 import org.apache.skywalking.oap.server.library.util.StringUtil;
-import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.TableHelper;
 import zipkin.server.storage.cassandra.CassandraClient;
 import zipkin.server.storage.cassandra.CassandraTableHelper;
 import zipkin2.Endpoint;
@@ -37,17 +35,20 @@ import zipkin2.storage.QueryRequest;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static java.util.stream.Collectors.toList;
+import static zipkin.server.storage.cassandra.dao.CassandraTableExtension.durationIndexBucket;
 
 public class CassandraZipkinQueryDAO implements IZipkinQueryDAO {
   private final static int NAME_QUERY_MAX_SIZE = Integer.MAX_VALUE;
@@ -55,151 +56,142 @@ public class CassandraZipkinQueryDAO implements IZipkinQueryDAO {
 
   private final CassandraClient client;
   private final CassandraTableHelper tableHelper;
+  private int indexTtl;
 
   public CassandraZipkinQueryDAO(CassandraClient client, CassandraTableHelper tableHelper) {
     this.client = client;
     this.tableHelper = tableHelper;
   }
 
+  private int getIndexTtl() {
+    if (this.indexTtl > 0) {
+      return this.indexTtl;
+    }
+    this.indexTtl = client.getDefaultTtl(ZipkinSpanRecord.INDEX_NAME);
+    return this.indexTtl;
+  }
+
   @Override
   public List<String> getServiceNames() throws IOException {
-    final List<String> services = new ArrayList<>();
-
-    for (String table : tableHelper.getTablesWithinTTL(ZipkinServiceTraffic.INDEX_NAME)) {
-      services.addAll(client.executeQuery("select " + ZipkinServiceTraffic.SERVICE_NAME + " from " + table + " limit " + NAME_QUERY_MAX_SIZE,
-          row -> row.getString(ZipkinServiceTraffic.SERVICE_NAME)));
-    }
-
-    return services
-        .stream()
-        .limit(NAME_QUERY_MAX_SIZE)
-        .collect(toList());
+    return client.executeQuery("select " + ZipkinServiceTraffic.SERVICE_NAME + " from " +
+            tableHelper.getTableForRead(ZipkinServiceTraffic.INDEX_NAME) + " limit " + NAME_QUERY_MAX_SIZE,
+          row -> row.getString(ZipkinServiceTraffic.SERVICE_NAME));
   }
 
   @Override
   public List<String> getRemoteServiceNames(String serviceName) throws IOException {
-    final Set<String> services = new HashSet<>();
-
-    for (String table : tableHelper.getTablesWithinTTL(ZipkinServiceRelationTraffic.INDEX_NAME)) {
-      services.addAll(client.executeQuery("select " + ZipkinServiceRelationTraffic.REMOTE_SERVICE_NAME +
-          " from " + table +
-          " where " + ZipkinServiceRelationTraffic.SERVICE_NAME + " = ?" +
-          " limit " + NAME_QUERY_MAX_SIZE,
-          row -> row.getString(ZipkinServiceRelationTraffic.REMOTE_SERVICE_NAME),
-          serviceName));
-    }
-
-    return services
-        .stream()
-        .limit(NAME_QUERY_MAX_SIZE)
-        .collect(toList());
+    return client.executeQuery("select " + ZipkinServiceRelationTraffic.REMOTE_SERVICE_NAME +
+        " from " + tableHelper.getTableForRead(ZipkinServiceRelationTraffic.INDEX_NAME) +
+        " where " + ZipkinServiceRelationTraffic.SERVICE_NAME + " = ?" +
+        " limit " + NAME_QUERY_MAX_SIZE,
+        row -> row.getString(ZipkinServiceRelationTraffic.REMOTE_SERVICE_NAME),
+        serviceName);
   }
 
   @Override
   public List<String> getSpanNames(String serviceName) throws IOException {
-    final Set<String> names = new HashSet<>();
-
-    for (String table : tableHelper.getTablesWithinTTL(ZipkinServiceSpanTraffic.INDEX_NAME)) {
-      names.addAll(client.executeQuery("select " + ZipkinServiceSpanTraffic.SPAN_NAME +
-          " from " + table +
-          " where " + ZipkinServiceSpanTraffic.SERVICE_NAME + " = ?" +
-          " limit " + NAME_QUERY_MAX_SIZE,
-          row -> row.getString(ZipkinServiceSpanTraffic.SPAN_NAME),
-          serviceName));
-    }
-
-    return names
-        .stream()
-        .limit(NAME_QUERY_MAX_SIZE)
-        .collect(toList());
+    return client.executeQuery("select " + ZipkinServiceSpanTraffic.SPAN_NAME +
+        " from " + tableHelper.getTableForRead(ZipkinServiceSpanTraffic.INDEX_NAME) +
+        " where " + ZipkinServiceSpanTraffic.SERVICE_NAME + " = ?" +
+        " limit " + NAME_QUERY_MAX_SIZE,
+        row -> row.getString(ZipkinServiceSpanTraffic.SPAN_NAME),
+        serviceName);
   }
 
   @Override
   public List<Span> getTrace(String traceId) {
-    final List<Span> spans = new ArrayList<>();
-
-    for (String table : tableHelper.getTablesWithinTTL(ZipkinSpanRecord.INDEX_NAME)) {
-      spans.addAll(client.executeQuery("select * from " + table +
+    return client.executeQuery("select * from " + tableHelper.getTableForRead(ZipkinSpanRecord.INDEX_NAME) +
           " where " + ZipkinSpanRecord.TRACE_ID + " = ?" +
           " limit " + NAME_QUERY_MAX_SIZE,
-          this::buildSpan, traceId));
-    }
-
-    return spans;
+          this::buildSpan, traceId);
   }
 
   @Override
   public List<List<Span>> getTraces(QueryRequest request, Duration duration) throws IOException {
-    Set<String> traceIdSet = new HashSet<>();
-    for (String table : tableHelper.getTablesForRead(
-        ZipkinSpanRecord.INDEX_NAME,
-        duration.getStartTimeBucket(),
-        duration.getEndTimeBucket()
-    )) {
-      List<CompletionStage<List<String>>> completionTraceIds = new ArrayList<>();
-      if (CollectionUtils.isNotEmpty(request.annotationQuery())) {
-        final long timeBucket = TableHelper.getTimeBucket(table);
-        final String tagTable = TableHelper.getTable(ZipkinSpanRecord.ADDITIONAL_QUERY_TABLE, timeBucket);
-        for (Map.Entry<String, String> entry : request.annotationQuery().entrySet()) {
-          completionTraceIds.add(client.executeAsyncQuery("select " + ZipkinSpanRecord.TRACE_ID + " from " + tagTable +
-                  " where " + ZipkinSpanRecord.QUERY + " = ?" +
-                  " and " + ZipkinSpanRecord.TIME_BUCKET + " >= ?" +
-                  " and " + ZipkinSpanRecord.TIME_BUCKET + " <= ? ALLOW FILTERING",
-              row -> row.getString(ZipkinSpanRecord.TRACE_ID),
-              entry.getValue().isEmpty() ? entry.getKey() : entry.getKey() + "=" + entry.getValue(),
-              duration.getStartTimeBucket(), duration.getEndTimeBucket()));
-        }
-      }
-      if (request.minDuration() != null) {
-        completionTraceIds.add(client.executeAsyncQuery("select " + ZipkinSpanRecord.TRACE_ID + " from " + table +
-                " where " + ZipkinSpanRecord.DURATION + " >= ?" +
+    List<CompletionStage<List<String>>> completionTraceIds = new ArrayList<>();
+    if (CollectionUtils.isNotEmpty(request.annotationQuery())) {
+      for (Map.Entry<String, String> entry : request.annotationQuery().entrySet()) {
+        completionTraceIds.add(client.executeAsyncQuery("select " + ZipkinSpanRecord.TRACE_ID +
+                " from " + ZipkinSpanRecord.ADDITIONAL_QUERY_TABLE +
+                " where " + ZipkinSpanRecord.QUERY + " = ?" +
                 " and " + ZipkinSpanRecord.TIME_BUCKET + " >= ?" +
-                " and " + ZipkinSpanRecord.TIME_BUCKET + " <= ? ALLOW FILTERING",
+                " and " + ZipkinSpanRecord.TIME_BUCKET + " <= ?",
             row -> row.getString(ZipkinSpanRecord.TRACE_ID),
-            request.minDuration(), duration.getStartTimeBucket(), duration.getEndTimeBucket()
-        ));
+            entry.getValue().isEmpty() ? entry.getKey() : entry.getKey() + "=" + entry.getValue(),
+            duration.getStartTimeBucket(), duration.getEndTimeBucket()));
       }
-      if (request.maxDuration() != null) {
-        completionTraceIds.add(client.executeAsyncQuery("select " + ZipkinSpanRecord.TRACE_ID + " from " + table +
-                " where " + ZipkinSpanRecord.DURATION + " <= ?" +
-                " and " + ZipkinSpanRecord.TIME_BUCKET + " >= ?" +
-                " and " + ZipkinSpanRecord.TIME_BUCKET + " <= ? ALLOW FILTERING",
-            row -> row.getString(ZipkinSpanRecord.TRACE_ID),
-            request.maxDuration(), duration.getStartTimeBucket(), duration.getEndTimeBucket()
-        ));
-      }
-      if (StringUtil.isNotEmpty(request.serviceName())) {
-        completionTraceIds.add(client.executeAsyncQuery("select " + ZipkinSpanRecord.TRACE_ID + " from " + table +
-                " where " + ZipkinSpanRecord.LOCAL_ENDPOINT_SERVICE_NAME + " = ?" +
-                " and " + ZipkinSpanRecord.TIME_BUCKET + " >= ?" +
-                " and " + ZipkinSpanRecord.TIME_BUCKET + " <= ? ALLOW FILTERING",
-            row -> row.getString(ZipkinSpanRecord.TRACE_ID),
-            request.serviceName(), duration.getStartTimeBucket(), duration.getEndTimeBucket()
-        ));
-      }
-      if (StringUtil.isNotEmpty(request.remoteServiceName())) {
-        completionTraceIds.add(client.executeAsyncQuery("select " + ZipkinSpanRecord.TRACE_ID + " from " + table +
-                " where " + ZipkinSpanRecord.REMOTE_ENDPOINT_SERVICE_NAME + " = ?" +
-                " and " + ZipkinSpanRecord.TIME_BUCKET + " >= ?" +
-                " and " + ZipkinSpanRecord.TIME_BUCKET + " <= ? ALLOW FILTERING",
-            row -> row.getString(ZipkinSpanRecord.TRACE_ID),
-            request.remoteServiceName(), duration.getStartTimeBucket(), duration.getEndTimeBucket()
-        ));
-      }
-      if (StringUtil.isNotEmpty(request.spanName())) {
-        completionTraceIds.add(client.executeAsyncQuery("select " + ZipkinSpanRecord.TRACE_ID + " from " + table +
-                " where " + ZipkinSpanRecord.NAME + " = ?" +
-                " and " + ZipkinSpanRecord.TIME_BUCKET + " >= ?" +
-                " and " + ZipkinSpanRecord.TIME_BUCKET + " <= ? ALLOW FILTERING",
-            row -> row.getString(ZipkinSpanRecord.TRACE_ID),
-            request.spanName(), duration.getStartTimeBucket(), duration.getEndTimeBucket()
-        ));
-      }
-
-      traceIdSet.addAll(retainTraceIdList(completionTraceIds));
     }
 
+    // Bucketed calls can be expensive when service name isn't specified. This guards against abuse.
+    if (request.remoteServiceName() != null
+        || request.spanName() != null
+        || request.minDuration() != null
+        || completionTraceIds.isEmpty()) {
+      completionTraceIds.add(newBucketedTraceIdCall(request));
+    }
+
+    final Set<String> traceIdSet = retainTraceIdList(completionTraceIds);
     return getTraces(request.limit() > 0 ? traceIdSet.stream().limit(request.limit()).collect(Collectors.toSet()) : traceIdSet);
+  }
+
+  private CompletionStage<List<String>> newBucketedTraceIdCall(QueryRequest request) throws IOException {
+    final List<CompletionStage<List<String>>> result = new ArrayList<>();
+
+    TimestampRange timestampRange = timestampRange(request);
+    int startBucket = durationIndexBucket(timestampRange.startMillis);
+    int endBucket = durationIndexBucket(timestampRange.endMillis);
+    if (startBucket > endBucket) {
+      throw new IllegalArgumentException(
+          "Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");
+    }
+
+    String remoteService = request.remoteServiceName();
+    List<String> serviceNames = StringUtil.isEmpty(request.serviceName()) ? getServiceNames() : Arrays.asList(request.serviceName());
+    String spanName = null != request.spanName() ? request.spanName() : "";
+    Long minDuration = request.minDuration(), maxDuration = request.maxDuration();
+
+    Long start_duration = null, end_duration = null;
+    if (minDuration != null) {
+      start_duration = minDuration / 1000L;
+      end_duration = maxDuration != null ? maxDuration / 1000L : Long.MAX_VALUE;
+    }
+
+    String traceByServiceSpanBaseCql = "select trace_id from " + CassandraTableExtension.TABLE_TRACE_BY_SERVICE_SPAN
+        + " where service=? and span=? and bucket=? and ts>=? and ts<=?";
+    // each service names
+    for (String serviceName : serviceNames) {
+      for (int bucket = endBucket; bucket >= startBucket; bucket--) {
+        boolean addSpanQuery = true;
+        if (remoteService != null) {
+          result.add(client.executeAsyncQuery("select trace_id from " + CassandraTableExtension.TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE
+              + " where service=? and remote_service=? and bucket=? and ts>=? and ts<=?",
+              resultSet -> resultSet.getString(0),
+              serviceName, remoteService, bucket, timestampRange.startUUID, timestampRange.endUUID));
+          // If the remote service query can satisfy the request, don't make a redundant span query
+          addSpanQuery = !spanName.isEmpty() || minDuration != null;
+        }
+        if (!addSpanQuery) continue;
+
+        if (start_duration != null) {
+          result.add(client.executeAsyncQuery(traceByServiceSpanBaseCql + " and duration>=? and duration<=?",
+              resultSet -> resultSet.getString(0),
+              serviceName, spanName, bucket, timestampRange.startUUID, timestampRange.endUUID, start_duration, end_duration)
+              );
+        } else {
+          result.add(client.executeAsyncQuery(traceByServiceSpanBaseCql,
+              resultSet -> resultSet.getString(0),
+              serviceName, spanName, bucket, timestampRange.startUUID, timestampRange.endUUID));
+        }
+      }
+    }
+
+    return CompletableFuture.allOf(result.toArray(new CompletableFuture[0]))
+        .thenApplyAsync(ignored ->
+            result.stream()
+                .map(CompletionStage::toCompletableFuture)
+                .map(CompletableFuture::join)
+                .collect(ArrayList::new, ArrayList::addAll, (list1, list2) -> {
+                }));
   }
 
   private Set<String> retainTraceIdList(List<CompletionStage<List<String>>> completionStages) {
@@ -220,20 +212,10 @@ public class CassandraZipkinQueryDAO implements IZipkinQueryDAO {
       return Collections.emptyList();
     }
 
-    final List<List<Span>> result = new ArrayList<>();
-    for (String table : tableHelper.getTablesWithinTTL(ZipkinSpanRecord.INDEX_NAME)) {
-      final PreparedStatement stmt = client.getSession().prepare("select * from " + table + " where " +
-          ZipkinSpanRecord.TRACE_ID + " in ?");
-      final ResultSet execute = client.getSession().execute(stmt.boundStatementBuilder()
-          .setList(0, new ArrayList<>(traceIds), String.class).build());
-
-      result.addAll(StreamSupport.stream(execute.spliterator(), false)
-          .map(this::buildSpan).collect(Collectors.toMap(Span::traceId, s -> new ArrayList<>(Collections.singleton(s)), (s1, s2) -> {
-            s1.addAll(s2);
-            return s1;
-          })).values());
-    }
-    return result;
+    String table = tableHelper.getTableForRead(ZipkinSpanRecord.INDEX_NAME);
+    return traceIds.stream().map(traceId ->
+        client.executeAsyncQuery("select * from " + table + " where " + ZipkinSpanRecord.TRACE_ID + " = ?", this::buildSpan, traceId)
+    ).map(CompletionStage::toCompletableFuture).map(CompletableFuture::join).collect(toList());
   }
 
   private Span buildSpan(Row row) {
@@ -293,5 +275,22 @@ public class CassandraZipkinQueryDAO implements IZipkinQueryDAO {
       }
     }
     return span.build();
+  }
+
+  static final class TimestampRange {
+    long startMillis;
+    UUID startUUID;
+    long endMillis;
+    UUID endUUID;
+  }
+
+  TimestampRange timestampRange(QueryRequest request) {
+    long oldestData = Math.max(System.currentTimeMillis() - getIndexTtl() * 1000, 0); // >= 1970
+    TimestampRange result = new TimestampRange();
+    result.startMillis = Math.max((request.endTs() - request.lookback()), oldestData);
+    result.startUUID = Uuids.startOf(result.startMillis);
+    result.endMillis = Math.max(request.endTs(), oldestData);
+    result.endUUID = Uuids.endOf(result.endMillis);
+    return result;
   }
 }

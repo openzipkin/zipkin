@@ -13,9 +13,11 @@
  */
 package zipkin.server.storage.cassandra.dao;
 
+import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import org.apache.skywalking.oap.server.core.storage.IBatchDAO;
 import org.apache.skywalking.oap.server.library.client.request.InsertRequest;
 import org.apache.skywalking.oap.server.library.client.request.PrepareRequest;
+import org.apache.skywalking.oap.server.library.client.request.UpdateRequest;
 import org.apache.skywalking.oap.server.library.datacarrier.DataCarrier;
 import org.apache.skywalking.oap.server.library.datacarrier.consumer.IConsumer;
 import org.apache.skywalking.oap.server.library.util.CollectionUtils;
@@ -57,28 +59,54 @@ public class CassandraBatchDAO implements IBatchDAO {
       return CompletableFuture.completedFuture(null);
     }
 
-    List<PrepareRequest> sqls = new ArrayList<>();
+    List<PrepareRequest> cqls = new ArrayList<>();
     prepareRequests.forEach(prepareRequest -> {
-      sqls.add(prepareRequest);
+      cqls.add(prepareRequest);
       CQLExecutor cqlExecutor = (CQLExecutor) prepareRequest;
       if (!CollectionUtils.isEmpty(cqlExecutor.getAdditionalCQLs())) {
-        sqls.addAll(cqlExecutor.getAdditionalCQLs());
+        cqls.addAll(cqlExecutor.getAdditionalCQLs());
       }
     });
 
     if (LOG.isDebugEnabled()) {
-      LOG.debug("to execute sql statements execute, data size: {}, maxBatchSqlSize: {}", sqls.size(), maxBatchSqlSize);
+      LOG.debug("to execute sql statements execute, data size: {}, maxBatchSqlSize: {}", cqls.size(), maxBatchSqlSize);
+    }
+    if (CollectionUtils.isEmpty(cqls)) {
+      return CompletableFuture.completedFuture(null);
     }
 
+    final long start = System.currentTimeMillis();
+    boolean success = true;
     try {
-      final BatchCQLExecutor batchSQLExecutor = new BatchCQLExecutor(client, sqls);
-      batchSQLExecutor.invoke(maxBatchSqlSize);
+      for (PrepareRequest cql : cqls) {
+        final CQLExecutor executor = (CQLExecutor) cql;
+        if (LOG.isDebugEnabled()) {
+          LOG.debug("Executing CQL: {}", executor.getCql());
+          LOG.debug("CQL parameters: {}", executor.getParams());
+        }
+
+        final BoundStatement stmt = client.getSession().prepare(executor.getCql())
+            .bind(((CQLExecutor) cql).getParams().toArray());
+        client.getSession().execute(stmt);
+      }
     } catch (Exception e) {
       // Just to avoid one execution failure makes the rest of batch failure.
       LOG.error(e.getMessage(), e);
+      success = false;
+    }
+
+    final boolean isInsert = cqls.get(0) instanceof InsertRequest;
+    for (PrepareRequest executor : cqls) {
+      if (isInsert) {
+        ((InsertRequest) executor).onInsertCompleted();
+      } else if (!success) {
+        ((UpdateRequest) executor).onUpdateFailure();
+      }
     }
     if (LOG.isDebugEnabled()) {
-      LOG.debug("execute sql statements done, data size: {}, maxBatchSqlSize: {}", prepareRequests.size(), maxBatchSqlSize);
+      long end = System.currentTimeMillis();
+      long cost = end - start;
+      LOG.debug("execute sql statements done, data size: {}, maxBatchSqlSize: {}, cost:{}ms", prepareRequests.size(), maxBatchSqlSize, cost);
     }
     return CompletableFuture.completedFuture(null);
   }

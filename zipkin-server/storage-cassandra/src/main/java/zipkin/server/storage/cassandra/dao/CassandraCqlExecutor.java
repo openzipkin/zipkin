@@ -26,8 +26,8 @@ import org.apache.skywalking.oap.server.core.storage.type.Convert2Storage;
 import org.apache.skywalking.oap.server.core.storage.type.HashMapConverter;
 import org.apache.skywalking.oap.server.core.storage.type.StorageBuilder;
 import org.apache.skywalking.oap.server.core.storage.type.StorageDataComplexObject;
+import org.apache.skywalking.oap.server.core.zipkin.ZipkinSpanRecord;
 import org.apache.skywalking.oap.server.library.util.CollectionUtils;
-import org.apache.skywalking.oap.server.storage.plugin.jdbc.SQLBuilder;
 import org.apache.skywalking.oap.server.storage.plugin.jdbc.TableMetaInfo;
 import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.JDBCTableInstaller;
 import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.TableHelper;
@@ -50,19 +50,11 @@ public class CassandraCqlExecutor {
                                                                String modelName,
                                                                List<String> ids,
                                                                StorageBuilder<T> storageBuilder) {
-    final List<String> modelTables = getModelTables(client, modelName);
     List<StorageData> storageDataList = new ArrayList<>();
 
-    for (String table : modelTables) {
-      final SQLBuilder sql = new SQLBuilder("SELECT * FROM " + table + " WHERE id in ")
-          .append(ids.stream().map(it -> "?").collect(Collectors.joining(",", "(", ")")));
-      storageDataList.addAll(client.executeQuery(sql.toString(), new CassandraClient.ResultHandler<StorageData>() {
-        @Override
-        public StorageData handle(Row resultSet) {
-          return toStorageData(resultSet, modelName, storageBuilder);
-        }
-      }, ids.toArray()));
-    }
+    final String cql = "SELECT * FROM " + getModelTables(client, modelName) + " WHERE id in " +
+        ids.stream().map(it -> "?").collect(Collectors.joining(",", "(", ") ALLOW FILTERING"));
+    storageDataList.addAll(client.executeQuery(cql, resultSet -> toStorageData(resultSet, modelName, storageBuilder), ids.toArray()));
 
     return storageDataList;
   }
@@ -93,6 +85,11 @@ public class CassandraCqlExecutor {
           timeBucket, additionalEntity, callback
       );
       sqlExecutor.appendAdditionalCQLs(additionalSQLExecutors);
+    }
+
+    // extension the span tables for query
+    if (metrics instanceof ZipkinSpanRecord) {
+      sqlExecutor.appendAdditionalCQLs(CassandraTableExtension.buildExtensionsForSpan((ZipkinSpanRecord) metrics, callback));
     }
     return sqlExecutor;
   }
@@ -138,8 +135,7 @@ public class CassandraCqlExecutor {
     List<String> columnNames = new ArrayList<>();
     List<String> values = new ArrayList<>();
     List<Object> param = new ArrayList<>();
-    final SQLBuilder sqlBuilder = new SQLBuilder("INSERT INTO ")
-        .append(TableHelper.getTable(tableName, timeBucket));
+    final StringBuilder cqlBuilder = new StringBuilder("INSERT INTO ").append(tableName);
 
     columnNames.add(ID_COLUMN);
     values.add("?");
@@ -170,9 +166,9 @@ public class CassandraCqlExecutor {
       }
     }
 
-    sqlBuilder.append("(").append(columnNames.stream().collect(Collectors.joining(", "))).append(")")
+    cqlBuilder.append("(").append(columnNames.stream().collect(Collectors.joining(", "))).append(")")
         .append(" VALUES (").append(values.stream().collect(Collectors.joining(", "))).append(")");
-    String sql = sqlBuilder.toString();
+    String sql = cqlBuilder.toString();
     if (!CollectionUtils.isEmpty(valueList)) {
       for (Object object : valueList) {
         List<Object> paramCopy = new ArrayList<>(param);
@@ -180,6 +176,10 @@ public class CassandraCqlExecutor {
         sqlExecutors.add(new CQLExecutor(sql, paramCopy, callback, null));
       }
     } else {
+      // if not query data, then ignore the data insert
+      if ("zipkin_query".equals(tableName)) {
+        return sqlExecutors;
+      }
       sqlExecutors.add(new CQLExecutor(sql, param, callback, null));
     }
 
@@ -191,8 +191,8 @@ public class CassandraCqlExecutor {
                                                                   long timeBucket,
                                                                   Map<String, Object> objectMap,
                                                                   SessionCacheCallback onCompleteCallback) {
-    final String table = TableHelper.getTable(model, timeBucket);
-    final SQLBuilder sqlBuilder = new SQLBuilder("INSERT INTO " + table);
+    final String table = TableHelper.getTableName(model);
+    final StringBuilder cqlBuilder = new StringBuilder("INSERT INTO ").append(table);
     final List<ModelColumn> columns = model.getColumns();
     final List<String> columnNames =
         Stream.concat(
@@ -205,9 +205,9 @@ public class CassandraCqlExecutor {
     if (model.isRecord()) {
       columnNames.add(CassandraClient.RECORD_UNIQUE_UUID_COLUMN);
     }
-    sqlBuilder.append(columnNames.stream().collect(Collectors.joining(",", "(", ")")));
-    sqlBuilder.append(" VALUES ");
-    sqlBuilder.append(columnNames.stream().map(it -> "?").collect(Collectors.joining(",", "(", ")")));
+    cqlBuilder.append(columnNames.stream().collect(Collectors.joining(",", "(", ")")));
+    cqlBuilder.append(" VALUES ");
+    cqlBuilder.append(columnNames.stream().map(it -> "?").collect(Collectors.joining(",", "(", ")")));
 
     final List<Object> params = Stream.concat(
             Stream.of(TableHelper.generateId(model, metrics.id().build()), model.getName()),
@@ -227,7 +227,7 @@ public class CassandraCqlExecutor {
       params.add(UUID.randomUUID().toString());
     }
 
-    return new CQLExecutor(sqlBuilder.toString(), params, onCompleteCallback, null);
+    return new CQLExecutor(cqlBuilder.toString(), params, onCompleteCallback, null);
   }
 
 
@@ -241,11 +241,8 @@ public class CassandraCqlExecutor {
     return storageBuilder.storage2Entity(new HashMapConverter.ToEntity(data));
   }
 
-  private static List<String> getModelTables(CassandraClient client, String modelName) {
+  private static String getModelTables(CassandraClient client, String modelName) {
     final Model model = TableMetaInfo.get(modelName);
-    final String tableName = TableHelper.getTableName(model);
-    return client.getMetadata().getTables().keySet().stream()
-        .filter(t -> t.asInternal().startsWith(tableName))
-        .map(CqlIdentifier::asInternal).collect(Collectors.toList());
+    return TableHelper.getTableName(model);
   }
 }

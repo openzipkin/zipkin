@@ -62,8 +62,6 @@ import zipkin.server.storage.cassandra.dao.CassandraTagAutocompleteDAO;
 import zipkin.server.storage.cassandra.dao.CassandraZipkinQueryDAO;
 import zipkin.server.storage.cassandra.dao.EmptyDAO;
 
-import java.time.Clock;
-
 public class CassandraProvider extends ModuleProvider {
   private CassandraConfig moduleConfig;
   private CassandraClient client;
@@ -98,7 +96,7 @@ public class CassandraProvider extends ModuleProvider {
   @Override
   public void prepare() throws ServiceNotProvidedException, ModuleStartException {
     client = new CassandraClient(moduleConfig);
-    modelInstaller = new CassandraTableInstaller(client, getManager());
+    modelInstaller = new CassandraTableInstaller(client, moduleConfig);
     tableHelper = new CassandraTableHelper(getManager(), client);
 
     this.registerServiceImplementation(
@@ -137,9 +135,9 @@ public class CassandraProvider extends ModuleProvider {
     this.registerServiceImplementation(IServiceLabelDAO.class, emptyDAO);
     this.registerServiceImplementation(ISpanAttachedEventQueryDAO.class, new CassandraSpanAttachedEventRecordDAO());
 
-    this.registerServiceImplementation(IHistoryDeleteDAO.class, new CassandraHistoryDeleteDAO(client, tableHelper, modelInstaller, Clock.systemDefaultZone()));
+    this.registerServiceImplementation(IHistoryDeleteDAO.class, new CassandraHistoryDeleteDAO());
     this.registerServiceImplementation(IZipkinQueryDAO.class, new CassandraZipkinQueryDAO(client, tableHelper));
-    this.registerServiceImplementation(ITagAutoCompleteQueryDAO.class, new CassandraTagAutocompleteDAO(client, tableHelper));
+    this.registerServiceImplementation(ITagAutoCompleteQueryDAO.class, new CassandraTagAutocompleteDAO(client, tableHelper, getManager()));
 
   }
 
