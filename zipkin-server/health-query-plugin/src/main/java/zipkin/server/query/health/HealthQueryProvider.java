@@ -24,6 +24,7 @@ import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
+import zipkin.server.core.services.HTTPConfigurableServer;
 
 import java.util.Collections;
 
@@ -67,7 +68,7 @@ public class HealthQueryProvider extends ModuleProvider {
           .acceptQueueSize(moduleConfig.getRestAcceptQueueSize())
           .maxRequestHeaderSize(moduleConfig.getRestMaxRequestHeaderSize())
           .build();
-      httpServer = new HTTPServer(httpServerConfig);
+      httpServer = new HTTPConfigurableServer(httpServerConfig);
       httpServer.initialize();
     }
   }

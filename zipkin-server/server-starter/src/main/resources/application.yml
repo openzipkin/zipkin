@@ -220,6 +220,7 @@ query-zipkin:
     restAcceptQueueSize: ${ZIPKIN_QUERY_REST_QUEUE_SIZE:0}
     restMaxRequestHeaderSize: ${ZIPKIN_QUERY_REST_MAX_REQUEST_HEADER_SIZE:8192}
     strictTraceId: ${ZIPKIN_QUERY_STRICT_TRACE_ID:true}
+    allowedOrigins: ${ZIPKIN_QUERY_ALLOWED_ORIGINS:"*"}
     # Default look back for traces and autocompleteTags, 1 day in millis
     lookback: ${ZIPKIN_QUERY_LOOKBACK:86400000}
     # The Cache-Control max-age (seconds) for serviceNames, remoteServiceNames and spanNames
@@ -229,6 +230,8 @@ query-zipkin:
     uiQueryLimit: ${ZIPKIN_QUERY_UI_QUERY_LIMIT:10}
     # Default look back on the UI for search traces, 15 minutes in millis
     uiDefaultLookback: ${ZIPKIN_QUERY_UI_DEFAULT_LOOKBACK:900000}
+    uiEnable: ${ZIPKIN_QUERY_UI_ENABLE:true}
+    uiBasePath: ${ZIPKIN_QUERY_UI_BASE_PATH:/zipkin}
 
 query-health:
   selector: ${ZIPKIN_QUERY_HEALTH:zipkin}
@@ -243,14 +246,17 @@ query-health:
     restMaxRequestHeaderSize: ${ZIPKIN_QUERY_HEALTH_REST_MAX_REQUEST_HEADER_SIZE:8192}
 
 telemetry:
-  selector: ${ZIPKIN_TELEMETRY:none}
+  selector: ${ZIPKIN_TELEMETRY:zipkin}
   none:
-  prometheus:
-    host: ${ZIPKIN_TELEMETRY_PROMETHEUS_HOST:0.0.0.0}
-    port: ${ZIPKIN_TELEMETRY_PROMETHEUS_PORT:1234}
-    sslEnabled: ${ZIPKIN_TELEMETRY_PROMETHEUS_SSL_ENABLED:false}
-    sslKeyPath: ${ZIPKIN_TELEMETRY_PROMETHEUS_SSL_KEY_PATH:""}
-    sslCertChainPath: ${ZIPKIN_TELEMETRY_PROMETHEUS_SSL_CERT_CHAIN_PATH:""}
+  zipkin:
+    restHost: ${ZIPKIN_QUERY_HEALTH_REST_HOST:0.0.0.0}
+    # The port number of the HTTP service, the default HTTP service in the core would be used if the value is smaller than 0.
+    restPort: ${ZIPKIN_QUERY_HEALTH_REST_PORT:-1}
+    restContextPath: ${ZIPKIN_QUERY_HEALTH_REST_CONTEXT_PATH:/}
+    restMaxThreads: ${ZIPKIN_QUERY_HEALTH_REST_MAX_THREADS:200}
+    restIdleTimeOut: ${ZIPKIN_QUERY_HEALTH_REST_IDLE_TIMEOUT:30000}
+    restAcceptQueueSize: ${ZIPKIN_QUERY_HEALTH_REST_QUEUE_SIZE:0}
+    restMaxRequestHeaderSize: ${ZIPKIN_QUERY_HEALTH_REST_MAX_REQUEST_HEADER_SIZE:8192}
 
 cluster:
   selector: standalone

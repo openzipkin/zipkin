@@ -13,6 +13,7 @@
  */
 package zipkin.server.core;
 
+import com.linecorp.armeria.common.HttpMethod;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.RunningMode;
 import org.apache.skywalking.oap.server.core.analysis.meter.MeterSystem;
@@ -84,11 +85,13 @@ import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
 import org.apache.skywalking.oap.server.telemetry.api.TelemetryRelatedContext;
 import zipkin.server.core.services.EmptyComponentLibraryCatalogService;
-import zipkin.server.core.services.EmptyHTTPHandlerRegister;
 import zipkin.server.core.services.EmptyNetworkAddressAliasCache;
+import zipkin.server.core.services.HTTPConfigurableServer;
+import zipkin.server.core.services.HTTPInfoHandler;
 import zipkin.server.core.services.ZipkinConfigService;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 
 public class CoreModuleProvider extends ModuleProvider {
@@ -165,8 +168,10 @@ public class CoreModuleProvider extends ModuleProvider {
         .maxRequestHeaderSize(
             moduleConfig.getRestMaxRequestHeaderSize())
         .build();
-    httpServer = new HTTPServer(httpServerConfig);
+    httpServer = new HTTPConfigurableServer(httpServerConfig);
     httpServer.initialize();
+    // "/info" handler
+    httpServer.addHandler(new HTTPInfoHandler(), Arrays.asList(HttpMethod.GET, HttpMethod.POST));
 
     // grpc
     if (moduleConfig.getGRPCSslEnabled()) {
