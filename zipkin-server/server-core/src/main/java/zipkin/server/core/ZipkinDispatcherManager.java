@@ -14,10 +14,30 @@
 
 package zipkin.server.core;
 
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassInfo;
+import io.github.classgraph.ScanResult;
 import org.apache.skywalking.oap.server.core.analysis.DispatcherManager;
 import org.apache.skywalking.oap.server.core.analysis.manual.searchtag.TagAutocompleteDispatcher;
 
+import java.io.IOException;
+
 public class ZipkinDispatcherManager extends DispatcherManager {
+
+  @Override
+  public void scan() throws IOException, IllegalAccessException, InstantiationException {
+    ClassGraph classGraph = new ClassGraph();
+    classGraph.enableClassInfo();
+    final ScanResult scan = classGraph.scan();
+    for (ClassInfo classInfo : scan.getAllClasses()) {
+      // not skywalking package or a subclass should ignore
+      if (!classInfo.getName().startsWith("org.apache.skywalking") || classInfo.getName().contains("$")) {
+        continue;
+      }
+      final Class<?> aClass = classInfo.loadClass();
+      addIfAsSourceDispatcher(aClass);
+    }
+  }
 
   @Override
   public void addIfAsSourceDispatcher(Class aClass) throws IllegalAccessException, InstantiationException {
