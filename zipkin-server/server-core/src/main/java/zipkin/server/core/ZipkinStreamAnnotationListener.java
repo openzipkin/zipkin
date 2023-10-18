@@ -16,6 +16,7 @@ package zipkin.server.core;
 
 import org.apache.skywalking.oap.server.core.analysis.StreamAnnotationListener;
 import org.apache.skywalking.oap.server.core.analysis.manual.searchtag.TagAutocompleteData;
+import org.apache.skywalking.oap.server.core.analysis.manual.spanattach.SpanAttachedEventRecord;
 import org.apache.skywalking.oap.server.core.storage.StorageException;
 import org.apache.skywalking.oap.server.library.module.ModuleDefineHolder;
 
@@ -28,7 +29,7 @@ public class ZipkinStreamAnnotationListener extends StreamAnnotationListener {
   @Override
   public void notify(Class aClass) throws StorageException {
     // only including all zipkin streaming
-    if (aClass.getSimpleName().startsWith("Zipkin") || aClass.equals(TagAutocompleteData.class)) {
+    if (aClass.getSimpleName().startsWith("Zipkin") || aClass.equals(TagAutocompleteData.class) || aClass.equals(SpanAttachedEventRecord.class)) {
       super.notify(aClass);
     }
   }

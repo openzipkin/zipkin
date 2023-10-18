@@ -99,14 +99,14 @@ public class CoreModuleProvider extends ModuleProvider {
 
   private EndpointNameGrouping endpointNameGrouping;
   private final ZipkinSourceReceiverImpl receiver;
-  private final AnnotationScan annotationScan;
+  private final ZipkinAnnotationScan annotationScan;
   private final StorageModels storageModels;
   private RemoteClientManager remoteClientManager;
   private GRPCServer grpcServer;
   private HTTPServer httpServer;
 
   public CoreModuleProvider() {
-    this.annotationScan = new AnnotationScan();
+    this.annotationScan = new ZipkinAnnotationScan();
     this.receiver = new ZipkinSourceReceiverImpl();
     this.storageModels = new StorageModels();
   }
@@ -147,15 +147,8 @@ public class CoreModuleProvider extends ModuleProvider {
     );
     this.registerServiceImplementation(NamingControl.class, namingControl);
 
+    annotationScan.registerListener(new DefaultScopeDefine.Listener());
     annotationScan.registerListener(new ZipkinStreamAnnotationListener(getManager()));
-
-    AnnotationScan scopeScan = new AnnotationScan();
-    scopeScan.registerListener(new DefaultScopeDefine.Listener());
-    try {
-      scopeScan.scan();
-    } catch (Exception e) {
-      throw new ModuleStartException(e.getMessage(), e);
-    }
 
     HTTPServerConfig httpServerConfig = HTTPServerConfig.builder()
         .host(moduleConfig.getRestHost())
