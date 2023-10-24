@@ -56,7 +56,7 @@ core:
     restAcceptQueueSize: ${ZIPKIN_REST_QUEUE_SIZE:0}
     restMaxRequestHeaderSize: ${ZIPKIN_REST_MAX_REQUEST_HEADER_SIZE:8192}
 
-storage:
+storage: &storage
   selector: ${ZIPKIN_STORAGE:h2}
   elasticsearch:
     namespace: ${ZIPKIN_NAMESPACE:""}
@@ -147,6 +147,8 @@ storage:
     superDatasetSegmentIntervalDays: ${ZIPKIN_STORAGE_BANYANDB_SUPER_DATASET_SEGMENT_INTERVAL_DAYS:1} # Unit is day
     specificGroupSettings: ${ZIPKIN_STORAGE_BANYANDB_SPECIFIC_GROUP_SETTINGS:""} # For example, {"group1": {"blockIntervalHours": 4, "segmentIntervalDays": 1}}
 
+zipkin-dependency-storage-ext: *storage
+
 receiver-zipkin-http:
   selector: ${ZIPKIN_RECEIVER_ZIPKIN_HTTP:default}
   default:
@@ -232,6 +234,9 @@ query-zipkin:
     uiDefaultLookback: ${ZIPKIN_QUERY_UI_DEFAULT_LOOKBACK:900000}
     uiEnable: ${ZIPKIN_QUERY_UI_ENABLE:true}
     uiBasePath: ${ZIPKIN_QUERY_UI_BASE_PATH:/zipkin}
+    dependencyEnabled: ${ZIPKIN_QUERY_DEPENDENCY_ENABLED:true}
+    dependencyLowErrorRate: ${ZIPKIN_QUERY_DEPENDENCY_LOW_ERROR_RATE:0.5}
+    dependencyHighErrorRate: ${ZIPKIN_QUERY_DEPENDENCY_HIGH_ERROR_RATE:0.75}
 
 query-health:
   selector: ${ZIPKIN_QUERY_HEALTH:zipkin}

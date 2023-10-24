@@ -42,6 +42,10 @@ public class HTTPQueryConfig extends ModuleConfig {
   private boolean uiEnable = true;
   private String uiBasePath = "/zipkin";
 
+  private boolean dependencyEnabled = true;
+  private double dependencyLowErrorRate = 0.5;  // 50% of calls in error turns line yellow
+  private double dependencyHighErrorRate = 0.75;// 75% of calls in error turns line red
+
   public ZipkinQueryConfig toSkyWalkingConfig() {
     final ZipkinQueryConfig result = new ZipkinQueryConfig();
     result.setLookback(lookback);
@@ -187,5 +191,29 @@ public class HTTPQueryConfig extends ModuleConfig {
 
   public void setAllowedOrigins(String allowedOrigins) {
     this.allowedOrigins = allowedOrigins;
+  }
+
+  public boolean getDependencyEnabled() {
+    return dependencyEnabled;
+  }
+
+  public void setDependencyEnabled(boolean dependencyEnabled) {
+    this.dependencyEnabled = dependencyEnabled;
+  }
+
+  public double getDependencyLowErrorRate() {
+    return dependencyLowErrorRate;
+  }
+
+  public void setDependencyLowErrorRate(double dependencyLowErrorRate) {
+    this.dependencyLowErrorRate = dependencyLowErrorRate;
+  }
+
+  public double getDependencyHighErrorRate() {
+    return dependencyHighErrorRate;
+  }
+
+  public void setDependencyHighErrorRate(double dependencyHighErrorRate) {
+    this.dependencyHighErrorRate = dependencyHighErrorRate;
   }
 }

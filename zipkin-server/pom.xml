@@ -70,6 +70,8 @@
     <module>http-query-plugin</module>
     <module>health-query-plugin</module>
     <module>telemetry-zipkin</module>
+    <module>zipkin-dependency</module>
+    <module>zipkin-storage-ext</module>
   </modules>
 
   <dependencyManagement>
