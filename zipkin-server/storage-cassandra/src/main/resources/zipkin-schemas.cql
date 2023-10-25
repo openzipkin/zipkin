@@ -159,3 +159,18 @@ CREATE TABLE IF NOT EXISTS zipkin_trace_by_service_remote_service (
   AND dclocal_read_repair_chance = 0
   AND speculative_retry = '95percentile'
   AND comment = 'Secondary table for looking up a trace by a remote service. bucket column adds time bucketing to the partition key, values are microseconds rounded to a pre-configured interval (typically one day). ts column is start timestamp of the span as time-uuid, truncated to millisecond precision.';
+
+CREATE TABLE IF NOT EXISTS zipkin_dependency (
+  analyze_day  date,
+  parent       text,
+  child        text,
+  error_count  bigint,
+  call_count   bigint,
+  PRIMARY KEY (analyze_day, parent, child)
+)
+  WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}
+  AND default_time_to_live =  259200
+  AND gc_grace_seconds = 3600
+  AND read_repair_chance = 0
+  AND dclocal_read_repair_chance = 0
+  AND comment = 'Holder for each days generation of zipkin2.DependencyLink';
