@@ -14,27 +14,38 @@
 
 package zipkin.server.query.http;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
+import com.linecorp.armeria.server.annotation.Blocking;
+import com.linecorp.armeria.server.annotation.Get;
+import com.linecorp.armeria.server.annotation.Param;
 import org.apache.skywalking.oap.query.zipkin.handler.ZipkinQueryHandler;
 import org.apache.skywalking.oap.server.core.storage.StorageModule;
 import org.apache.skywalking.oap.server.core.storage.query.IZipkinQueryDAO;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.library.util.CollectionUtils;
 import org.apache.skywalking.oap.server.library.util.StringUtil;
+import zipkin.server.dependency.IZipkinDependencyQueryDAO;
+import zipkin.server.dependency.ZipkinDependencyModule;
+import zipkin2.DependencyLink;
 import zipkin2.Span;
+import zipkin2.codec.DependencyLinkBytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -47,10 +58,39 @@ public class HTTPQueryHandler extends ZipkinQueryHandler {
   private final ModuleManager moduleManager;
 
   private IZipkinQueryDAO zipkinQueryDAO;
+  private IZipkinDependencyQueryDAO dependencyQueryDAO;
   public HTTPQueryHandler(HTTPQueryConfig config, ModuleManager moduleManager) {
     super(config.toSkyWalkingConfig(), moduleManager);
     this.config = config;
     this.moduleManager = moduleManager;
+  }
+
+  @Override
+  public AggregatedHttpResponse getUIConfig() throws IOException {
+    StringWriter writer = new StringWriter();
+    JsonGenerator generator = new JsonFactory().createGenerator(writer);
+    generator.writeStartObject();
+    generator.writeStringField("environment", config.getUiEnvironment());
+    generator.writeNumberField("queryLimit", config.getUiQueryLimit());
+    generator.writeNumberField("defaultLookback", config.getUiDefaultLookback());
+    generator.writeBooleanField("searchEnabled", config.getUiSearchEnabled());
+    generator.writeObjectFieldStart("dependency");
+    generator.writeBooleanField("enabled", config.getDependencyEnabled());
+    generator.writeNumberField("lowErrorRate", config.getDependencyLowErrorRate());
+    generator.writeNumberField("highErrorRate", config.getDependencyHighErrorRate());
+    generator.writeEndObject();
+    generator.writeEndObject();
+    generator.close();
+    return AggregatedHttpResponse.of(HttpStatus.OK, MediaType.JSON, HttpData.ofUtf8(writer.toString()));
+  }
+
+  @Get("/api/v2/dependencies")
+  @Blocking
+  public AggregatedHttpResponse getDependencies(
+      @Param("endTs") long endTs,
+      @Param("lookback") Optional<Long> lookback) throws IOException {
+    final List<DependencyLink> dependencies = getDependencyQueryDAO().getDependencies(endTs, lookback.orElse(config.getLookback()));
+    return response(DependencyLinkBytesEncoder.JSON_V1.encodeList(dependencies));
   }
 
   @Override
@@ -128,5 +168,12 @@ public class HTTPQueryHandler extends ZipkinQueryHandler {
       zipkinQueryDAO = moduleManager.find(StorageModule.NAME).provider().getService(IZipkinQueryDAO.class);
     }
     return zipkinQueryDAO;
+  }
+
+  public IZipkinDependencyQueryDAO getDependencyQueryDAO() {
+    if (dependencyQueryDAO == null) {
+      dependencyQueryDAO = moduleManager.find(ZipkinDependencyModule.NAME).provider().getService(IZipkinDependencyQueryDAO.class);
+    }
+    return dependencyQueryDAO;
   }
 }

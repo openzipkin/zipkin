@@ -34,9 +34,9 @@
     </dependency>
     <!-- telemetry -->
     <dependency>
-      <groupId>org.apache.skywalking</groupId>
-      <artifactId>telemetry-prometheus</artifactId>
-      <version>${skywalking.version}</version>
+      <groupId>io.zipkin</groupId>
+      <artifactId>telemetry-zipkin</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <!-- storage -->
@@ -58,6 +58,23 @@
     <dependency>
       <groupId>io.zipkin</groupId>
       <artifactId>storage-cassandra</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- storage ext -->
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>zipkin-dependency-storage-jdbc</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>zipkin-dependency-storage-elasticsearch</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>zipkin-dependency-storage-banyandb</artifactId>
       <version>${project.version}</version>
     </dependency>
 
@@ -117,7 +134,33 @@
       <artifactId>slf4j-api</artifactId>
       <version>${slf4j.version}</version>
     </dependency>
+
+    <!-- for mysql -->
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <version>8.0.33</version>
+    </dependency>
   </dependencies>
+
+  <profiles>
+    <profile>
+      <id>include-lens</id>
+      <activation>
+        <property>
+          <name>!skipLens</name>
+        </property>
+      </activation>
+      <dependencies>
+        <!-- Static content for the Lens UI -->
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>zipkin-lens</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 
   <build>
     <resources>

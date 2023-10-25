@@ -27,6 +27,7 @@ import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
 import org.apache.skywalking.oap.server.receiver.zipkin.handler.ZipkinSpanHTTPHandler;
 import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
+import zipkin.server.core.services.HTTPConfigurableServer;
 import zipkin.server.core.services.ZipkinConfigService;
 
 import java.util.Arrays;
@@ -73,7 +74,7 @@ public class ZipkinHTTPReceiverProvider extends ModuleProvider {
           .acceptQueueSize(moduleConfig.getRestAcceptQueueSize())
           .maxRequestHeaderSize(moduleConfig.getRestMaxRequestHeaderSize())
           .build();
-      httpServer = new HTTPServer(httpServerConfig);
+      httpServer = new HTTPConfigurableServer(httpServerConfig);
       httpServer.initialize();
     }
   }

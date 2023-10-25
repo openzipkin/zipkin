@@ -13,6 +13,7 @@
  */
 package zipkin.server.core;
 
+import com.linecorp.armeria.common.HttpMethod;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.RunningMode;
 import org.apache.skywalking.oap.server.core.analysis.meter.MeterSystem;
@@ -84,11 +85,13 @@ import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
 import org.apache.skywalking.oap.server.telemetry.api.TelemetryRelatedContext;
 import zipkin.server.core.services.EmptyComponentLibraryCatalogService;
-import zipkin.server.core.services.EmptyHTTPHandlerRegister;
 import zipkin.server.core.services.EmptyNetworkAddressAliasCache;
+import zipkin.server.core.services.HTTPConfigurableServer;
+import zipkin.server.core.services.HTTPInfoHandler;
 import zipkin.server.core.services.ZipkinConfigService;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 
 public class CoreModuleProvider extends ModuleProvider {
@@ -96,14 +99,14 @@ public class CoreModuleProvider extends ModuleProvider {
 
   private EndpointNameGrouping endpointNameGrouping;
   private final ZipkinSourceReceiverImpl receiver;
-  private final AnnotationScan annotationScan;
+  private final ZipkinAnnotationScan annotationScan;
   private final StorageModels storageModels;
   private RemoteClientManager remoteClientManager;
   private GRPCServer grpcServer;
   private HTTPServer httpServer;
 
   public CoreModuleProvider() {
-    this.annotationScan = new AnnotationScan();
+    this.annotationScan = new ZipkinAnnotationScan();
     this.receiver = new ZipkinSourceReceiverImpl();
     this.storageModels = new StorageModels();
   }
@@ -144,15 +147,8 @@ public class CoreModuleProvider extends ModuleProvider {
     );
     this.registerServiceImplementation(NamingControl.class, namingControl);
 
+    annotationScan.registerListener(new DefaultScopeDefine.Listener());
     annotationScan.registerListener(new ZipkinStreamAnnotationListener(getManager()));
-
-    AnnotationScan scopeScan = new AnnotationScan();
-    scopeScan.registerListener(new DefaultScopeDefine.Listener());
-    try {
-      scopeScan.scan();
-    } catch (Exception e) {
-      throw new ModuleStartException(e.getMessage(), e);
-    }
 
     HTTPServerConfig httpServerConfig = HTTPServerConfig.builder()
         .host(moduleConfig.getRestHost())
@@ -165,8 +161,10 @@ public class CoreModuleProvider extends ModuleProvider {
         .maxRequestHeaderSize(
             moduleConfig.getRestMaxRequestHeaderSize())
         .build();
-    httpServer = new HTTPServer(httpServerConfig);
+    httpServer = new HTTPConfigurableServer(httpServerConfig);
     httpServer.initialize();
+    // "/info" handler
+    httpServer.addHandler(new HTTPInfoHandler(), Arrays.asList(HttpMethod.GET, HttpMethod.POST));
 
     // grpc
     if (moduleConfig.getGRPCSslEnabled()) {

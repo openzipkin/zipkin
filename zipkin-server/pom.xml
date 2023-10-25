@@ -70,6 +70,9 @@
     <module>storage-cassandra</module>
     <module>http-query-plugin</module>
     <module>health-query-plugin</module>
+    <module>telemetry-zipkin</module>
+    <module>zipkin-dependency</module>
+    <module>zipkin-storage-ext</module>
   </modules>
 
   <dependencyManagement>
@@ -216,24 +219,5 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <profiles>
-    <profile>
-      <id>include-lens</id>
-      <activation>
-        <property>
-          <name>!skipLens</name>
-        </property>
-      </activation>
-      <dependencies>
-        <!-- Static content for the Lens UI -->
-        <dependency>
-          <groupId>${project.groupId}</groupId>
-          <artifactId>zipkin-lens</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-      </dependencies>
-    </profile>
-  </profiles>
 
 </project>

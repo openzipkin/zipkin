@@ -18,6 +18,16 @@
       <artifactId>zipkin-query-plugin</artifactId>
       <version>${skywalking.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>zipkin-server-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>zipkin-dependency</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
 </project>

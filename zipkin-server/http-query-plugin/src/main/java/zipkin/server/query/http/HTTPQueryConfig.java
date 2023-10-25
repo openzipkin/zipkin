@@ -37,6 +37,14 @@ public class HTTPQueryConfig extends ModuleConfig {
   private String uiEnvironment = "";
   private long uiDefaultLookback = 900000L;
   private boolean uiSearchEnabled = true;
+  private String allowedOrigins = "*";
+
+  private boolean uiEnable = true;
+  private String uiBasePath = "/zipkin";
+
+  private boolean dependencyEnabled = true;
+  private double dependencyLowErrorRate = 0.5;  // 50% of calls in error turns line yellow
+  private double dependencyHighErrorRate = 0.75;// 75% of calls in error turns line red
 
   public ZipkinQueryConfig toSkyWalkingConfig() {
     final ZipkinQueryConfig result = new ZipkinQueryConfig();
@@ -159,5 +167,53 @@ public class HTTPQueryConfig extends ModuleConfig {
 
   public void setRestMaxRequestHeaderSize(int restMaxRequestHeaderSize) {
     this.restMaxRequestHeaderSize = restMaxRequestHeaderSize;
+  }
+
+  public String getUiBasePath() {
+    return uiBasePath;
+  }
+
+  public void setUiBasePath(String uiBasePath) {
+    this.uiBasePath = uiBasePath;
+  }
+
+  public boolean getUiEnable() {
+    return uiEnable;
+  }
+
+  public void setUiEnable(boolean uiEnable) {
+    this.uiEnable = uiEnable;
+  }
+
+  public String getAllowedOrigins() {
+    return allowedOrigins;
+  }
+
+  public void setAllowedOrigins(String allowedOrigins) {
+    this.allowedOrigins = allowedOrigins;
+  }
+
+  public boolean getDependencyEnabled() {
+    return dependencyEnabled;
+  }
+
+  public void setDependencyEnabled(boolean dependencyEnabled) {
+    this.dependencyEnabled = dependencyEnabled;
+  }
+
+  public double getDependencyLowErrorRate() {
+    return dependencyLowErrorRate;
+  }
+
+  public void setDependencyLowErrorRate(double dependencyLowErrorRate) {
+    this.dependencyLowErrorRate = dependencyLowErrorRate;
+  }
+
+  public double getDependencyHighErrorRate() {
+    return dependencyHighErrorRate;
+  }
+
+  public void setDependencyHighErrorRate(double dependencyHighErrorRate) {
+    this.dependencyHighErrorRate = dependencyHighErrorRate;
   }
 }
