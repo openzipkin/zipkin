@@ -18,6 +18,9 @@
   -->
 
 <Configuration status="DEBUG">
+    <Properties>
+        <Property name="defaultRootLogLevel">INFO</Property>
+    </Properties>
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight{%5p} ${PID:-} --- [%15.15t] %c{1.} : %m%n" />
@@ -32,7 +35,7 @@
         <logger name="com.linecorp.armeria" level="WARN" />
         <logger name="com.linecorp.armeria.server.Server" level="INFO"/>
         <logger name="org.apache.kafka" level="OFF"/>
-        <Root level="INFO">
+        <Root level="${sys:log.level:-${defaultRootLogLevel}}">
             <AppenderRef ref="Console"/>
         </Root>
     </Loggers>
