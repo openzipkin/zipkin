@@ -102,6 +102,8 @@ public class CoreModuleConfig extends ModuleConfig {
    */
   private int remoteTimeout = 20;
 
+  private boolean searchEnable = true;
+
   private static final String DEFAULT_SEARCHABLE_TAG_KEYS = String.join(
       Const.COMMA,
       "http.method"
@@ -353,5 +355,13 @@ public class CoreModuleConfig extends ModuleConfig {
 
   public void setRestMaxRequestHeaderSize(int restMaxRequestHeaderSize) {
     this.restMaxRequestHeaderSize = restMaxRequestHeaderSize;
+  }
+
+  public boolean getSearchEnable() {
+    return searchEnable;
+  }
+
+  public void setSearchEnable(boolean searchEnable) {
+    this.searchEnable = searchEnable;
   }
 }

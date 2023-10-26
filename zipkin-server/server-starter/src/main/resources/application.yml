@@ -55,6 +55,7 @@ core:
     restIdleTimeOut: ${ZIPKIN_REST_IDLE_TIMEOUT:30000}
     restAcceptQueueSize: ${ZIPKIN_REST_QUEUE_SIZE:0}
     restMaxRequestHeaderSize: ${ZIPKIN_REST_MAX_REQUEST_HEADER_SIZE:8192}
+    searchEnable: ${ZIPKIN_SEARCH_ENABLED:true}
 
 storage: &storage
   selector: ${ZIPKIN_STORAGE:h2}

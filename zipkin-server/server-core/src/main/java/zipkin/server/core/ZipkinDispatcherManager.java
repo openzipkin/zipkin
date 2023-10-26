@@ -19,10 +19,16 @@ import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 import org.apache.skywalking.oap.server.core.analysis.DispatcherManager;
 import org.apache.skywalking.oap.server.core.analysis.manual.searchtag.TagAutocompleteDispatcher;
+import org.apache.skywalking.oap.server.core.zipkin.dispatcher.ZipkinSpanRecordDispatcher;
 
 import java.io.IOException;
 
 public class ZipkinDispatcherManager extends DispatcherManager {
+  private final boolean searchEnable;
+
+  public ZipkinDispatcherManager(boolean searchEnable) {
+    this.searchEnable = searchEnable;
+  }
 
   @Override
   public void scan() throws IOException, IllegalAccessException, InstantiationException {
@@ -42,6 +48,10 @@ public class ZipkinDispatcherManager extends DispatcherManager {
   @Override
   public void addIfAsSourceDispatcher(Class aClass) throws IllegalAccessException, InstantiationException {
     if (aClass.getSimpleName().startsWith("Zipkin") || aClass.equals(TagAutocompleteDispatcher.class)) {
+      // If search is disabled, only the span can be stored.
+      if (!searchEnable && !aClass.equals(ZipkinSpanRecordDispatcher.class)) {
+        return;
+      }
       super.addIfAsSourceDispatcher(aClass);
     }
   }

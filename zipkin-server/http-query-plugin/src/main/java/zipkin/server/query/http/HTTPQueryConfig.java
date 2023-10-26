@@ -36,7 +36,6 @@ public class HTTPQueryConfig extends ModuleConfig {
   private int uiQueryLimit = 10;
   private String uiEnvironment = "";
   private long uiDefaultLookback = 900000L;
-  private boolean uiSearchEnabled = true;
   private String allowedOrigins = "*";
 
   private boolean uiEnable = true;
@@ -46,14 +45,14 @@ public class HTTPQueryConfig extends ModuleConfig {
   private double dependencyLowErrorRate = 0.5;  // 50% of calls in error turns line yellow
   private double dependencyHighErrorRate = 0.75;// 75% of calls in error turns line red
 
-  public ZipkinQueryConfig toSkyWalkingConfig() {
+  public ZipkinQueryConfig toSkyWalkingConfig(boolean searchEnabled) {
     final ZipkinQueryConfig result = new ZipkinQueryConfig();
     result.setLookback(lookback);
     result.setNamesMaxAge(namesMaxAge);
     result.setUiQueryLimit(uiQueryLimit);
     result.setUiEnvironment(uiEnvironment);
     result.setUiDefaultLookback(uiDefaultLookback);
-    result.setUiSearchEnabled(uiSearchEnabled);
+    result.setUiSearchEnabled(searchEnabled);
     return result;
   }
 
@@ -95,14 +94,6 @@ public class HTTPQueryConfig extends ModuleConfig {
 
   public void setUiDefaultLookback(long uiDefaultLookback) {
     this.uiDefaultLookback = uiDefaultLookback;
-  }
-
-  public boolean getUiSearchEnabled() {
-    return uiSearchEnabled;
-  }
-
-  public void setUiSearchEnabled(boolean uiSearchEnabled) {
-    this.uiSearchEnabled = uiSearchEnabled;
   }
 
   public boolean getStrictTraceId() {

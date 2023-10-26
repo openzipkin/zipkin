@@ -40,6 +40,7 @@ import zipkin2.codec.SpanBytesEncoder;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -56,13 +57,67 @@ import static com.linecorp.armeria.common.MediaType.ANY_TEXT_TYPE;
 public class HTTPQueryHandler extends ZipkinQueryHandler {
   private final HTTPQueryConfig config;
   private final ModuleManager moduleManager;
+  private final boolean searchEnable;
+
+  private final AggregatedHttpResponse EMPTY_ARRAY_RESPONSE = AggregatedHttpResponse.of(ResponseHeaders.builder(HttpStatus.OK)
+      .contentType(MediaType.JSON)
+      .build(), HttpData.wrap("[]".getBytes(StandardCharsets.UTF_8)));
 
   private IZipkinQueryDAO zipkinQueryDAO;
   private IZipkinDependencyQueryDAO dependencyQueryDAO;
-  public HTTPQueryHandler(HTTPQueryConfig config, ModuleManager moduleManager) {
-    super(config.toSkyWalkingConfig(), moduleManager);
+  public HTTPQueryHandler(boolean searchEnable, HTTPQueryConfig config, ModuleManager moduleManager) {
+    super(config.toSkyWalkingConfig(searchEnable), moduleManager);
+    this.searchEnable = searchEnable;
     this.config = config;
     this.moduleManager = moduleManager;
+  }
+
+  @Override
+  public AggregatedHttpResponse getServiceNames() throws IOException {
+    if (!searchEnable) {
+      return EMPTY_ARRAY_RESPONSE;
+    }
+    return super.getServiceNames();
+  }
+
+  @Override
+  public AggregatedHttpResponse getRemoteServiceNames(String serviceName) throws IOException {
+    if (!searchEnable) {
+      return EMPTY_ARRAY_RESPONSE;
+    }
+    return super.getRemoteServiceNames(serviceName);
+  }
+
+  @Override
+  public AggregatedHttpResponse getAutocompleteKeys() throws IOException {
+    if (!searchEnable) {
+      return EMPTY_ARRAY_RESPONSE;
+    }
+    return super.getAutocompleteKeys();
+  }
+
+  @Override
+  public AggregatedHttpResponse getAutocompleteValues(String key) throws IOException {
+    if (!searchEnable) {
+      return EMPTY_ARRAY_RESPONSE;
+    }
+    return super.getAutocompleteValues(key);
+  }
+
+  @Override
+  public AggregatedHttpResponse getTraces(Optional<String> serviceName, Optional<String> remoteServiceName, Optional<String> spanName, Optional<String> annotationQuery, Optional<Long> minDuration, Optional<Long> maxDuration, Optional<Long> endTs, Optional<Long> lookback, int limit) throws IOException {
+    if (!searchEnable) {
+      return EMPTY_ARRAY_RESPONSE;
+    }
+    return super.getTraces(serviceName, remoteServiceName, spanName, annotationQuery, minDuration, maxDuration, endTs, lookback, limit);
+  }
+
+  @Override
+  public AggregatedHttpResponse getSpanNames(String serviceName) throws IOException {
+    if (!searchEnable) {
+      return EMPTY_ARRAY_RESPONSE;
+    }
+    return super.getSpanNames(serviceName);
   }
 
   @Override
@@ -73,7 +128,7 @@ public class HTTPQueryHandler extends ZipkinQueryHandler {
     generator.writeStringField("environment", config.getUiEnvironment());
     generator.writeNumberField("queryLimit", config.getUiQueryLimit());
     generator.writeNumberField("defaultLookback", config.getUiDefaultLookback());
-    generator.writeBooleanField("searchEnabled", config.getUiSearchEnabled());
+    generator.writeBooleanField("searchEnabled", searchEnable);
     generator.writeObjectFieldStart("dependency");
     generator.writeBooleanField("enabled", config.getDependencyEnabled());
     generator.writeNumberField("lowErrorRate", config.getDependencyLowErrorRate());
