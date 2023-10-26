@@ -28,6 +28,7 @@ import com.linecorp.armeria.server.file.FileService;
 import com.linecorp.armeria.server.file.HttpFile;
 import org.apache.skywalking.oap.query.zipkin.ZipkinQueryModule;
 import org.apache.skywalking.oap.server.core.CoreModule;
+import org.apache.skywalking.oap.server.core.config.ConfigService;
 import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
@@ -37,6 +38,7 @@ import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedExcepti
 import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
 import zipkin.server.core.services.HTTPConfigurableServer;
+import zipkin.server.core.services.ZipkinConfigService;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -115,7 +117,9 @@ public class HTTPQueryProvider extends ModuleProvider {
       server.decorator(corsBuilder::build);
     };
 
-    final HTTPQueryHandler httpService = new HTTPQueryHandler(moduleConfig, getManager());
+    final ConfigService configService = getManager().find(CoreModule.NAME).provider().getService(ConfigService.class);
+    final boolean searchEnable = ((ZipkinConfigService) configService).getSearchEnable();
+    final HTTPQueryHandler httpService = new HTTPQueryHandler(searchEnable, moduleConfig, getManager());
     if (httpServer != null) {
       httpServer.addHandler(httpService, Collections.singletonList(HttpMethod.GET));
       httpServer.addHandler(corsConfiguration, Arrays.asList(HttpMethod.GET, HttpMethod.POST));

@@ -23,8 +23,8 @@ import java.io.IOException;
 public class ZipkinSourceReceiverImpl implements SourceReceiver {
   private final ZipkinDispatcherManager mgr;
 
-  public ZipkinSourceReceiverImpl() {
-    mgr = new ZipkinDispatcherManager();
+  public ZipkinSourceReceiverImpl(boolean searchEnable) {
+    mgr = new ZipkinDispatcherManager(searchEnable);
   }
 
   @Override
