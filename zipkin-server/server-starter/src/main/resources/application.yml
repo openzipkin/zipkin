@@ -110,6 +110,7 @@ storage: &storage
   mysql:
     properties:
       jdbcUrl: ${ZIPKIN_JDBC_URL:"jdbc:mysql://localhost:3306/swtest?rewriteBatchedStatements=true&allowMultiQueries=true"}
+      driverClassName: org.mariadb.jdbc.Driver
       dataSource.user: ${ZIPKIN_DATA_SOURCE_USER:root}
       dataSource.password: ${ZIPKIN_DATA_SOURCE_PASSWORD:root@1234}
       dataSource.cachePrepStmts: ${ZIPKIN_DATA_SOURCE_CACHE_PREP_STMTS:true}
