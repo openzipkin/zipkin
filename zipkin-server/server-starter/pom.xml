@@ -55,6 +55,11 @@
       <artifactId>storage-elasticsearch-plugin</artifactId>
       <version>${skywalking.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>storage-cassandra</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- storage ext -->
     <dependency>
@@ -70,6 +75,11 @@
     <dependency>
       <groupId>io.zipkin</groupId>
       <artifactId>zipkin-dependency-storage-banyandb</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>zipkin-dependency-storage-cassandra</artifactId>
       <version>${project.version}</version>
     </dependency>
 

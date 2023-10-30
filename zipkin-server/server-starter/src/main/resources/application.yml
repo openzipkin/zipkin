@@ -148,6 +148,23 @@ storage: &storage
     superDatasetBlockIntervalHours: ${ZIPKIN_STORAGE_BANYANDB_SUPER_DATASET_BLOCK_INTERVAL_HOURS:4} # Unit is hour
     superDatasetSegmentIntervalDays: ${ZIPKIN_STORAGE_BANYANDB_SUPER_DATASET_SEGMENT_INTERVAL_DAYS:1} # Unit is day
     specificGroupSettings: ${ZIPKIN_STORAGE_BANYANDB_SPECIFIC_GROUP_SETTINGS:""} # For example, {"group1": {"blockIntervalHours": 4, "segmentIntervalDays": 1}}
+  cassandra:
+    keyspace: ${ZIPKIN_STORAGE_CASSANDRA_KEYSPACE:zipkin}
+    # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
+    contactPoints: ${ZIPKIN_STORAGE_CASSANDRA_CONTACT_POINTS:localhost}
+    # Name of the datacenter that will be considered "local" for load balancing.
+    localDc: ${ZIPKIN_STORAGE_CASSANDRA_LOCAL_DC:datacenter1}
+    # Will throw an exception on startup if authentication fails.
+    username: ${ZIPKIN_STORAGE_CASSANDRA_USERNAME:}
+    password: ${ZIPKIN_STORAGE_CASSANDRA_PASSWORD:}
+    # Ensuring that schema exists, if enabled tries to execute script /zipkin-server/storage-cassandra/resources/zipkin-schemas.cql.
+    ensureSchema: ${ZIPKIN_STORAGE_CASSANDRA_ENSURE_SCHEMA:true}
+    # Max pooled connections per datacenter-local host.
+    maxConnections: ${ZIPKIN_STORAGE_CASSANDRA_MAX_CONNECTIONS:8}
+    # Using ssl for connection, rely on Keystore
+    use-ssl: ${ZIPKIN_STORAGE_CASSANDRA_USE_SSL:false}
+    maxSizeOfBatchCql: ${ZIPKIN_STORAGE_CASSANDRA_MAX_SIZE_OF_BATCH_CQL:2000}
+    asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_CASSANDRA_ASYNC_BATCH_PERSISTENT_POOL_SIZE:4}
 
 zipkin-dependency-storage-ext: *storage
 

@@ -52,6 +52,7 @@ jobs:
           - name: receiver-zipkin-kafka
           - name: receiver-zipkin-rabbitmq
           - name: receiver-zipkin-scribe
+          - name: storage-cassandra
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
