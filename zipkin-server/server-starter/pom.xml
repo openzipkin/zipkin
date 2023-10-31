@@ -86,6 +86,11 @@
     <!-- zipkin receiver -->
     <dependency>
       <groupId>io.zipkin</groupId>
+      <artifactId>receiver-zipkin-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
       <artifactId>receiver-zipkin-http</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -107,6 +112,11 @@
     <dependency>
       <groupId>io.zipkin</groupId>
       <artifactId>receiver-zipkin-scribe</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
+      <artifactId>receiver-otlp-trace</artifactId>
       <version>${project.version}</version>
     </dependency>
 

@@ -30,10 +30,4 @@ public class ZipkinConfigService extends ConfigService {
     return moduleConfig.getSearchEnable();
   }
 
-  public ZipkinReceiverConfig toZipkinReceiverConfig() {
-    final ZipkinReceiverConfig config = new ZipkinReceiverConfig();
-    config.setSearchableTracesTags(moduleConfig.getSearchableTracesTags());
-    config.setSampleRate((int) (moduleConfig.getTraceSampleRate() * 10000));
-    return config;
-  }
 }

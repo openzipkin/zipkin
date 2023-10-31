@@ -15,14 +15,8 @@
   <dependencies>
     <dependency>
       <groupId>io.zipkin</groupId>
-      <artifactId>zipkin-server-core</artifactId>
+      <artifactId>receiver-zipkin-core</artifactId>
       <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.skywalking</groupId>
-      <artifactId>zipkin-receiver-plugin</artifactId>
-      <version>${skywalking.version}</version>
     </dependency>
   </dependencies>
 

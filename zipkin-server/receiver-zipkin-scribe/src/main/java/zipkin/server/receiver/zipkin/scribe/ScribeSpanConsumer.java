@@ -14,7 +14,7 @@
 package zipkin.server.receiver.zipkin.scribe;
 
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
-import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
+import org.apache.skywalking.oap.server.receiver.zipkin.SpanForwardService;
 import org.apache.skywalking.oap.server.telemetry.TelemetryModule;
 import org.apache.skywalking.oap.server.telemetry.api.HistogramMetrics;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
@@ -32,12 +32,12 @@ import java.util.Base64;
 import java.util.List;
 
 final class ScribeSpanConsumer implements Scribe.AsyncIface {
-  private final SpanForward spanForward;
+  private final SpanForwardService spanForward;
   private final String category;
 
   private final HistogramMetrics histogram;
 
-  ScribeSpanConsumer(SpanForward spanForward, String category, ModuleManager moduleManager) {
+  ScribeSpanConsumer(SpanForwardService spanForward, String category, ModuleManager moduleManager) {
     this.spanForward = spanForward;
     this.category = category;
 

@@ -29,6 +29,11 @@
       <artifactId>classgraph</artifactId>
       <version>4.8.162</version>
     </dependency>
+    <dependency>
+      <groupId>${armeria.groupId}</groupId>
+      <artifactId>armeria-grpc</artifactId>
+      <version>${armeria.version}</version>
+    </dependency>
   </dependencies>
 
 </project>

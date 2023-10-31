@@ -18,11 +18,10 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
-import org.apache.skywalking.oap.server.core.CoreModule;
-import org.apache.skywalking.oap.server.core.CoreModuleProvider;
-import org.apache.skywalking.oap.server.core.config.ConfigService;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
+import org.apache.skywalking.oap.server.receiver.zipkin.SpanForwardService;
+import org.apache.skywalking.oap.server.receiver.zipkin.ZipkinReceiverModule;
 import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
 import org.apache.skywalking.oap.server.telemetry.TelemetryModule;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
@@ -39,8 +38,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.powermock.reflect.Whitebox;
-import zipkin.server.core.CoreModuleConfig;
-import zipkin.server.core.services.ZipkinConfigService;
+import zipkin.server.receiver.zipkin.core.ZipkinReceiverCoreProvider;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 import zipkin2.codec.SpanBytesEncoder;
@@ -80,7 +78,7 @@ public class ITKafkaReceiver {
     config.setKafkaHandlerThreadPoolSize(2);
     config.setKafkaHandlerThreadPoolQueueSize(100);
 
-    moduleManager = setupModuleManager();
+    moduleManager = setupModuleManager(forward);
 
     final ZipkinKafkaReceiverProvider provider = new ZipkinKafkaReceiverProvider();
     provider.setManager(moduleManager);
@@ -91,7 +89,6 @@ public class ITKafkaReceiver {
       spans.add(invocationOnMock.getArgument(0, ArrayList.class));
       return null;
     }).when(forward).send(any());
-    Whitebox.setInternalState(provider, SpanForward.class, forward);
     provider.notifyAfterCompleted();
 
     kafka.prepareTopics(config.getKafkaTopic(), 1);
@@ -121,21 +118,20 @@ public class ITKafkaReceiver {
     }
   }
 
-  private ModuleManager setupModuleManager() {
+  private ModuleManager setupModuleManager(SpanForward forward) {
     ModuleManager moduleManager = Mockito.mock(ModuleManager.class);
 
-    CoreModule coreModule = Mockito.spy(CoreModule.class);
-    CoreModuleProvider moduleProvider = Mockito.mock(CoreModuleProvider.class);
-    Whitebox.setInternalState(coreModule, "loadedProvider", moduleProvider);
-    Mockito.when(moduleManager.find(CoreModule.NAME)).thenReturn(coreModule);
+    final ZipkinReceiverModule zipkinReceiverModule = Mockito.spy(ZipkinReceiverModule.class);
+    final ZipkinReceiverCoreProvider receiverProvider = Mockito.mock(ZipkinReceiverCoreProvider.class);
+    Whitebox.setInternalState(zipkinReceiverModule, "loadedProvider", receiverProvider);
+    Mockito.when(moduleManager.find(ZipkinReceiverModule.NAME)).thenReturn(zipkinReceiverModule);
+    Mockito.when(zipkinReceiverModule.provider().getService(SpanForwardService.class)).thenReturn(forward);
 
     TelemetryModule telemetryModule = Mockito.spy(TelemetryModule.class);
     NoneTelemetryProvider noneTelemetryProvider = Mockito.mock(NoneTelemetryProvider.class);
     Whitebox.setInternalState(telemetryModule, "loadedProvider", noneTelemetryProvider);
     Mockito.when(moduleManager.find(TelemetryModule.NAME)).thenReturn(telemetryModule);
 
-    Mockito.when(moduleProvider.getService(ConfigService.class))
-        .thenReturn(new ZipkinConfigService(new CoreModuleConfig(), moduleProvider));
     Mockito.when(noneTelemetryProvider.getService(MetricsCreator.class))
         .thenReturn(new MetricsCreatorNoop());
 

@@ -16,13 +16,14 @@ package zipkin.server.receiver.zipkin.http;
 
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.CoreModuleProvider;
-import org.apache.skywalking.oap.server.core.config.ConfigService;
 import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
 import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegisterImpl;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
+import org.apache.skywalking.oap.server.receiver.zipkin.SpanForwardService;
+import org.apache.skywalking.oap.server.receiver.zipkin.ZipkinReceiverModule;
 import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
 import org.apache.skywalking.oap.server.telemetry.TelemetryModule;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
@@ -37,8 +38,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.powermock.reflect.Whitebox;
-import zipkin.server.core.CoreModuleConfig;
-import zipkin.server.core.services.ZipkinConfigService;
+import zipkin.server.receiver.zipkin.core.ZipkinReceiverCoreProvider;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 import zipkin2.codec.SpanBytesEncoder;
@@ -72,12 +72,11 @@ public class ITHTTPReceiver {
   public void setup() throws ModuleStartException {
     final HTTPServer httpServer = new HTTPServer(HTTPServerConfig.builder().host("0.0.0.0").port(port).contextPath("/").build());
     httpServer.initialize();
-    moduleManager = setupModuleManager(httpServer);
+    moduleManager = setupModuleManager(httpServer, forward);
 
     final ZipkinHTTPReceiverProvider provider = new ZipkinHTTPReceiverProvider();
     provider.setManager(moduleManager);
     final ZipkinHTTPReceiverConfig config = new ZipkinHTTPReceiverConfig();
-    config.setRestPort(-1);
     Whitebox.setInternalState(provider, ZipkinHTTPReceiverConfig.class, config);
     provider.prepare();
     provider.start();
@@ -86,7 +85,6 @@ public class ITHTTPReceiver {
       spans.add(invocationOnMock.getArgument(0, ArrayList.class));
       return null;
     }).when(forward).send(any());
-    Whitebox.setInternalState(provider.getHttpHandler(), SpanForward.class, forward);
     provider.notifyAfterCompleted();
   }
 
@@ -116,7 +114,7 @@ public class ITHTTPReceiver {
     assertThat(spans.take()).containsExactly(CLIENT_SPAN);
   }
 
-  private ModuleManager setupModuleManager(HTTPServer httpServer) {
+  private ModuleManager setupModuleManager(HTTPServer httpServer, SpanForward forward) {
     ModuleManager moduleManager = Mockito.mock(ModuleManager.class);
 
     CoreModule coreModule = Mockito.spy(CoreModule.class);
@@ -125,13 +123,17 @@ public class ITHTTPReceiver {
     Mockito.when(moduleManager.find(CoreModule.NAME)).thenReturn(coreModule);
     Mockito.when(coreModule.provider().getService(HTTPHandlerRegister.class)).thenReturn(new HTTPHandlerRegisterImpl(httpServer));
 
+    final ZipkinReceiverModule zipkinReceiverModule = Mockito.spy(ZipkinReceiverModule.class);
+    final ZipkinReceiverCoreProvider receiverProvider = Mockito.mock(ZipkinReceiverCoreProvider.class);
+    Whitebox.setInternalState(zipkinReceiverModule, "loadedProvider", receiverProvider);
+    Mockito.when(moduleManager.find(ZipkinReceiverModule.NAME)).thenReturn(zipkinReceiverModule);
+    Mockito.when(zipkinReceiverModule.provider().getService(SpanForwardService.class)).thenReturn(forward);
+
     TelemetryModule telemetryModule = Mockito.spy(TelemetryModule.class);
     NoneTelemetryProvider noneTelemetryProvider = Mockito.mock(NoneTelemetryProvider.class);
     Whitebox.setInternalState(telemetryModule, "loadedProvider", noneTelemetryProvider);
     Mockito.when(moduleManager.find(TelemetryModule.NAME)).thenReturn(telemetryModule);
 
-    Mockito.when(moduleProvider.getService(ConfigService.class))
-        .thenReturn(new ZipkinConfigService(new CoreModuleConfig(), moduleProvider));
     Mockito.when(noneTelemetryProvider.getService(MetricsCreator.class))
         .thenReturn(new MetricsCreatorNoop());
 

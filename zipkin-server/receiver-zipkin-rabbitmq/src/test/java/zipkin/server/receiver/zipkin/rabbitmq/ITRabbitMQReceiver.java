@@ -17,11 +17,10 @@ package zipkin.server.receiver.zipkin.rabbitmq;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import org.apache.skywalking.oap.server.core.CoreModule;
-import org.apache.skywalking.oap.server.core.CoreModuleProvider;
-import org.apache.skywalking.oap.server.core.config.ConfigService;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
+import org.apache.skywalking.oap.server.receiver.zipkin.SpanForwardService;
+import org.apache.skywalking.oap.server.receiver.zipkin.ZipkinReceiverModule;
 import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
 import org.apache.skywalking.oap.server.telemetry.TelemetryModule;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
@@ -37,8 +36,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.powermock.reflect.Whitebox;
-import zipkin.server.core.CoreModuleConfig;
-import zipkin.server.core.services.ZipkinConfigService;
+import zipkin.server.receiver.zipkin.core.ZipkinReceiverCoreProvider;
 import zipkin.server.receriver.zipkin.rabbitmq.ZipkinRabbitMQConfig;
 import zipkin.server.receriver.zipkin.rabbitmq.ZipkinRabbitMQProvider;
 import zipkin2.Span;
@@ -77,7 +75,7 @@ public class ITRabbitMQReceiver {
     config.setAddresses(Collections.singletonList(rabbitMQ.host() + ":" + rabbitMQ.port()));
     config.setQueue("test");
 
-    moduleManager = setupModuleManager();
+    moduleManager = setupModuleManager(forward);
 
     final ZipkinRabbitMQProvider provider = new ZipkinRabbitMQProvider();
     provider.setManager(moduleManager);
@@ -88,7 +86,6 @@ public class ITRabbitMQReceiver {
       exceptedSpans.add(invocationOnMock.getArgument(0, ArrayList.class));
       return null;
     }).when(forward).send(any());
-    Whitebox.setInternalState(provider, SpanForward.class, forward);
     provider.notifyAfterCompleted();
 
     ConnectionFactory factory = new ConnectionFactory();
@@ -121,21 +118,20 @@ public class ITRabbitMQReceiver {
     }
   }
 
-  private ModuleManager setupModuleManager() {
+  private ModuleManager setupModuleManager(SpanForward forward) {
     ModuleManager moduleManager = Mockito.mock(ModuleManager.class);
 
-    CoreModule coreModule = Mockito.spy(CoreModule.class);
-    CoreModuleProvider moduleProvider = Mockito.mock(CoreModuleProvider.class);
-    Whitebox.setInternalState(coreModule, "loadedProvider", moduleProvider);
-    Mockito.when(moduleManager.find(CoreModule.NAME)).thenReturn(coreModule);
+    final ZipkinReceiverModule zipkinReceiverModule = Mockito.spy(ZipkinReceiverModule.class);
+    final ZipkinReceiverCoreProvider receiverProvider = Mockito.mock(ZipkinReceiverCoreProvider.class);
+    Whitebox.setInternalState(zipkinReceiverModule, "loadedProvider", receiverProvider);
+    Mockito.when(moduleManager.find(ZipkinReceiverModule.NAME)).thenReturn(zipkinReceiverModule);
+    Mockito.when(zipkinReceiverModule.provider().getService(SpanForwardService.class)).thenReturn(forward);
 
     TelemetryModule telemetryModule = Mockito.spy(TelemetryModule.class);
     NoneTelemetryProvider noneTelemetryProvider = Mockito.mock(NoneTelemetryProvider.class);
     Whitebox.setInternalState(telemetryModule, "loadedProvider", noneTelemetryProvider);
     Mockito.when(moduleManager.find(TelemetryModule.NAME)).thenReturn(telemetryModule);
 
-    Mockito.when(moduleProvider.getService(ConfigService.class))
-        .thenReturn(new ZipkinConfigService(new CoreModuleConfig(), moduleProvider));
     Mockito.when(noneTelemetryProvider.getService(MetricsCreator.class))
         .thenReturn(new MetricsCreatorNoop());
 
