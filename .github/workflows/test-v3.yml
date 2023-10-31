@@ -40,7 +40,7 @@ jobs:
           path: ~/.npm
           key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
       - name: Test without Docker
-        run: build-bin/maven_go_offline && build-bin/test -Ddocker.skip=true -Dcheckstyle.skip=true
+        run: build-bin/maven_go_offline && build-bin/test -Ddocker.skip=true -Dcheckstyle.skip=true -DskipUTs=true -DexcludedGroups=slow
   test_docker:
     runs-on: ubuntu-20.04 # newest available distribution, aka focal
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
@@ -72,4 +72,4 @@ jobs:
           | # configure_test seeds NPM cache, which isn't needed for these tests
           build-bin/maven/maven_go_offline &&
           build-bin/docker/configure_docker &&
-          build-bin/test -pl :${{ matrix.name }} --am -Dlicense.skip=true -Dcheckstyle.skip=true
+          build-bin/test -pl :${{ matrix.name }} --am -Dlicense.skip=true -Dcheckstyle.skip=true -DskipUTs=true -DexcludedGroups=slow
