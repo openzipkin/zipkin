@@ -16,6 +16,10 @@ package zipkin.server.core.services;
 
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.server.ServerBuilder;
+import com.linecorp.armeria.server.grpc.GrpcService;
+import io.grpc.BindableService;
+import io.grpc.ServerInterceptor;
+import io.grpc.ServerServiceDefinition;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
 
@@ -31,6 +35,15 @@ public class HTTPConfigurableServer extends HTTPServer {
     if (handler instanceof ServerConfiguration) {
       ((ServerConfiguration) handler).configure(sb);
       allowedMethods.addAll(httpMethods);
+      return;
+    } else if (handler instanceof BindableService) {
+      sb.service(GrpcService.builder().addService((BindableService) handler).build());
+      return;
+    } else if (handler instanceof ServerServiceDefinition) {
+      sb.service(GrpcService.builder().addService((ServerServiceDefinition) handler).build());
+      return;
+    } else if (handler instanceof ServerInterceptor) {
+      sb.service(GrpcService.builder().intercept((ServerInterceptor) handler).build());
       return;
     }
     super.addHandler(handler, httpMethods);

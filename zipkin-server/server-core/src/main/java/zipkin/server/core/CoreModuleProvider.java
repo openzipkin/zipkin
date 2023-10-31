@@ -18,7 +18,6 @@ import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.RunningMode;
 import org.apache.skywalking.oap.server.core.analysis.meter.MeterSystem;
 import org.apache.skywalking.oap.server.core.analysis.worker.MetricsStreamProcessor;
-import org.apache.skywalking.oap.server.core.annotation.AnnotationScan;
 import org.apache.skywalking.oap.server.core.cache.NetworkAddressAliasCache;
 import org.apache.skywalking.oap.server.core.cache.ProfileTaskCache;
 import org.apache.skywalking.oap.server.core.cluster.ClusterCoordinator;
@@ -58,7 +57,6 @@ import org.apache.skywalking.oap.server.core.remote.client.Address;
 import org.apache.skywalking.oap.server.core.remote.client.RemoteClientManager;
 import org.apache.skywalking.oap.server.core.remote.health.HealthCheckServiceHandler;
 import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegister;
-import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegisterImpl;
 import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegister;
 import org.apache.skywalking.oap.server.core.server.HTTPHandlerRegisterImpl;
 import org.apache.skywalking.oap.server.core.source.DefaultScopeDefine;
@@ -79,8 +77,6 @@ import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
-import org.apache.skywalking.oap.server.library.server.ServerException;
-import org.apache.skywalking.oap.server.library.server.grpc.GRPCServer;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
 import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
 import org.apache.skywalking.oap.server.telemetry.api.TelemetryRelatedContext;
@@ -102,8 +98,7 @@ public class CoreModuleProvider extends ModuleProvider {
   private EndpointNameGrouping endpointNameGrouping;
   private ZipkinSourceReceiverImpl receiver;
   private RemoteClientManager remoteClientManager;
-  private GRPCServer grpcServer;
-  private HTTPServer httpServer;
+  private HTTPServer server;
 
   public CoreModuleProvider() {
     this.annotationScan = new ZipkinAnnotationScan();
@@ -151,48 +146,25 @@ public class CoreModuleProvider extends ModuleProvider {
     annotationScan.registerListener(new ZipkinStreamAnnotationListener(getManager(), moduleConfig.getSearchEnable()));
 
     HTTPServerConfig httpServerConfig = HTTPServerConfig.builder()
-        .host(moduleConfig.getRestHost())
-        .port(moduleConfig.getRestPort())
-        .contextPath(moduleConfig.getRestContextPath())
-        .idleTimeOut(moduleConfig.getRestIdleTimeOut())
-        .maxThreads(moduleConfig.getRestMaxThreads())
-        .acceptQueueSize(
-            moduleConfig.getRestAcceptQueueSize())
-        .maxRequestHeaderSize(
-            moduleConfig.getRestMaxRequestHeaderSize())
+        .host(moduleConfig.getServerHost())
+        .port(moduleConfig.getServerPort())
+        .contextPath("/")
+        .idleTimeOut(moduleConfig.getServerIdleTimeOut())
+        .maxThreads(moduleConfig.getServerMaxThreads())
+        .acceptQueueSize(moduleConfig.getServerAcceptQueueSize())
+        .maxRequestHeaderSize(moduleConfig.getServerMaxRequestHeaderSize())
+        .enableTLS(moduleConfig.getServerEnableTLS())
+        .tlsKeyPath(moduleConfig.getServerTLSKeyPath())
+        .tlsCertChainPath(moduleConfig.getServerTLSCertChainPath())
         .build();
-    httpServer = new HTTPConfigurableServer(httpServerConfig);
-    httpServer.initialize();
+    server = new HTTPConfigurableServer(httpServerConfig);
+    server.initialize();
     // "/info" handler
-    httpServer.addHandler(new HTTPInfoHandler(), Arrays.asList(HttpMethod.GET, HttpMethod.POST));
+    server.addHandler(new HTTPInfoHandler(), Arrays.asList(HttpMethod.GET, HttpMethod.POST));
 
-    // grpc
-    if (moduleConfig.getGRPCSslEnabled()) {
-      grpcServer = new GRPCServer(moduleConfig.getGRPCHost(), moduleConfig.getGRPCPort(),
-          moduleConfig.getGRPCSslCertChainPath(),
-          moduleConfig.getGRPCSslKeyPath(),
-          null
-      );
-    } else {
-      grpcServer = new GRPCServer(moduleConfig.getGRPCHost(), moduleConfig.getGRPCPort());
-    }
-    if (moduleConfig.getGRPCMaxConcurrentCallsPerConnection() > 0) {
-      grpcServer.setMaxConcurrentCallsPerConnection(moduleConfig.getGRPCMaxConcurrentCallsPerConnection());
-    }
-    if (moduleConfig.getGRPCMaxMessageSize() > 0) {
-      grpcServer.setMaxMessageSize(moduleConfig.getGRPCMaxMessageSize());
-    }
-    if (moduleConfig.getGRPCThreadPoolQueueSize() > 0) {
-      grpcServer.setThreadPoolQueueSize(moduleConfig.getGRPCThreadPoolQueueSize());
-    }
-    if (moduleConfig.getGRPCThreadPoolSize() > 0) {
-      grpcServer.setThreadPoolSize(moduleConfig.getGRPCThreadPoolSize());
-    }
-    grpcServer.initialize();
-
-    if (moduleConfig.getGRPCSslEnabled()) {
+    if (moduleConfig.getServerEnableTLS()) {
       this.remoteClientManager = new RemoteClientManager(getManager(), moduleConfig.getRemoteTimeout(),
-          moduleConfig.getGRPCSslTrustedCAPath()
+          moduleConfig.getClusterSslTrustedCAPath()
       );
     } else {
       this.remoteClientManager = new RemoteClientManager(getManager(), moduleConfig.getRemoteTimeout());
@@ -203,8 +175,8 @@ public class CoreModuleProvider extends ModuleProvider {
     this.registerServiceImplementation(ConfigService.class, new ZipkinConfigService(moduleConfig, this));
     this.registerServiceImplementation(ServerStatusService.class, new ServerStatusService(getManager()));
     this.registerServiceImplementation(DownSamplingConfigService.class, new DownSamplingConfigService(Collections.emptyList()));
-    this.registerServiceImplementation(GRPCHandlerRegister.class, new GRPCHandlerRegisterImpl(grpcServer));
-    this.registerServiceImplementation(HTTPHandlerRegister.class, new HTTPHandlerRegisterImpl(httpServer));
+    this.registerServiceImplementation(GRPCHandlerRegister.class, new GRPCHandlerRegisterAdapter(server));
+    this.registerServiceImplementation(HTTPHandlerRegister.class, new HTTPHandlerRegisterImpl(server));
     this.registerServiceImplementation(IComponentLibraryCatalogService.class, new EmptyComponentLibraryCatalogService());
     this.registerServiceImplementation(SourceReceiver.class, receiver);
     final WorkerInstancesService instancesService = new WorkerInstancesService();
@@ -258,8 +230,8 @@ public class CoreModuleProvider extends ModuleProvider {
 
   @Override
   public void start() throws ServiceNotProvidedException, ModuleStartException {
-    grpcServer.addHandler(new RemoteServiceHandler(getManager()));
-    grpcServer.addHandler(new HealthCheckServiceHandler());
+    server.addHandler(new RemoteServiceHandler(getManager()), Arrays.asList(HttpMethod.GET));
+    server.addHandler(new HealthCheckServiceHandler(), Arrays.asList(HttpMethod.GET));
 
     try {
       receiver.scan();
@@ -268,7 +240,7 @@ public class CoreModuleProvider extends ModuleProvider {
       throw new ModuleStartException(e.getMessage(), e);
     }
 
-    Address gRPCServerInstanceAddress = new Address(moduleConfig.getGRPCHost(), moduleConfig.getGRPCPort(), true);
+    Address gRPCServerInstanceAddress = new Address(moduleConfig.getServerHost(), moduleConfig.getServerPort(), true);
     TelemetryRelatedContext.INSTANCE.setId(gRPCServerInstanceAddress.toString());
     ClusterCoordinator coordinator = this.getManager()
         .find(ClusterModule.NAME)
@@ -282,14 +254,9 @@ public class CoreModuleProvider extends ModuleProvider {
 
   @Override
   public void notifyAfterCompleted() throws ServiceNotProvidedException, ModuleStartException {
-    try {
-      if (!RunningMode.isInitMode()) {
-        grpcServer.start();
-        httpServer.start();
-        remoteClientManager.start();
-      }
-    } catch (ServerException e) {
-      throw new ModuleStartException(e.getMessage(), e);
+    if (!RunningMode.isInitMode()) {
+      server.start();
+      remoteClientManager.start();
     }
 
     final org.apache.skywalking.oap.server.core.CoreModuleConfig swConfig = this.moduleConfig.toSkyWalkingConfig();

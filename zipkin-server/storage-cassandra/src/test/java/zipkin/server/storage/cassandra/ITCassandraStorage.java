@@ -24,8 +24,8 @@ import org.apache.skywalking.oap.server.library.module.ModuleConfigException;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.library.module.ModuleNotFoundException;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
-import org.apache.skywalking.oap.server.receiver.zipkin.ZipkinReceiverConfig;
-import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
+import org.apache.skywalking.oap.server.receiver.zipkin.SpanForwardService;
+import org.apache.skywalking.oap.server.receiver.zipkin.ZipkinReceiverModule;
 import org.joda.time.DateTime;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
@@ -54,16 +54,14 @@ public class ITCassandraStorage {
   CassandraExtension cassandra = new CassandraExtension();
 
   private final ModuleManager moduleManager = new ModuleManager();
-  private SpanForward forward;
+  private SpanForwardService forward;
   private ITagAutoCompleteQueryDAO tagAutoCompleteQueryDAO;
   private IZipkinQueryDAO zipkinQueryDAO;
   @BeforeAll
   public void setup() throws ModuleNotFoundException, ModuleConfigException, ModuleStartException {
     final ApplicationConfigLoader loader = new ApplicationConfigLoader();
     moduleManager.init(loader.load());
-    final ZipkinReceiverConfig config = new ZipkinReceiverConfig();
-    config.setSearchableTracesTags("http.path");
-    this.forward = new SpanForward(config, moduleManager);
+    this.forward = moduleManager.find(ZipkinReceiverModule.NAME).provider().getService(SpanForwardService.class);
     this.tagAutoCompleteQueryDAO = moduleManager.find(StorageModule.NAME).provider().getService(ITagAutoCompleteQueryDAO.class);
     this.zipkinQueryDAO = moduleManager.find(StorageModule.NAME).provider().getService(IZipkinQueryDAO.class);
   }

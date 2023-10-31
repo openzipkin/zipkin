@@ -17,29 +17,21 @@ import org.apache.skywalking.oap.server.core.Const;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 
 public class CoreModuleConfig extends ModuleConfig {
-  private String gRPCHost;
-  private int gRPCPort;
-  private boolean gRPCSslEnabled = false;
-  private String gRPCSslKeyPath;
-  private String gRPCSslCertChainPath;
-  private String gRPCSslTrustedCAPath;
-  private int gRPCThreadPoolSize;
-  private int gRPCThreadPoolQueueSize;
-  private int gRPCMaxConcurrentCallsPerConnection;
-  private int gRPCMaxMessageSize;
-
-  private String restHost;
-  private int restPort;
-  private String restContextPath;
-  private int restMaxThreads = 200;
-  private long restIdleTimeOut = 30000;
-  private int restAcceptQueueSize = 0;
+  private String serverHost;
+  private int serverPort;
+  private int serverMaxThreads = 200;
+  private long serverIdleTimeOut = 30000;
+  private int serverAcceptQueueSize = 0;
   /**
    * The maximum size in bytes allowed for request headers.
    * Use -1 to disable it.
    */
-  private int restMaxRequestHeaderSize = 8192;
-  
+  private int serverMaxRequestHeaderSize = 8192;
+  private boolean serverEnableTLS = false;
+  private String serverTLSKeyPath;
+  private String serverTLSCertChainPath;
+  private String clusterSslTrustedCAPath;
+
   /**
    * The max length of the service name.
    */
@@ -221,147 +213,91 @@ public class CoreModuleConfig extends ModuleConfig {
     this.remoteTimeout = remoteTimeout;
   }
 
-  public String getGRPCHost() {
-    return gRPCHost;
-  }
-
-  public void setGRPCHost(String gRPCHost) {
-    this.gRPCHost = gRPCHost;
-  }
-
-  public int getGRPCPort() {
-    return gRPCPort;
-  }
-
-  public void setGRPCPort(int gRPCPort) {
-    this.gRPCPort = gRPCPort;
-  }
-
-  public boolean getGRPCSslEnabled() {
-    return gRPCSslEnabled;
-  }
-
-  public void setGRPCSslEnabled(boolean gRPCSslEnabled) {
-    this.gRPCSslEnabled = gRPCSslEnabled;
-  }
-
-  public String getGRPCSslKeyPath() {
-    return gRPCSslKeyPath;
-  }
-
-  public void setGRPCSslKeyPath(String gRPCSslKeyPath) {
-    this.gRPCSslKeyPath = gRPCSslKeyPath;
-  }
-
-  public String getGRPCSslCertChainPath() {
-    return gRPCSslCertChainPath;
-  }
-
-  public void setGRPCSslCertChainPath(String gRPCSslCertChainPath) {
-    this.gRPCSslCertChainPath = gRPCSslCertChainPath;
-  }
-
-  public String getGRPCSslTrustedCAPath() {
-    return gRPCSslTrustedCAPath;
-  }
-
-  public void setGRPCSslTrustedCAPath(String gRPCSslTrustedCAPath) {
-    this.gRPCSslTrustedCAPath = gRPCSslTrustedCAPath;
-  }
-
-  public int getGRPCThreadPoolSize() {
-    return gRPCThreadPoolSize;
-  }
-
-  public void setGRPCThreadPoolSize(int gRPCThreadPoolSize) {
-    this.gRPCThreadPoolSize = gRPCThreadPoolSize;
-  }
-
-  public int getGRPCThreadPoolQueueSize() {
-    return gRPCThreadPoolQueueSize;
-  }
-
-  public void setGRPCThreadPoolQueueSize(int gRPCThreadPoolQueueSize) {
-    this.gRPCThreadPoolQueueSize = gRPCThreadPoolQueueSize;
-  }
-
-  public int getGRPCMaxConcurrentCallsPerConnection() {
-    return gRPCMaxConcurrentCallsPerConnection;
-  }
-
-  public void setGRPCMaxConcurrentCallsPerConnection(int gRPCMaxConcurrentCallsPerConnection) {
-    this.gRPCMaxConcurrentCallsPerConnection = gRPCMaxConcurrentCallsPerConnection;
-  }
-
-  public int getGRPCMaxMessageSize() {
-    return gRPCMaxMessageSize;
-  }
-
-  public void setGRPCMaxMessageSize(int gRPCMaxMessageSize) {
-    this.gRPCMaxMessageSize = gRPCMaxMessageSize;
-  }
-
-  public String getRestHost() {
-    return restHost;
-  }
-
-  public void setRestHost(String restHost) {
-    this.restHost = restHost;
-  }
-
-  public int getRestPort() {
-    return restPort;
-  }
-
-  public void setRestPort(int restPort) {
-    this.restPort = restPort;
-  }
-
-  public String getRestContextPath() {
-    return restContextPath;
-  }
-
-  public void setRestContextPath(String restContextPath) {
-    this.restContextPath = restContextPath;
-  }
-
-  public int getRestMaxThreads() {
-    return restMaxThreads;
-  }
-
-  public void setRestMaxThreads(int restMaxThreads) {
-    this.restMaxThreads = restMaxThreads;
-  }
-
-  public long getRestIdleTimeOut() {
-    return restIdleTimeOut;
-  }
-
-  public void setRestIdleTimeOut(long restIdleTimeOut) {
-    this.restIdleTimeOut = restIdleTimeOut;
-  }
-
-  public int getRestAcceptQueueSize() {
-    return restAcceptQueueSize;
-  }
-
-  public void setRestAcceptQueueSize(int restAcceptQueueSize) {
-    this.restAcceptQueueSize = restAcceptQueueSize;
-  }
-
-  public int getRestMaxRequestHeaderSize() {
-    return restMaxRequestHeaderSize;
-  }
-
-  public void setRestMaxRequestHeaderSize(int restMaxRequestHeaderSize) {
-    this.restMaxRequestHeaderSize = restMaxRequestHeaderSize;
-  }
-
   public boolean getSearchEnable() {
     return searchEnable;
   }
 
   public void setSearchEnable(boolean searchEnable) {
     this.searchEnable = searchEnable;
+  }
+
+  public String getServerHost() {
+    return serverHost;
+  }
+
+  public void setServerHost(String serverHost) {
+    this.serverHost = serverHost;
+  }
+
+  public int getServerPort() {
+    return serverPort;
+  }
+
+  public void setServerPort(int serverPort) {
+    this.serverPort = serverPort;
+  }
+
+  public int getServerMaxThreads() {
+    return serverMaxThreads;
+  }
+
+  public void setServerMaxThreads(int serverMaxThreads) {
+    this.serverMaxThreads = serverMaxThreads;
+  }
+
+  public long getServerIdleTimeOut() {
+    return serverIdleTimeOut;
+  }
+
+  public void setServerIdleTimeOut(long serverIdleTimeOut) {
+    this.serverIdleTimeOut = serverIdleTimeOut;
+  }
+
+  public int getServerAcceptQueueSize() {
+    return serverAcceptQueueSize;
+  }
+
+  public void setServerAcceptQueueSize(int serverAcceptQueueSize) {
+    this.serverAcceptQueueSize = serverAcceptQueueSize;
+  }
+
+  public int getServerMaxRequestHeaderSize() {
+    return serverMaxRequestHeaderSize;
+  }
+
+  public void setServerMaxRequestHeaderSize(int serverMaxRequestHeaderSize) {
+    this.serverMaxRequestHeaderSize = serverMaxRequestHeaderSize;
+  }
+
+  public boolean getServerEnableTLS() {
+    return serverEnableTLS;
+  }
+
+  public void setServerEnableTLS(boolean serverEnableTLS) {
+    this.serverEnableTLS = serverEnableTLS;
+  }
+
+  public String getServerTLSKeyPath() {
+    return serverTLSKeyPath;
+  }
+
+  public void setServerTLSKeyPath(String serverTLSKeyPath) {
+    this.serverTLSKeyPath = serverTLSKeyPath;
+  }
+
+  public String getServerTLSCertChainPath() {
+    return serverTLSCertChainPath;
+  }
+
+  public void setServerTLSCertChainPath(String serverTLSCertChainPath) {
+    this.serverTLSCertChainPath = serverTLSCertChainPath;
+  }
+
+  public String getClusterSslTrustedCAPath() {
+    return clusterSslTrustedCAPath;
+  }
+
+  public void setClusterSslTrustedCAPath(String clusterSslTrustedCAPath) {
+    this.clusterSslTrustedCAPath = clusterSslTrustedCAPath;
   }
 }

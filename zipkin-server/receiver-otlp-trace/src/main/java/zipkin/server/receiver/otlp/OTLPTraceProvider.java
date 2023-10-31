@@ -14,17 +14,13 @@
 
 package zipkin.server.receiver.otlp;
 
-import org.apache.logging.log4j.util.Strings;
 import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegister;
-import org.apache.skywalking.oap.server.core.server.GRPCHandlerRegisterImpl;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
-import org.apache.skywalking.oap.server.library.server.ServerException;
-import org.apache.skywalking.oap.server.library.server.grpc.GRPCServer;
 import org.apache.skywalking.oap.server.receiver.otel.OtelMetricReceiverConfig;
 import org.apache.skywalking.oap.server.receiver.otel.OtelMetricReceiverModule;
 import org.apache.skywalking.oap.server.receiver.otel.otlp.OpenTelemetryMetricRequestProcessor;
@@ -34,7 +30,6 @@ import zipkin.server.receiver.otlp.handler.OTLPTraceHandler;
 public class OTLPTraceProvider extends ModuleProvider {
   private OTLPTraceConfig moduleConfig;
   private OpenTelemetryTraceHandler traceHandler;
-  private GRPCServer grpcServer;
 
   @Override
   public String name() {
@@ -70,53 +65,13 @@ public class OTLPTraceProvider extends ModuleProvider {
 
   @Override
   public void start() throws ServiceNotProvidedException, ModuleStartException {
-    GRPCHandlerRegister handlerRegister;
-    if (moduleConfig.getGRPCPort() > 0) {
-      if (moduleConfig.getGRPCSslEnabled()) {
-        grpcServer = new GRPCServer(
-            Strings.isBlank(moduleConfig.getGRPCHost()) ? "0.0.0.0" : moduleConfig.getGRPCHost(),
-            moduleConfig.getGRPCPort(),
-            moduleConfig.getGRPCSslCertChainPath(),
-            moduleConfig.getGRPCSslKeyPath(),
-            moduleConfig.getGRPCSslTrustedCAsPath()
-        );
-      } else {
-        grpcServer = new GRPCServer(
-            Strings.isBlank(moduleConfig.getGRPCHost()) ? "0.0.0.0" : moduleConfig.getGRPCHost(),
-            moduleConfig.getGRPCPort()
-        );
-      }
-      if (moduleConfig.getMaxMessageSize() > 0) {
-        grpcServer.setMaxMessageSize(moduleConfig.getMaxMessageSize());
-      }
-      if (moduleConfig.getMaxConcurrentCallsPerConnection() > 0) {
-        grpcServer.setMaxConcurrentCallsPerConnection(moduleConfig.getMaxConcurrentCallsPerConnection());
-      }
-      if (moduleConfig.getGRPCThreadPoolQueueSize() > 0) {
-        grpcServer.setThreadPoolQueueSize(moduleConfig.getGRPCThreadPoolQueueSize());
-      }
-      if (moduleConfig.getGRPCThreadPoolSize() > 0) {
-        grpcServer.setThreadPoolSize(moduleConfig.getGRPCThreadPoolSize());
-      }
-      grpcServer.initialize();
-
-      handlerRegister = new GRPCHandlerRegisterImpl(grpcServer);
-    } else {
-      handlerRegister = getManager().find(CoreModule.NAME).provider().getService(GRPCHandlerRegister.class);
-    }
+    GRPCHandlerRegister handlerRegister = getManager().find(CoreModule.NAME).provider().getService(GRPCHandlerRegister.class);
     traceHandler = new OTLPTraceHandler(handlerRegister, getManager());
     traceHandler.active();
   }
 
   @Override
   public void notifyAfterCompleted() throws ServiceNotProvidedException, ModuleStartException {
-    if (grpcServer != null) {
-      try {
-        grpcServer.start();
-      } catch (ServerException e) {
-        throw new ModuleStartException(e.getMessage(), e);
-      }
-    }
   }
 
   @Override

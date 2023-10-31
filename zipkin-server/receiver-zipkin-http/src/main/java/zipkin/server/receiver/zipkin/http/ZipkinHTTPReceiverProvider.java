@@ -22,19 +22,15 @@ import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
-import org.apache.skywalking.oap.server.library.server.http.HTTPServer;
-import org.apache.skywalking.oap.server.library.server.http.HTTPServerConfig;
 import org.apache.skywalking.oap.server.receiver.zipkin.SpanForwardService;
 import org.apache.skywalking.oap.server.receiver.zipkin.ZipkinReceiverModule;
 import org.apache.skywalking.oap.server.receiver.zipkin.handler.ZipkinSpanHTTPHandler;
-import zipkin.server.core.services.HTTPConfigurableServer;
 
 import java.util.Arrays;
 
 public class ZipkinHTTPReceiverProvider extends ModuleProvider {
   private ZipkinHTTPReceiverConfig moduleConfig;
   private ZipkinSpanHTTPHandler httpHandler;
-  private HTTPServer httpServer;
 
   @Override
   public String name() {
@@ -63,19 +59,6 @@ public class ZipkinHTTPReceiverProvider extends ModuleProvider {
 
   @Override
   public void prepare() throws ServiceNotProvidedException, ModuleStartException {
-    if (moduleConfig.getRestPort() > 0) {
-      HTTPServerConfig httpServerConfig = HTTPServerConfig.builder()
-          .host(moduleConfig.getRestHost())
-          .port(moduleConfig.getRestPort())
-          .contextPath(moduleConfig.getRestContextPath())
-          .idleTimeOut(moduleConfig.getRestIdleTimeOut())
-          .maxThreads(moduleConfig.getRestMaxThreads())
-          .acceptQueueSize(moduleConfig.getRestAcceptQueueSize())
-          .maxRequestHeaderSize(moduleConfig.getRestMaxRequestHeaderSize())
-          .build();
-      httpServer = new HTTPConfigurableServer(httpServerConfig);
-      httpServer.initialize();
-    }
   }
 
   @Override
@@ -83,19 +66,12 @@ public class ZipkinHTTPReceiverProvider extends ModuleProvider {
     final SpanForwardService spanForward = getManager().find(ZipkinReceiverModule.NAME).provider().getService(SpanForwardService.class);
     httpHandler = new ZipkinSpanHTTPHandler(spanForward, getManager());
 
-    if (httpServer != null) {
-      httpServer.addHandler(httpHandler, Arrays.asList(HttpMethod.POST, HttpMethod.GET));
-    } else {
-      final HTTPHandlerRegister httpRegister = getManager().find(CoreModule.NAME).provider().getService(HTTPHandlerRegister.class);
-      httpRegister.addHandler(httpHandler, Arrays.asList(HttpMethod.POST, HttpMethod.GET));
-    }
+    final HTTPHandlerRegister httpRegister = getManager().find(CoreModule.NAME).provider().getService(HTTPHandlerRegister.class);
+    httpRegister.addHandler(httpHandler, Arrays.asList(HttpMethod.POST, HttpMethod.GET));
   }
 
   @Override
   public void notifyAfterCompleted() throws ServiceNotProvidedException, ModuleStartException {
-    if (httpServer != null) {
-      httpServer.start();
-    }
   }
 
   @Override
@@ -103,9 +79,5 @@ public class ZipkinHTTPReceiverProvider extends ModuleProvider {
     return new String[] {
         CoreModule.NAME,
     };
-  }
-
-  public ZipkinSpanHTTPHandler getHttpHandler() {
-    return httpHandler;
   }
 }
