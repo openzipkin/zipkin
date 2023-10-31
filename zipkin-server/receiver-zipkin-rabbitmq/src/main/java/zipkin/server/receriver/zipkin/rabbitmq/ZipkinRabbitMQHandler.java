@@ -24,7 +24,7 @@ import com.rabbitmq.client.Envelope;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.library.util.CollectionUtils;
 import org.apache.skywalking.oap.server.library.util.StringUtil;
-import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
+import org.apache.skywalking.oap.server.receiver.zipkin.SpanForwardService;
 import org.apache.skywalking.oap.server.telemetry.TelemetryModule;
 import org.apache.skywalking.oap.server.telemetry.api.HistogramMetrics;
 import org.apache.skywalking.oap.server.telemetry.api.MetricsCreator;
@@ -45,13 +45,13 @@ import java.util.concurrent.TimeoutException;
 
 public class ZipkinRabbitMQHandler {
   private final ZipkinRabbitMQConfig config;
-  private final SpanForward spanForward;
+  private final SpanForwardService spanForward;
 
   private final ConnectionFactory connectionFactory = new ConnectionFactory();
 
   private final HistogramMetrics histogram;
 
-  public ZipkinRabbitMQHandler(ZipkinRabbitMQConfig config, SpanForward spanForward, ModuleManager moduleManager) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
+  public ZipkinRabbitMQHandler(ZipkinRabbitMQConfig config, SpanForwardService spanForward, ModuleManager moduleManager) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
     this.config = config;
     this.spanForward = spanForward;
 

@@ -20,7 +20,7 @@ import org.apache.activemq.Closeable;
 import org.apache.activemq.transport.TransportListener;
 import org.apache.skywalking.oap.server.library.module.ModuleManager;
 import org.apache.skywalking.oap.server.library.util.StringUtil;
-import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
+import org.apache.skywalking.oap.server.receiver.zipkin.SpanForwardService;
 import org.apache.skywalking.oap.server.telemetry.TelemetryModule;
 import org.apache.skywalking.oap.server.telemetry.api.CounterMetrics;
 import org.apache.skywalking.oap.server.telemetry.api.HistogramMetrics;
@@ -54,7 +54,7 @@ public class ActiveMQHandler implements TransportListener, MessageListener, Clos
   private static final Logger log = LoggerFactory.getLogger(ActiveMQHandler.class.getName());
 
   private final ZipkinActiveMQConfig config;
-  private final SpanForward spanForward;
+  private final SpanForwardService spanForward;
   private final ActiveMQConnectionFactory connectionFactory;
 
   static final CheckResult
@@ -70,11 +70,11 @@ public class ActiveMQHandler implements TransportListener, MessageListener, Clos
 
   volatile CheckResult checkResult = CheckResult.OK;
 
-  public ActiveMQHandler(ZipkinActiveMQConfig config, SpanForward spanForward, ModuleManager moduleManager) {
+  public ActiveMQHandler(ZipkinActiveMQConfig config, SpanForwardService spanForward, ModuleManager moduleManager) {
     this(config, createConnectionFactory(config), spanForward, moduleManager);
   }
 
-  public ActiveMQHandler(ZipkinActiveMQConfig config, ActiveMQConnectionFactory connectionFactory, SpanForward spanForward, ModuleManager moduleManager) {
+  public ActiveMQHandler(ZipkinActiveMQConfig config, ActiveMQConnectionFactory connectionFactory, SpanForwardService spanForward, ModuleManager moduleManager) {
     this.config = config;
     this.spanForward = spanForward;
     this.connectionFactory = connectionFactory;

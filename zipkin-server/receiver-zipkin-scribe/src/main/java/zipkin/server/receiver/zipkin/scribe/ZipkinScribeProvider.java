@@ -14,19 +14,17 @@
 
 package zipkin.server.receiver.zipkin.scribe;
 
-import org.apache.skywalking.oap.server.core.CoreModule;
-import org.apache.skywalking.oap.server.core.config.ConfigService;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
-import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
-import zipkin.server.core.services.ZipkinConfigService;
+import org.apache.skywalking.oap.server.receiver.zipkin.SpanForwardService;
+import org.apache.skywalking.oap.server.receiver.zipkin.ZipkinReceiverModule;
 
 public class ZipkinScribeProvider extends ModuleProvider {
   private ZipkinScribeConfig moduleConfig;
-  private SpanForward spanForward;
+  private SpanForwardService spanForward;
 
   @Override
   public String name() {
@@ -59,8 +57,7 @@ public class ZipkinScribeProvider extends ModuleProvider {
 
   @Override
   public void start() throws ServiceNotProvidedException, ModuleStartException {
-    final ConfigService service = getManager().find(CoreModule.NAME).provider().getService(ConfigService.class);
-    this.spanForward = new SpanForward(((ZipkinConfigService)service).toZipkinReceiverConfig(), getManager());
+    this.spanForward = getManager().find(ZipkinReceiverModule.NAME).provider().getService(SpanForwardService.class);
   }
 
   @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,41 +12,41 @@
  * the License.
  */
 
-package zipkin.server.receiver.zipkin.activemq;
+package zipkin.server.receiver.zipkin.core;
 
-import org.apache.skywalking.oap.server.core.CoreModule;
 import org.apache.skywalking.oap.server.library.module.ModuleConfig;
 import org.apache.skywalking.oap.server.library.module.ModuleDefine;
 import org.apache.skywalking.oap.server.library.module.ModuleProvider;
 import org.apache.skywalking.oap.server.library.module.ModuleStartException;
 import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedException;
 import org.apache.skywalking.oap.server.receiver.zipkin.SpanForwardService;
+import org.apache.skywalking.oap.server.receiver.zipkin.ZipkinReceiverConfig;
 import org.apache.skywalking.oap.server.receiver.zipkin.ZipkinReceiverModule;
 
-public class ZipkinActiveMQProvider extends ModuleProvider {
-  private ZipkinActiveMQConfig moduleConfig;
-  private SpanForwardService spanForward;
+public class ZipkinReceiverCoreProvider extends ModuleProvider {
+  private ZipkinReceiverCoreConfig moduleConfig;
 
   @Override
   public String name() {
-    return "default";
+    return "zipkin";
   }
 
   @Override
   public Class<? extends ModuleDefine> module() {
-    return ZipkinActiveMQModule.class;
+    return ZipkinReceiverModule.class;
   }
 
   @Override
   public ConfigCreator<? extends ModuleConfig> newConfigCreator() {
-    return new ConfigCreator<ZipkinActiveMQConfig>() {
+    return new ConfigCreator<ZipkinReceiverCoreConfig>() {
+
       @Override
-      public Class<ZipkinActiveMQConfig> type() {
-        return ZipkinActiveMQConfig.class;
+      public Class<ZipkinReceiverCoreConfig> type() {
+        return ZipkinReceiverCoreConfig.class;
       }
 
       @Override
-      public void onInitialized(ZipkinActiveMQConfig initialized) {
+      public void onInitialized(ZipkinReceiverCoreConfig initialized) {
         moduleConfig = initialized;
       }
     };
@@ -54,23 +54,23 @@ public class ZipkinActiveMQProvider extends ModuleProvider {
 
   @Override
   public void prepare() throws ServiceNotProvidedException, ModuleStartException {
+    final ZipkinReceiverConfig config = new ZipkinReceiverConfig();
+    config.setSearchableTracesTags(moduleConfig.getSearchableTracesTags());
+    config.setSampleRate((int) (moduleConfig.getTraceSampleRate() * 10000));
+
+    this.registerServiceImplementation(SpanForwardService.class, new SpanForwardCore(config, getManager()));
   }
 
   @Override
   public void start() throws ServiceNotProvidedException, ModuleStartException {
-    this.spanForward = getManager().find(ZipkinReceiverModule.NAME).provider().getService(SpanForwardService.class);
   }
 
   @Override
   public void notifyAfterCompleted() throws ServiceNotProvidedException, ModuleStartException {
-    final ActiveMQHandler handler = new ActiveMQHandler(this.moduleConfig, this.spanForward, getManager());
-    handler.start();
   }
 
   @Override
   public String[] requiredModules() {
-    return new String[] {
-        CoreModule.NAME,
-    };
+    return new String[0];
   }
 }

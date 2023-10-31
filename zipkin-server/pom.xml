@@ -46,6 +46,8 @@
     <module>../skywalking/oap-server/server-core</module>
     <module>../skywalking/oap-server/server-receiver-plugin/receiver-proto</module>
     <module>../skywalking/oap-server/server-receiver-plugin/zipkin-receiver-plugin</module>
+    <module>../skywalking/oap-server/server-receiver-plugin/otel-receiver-plugin</module>
+    <module>../skywalking/oap-server/server-receiver-plugin/skywalking-sharing-server-plugin</module>
     <module>../skywalking/oap-server/server-cluster-plugin/cluster-standalone-plugin</module>
     <module>../skywalking/oap-server/server-cluster-plugin/cluster-consul-plugin</module>
     <module>../skywalking/oap-server/server-cluster-plugin/cluster-etcd-plugin</module>
@@ -59,6 +61,9 @@
     <module>../skywalking/oap-server/server-testing</module>
     <module>../skywalking/oap-server/server-configuration/configuration-api</module>
     <module>../skywalking/oap-server/ai-pipeline</module>
+    <module>../skywalking/oap-server/analyzer/meter-analyzer</module>
+    <module>../skywalking/oap-server/analyzer/log-analyzer</module>
+    <module>../skywalking/oap-server/analyzer/agent-analyzer</module>
 
     <module>server-core</module>
     <module>server-starter</module>
@@ -73,6 +78,8 @@
     <module>telemetry-zipkin</module>
     <module>zipkin-dependency</module>
     <module>zipkin-storage-ext</module>
+    <module>receiver-zipkin-core</module>
+    <module>receiver-otlp-trace</module>
   </modules>
 
   <dependencyManagement>

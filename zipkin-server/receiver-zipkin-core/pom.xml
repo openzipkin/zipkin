@@ -9,14 +9,20 @@
     <version>2.24.4-SNAPSHOT</version>
   </parent>
 
-  <artifactId>receiver-zipkin-kafka</artifactId>
-  <name>Zipkin Kafka Receiver</name>
+  <artifactId>receiver-zipkin-core</artifactId>
+  <name>Zipkin Receiver Core</name>
 
   <dependencies>
     <dependency>
       <groupId>io.zipkin</groupId>
-      <artifactId>receiver-zipkin-core</artifactId>
+      <artifactId>zipkin-server-core</artifactId>
       <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.skywalking</groupId>
+      <artifactId>zipkin-receiver-plugin</artifactId>
+      <version>${skywalking.version}</version>
     </dependency>
   </dependencies>
 

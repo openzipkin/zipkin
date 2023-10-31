@@ -16,7 +16,7 @@
   <dependencies>
     <dependency>
       <groupId>io.zipkin</groupId>
-      <artifactId>zipkin-server-core</artifactId>
+      <artifactId>receiver-zipkin-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
