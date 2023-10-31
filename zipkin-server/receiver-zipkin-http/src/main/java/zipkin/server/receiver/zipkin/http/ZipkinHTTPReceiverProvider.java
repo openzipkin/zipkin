@@ -25,6 +25,7 @@ import org.apache.skywalking.oap.server.library.module.ServiceNotProvidedExcepti
 import org.apache.skywalking.oap.server.receiver.zipkin.SpanForwardService;
 import org.apache.skywalking.oap.server.receiver.zipkin.ZipkinReceiverModule;
 import org.apache.skywalking.oap.server.receiver.zipkin.handler.ZipkinSpanHTTPHandler;
+import org.apache.skywalking.oap.server.receiver.zipkin.trace.SpanForward;
 
 import java.util.Arrays;
 
@@ -64,7 +65,7 @@ public class ZipkinHTTPReceiverProvider extends ModuleProvider {
   @Override
   public void start() throws ServiceNotProvidedException, ModuleStartException {
     final SpanForwardService spanForward = getManager().find(ZipkinReceiverModule.NAME).provider().getService(SpanForwardService.class);
-    httpHandler = new ZipkinSpanHTTPHandler(spanForward, getManager());
+    httpHandler = new ZipkinSpanHTTPHandler(((SpanForward) spanForward), getManager());
 
     final HTTPHandlerRegister httpRegister = getManager().find(CoreModule.NAME).provider().getService(HTTPHandlerRegister.class);
     httpRegister.addHandler(httpHandler, Arrays.asList(HttpMethod.POST, HttpMethod.GET));
