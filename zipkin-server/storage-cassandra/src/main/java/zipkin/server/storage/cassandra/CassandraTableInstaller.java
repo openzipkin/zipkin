@@ -14,10 +14,13 @@
 
 package zipkin.server.storage.cassandra;
 
+import org.apache.skywalking.oap.server.core.storage.StorageData;
 import org.apache.skywalking.oap.server.core.storage.StorageException;
 import org.apache.skywalking.oap.server.core.storage.model.Model;
 import org.apache.skywalking.oap.server.core.storage.model.ModelCreator;
+import org.apache.skywalking.oap.server.core.zipkin.ZipkinSpanRecord;
 import org.apache.skywalking.oap.server.storage.plugin.jdbc.TableMetaInfo;
+import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.JDBCTableInstaller;
 
 public class CassandraTableInstaller implements ModelCreator.CreatingListener {
   private final CassandraClient client;
@@ -43,6 +46,17 @@ public class CassandraTableInstaller implements ModelCreator.CreatingListener {
 
   @Override
   public void whenCreating(Model model) throws StorageException {
+    if (ZipkinSpanRecord.INDEX_NAME.equals(model.getName())) {
+      // remove unnecessary columns
+      for (int i = model.getColumns().size() - 1; i >= 0; i--) {
+        final String columnName = model.getColumns().get(i).getColumnName().getStorageName();
+        if (StorageData.TIME_BUCKET.equals(columnName) ||
+            ZipkinSpanRecord.TIMESTAMP_MILLIS.equals(columnName) ||
+            JDBCTableInstaller.TABLE_COLUMN.equals(columnName)) {
+          model.getColumns().remove(i);
+        }
+      }
+    }
     TableMetaInfo.addModel(model);
   }
 }

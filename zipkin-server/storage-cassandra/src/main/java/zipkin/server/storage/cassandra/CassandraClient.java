@@ -20,8 +20,10 @@ import com.datastax.oss.driver.api.core.auth.AuthProvider;
 import com.datastax.oss.driver.api.core.config.DriverOption;
 import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.datastax.oss.driver.api.core.cql.Statement;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import com.datastax.oss.driver.internal.core.auth.ProgrammaticPlainTextAuthProvider;
@@ -77,11 +79,23 @@ public class CassandraClient implements Client {
   }
 
   public <T> List<T> executeQuery(String cql, ResultHandler<T> resultHandler, Object... params) {
+    return executeQuery(cqlSession.prepare(cql), resultHandler, params);
+  }
+
+  public <T> CompletionStage<List<T>> executeAsyncQuery(String cql, ResultHandler<T> resultHandler, Object... params) {
+    return executeAsyncQuery(cqlSession.prepare(cql), resultHandler, params);
+  }
+
+  public PreparedStatement prepare(String cql) {
+    return cqlSession.prepare(cql);
+  }
+
+  public <T> List<T> executeQuery(PreparedStatement statement, ResultHandler<T> resultHandler, Object... params) {
     if (LOG.isDebugEnabled()) {
-      LOG.debug("Executing CQL: {}", cql);
+      LOG.debug("Executing CQL: {}", statement.getQuery());
       LOG.debug("CQL parameters: {}", Arrays.toString(params));
     }
-    final BoundStatement stmt = cqlSession.prepare(cql).bind(params);
+    final BoundStatement stmt = statement.bind(params);
     final ResultSet resultSet = cqlSession.execute(stmt);
     healthChecker.health();
     if (resultHandler != null) {
@@ -91,12 +105,23 @@ public class CassandraClient implements Client {
     return null;
   }
 
-  public <T> CompletionStage<List<T>> executeAsyncQuery(String cql, ResultHandler<T> resultHandler, Object... params) {
+  public <T> CompletionStage<List<T>> executeAsyncQuery(PreparedStatement statement, ResultHandler<T> resultHandler, Object... params) {
     if (LOG.isDebugEnabled()) {
-      LOG.debug("Executing CQL: {}", cql);
+      LOG.debug("Executing CQL: {}", statement.getQuery());
       LOG.debug("CQL parameters: {}", Arrays.toString(params));
     }
-    final BoundStatement stmt = cqlSession.prepare(cql).bind(params);
+    final BoundStatement stmt = statement.bind(params);
+    return executeAsyncQuery0(stmt, resultHandler);
+  }
+
+  public <T> CompletionStage<List<T>> executeAsyncQueryWithCustomBind(PreparedStatement original, Statement statement, ResultHandler<T> resultHandler) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Executing Custom Bind CQL: {}", original.getQuery());
+    }
+    return executeAsyncQuery0(statement, resultHandler);
+  }
+
+  private <T> CompletionStage<List<T>> executeAsyncQuery0(Statement stmt, ResultHandler<T> resultHandler) {
     final CompletionStage<AsyncResultSet> resultSet = cqlSession.executeAsync(stmt);
     healthChecker.health();
     if (resultHandler != null) {

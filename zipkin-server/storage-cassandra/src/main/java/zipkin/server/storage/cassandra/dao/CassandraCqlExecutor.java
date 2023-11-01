@@ -14,7 +14,6 @@
 
 package zipkin.server.storage.cassandra.dao;
 
-import com.datastax.oss.driver.api.core.CqlIdentifier;
 import com.datastax.oss.driver.api.core.cql.Row;
 import org.apache.skywalking.oap.server.core.storage.SessionCacheCallback;
 import org.apache.skywalking.oap.server.core.storage.StorageData;
@@ -35,6 +34,8 @@ import zipkin.server.storage.cassandra.CQLExecutor;
 import zipkin.server.storage.cassandra.CassandraClient;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -137,10 +138,6 @@ public class CassandraCqlExecutor {
     List<Object> param = new ArrayList<>();
     final StringBuilder cqlBuilder = new StringBuilder("INSERT INTO ").append(tableName);
 
-    columnNames.add(ID_COLUMN);
-    values.add("?");
-    param.add(TableHelper.generateId(model, metrics.id().build()));
-
     int position = 0;
     List valueList = new ArrayList();
     for (int i = 0; i < columns.size(); i++) {
@@ -172,7 +169,7 @@ public class CassandraCqlExecutor {
     if (!CollectionUtils.isEmpty(valueList)) {
       for (Object object : valueList) {
         List<Object> paramCopy = new ArrayList<>(param);
-        paramCopy.set(position, object);
+        paramCopy.set(position - 1, object);
         sqlExecutors.add(new CQLExecutor(sql, paramCopy, callback, null));
       }
     } else {
@@ -196,7 +193,7 @@ public class CassandraCqlExecutor {
     final List<ModelColumn> columns = model.getColumns();
     final List<String> columnNames =
         Stream.concat(
-                Stream.of(ID_COLUMN, JDBCTableInstaller.TABLE_COLUMN),
+                (model.isRecord() ? Collections.<String>emptyList() : Arrays.asList(ID_COLUMN, JDBCTableInstaller.TABLE_COLUMN)).stream(),
                 columns
                     .stream()
                     .map(ModelColumn::getColumnName)
@@ -210,7 +207,7 @@ public class CassandraCqlExecutor {
     cqlBuilder.append(columnNames.stream().map(it -> "?").collect(Collectors.joining(",", "(", ")")));
 
     final List<Object> params = Stream.concat(
-            Stream.of(TableHelper.generateId(model, metrics.id().build()), model.getName()),
+            (model.isRecord() ? Collections.<String>emptyList() : Arrays.asList(TableHelper.generateId(model, metrics.id().build()), model.getName())).stream(),
             columns
                 .stream()
                 .map(ModelColumn::getColumnName)

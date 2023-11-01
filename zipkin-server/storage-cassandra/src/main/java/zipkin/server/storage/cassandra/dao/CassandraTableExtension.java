@@ -65,7 +65,7 @@ public class CassandraTableExtension {
 
   public static int durationIndexBucket(long ts_milli) {
     // if the window constant has microsecond precision, the division produces negative getValues
-    return (int) (ts_milli / (DURATION_INDEX_BUCKET_WINDOW_SECONDS));
+    return (int) (ts_milli / (DURATION_INDEX_BUCKET_WINDOW_SECONDS)) / 1000;
   }
 
   private static CQLExecutor buildServiceSpan(String service, String span, int bucket, UUID ts, String trace_id, long durationMillis,
