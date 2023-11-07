@@ -14,22 +14,21 @@
 
 package zipkin.server.storage.cassandra.dao;
 
-import com.datastax.oss.driver.api.core.cql.Row;
 import com.datastax.oss.driver.api.core.uuid.Uuids;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import org.apache.skywalking.oap.server.core.query.input.Duration;
 import org.apache.skywalking.oap.server.core.storage.query.IZipkinQueryDAO;
-import org.apache.skywalking.oap.server.core.zipkin.ZipkinServiceRelationTraffic;
-import org.apache.skywalking.oap.server.core.zipkin.ZipkinServiceSpanTraffic;
-import org.apache.skywalking.oap.server.core.zipkin.ZipkinServiceTraffic;
 import org.apache.skywalking.oap.server.core.zipkin.ZipkinSpanRecord;
 import org.apache.skywalking.oap.server.library.util.CollectionUtils;
 import org.apache.skywalking.oap.server.library.util.StringUtil;
 import zipkin.server.storage.cassandra.CassandraClient;
 import zipkin.server.storage.cassandra.CassandraTableHelper;
-import zipkin2.Endpoint;
+import zipkin.server.storage.cassandra.dao.executor.MultipleTraceQueryExecutor;
+import zipkin.server.storage.cassandra.dao.executor.RemoteServiceNameQueryExecutor;
+import zipkin.server.storage.cassandra.dao.executor.ServiceNameQueryExecutor;
+import zipkin.server.storage.cassandra.dao.executor.SingleTraceQueryExecutor;
+import zipkin.server.storage.cassandra.dao.executor.SpanNameQueryExecutor;
+import zipkin.server.storage.cassandra.dao.executor.TraceIDByAnnotationQueryExecutor;
+import zipkin.server.storage.cassandra.dao.executor.TraceIDByServiceQueryExecutor;
 import zipkin2.Span;
 import zipkin2.storage.QueryRequest;
 
@@ -51,16 +50,29 @@ import static java.util.stream.Collectors.toList;
 import static zipkin.server.storage.cassandra.dao.CassandraTableExtension.durationIndexBucket;
 
 public class CassandraZipkinQueryDAO implements IZipkinQueryDAO {
-  private final static int NAME_QUERY_MAX_SIZE = Integer.MAX_VALUE;
-  private static final Gson GSON = new Gson();
-
   private final CassandraClient client;
   private final CassandraTableHelper tableHelper;
   private int indexTtl;
 
+  private final ServiceNameQueryExecutor serviceNameQueryExecutor;
+  private final RemoteServiceNameQueryExecutor remoteServiceNameQueryExecutor;
+  private final SpanNameQueryExecutor spanNameQueryExecutor;
+  private final SingleTraceQueryExecutor singleTraceQueryExecutor;
+  private final MultipleTraceQueryExecutor multipleTraceQueryExecutor;
+  private final TraceIDByAnnotationQueryExecutor traceIDByAnnotationQueryExecutor;
+  private final TraceIDByServiceQueryExecutor traceIDByServiceQueryExecutor;
+
   public CassandraZipkinQueryDAO(CassandraClient client, CassandraTableHelper tableHelper) {
     this.client = client;
     this.tableHelper = tableHelper;
+
+    this.serviceNameQueryExecutor = new ServiceNameQueryExecutor(client, tableHelper);
+    this.remoteServiceNameQueryExecutor = new RemoteServiceNameQueryExecutor(client, tableHelper);
+    this.spanNameQueryExecutor = new SpanNameQueryExecutor(client, tableHelper);
+    this.singleTraceQueryExecutor = new SingleTraceQueryExecutor(client, tableHelper);
+    this.multipleTraceQueryExecutor = new MultipleTraceQueryExecutor(client, tableHelper);
+    this.traceIDByAnnotationQueryExecutor = new TraceIDByAnnotationQueryExecutor(client, tableHelper);
+    this.traceIDByServiceQueryExecutor = new TraceIDByServiceQueryExecutor(client, tableHelper);
   }
 
   private int getIndexTtl() {
@@ -73,37 +85,22 @@ public class CassandraZipkinQueryDAO implements IZipkinQueryDAO {
 
   @Override
   public List<String> getServiceNames() throws IOException {
-    return client.executeQuery("select " + ZipkinServiceTraffic.SERVICE_NAME + " from " +
-            tableHelper.getTableForRead(ZipkinServiceTraffic.INDEX_NAME) + " limit " + NAME_QUERY_MAX_SIZE,
-          row -> row.getString(ZipkinServiceTraffic.SERVICE_NAME));
+    return serviceNameQueryExecutor.get();
   }
 
   @Override
   public List<String> getRemoteServiceNames(String serviceName) throws IOException {
-    return client.executeQuery("select " + ZipkinServiceRelationTraffic.REMOTE_SERVICE_NAME +
-        " from " + tableHelper.getTableForRead(ZipkinServiceRelationTraffic.INDEX_NAME) +
-        " where " + ZipkinServiceRelationTraffic.SERVICE_NAME + " = ?" +
-        " limit " + NAME_QUERY_MAX_SIZE,
-        row -> row.getString(ZipkinServiceRelationTraffic.REMOTE_SERVICE_NAME),
-        serviceName);
+    return remoteServiceNameQueryExecutor.get(serviceName);
   }
 
   @Override
   public List<String> getSpanNames(String serviceName) throws IOException {
-    return client.executeQuery("select " + ZipkinServiceSpanTraffic.SPAN_NAME +
-        " from " + tableHelper.getTableForRead(ZipkinServiceSpanTraffic.INDEX_NAME) +
-        " where " + ZipkinServiceSpanTraffic.SERVICE_NAME + " = ?" +
-        " limit " + NAME_QUERY_MAX_SIZE,
-        row -> row.getString(ZipkinServiceSpanTraffic.SPAN_NAME),
-        serviceName);
+    return spanNameQueryExecutor.get(serviceName);
   }
 
   @Override
   public List<Span> getTrace(String traceId) {
-    return client.executeQuery("select * from " + tableHelper.getTableForRead(ZipkinSpanRecord.INDEX_NAME) +
-          " where " + ZipkinSpanRecord.TRACE_ID + " = ?" +
-          " limit " + NAME_QUERY_MAX_SIZE,
-          this::buildSpan, traceId);
+    return singleTraceQueryExecutor.get(traceId);
   }
 
   @Override
@@ -111,14 +108,10 @@ public class CassandraZipkinQueryDAO implements IZipkinQueryDAO {
     List<CompletionStage<List<String>>> completionTraceIds = new ArrayList<>();
     if (CollectionUtils.isNotEmpty(request.annotationQuery())) {
       for (Map.Entry<String, String> entry : request.annotationQuery().entrySet()) {
-        completionTraceIds.add(client.executeAsyncQuery("select " + ZipkinSpanRecord.TRACE_ID +
-                " from " + ZipkinSpanRecord.ADDITIONAL_QUERY_TABLE +
-                " where " + ZipkinSpanRecord.QUERY + " = ?" +
-                " and " + ZipkinSpanRecord.TIME_BUCKET + " >= ?" +
-                " and " + ZipkinSpanRecord.TIME_BUCKET + " <= ?",
-            row -> row.getString(ZipkinSpanRecord.TRACE_ID),
+        completionTraceIds.add(traceIDByAnnotationQueryExecutor.asyncGet(
             entry.getValue().isEmpty() ? entry.getKey() : entry.getKey() + "=" + entry.getValue(),
-            duration.getStartTimeBucket(), duration.getEndTimeBucket()));
+            duration.getStartTimeBucket(), duration.getEndTimeBucket()
+        ));
       }
     }
 
@@ -156,31 +149,26 @@ public class CassandraZipkinQueryDAO implements IZipkinQueryDAO {
       end_duration = maxDuration != null ? maxDuration / 1000L : Long.MAX_VALUE;
     }
 
-    String traceByServiceSpanBaseCql = "select trace_id from " + CassandraTableExtension.TABLE_TRACE_BY_SERVICE_SPAN
-        + " where service=? and span=? and bucket=? and ts>=? and ts<=?";
     // each service names
     for (String serviceName : serviceNames) {
       for (int bucket = endBucket; bucket >= startBucket; bucket--) {
         boolean addSpanQuery = true;
         if (remoteService != null) {
-          result.add(client.executeAsyncQuery("select trace_id from " + CassandraTableExtension.TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE
-              + " where service=? and remote_service=? and bucket=? and ts>=? and ts<=?",
-              resultSet -> resultSet.getString(0),
-              serviceName, remoteService, bucket, timestampRange.startUUID, timestampRange.endUUID));
+          result.add(traceIDByServiceQueryExecutor.asyncWithRemoteService(
+              serviceName, remoteService, bucket, timestampRange.startUUID, timestampRange.endUUID)
+          );
           // If the remote service query can satisfy the request, don't make a redundant span query
           addSpanQuery = !spanName.isEmpty() || minDuration != null;
         }
         if (!addSpanQuery) continue;
 
         if (start_duration != null) {
-          result.add(client.executeAsyncQuery(traceByServiceSpanBaseCql + " and duration>=? and duration<=?",
-              resultSet -> resultSet.getString(0),
-              serviceName, spanName, bucket, timestampRange.startUUID, timestampRange.endUUID, start_duration, end_duration)
-              );
+          result.add(traceIDByServiceQueryExecutor.asyncWithSpanAndDuration(
+              serviceName, spanName, bucket, timestampRange.startUUID, timestampRange.endUUID, start_duration, end_duration,
+              request.limit()));
         } else {
-          result.add(client.executeAsyncQuery(traceByServiceSpanBaseCql,
-              resultSet -> resultSet.getString(0),
-              serviceName, spanName, bucket, timestampRange.startUUID, timestampRange.endUUID));
+          result.add(traceIDByServiceQueryExecutor.asyncWithSpan(
+              serviceName, spanName, bucket, timestampRange.startUUID, timestampRange.endUUID, request.limit()));
         }
       }
     }
@@ -208,74 +196,9 @@ public class CassandraZipkinQueryDAO implements IZipkinQueryDAO {
 
   @Override
   public List<List<Span>> getTraces(Set<String> traceIds) throws IOException {
-    if (CollectionUtils.isEmpty(traceIds)) {
-      return Collections.emptyList();
-    }
-
-    String table = tableHelper.getTableForRead(ZipkinSpanRecord.INDEX_NAME);
-    return traceIds.stream().map(traceId ->
-        client.executeAsyncQuery("select * from " + table + " where " + ZipkinSpanRecord.TRACE_ID + " = ?", this::buildSpan, traceId)
-    ).map(CompletionStage::toCompletableFuture).map(CompletableFuture::join).collect(toList());
+    return multipleTraceQueryExecutor.get(traceIds);
   }
 
-  private Span buildSpan(Row row) {
-    Span.Builder span = Span.newBuilder();
-    span.traceId(row.getString(ZipkinSpanRecord.TRACE_ID));
-    span.id(row.getString(ZipkinSpanRecord.SPAN_ID));
-    span.parentId(row.getString(ZipkinSpanRecord.PARENT_ID));
-    String kind = row.getString(ZipkinSpanRecord.KIND);
-    if (!StringUtil.isEmpty(kind)) {
-      span.kind(Span.Kind.valueOf(kind));
-    }
-    span.timestamp(row.getLong(ZipkinSpanRecord.TIMESTAMP));
-    span.duration(row.getLong(ZipkinSpanRecord.DURATION));
-    span.name(row.getString(ZipkinSpanRecord.NAME));
-
-    if (row.getInt(ZipkinSpanRecord.DEBUG) > 0) {
-      span.debug(Boolean.TRUE);
-    }
-    if (row.getInt(ZipkinSpanRecord.SHARED) > 0) {
-      span.shared(Boolean.TRUE);
-    }
-    //Build localEndpoint
-    Endpoint.Builder localEndpoint = Endpoint.newBuilder();
-    localEndpoint.serviceName(row.getString(ZipkinSpanRecord.LOCAL_ENDPOINT_SERVICE_NAME));
-    if (!StringUtil.isEmpty(row.getString(ZipkinSpanRecord.LOCAL_ENDPOINT_IPV4))) {
-      localEndpoint.parseIp(row.getString(ZipkinSpanRecord.LOCAL_ENDPOINT_IPV4));
-    } else {
-      localEndpoint.parseIp(row.getString(ZipkinSpanRecord.LOCAL_ENDPOINT_IPV6));
-    }
-    localEndpoint.port(row.getInt(ZipkinSpanRecord.LOCAL_ENDPOINT_PORT));
-    span.localEndpoint(localEndpoint.build());
-    //Build remoteEndpoint
-    Endpoint.Builder remoteEndpoint = Endpoint.newBuilder();
-    remoteEndpoint.serviceName(row.getString(ZipkinSpanRecord.REMOTE_ENDPOINT_SERVICE_NAME));
-    if (!StringUtil.isEmpty(row.getString(ZipkinSpanRecord.REMOTE_ENDPOINT_IPV4))) {
-      remoteEndpoint.parseIp(row.getString(ZipkinSpanRecord.REMOTE_ENDPOINT_IPV4));
-    } else {
-      remoteEndpoint.parseIp(row.getString(ZipkinSpanRecord.REMOTE_ENDPOINT_IPV6));
-    }
-    remoteEndpoint.port(row.getInt(ZipkinSpanRecord.REMOTE_ENDPOINT_PORT));
-    span.remoteEndpoint(remoteEndpoint.build());
-
-    //Build tags
-    String tagsString = row.getString(ZipkinSpanRecord.TAGS);
-    if (!StringUtil.isEmpty(tagsString)) {
-      JsonObject tagsJson = GSON.fromJson(tagsString, JsonObject.class);
-      for (Map.Entry<String, JsonElement> tag : tagsJson.entrySet()) {
-        span.putTag(tag.getKey(), tag.getValue().getAsString());
-      }
-    }
-    //Build annotation
-    String annotationString = row.getString(ZipkinSpanRecord.ANNOTATIONS);
-    if (!StringUtil.isEmpty(annotationString)) {
-      JsonObject annotationJson = GSON.fromJson(annotationString, JsonObject.class);
-      for (Map.Entry<String, JsonElement> annotation : annotationJson.entrySet()) {
-        span.addAnnotation(Long.parseLong(annotation.getKey()), annotation.getValue().getAsString());
-      }
-    }
-    return span.build();
-  }
 
   static final class TimestampRange {
     long startMillis;

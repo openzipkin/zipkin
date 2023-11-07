@@ -3,15 +3,12 @@ CREATE KEYSPACE IF NOT EXISTS zipkin2
   AND durable_writes = false;
 
 CREATE TABLE IF NOT EXISTS zipkin_span (
-  id text,
-  table_name text,
   trace_id text,
   span_id text,
   parent_id text,
   name text,
   duration BIGINT,
   kind text,
-  timestamp_millis BIGINT,
   TIMESTAMP BIGINT,
   local_endpoint_service_name text,
   local_endpoint_ipv4 text,
@@ -25,7 +22,6 @@ CREATE TABLE IF NOT EXISTS zipkin_span (
   tags text,
   debug INT,
   shared INT,
-  time_bucket BIGINT,
   uuid_unique text,
   PRIMARY KEY(trace_id, uuid_unique)
 )
@@ -88,7 +84,6 @@ CREATE TABLE IF NOT EXISTS zipkin_service_traffic (
   AND comment = 'Secondary table for looking up all services';
 
 CREATE TABLE IF NOT EXISTS zipkin_query (
-  id text,
   trace_id text,
   query text,
   time_bucket BIGINT,
