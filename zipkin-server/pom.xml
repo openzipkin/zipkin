@@ -80,6 +80,7 @@
     <module>zipkin-storage-ext</module>
     <module>receiver-zipkin-core</module>
     <module>receiver-otlp-trace</module>
+    <module>receiver-zipkin-grpc</module>
   </modules>
 
   <dependencyManagement>

@@ -116,6 +116,11 @@
     </dependency>
     <dependency>
       <groupId>io.zipkin</groupId>
+      <artifactId>receiver-zipkin-grpc</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin</groupId>
       <artifactId>receiver-otlp-trace</artifactId>
       <version>${project.version}</version>
     </dependency>
