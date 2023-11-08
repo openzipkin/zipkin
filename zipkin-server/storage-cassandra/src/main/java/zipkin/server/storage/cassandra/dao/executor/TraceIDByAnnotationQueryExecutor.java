@@ -15,6 +15,7 @@
 package zipkin.server.storage.cassandra.dao.executor;
 
 import org.apache.skywalking.oap.server.core.zipkin.ZipkinSpanRecord;
+import org.apache.skywalking.oap.server.library.util.StringUtil;
 import zipkin.server.storage.cassandra.CassandraClient;
 import zipkin.server.storage.cassandra.CassandraTableHelper;
 
@@ -23,19 +24,28 @@ import java.util.concurrent.CompletionStage;
 
 public class TraceIDByAnnotationQueryExecutor extends BaseQueryExecutor {
   private final Query<String> query;
+  private final Query<String> queryWithService;
   public TraceIDByAnnotationQueryExecutor(CassandraClient client, CassandraTableHelper tableHelper) {
     super(client, tableHelper);
-    this.query = buildQuery(
-        () -> "select " + ZipkinSpanRecord.TRACE_ID +
-            " from " + ZipkinSpanRecord.ADDITIONAL_QUERY_TABLE +
-            " where " + ZipkinSpanRecord.QUERY + " = ?" +
-            " and " + ZipkinSpanRecord.TIME_BUCKET + " >= ?" +
-            " and " + ZipkinSpanRecord.TIME_BUCKET + " <= ?",
+    String querySuffix = "annotation_query LIKE ?"
+        + " AND " + ZipkinSpanRecord.TIMESTAMP + ">=?"
+        + " AND " + ZipkinSpanRecord.TIMESTAMP + "<=?"
+        + " LIMIT ?"
+        + " ALLOW FILTERING";
+
+    this.query = buildQuery(() -> "select trace_id from " + ZipkinSpanRecord.INDEX_NAME + " where " + querySuffix,
+        row -> row.getString(ZipkinSpanRecord.TRACE_ID)
+    );
+    this.queryWithService = buildQuery(() -> "select trace_id from " + ZipkinSpanRecord.INDEX_NAME + " where " +
+            ZipkinSpanRecord.LOCAL_ENDPOINT_SERVICE_NAME + " = ? and " + querySuffix,
         row -> row.getString(ZipkinSpanRecord.TRACE_ID)
     );
   }
 
-  public CompletionStage<List<String>> asyncGet(String query, long startTimeBucket, long endTimeBucket) {
-    return executeAsync(this.query, query, startTimeBucket, endTimeBucket);
+  public CompletionStage<List<String>> asyncGet(String serviceName, String query, long startTimeBucket, long endTimeBucket, int size) {
+    if (StringUtil.isNotEmpty(serviceName)) {
+      return executeAsync(this.queryWithService, serviceName, query, startTimeBucket, endTimeBucket, size);
+    }
+    return executeAsync(this.query, query, startTimeBucket, endTimeBucket, size);
   }
 }

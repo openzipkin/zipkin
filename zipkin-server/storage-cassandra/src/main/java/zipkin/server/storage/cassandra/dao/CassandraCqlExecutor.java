@@ -15,18 +15,18 @@
 package zipkin.server.storage.cassandra.dao;
 
 import com.datastax.oss.driver.api.core.cql.Row;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import org.apache.skywalking.oap.server.core.storage.SessionCacheCallback;
 import org.apache.skywalking.oap.server.core.storage.StorageData;
 import org.apache.skywalking.oap.server.core.storage.model.ColumnName;
 import org.apache.skywalking.oap.server.core.storage.model.Model;
 import org.apache.skywalking.oap.server.core.storage.model.ModelColumn;
-import org.apache.skywalking.oap.server.core.storage.model.SQLDatabaseModelExtension;
 import org.apache.skywalking.oap.server.core.storage.type.Convert2Storage;
 import org.apache.skywalking.oap.server.core.storage.type.HashMapConverter;
 import org.apache.skywalking.oap.server.core.storage.type.StorageBuilder;
 import org.apache.skywalking.oap.server.core.storage.type.StorageDataComplexObject;
 import org.apache.skywalking.oap.server.core.zipkin.ZipkinSpanRecord;
-import org.apache.skywalking.oap.server.library.util.CollectionUtils;
 import org.apache.skywalking.oap.server.storage.plugin.jdbc.TableMetaInfo;
 import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.JDBCTableInstaller;
 import org.apache.skywalking.oap.server.storage.plugin.jdbc.common.TableHelper;
@@ -44,8 +44,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.skywalking.oap.server.storage.plugin.jdbc.common.JDBCTableInstaller.ID_COLUMN;
+import static zipkin2.internal.RecyclableBuffers.SHORT_STRING_LENGTH;
 
 public class CassandraCqlExecutor {
+  private static final JsonObject EMPTY_JSON_OBJECT = new JsonObject();
 
   protected <T extends StorageData> List<StorageData> getByIDs(CassandraClient client,
                                                                String modelName,
@@ -74,20 +76,6 @@ public class CassandraCqlExecutor {
     });
     CQLExecutor sqlExecutor = buildInsertExecutor(
         model, metrics, timeBucket, mainEntity, callback);
-    //build additional table cql
-    for (final SQLDatabaseModelExtension.AdditionalTable additionalTable : model.getSqlDBModelExtension().getAdditionalTables().values()) {
-      Map<String, Object> additionalEntity = new HashMap<>();
-      additionalTable.getColumns().forEach(column -> {
-        additionalEntity.put(column.getColumnName().getName(), objectMap.get(column.getColumnName().getName()));
-      });
-
-      List<CQLExecutor> additionalSQLExecutors = buildAdditionalInsertExecutor(
-          model, additionalTable.getName(), additionalTable.getColumns(), metrics,
-          timeBucket, additionalEntity, callback
-      );
-      sqlExecutor.appendAdditionalCQLs(additionalSQLExecutors);
-    }
-
     // extension the span tables for query
     if (metrics instanceof ZipkinSpanRecord) {
       sqlExecutor.appendAdditionalCQLs(CassandraTableExtension.buildExtensionsForSpan((ZipkinSpanRecord) metrics, callback));
@@ -125,64 +113,6 @@ public class CassandraCqlExecutor {
     return new CQLExecutor(sqlBuilder.toString(), param, callback, null);
   }
 
-  private <T extends StorageData> List<CQLExecutor> buildAdditionalInsertExecutor(Model model, String tableName,
-                                                                                  List<ModelColumn> columns,
-                                                                                  T metrics,
-                                                                                  long timeBucket,
-                                                                                  Map<String, Object> objectMap,
-                                                                                  SessionCacheCallback callback) {
-
-    List<CQLExecutor> sqlExecutors = new ArrayList<>();
-    List<String> columnNames = new ArrayList<>();
-    List<String> values = new ArrayList<>();
-    List<Object> param = new ArrayList<>();
-    final StringBuilder cqlBuilder = new StringBuilder("INSERT INTO ").append(tableName);
-
-    int position = 0;
-    List valueList = new ArrayList();
-    for (int i = 0; i < columns.size(); i++) {
-      ModelColumn column = columns.get(i);
-      if (List.class.isAssignableFrom(column.getType())) {
-        valueList = (List) objectMap.get(column.getColumnName().getName());
-
-        columnNames.add(column.getColumnName().getStorageName());
-        values.add("?");
-        param.add(null);
-
-        position = i + 1;
-      } else {
-        columnNames.add(column.getColumnName().getStorageName());
-        values.add("?");
-
-        Object value = objectMap.get(column.getColumnName().getName());
-        if (value instanceof StorageDataComplexObject) {
-          param.add(((StorageDataComplexObject) value).toStorageData());
-        } else {
-          param.add(value);
-        }
-      }
-    }
-
-    cqlBuilder.append("(").append(columnNames.stream().collect(Collectors.joining(", "))).append(")")
-        .append(" VALUES (").append(values.stream().collect(Collectors.joining(", "))).append(")");
-    String sql = cqlBuilder.toString();
-    if (!CollectionUtils.isEmpty(valueList)) {
-      for (Object object : valueList) {
-        List<Object> paramCopy = new ArrayList<>(param);
-        paramCopy.set(position - 1, object);
-        sqlExecutors.add(new CQLExecutor(sql, paramCopy, callback, null));
-      }
-    } else {
-      // if not query data, then ignore the data insert
-      if ("zipkin_query".equals(tableName)) {
-        return sqlExecutors;
-      }
-      sqlExecutors.add(new CQLExecutor(sql, param, callback, null));
-    }
-
-    return sqlExecutors;
-  }
-
   private <T extends StorageData> CQLExecutor buildInsertExecutor(Model model,
                                                                   T metrics,
                                                                   long timeBucket,
@@ -199,8 +129,9 @@ public class CassandraCqlExecutor {
                     .map(ModelColumn::getColumnName)
                     .map(ColumnName::getStorageName))
             .collect(Collectors.toList());
-    if (model.isRecord()) {
+    if (metrics instanceof ZipkinSpanRecord) {
       columnNames.add(CassandraClient.RECORD_UNIQUE_UUID_COLUMN);
+      columnNames.add(CassandraClient.ZIPKIN_SPAN_ANNOTATION_QUERY_COLUMN);
     }
     cqlBuilder.append(columnNames.stream().collect(Collectors.joining(",", "(", ")")));
     cqlBuilder.append(" VALUES ");
@@ -220,8 +151,9 @@ public class CassandraCqlExecutor {
                   return it;
                 }))
         .collect(Collectors.toList());
-    if (model.isRecord()) {
+    if (metrics instanceof ZipkinSpanRecord) {
       params.add(UUID.randomUUID().toString());
+      params.add(annotationQuery((ZipkinSpanRecord) metrics));
     }
 
     return new CQLExecutor(cqlBuilder.toString(), params, onCompleteCallback, null);
@@ -241,5 +173,36 @@ public class CassandraCqlExecutor {
   private static String getModelTables(CassandraClient client, String modelName) {
     final Model model = TableMetaInfo.get(modelName);
     return TableHelper.getTableName(model);
+  }
+
+  private String annotationQuery(ZipkinSpanRecord span) {
+    final JsonObject annotation = jsonCheck(span.getAnnotations());
+    final JsonObject tags = jsonCheck(span.getTags());
+    if (annotation.size() == 0 && tags.size() == 0) return null;
+
+    char delimiter = '░'; // as very unlikely to be in the query
+    StringBuilder result = new StringBuilder().append(delimiter);
+    for (Map.Entry<String, JsonElement> annotationEntry : annotation.entrySet()) {
+      final String annotationValue = annotationEntry.getValue().getAsString();
+      if (annotationValue.length() > SHORT_STRING_LENGTH) continue;
+
+      result.append(annotationValue).append(delimiter);
+    }
+
+    for (Map.Entry<String, JsonElement> tagEntry : tags.entrySet()) {
+      final String tagValue = tagEntry.getValue().getAsString();
+      if (tagValue.length() > SHORT_STRING_LENGTH) continue;
+
+      result.append(tagEntry.getKey()).append(delimiter); // search is possible by key alone
+      result.append(tagEntry.getKey()).append('=').append(tagValue).append(delimiter);
+    }
+    return result.length() == 1 ? null : result.toString();
+  }
+
+  private JsonObject jsonCheck(JsonObject json) {
+    if (json == null) {
+      json = EMPTY_JSON_OBJECT;
+    }
+    return json;
   }
 }

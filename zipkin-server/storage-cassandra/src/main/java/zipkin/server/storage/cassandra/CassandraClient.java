@@ -52,6 +52,7 @@ public class CassandraClient implements Client {
   static final Logger LOG = LoggerFactory.getLogger(CassandraClient.class);
 
   public static final String RECORD_UNIQUE_UUID_COLUMN = "uuid_unique";
+  public static final String ZIPKIN_SPAN_ANNOTATION_QUERY_COLUMN = "annotation_query";
 
   private final CassandraConfig config;
   private final DelegatedHealthChecker healthChecker;
