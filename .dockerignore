@@ -9,12 +9,11 @@
 !build-bin/docker/docker-healthcheck
 
 !docker/start-zipkin
-!/zipkin-server/target/zipkin-server-*exec.jar
-!/zipkin-server/target/zipkin-server-*slim.jar
+!/zipkin-server/server-starter/target/zipkin-server-*exec.jar
+!/zipkin-server/server-starter/target/zipkin-server-*slim.jar
 
 !docker/test-images/zipkin-cassandra/install.sh
 !docker/test-images/zipkin-cassandra/start-cassandra
-!zipkin-storage/cassandra/src/main/resources/*.cql
 
 !docker/test-images/zipkin-elasticsearch6/config/
 !docker/test-images/zipkin-elasticsearch7/config/
@@ -25,7 +24,6 @@
 
 !docker/test-images/zipkin-mysql/install.sh
 !docker/test-images/zipkin-mysql/start-mysql
-!zipkin-storage/mysql-v1/src/main/resources/mysql.sql
 
 !docker/test-images/zipkin-ui/nginx.conf
 !docker/test-images/zipkin-ui/start-nginx
@@ -33,17 +31,6 @@
 
 # Allow on-demand "mvn package". <modules> referenced in pom.xml must be added even if not built
 !zipkin/src/main/**
-!zipkin-collector/src/main/**
-!zipkin-collector/core/src/main/**
-!zipkin-collector/activemq/src/main/**
-!zipkin-collector/kafka/src/main/**
-!zipkin-collector/rabbitmq/src/main/**
-!zipkin-collector/scribe/src/main/**
-!zipkin-junit/src/main/**
-!zipkin-storage/src/main/**
-!zipkin-storage/cassandra/src/main/**
-!zipkin-storage/mysql-v1/src/main/**
-!zipkin-storage/elasticsearch/src/main/**
-!zipkin-server/src/main/**
+!zipkin-server/**
 !zipkin-tests/src/main/**
 !**/pom.xml
