@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS zipkin_span (
   debug INT,
   shared INT,
   uuid_unique text,
+  annotation_query text,
   PRIMARY KEY(trace_id, uuid_unique)
 )
   WITH CLUSTERING ORDER BY (uuid_unique DESC)
@@ -33,6 +34,15 @@ CREATE TABLE IF NOT EXISTS zipkin_span (
   AND dclocal_read_repair_chance = 0
   AND speculative_retry = '95percentile'
   AND comment = 'Primary table for holding trace data';
+
+CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin_span (local_endpoint_service_name) USING 'org.apache.cassandra.index.sasi.SASIIndex'
+   WITH OPTIONS = {'mode': 'PREFIX'};
+CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin_span (annotation_query) USING 'org.apache.cassandra.index.sasi.SASIIndex'
+   WITH OPTIONS = {
+    'mode': 'PREFIX',
+    'analyzed': 'true',
+    'analyzer_class':'org.apache.cassandra.index.sasi.analyzer.DelimiterAnalyzer',
+    'delimiter': '░'};
 
 CREATE TABLE IF NOT EXISTS zipkin_service_relation_traffic (
   id text,
@@ -82,21 +92,6 @@ CREATE TABLE IF NOT EXISTS zipkin_service_traffic (
   AND dclocal_read_repair_chance = 0
   AND speculative_retry = '95percentile'
   AND comment = 'Secondary table for looking up all services';
-
-CREATE TABLE IF NOT EXISTS zipkin_query (
-  trace_id text,
-  query text,
-  time_bucket BIGINT,
-  PRIMARY KEY(query, time_bucket, trace_id)
-)
-  WITH CLUSTERING ORDER BY (time_bucket DESC, trace_id DESC)
-  AND compaction = {'class': 'org.apache.cassandra.db.compaction.TimeWindowCompactionStrategy'}
-  AND default_time_to_live =  604800
-  AND gc_grace_seconds = 3600
-  AND read_repair_chance = 0
-  AND dclocal_read_repair_chance = 0
-  AND speculative_retry = '95percentile'
-  AND comment = 'Secondary table for looking up traces by annotation query';
 
 CREATE TABLE IF NOT EXISTS tag_autocomplete (
   id text,

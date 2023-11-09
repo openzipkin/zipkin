@@ -34,7 +34,7 @@ public class ZipkinServerBootstrap {
         RunningMode.setMode(mode);
 
         ApplicationConfigLoader configLoader = new ApplicationConfigLoader();
-        ModuleManager manager = new ModuleManager();
+        ModuleManager manager = new ModuleManager("Zipkin Server");
         try {
             ApplicationConfiguration applicationConfiguration = configLoader.load();
             manager.init(applicationConfiguration);

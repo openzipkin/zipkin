@@ -109,8 +109,8 @@ public class CassandraZipkinQueryDAO implements IZipkinQueryDAO {
     if (CollectionUtils.isNotEmpty(request.annotationQuery())) {
       for (Map.Entry<String, String> entry : request.annotationQuery().entrySet()) {
         completionTraceIds.add(traceIDByAnnotationQueryExecutor.asyncGet(
-            entry.getValue().isEmpty() ? entry.getKey() : entry.getKey() + "=" + entry.getValue(),
-            duration.getStartTimeBucket(), duration.getEndTimeBucket()
+            request.serviceName(), entry.getValue().isEmpty() ? entry.getKey() : entry.getKey() + "=" + entry.getValue(),
+            duration.getStartTimestamp() * 1000, duration.getEndTimestamp() * 1000, request.limit()
         ));
       }
     }

@@ -53,7 +53,7 @@ public class ITCassandraStorage {
   @RegisterExtension
   CassandraExtension cassandra = new CassandraExtension();
 
-  private final ModuleManager moduleManager = new ModuleManager();
+  private final ModuleManager moduleManager = new ModuleManager("Zipkin Server");
   private SpanForwardService forward;
   private ITagAutoCompleteQueryDAO tagAutoCompleteQueryDAO;
   private IZipkinQueryDAO zipkinQueryDAO;
@@ -92,6 +92,7 @@ public class ITCassandraStorage {
     // search traces
     final QueryRequest query = QueryRequest.newBuilder()
         .lookback(86400000L)
+        .serviceName("frontend")
         .endTs(System.currentTimeMillis())
         .minDuration(1000L)
         .annotationQuery(Collections.singletonMap("http.path", "/api"))
