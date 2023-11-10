@@ -56,7 +56,6 @@ DROP DATABASE IF EXISTS test ;
 CREATE DATABASE zipkin ;
 
 USE zipkin;
-SOURCE zipkin-schemas/mysql.sql ;
 
 GRANT ALL PRIVILEGES ON zipkin.* TO zipkin@'%' IDENTIFIED BY 'zipkin' WITH GRANT OPTION ;
 FLUSH PRIVILEGES ;

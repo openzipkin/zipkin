@@ -28,7 +28,7 @@ FROM scratch as scratch
 COPY build-bin/docker/docker-healthcheck /docker-bin/
 COPY docker/test-images/zipkin-cassandra/start-cassandra /docker-bin/
 COPY docker/test-images/zipkin-cassandra/install.sh /install/
-COPY zipkin-storage/cassandra/src/main/resources/*.cql /zipkin-schemas/
+COPY zipkin-server/storage-cassandra/src/main/resources/*.cql /zipkin-schemas/
 
 FROM ghcr.io/openzipkin/java:${java_version} as install
 

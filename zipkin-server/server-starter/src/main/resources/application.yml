@@ -49,7 +49,7 @@ core:
 storage: &storage
   selector: ${ZIPKIN_STORAGE:h2}
   elasticsearch:
-    namespace: ${ZIPKIN_NAMESPACE:""}
+    namespace: ${ZIPKIN_NAMESPACE:"zipkin"}
     clusterNodes: ${ZIPKIN_STORAGE_ES_CLUSTER_NODES:localhost:9200}
     protocol: ${ZIPKIN_STORAGE_ES_HTTP_PROTOCOL:"http"}
     connectTimeout: ${ZIPKIN_STORAGE_ES_CONNECT_TIMEOUT:3000}
@@ -92,17 +92,17 @@ storage: &storage
     enableCustomRouting: ${ZIPKIN_STORAGE_ES_ENABLE_CUSTOM_ROUTING:false}
   h2:
     properties:
-      jdbcUrl: ${ZIPKIN_STORAGE_H2_URL:jdbc:h2:mem:skywalking-oap-db;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=FALSE}
+      jdbcUrl: ${ZIPKIN_STORAGE_H2_URL:jdbc:h2:mem:zipkin-db;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=FALSE}
       dataSource.user: ${ZIPKIN_STORAGE_H2_USER:sa}
     metadataQueryMaxSize: ${ZIPKIN_STORAGE_H2_QUERY_MAX_SIZE:5000}
     maxSizeOfBatchSql: ${ZIPKIN_STORAGE_MAX_SIZE_OF_BATCH_SQL:100}
     asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_ASYNC_BATCH_PERSISTENT_POOL_SIZE:1}
   mysql:
     properties:
-      jdbcUrl: ${ZIPKIN_JDBC_URL:"jdbc:mysql://localhost:3306/swtest?rewriteBatchedStatements=true&allowMultiQueries=true"}
+      jdbcUrl: ${ZIPKIN_JDBC_URL:"jdbc:mysql://localhost:3306/zipkin?rewriteBatchedStatements=true&allowMultiQueries=true"}
       driverClassName: org.mariadb.jdbc.Driver
-      dataSource.user: ${ZIPKIN_DATA_SOURCE_USER:root}
-      dataSource.password: ${ZIPKIN_DATA_SOURCE_PASSWORD:root@1234}
+      dataSource.user: ${ZIPKIN_DATA_SOURCE_USER:zipkin}
+      dataSource.password: ${ZIPKIN_DATA_SOURCE_PASSWORD:zipkin}
       dataSource.cachePrepStmts: ${ZIPKIN_DATA_SOURCE_CACHE_PREP_STMTS:true}
       dataSource.prepStmtCacheSize: ${ZIPKIN_DATA_SOURCE_PREP_STMT_CACHE_SQL_SIZE:250}
       dataSource.prepStmtCacheSqlLimit: ${ZIPKIN_DATA_SOURCE_PREP_STMT_CACHE_SQL_LIMIT:2048}
@@ -112,7 +112,7 @@ storage: &storage
     asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_ASYNC_BATCH_PERSISTENT_POOL_SIZE:4}
   postgresql:
     properties:
-      jdbcUrl: ${ZIPKIN_JDBC_URL:"jdbc:postgresql://localhost:5432/skywalking"}
+      jdbcUrl: ${ZIPKIN_JDBC_URL:"jdbc:postgresql://localhost:5432/zipkin"}
       dataSource.user: ${ZIPKIN_DATA_SOURCE_USER:postgres}
       dataSource.password: ${ZIPKIN_DATA_SOURCE_PASSWORD:123456}
       dataSource.cachePrepStmts: ${ZIPKIN_DATA_SOURCE_CACHE_PREP_STMTS:true}
@@ -286,7 +286,7 @@ cluster:
   # Please check your ZooKeeper is 3.5+, However, it is also compatible with ZooKeeper 3.4.x. Replace the ZooKeeper 3.5+
   # library the oap-libs folder with your ZooKeeper 3.4.x library.
   zookeeper:
-    namespace: ${ZIPKIN_NAMESPACE:""}
+    namespace: ${ZIPKIN_NAMESPACE:"zipkin"}
     hostPort: ${ZIPKIN_CLUSTER_ZK_HOST_PORT:localhost:2181}
     # Retry Policy
     baseSleepTimeMs: ${ZIPKIN_CLUSTER_ZK_SLEEP_TIME:1000} # initial amount of time to wait between retries

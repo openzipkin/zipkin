@@ -1,8 +1,8 @@
-CREATE KEYSPACE IF NOT EXISTS zipkin2
+CREATE KEYSPACE IF NOT EXISTS zipkin
   WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'}
   AND durable_writes = false;
 
-CREATE TABLE IF NOT EXISTS zipkin_span (
+CREATE TABLE IF NOT EXISTS zipkin.zipkin_span (
   trace_id text,
   span_id text,
   parent_id text,
@@ -35,16 +35,16 @@ CREATE TABLE IF NOT EXISTS zipkin_span (
   AND speculative_retry = '95percentile'
   AND comment = 'Primary table for holding trace data';
 
-CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin_span (local_endpoint_service_name) USING 'org.apache.cassandra.index.sasi.SASIIndex'
+CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin.zipkin_span (local_endpoint_service_name) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {'mode': 'PREFIX'};
-CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin_span (annotation_query) USING 'org.apache.cassandra.index.sasi.SASIIndex'
+CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin.zipkin_span (annotation_query) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {
     'mode': 'PREFIX',
     'analyzed': 'true',
     'analyzer_class':'org.apache.cassandra.index.sasi.analyzer.DelimiterAnalyzer',
     'delimiter': '░'};
 
-CREATE TABLE IF NOT EXISTS zipkin_service_relation_traffic (
+CREATE TABLE IF NOT EXISTS zipkin.zipkin_service_relation_traffic (
   id text,
   table_name text,
   service_name text,
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS zipkin_service_relation_traffic (
   AND speculative_retry = '95percentile'
   AND comment = 'Secondary table for looking up remote service names by a service name.';
 
-CREATE TABLE IF NOT EXISTS zipkin_service_span_traffic (
+CREATE TABLE IF NOT EXISTS zipkin.zipkin_service_span_traffic (
   id text,
   table_name text,
   service_name text,
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS zipkin_service_span_traffic (
   AND speculative_retry = '95percentile'
   AND comment = 'Secondary table for looking up span names by a service name.';
 
-CREATE TABLE IF NOT EXISTS zipkin_service_traffic (
+CREATE TABLE IF NOT EXISTS zipkin.zipkin_service_traffic (
   id text,
   table_name text,
   service_name text,
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS zipkin_service_traffic (
   AND speculative_retry = '95percentile'
   AND comment = 'Secondary table for looking up all services';
 
-CREATE TABLE IF NOT EXISTS tag_autocomplete (
+CREATE TABLE IF NOT EXISTS zipkin.tag_autocomplete (
   id text,
   table_name text,
   tag_key text,
@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS tag_autocomplete (
   AND comment = 'Secondary table for looking up span tag values for auto-complete purposes.';
 
 
-CREATE TABLE IF NOT EXISTS zipkin_trace_by_service_span (
+CREATE TABLE IF NOT EXISTS zipkin.zipkin_trace_by_service_span (
   service       text,             //-- service name
   span          text,             //-- span name, or blank for queries without span name
   bucket        int,              //-- time bucket, calculated as ts/interval (in microseconds), for some pre-configured interval like 1 day.
@@ -130,10 +130,10 @@ CREATE TABLE IF NOT EXISTS zipkin_trace_by_service_span (
   AND speculative_retry = '95percentile'
   AND comment = 'Secondary table for looking up a trace by a service, or service and span. span column may be blank (when only looking up by service). bucket column adds time bucketing to the partition key, values are microseconds rounded to a pre-configured interval (typically one day). ts column is start timestamp of the span as time-uuid, truncated to millisecond precision. duration column is span duration, rounded up to tens of milliseconds (or hundredths of seconds)';
 
-CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin_trace_by_service_span (duration) USING 'org.apache.cassandra.index.sasi.SASIIndex'
+CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin.zipkin_trace_by_service_span (duration) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {'mode': 'PREFIX'};
 
-CREATE TABLE IF NOT EXISTS zipkin_trace_by_service_remote_service (
+CREATE TABLE IF NOT EXISTS zipkin.zipkin_trace_by_service_remote_service (
   service         text,             //-- service name
   remote_service  text,             //-- remote servie name
   bucket          int,              //-- time bucket, calculated as ts/interval (in microseconds), for some pre-configured interval like 1 day.
@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS zipkin_trace_by_service_remote_service (
   AND speculative_retry = '95percentile'
   AND comment = 'Secondary table for looking up a trace by a remote service. bucket column adds time bucketing to the partition key, values are microseconds rounded to a pre-configured interval (typically one day). ts column is start timestamp of the span as time-uuid, truncated to millisecond precision.';
 
-CREATE TABLE IF NOT EXISTS zipkin_dependency (
+CREATE TABLE IF NOT EXISTS zipkin.zipkin_dependency (
   analyze_day  date,
   parent       text,
   child        text,

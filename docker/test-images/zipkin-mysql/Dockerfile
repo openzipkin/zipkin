@@ -25,7 +25,6 @@ FROM scratch as scratch
 COPY build-bin/docker/docker-healthcheck /docker-bin/
 COPY docker/test-images/zipkin-mysql/start-mysql /docker-bin/
 COPY docker/test-images/zipkin-mysql/install.sh /install/
-COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /zipkin-schemas/
 
 FROM ghcr.io/openzipkin/alpine:${alpine_version} as zipkin-mysql
 LABEL org.opencontainers.image.description="MySQL on Alpine Linux with Zipkin schema pre-installed"
@@ -37,13 +36,12 @@ HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthche
 ENTRYPOINT ["start-mysql"]
 
 # Use latest from https://pkgs.alpinelinux.org/packages?name=mysql
-ARG mysql_version=10.11.4
+ARG mysql_version=10.11.5
 LABEL mysql-version=$mysql_version
 ENV MYSQL_VERSION=$mysql_version
 
 WORKDIR /tmp
-COPY --from=scratch /zipkin-schemas/* ./install/zipkin-schemas/
-COPY --from=scratch /install/install.sh ./install
+COPY --from=scratch /install/install.sh ./install/
 RUN (cd install && ./install.sh) && rm -rf ./install
 
 # All content including binaries and logs write under WORKDIR

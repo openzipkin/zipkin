@@ -29,8 +29,10 @@ import org.apache.skywalking.oap.server.telemetry.api.MetricsTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Callback;
+import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -81,9 +83,10 @@ public class ZipkinGRPCHandler extends AbstractUnsafeUnaryGrpcService {
           ctx -> ctx.makeContextAware(ctx.blockingTaskExecutor()),
           CommonPools::blockingTaskExecutor);
 
+      final List<Span> spanList = SpanBytesDecoder.PROTO3.decodeList(message.nioBuffer());
       executor.execute(() -> {
         try (HistogramMetrics.Timer ignored = histogram.createTimer()) {
-          spanForward.send(SpanBytesDecoder.PROTO3.decodeList(message.nioBuffer()));
+          spanForward.send(spanList);
           result.onSuccess(null);
         } catch (Exception e) {
           log.error("Failed to handle message", e);
