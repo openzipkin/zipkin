@@ -1,0 +1,27 @@
+# yamllint --format github .github/workflows/license.yml
+---
+name: license
+
+on:
+  push:
+    tags: ""
+    branches: master
+    paths-ignore:
+      - "**/*.md"
+      - "charts/**"
+  pull_request:
+    branches: master
+    paths-ignore:
+      - "**/*.md"
+      - "charts/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Check license header
+        uses: apache/skywalking-eyes@v0.5.0
