@@ -104,7 +104,7 @@ public class CassandraProvider extends ModuleProvider {
         new StorageBuilderFactory.Default());
     this.registerServiceImplementation(
         IBatchDAO.class,
-        new CassandraBatchDAO(client, moduleConfig.getMaxSizeOfBatchCql(), moduleConfig.getAsyncBatchPersistentPoolSize())
+        new CassandraBatchDAO(client, moduleConfig.getMaxSizeOfBatchCql())
     );
     this.registerServiceImplementation(
         StorageDAO.class,

@@ -89,27 +89,6 @@ bytes = SpanBytesEncoder.JSON_V2.encode(span);
 
 Note: The above is just an example, most likely you'll want to use an existing tracing library like [Brave](https://github.com/openzipkin/brave)
 
-## Storage Component
-Zipkin includes a [StorageComponent](zipkin/src/main/java/zipkin2/storage/StorageComponent.java), used to store and query spans and
-dependency links. This is used by the server and those making collectors, or span reporters. For this reason, storage
-components have minimal dependencies, but most require Java 8+
-
-Ex.
-```java
-// this won't create network connections
-storage = ElasticsearchStorage.newBuilder()
-                              .hosts(asList("http://myelastic:9200")).build();
-
-// prepare a call
-traceCall = storage.spanStore().getTrace("d3d200866a77cc59");
-
-// execute it synchronously or asynchronously
-trace = traceCall.execute();
-
-// clean up any sessions, etc
-storage.close();
-```
-
 ### In-Memory
 The [InMemoryStorage](zipkin-server#in-memory-storage) component is packaged in zipkin's core library. It
 is neither persistent, nor viable for realistic work loads. Its purpose
@@ -129,11 +108,29 @@ Note: This store requires a [job to aggregate](https://github.com/openzipkin/zip
 
 ### Elasticsearch
 The [Elasticsearch](zipkin-server#elasticsearch-storage) component uses
-Elasticsearch 5+ features, but is tested against Elasticsearch 6-7.x.
+Elasticsearch 6+ features, but is tested against Elasticsearch 7-8.x.
 
-It stores spans as Zipkin v2 json so that integration with other tools is
-straightforward. To help with scale, this uses a combination of custom
-and manually implemented indexing.
+It stores the analyzed data after receiving it, supports daily indexing and storage of data, 
+and optimizes storage space by reducing indexes.
+
+Note: This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
+
+### SQLike Datasource
+Supporting relational databases, both [Elasticsearch](#elasticsearch) and similar storage systems utilize 
+table structures to store data content at the day level.
+
+the following databases are supported:
+1. MySQL: uses MySQL 5.x features, but is tested against MySQL 5.6.
+2. PostgreSQL: used PostgreSQL 9+ features, but is tested against PostgreSQL 9.6.
+3. H2: uses H2 1.4 features, but is tested against H2 1.4.199.
+
+Note: This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
+
+### BanyanDB
+The [BanyanDB](zipkin-server#banyandb-storage-components) component uses BanyanDB 0.5.0+ features, but is tested against BanyanDB 0.5.0.
+
+BanyanDB expected to offer better compression rates, lesser memory usage, 
+and less CPU consumption similar to [Elasticsearch](#elasticsearch) data capacity scenarios.
 
 Note: This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
 
@@ -147,34 +144,10 @@ default. Search primarily allows the trace list screen of the UI operate.
 * `GET /autocompleteValues?key=X` - Distinct values of Span.tags by key
 * `GET /traces` - Traces matching a query possibly including the above criteria
 
-
 When search is disabled, traces can only be retrieved by ID
-(`GET /trace/{traceId}`). Disabling search is only viable when there is
+(`GET /trace/{traceId}` or `GET /traceMany?traceIds=X`). Disabling search is only viable when there is
 an alternative way to find trace IDs, such as logs. Disabling search can
 reduce storage costs or increase write throughput.
-
-`StorageComponent.Builder.searchEnabled(false)` is implied when a zipkin
-is run with the env variable `SEARCH_ENABLED=false`.
-
-### Legacy (v1) components
-The following components are no longer encouraged, but exist to help aid
-transition to supported ones. These are indicated as "v1" as they use
-data layouts based on Zipkin's V1 Thrift model, as opposed to the
-simpler v2 data model currently used.
-
-#### MySQL
-The [MySQL v1](zipkin-storage/mysql-v1) component uses MySQL 5.6+
-features, but is tested against MariaDB 10.3.
-
-The schema was designed to be easy to understand and get started with;
-it was not designed for performance. Ex spans fields are columns, so
-you can perform ad-hoc queries using SQL. However, this component has
-[known performance issues](https://github.com/openzipkin/zipkin/issues/1233): queries will eventually take seconds to return
-if you put a lot of data into it.
-
-This store does not require a [job to aggregate](https://github.com/openzipkin/zipkin-dependencies) dependency links.
-However, running the job will improve performance of dependencies
-queries.
 
 ## Running the server from source
 The [Zipkin server](zipkin-server) receives spans via HTTP POST and respond to queries
@@ -183,10 +156,12 @@ from its UI. It can also run collectors, such as RabbitMQ or Kafka.
 To run the server from the currently checked out source, enter the
 following. JDK 11 is required to compile the source.
 ```bash
+# Init and update all submodule
+$ git submodule update --init --recursive
 # Build the server and also make its dependencies
-$ ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server clean install
+$ ./mvnw -q --batch-mode -DskipTests -Dcheckstyle.skip=true --also-make clean install
 # Run the server
-$ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
+$ java -jar ./zipkin-server/server-starter/target/zipkin-server-starter*exec.jar
 ```
 
 ## Artifacts

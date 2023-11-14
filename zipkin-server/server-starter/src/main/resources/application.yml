@@ -77,14 +77,6 @@ storage: &storage
     # flush the bulk every 5 seconds whatever the number of requests
     flushInterval: ${ZIPKIN_STORAGE_ES_FLUSH_INTERVAL:5}
     concurrentRequests: ${ZIPKIN_STORAGE_ES_CONCURRENT_REQUESTS:2} # the number of concurrent requests
-    resultWindowMaxSize: ${ZIPKIN_STORAGE_ES_QUERY_MAX_WINDOW_SIZE:10000}
-    metadataQueryMaxSize: ${ZIPKIN_STORAGE_ES_QUERY_MAX_SIZE:10000}
-    scrollingBatchSize: ${ZIPKIN_STORAGE_ES_SCROLLING_BATCH_SIZE:5000}
-    segmentQueryMaxSize: ${ZIPKIN_STORAGE_ES_QUERY_SEGMENT_SIZE:200}
-    profileTaskQueryMaxSize: ${ZIPKIN_STORAGE_ES_QUERY_PROFILE_TASK_SIZE:200}
-    profileDataQueryBatchSize: ${ZIPKIN_STORAGE_ES_QUERY_PROFILE_DATA_BATCH_SIZE:100}
-    oapAnalyzer: ${ZIPKIN_STORAGE_ES_OAP_ANALYZER:"{\"analyzer\":{\"oap_analyzer\":{\"type\":\"stop\"}}}"} # the oap analyzer.
-    oapLogAnalyzer: ${ZIPKIN_STORAGE_ES_OAP_LOG_ANALYZER:"{\"analyzer\":{\"oap_log_analyzer\":{\"type\":\"standard\"}}}"} # the oap log analyzer. It could be customized by the ES analyzer configuration to support more language log formats, such as Chinese log, Japanese log and etc.
     advanced: ${ZIPKIN_STORAGE_ES_ADVANCED:""}
     # Enable shard metrics and records indices into multi-physical indices, one index template per metric/meter aggregation function or record.
     logicSharding: ${ZIPKIN_STORAGE_ES_LOGIC_SHARDING:false}
@@ -107,19 +99,17 @@ storage: &storage
       dataSource.prepStmtCacheSize: ${ZIPKIN_DATA_SOURCE_PREP_STMT_CACHE_SQL_SIZE:250}
       dataSource.prepStmtCacheSqlLimit: ${ZIPKIN_DATA_SOURCE_PREP_STMT_CACHE_SQL_LIMIT:2048}
       dataSource.useServerPrepStmts: ${ZIPKIN_DATA_SOURCE_USE_SERVER_PREP_STMTS:true}
-    metadataQueryMaxSize: ${ZIPKIN_STORAGE_MYSQL_QUERY_MAX_SIZE:5000}
     maxSizeOfBatchSql: ${ZIPKIN_STORAGE_MAX_SIZE_OF_BATCH_SQL:2000}
     asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_ASYNC_BATCH_PERSISTENT_POOL_SIZE:4}
   postgresql:
     properties:
       jdbcUrl: ${ZIPKIN_JDBC_URL:"jdbc:postgresql://localhost:5432/zipkin"}
-      dataSource.user: ${ZIPKIN_DATA_SOURCE_USER:postgres}
-      dataSource.password: ${ZIPKIN_DATA_SOURCE_PASSWORD:123456}
+      dataSource.user: ${ZIPKIN_DATA_SOURCE_USER:zipkin}
+      dataSource.password: ${ZIPKIN_DATA_SOURCE_PASSWORD:zipkin}
       dataSource.cachePrepStmts: ${ZIPKIN_DATA_SOURCE_CACHE_PREP_STMTS:true}
       dataSource.prepStmtCacheSize: ${ZIPKIN_DATA_SOURCE_PREP_STMT_CACHE_SQL_SIZE:250}
       dataSource.prepStmtCacheSqlLimit: ${ZIPKIN_DATA_SOURCE_PREP_STMT_CACHE_SQL_LIMIT:2048}
       dataSource.useServerPrepStmts: ${ZIPKIN_DATA_SOURCE_USE_SERVER_PREP_STMTS:true}
-    metadataQueryMaxSize: ${ZIPKIN_STORAGE_MYSQL_QUERY_MAX_SIZE:5000}
     maxSizeOfBatchSql: ${ZIPKIN_STORAGE_MAX_SIZE_OF_BATCH_SQL:2000}
     asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_ASYNC_BATCH_PERSISTENT_POOL_SIZE:4}
   banyandb:
@@ -131,7 +121,6 @@ storage: &storage
     recordShardsNumber: ${ZIPKIN_STORAGE_BANYANDB_RECORD_SHARDS_NUMBER:1}
     superDatasetShardsFactor: ${ZIPKIN_STORAGE_BANYANDB_SUPERDATASET_SHARDS_FACTOR:2}
     concurrentWriteThreads: ${ZIPKIN_STORAGE_BANYANDB_CONCURRENT_WRITE_THREADS:15}
-    profileTaskQueryMaxSize: ${ZIPKIN_STORAGE_BANYANDB_PROFILE_TASK_QUERY_MAX_SIZE:200} # the max number of fetch task in a request
     blockIntervalHours: ${ZIPKIN_STORAGE_BANYANDB_BLOCK_INTERVAL_HOURS:24} # Unit is hour
     segmentIntervalDays: ${ZIPKIN_STORAGE_BANYANDB_SEGMENT_INTERVAL_DAYS:1} # Unit is day
     superDatasetBlockIntervalHours: ${ZIPKIN_STORAGE_BANYANDB_SUPER_DATASET_BLOCK_INTERVAL_HOURS:4} # Unit is hour
@@ -153,7 +142,7 @@ storage: &storage
     # Using ssl for connection, rely on Keystore
     use-ssl: ${ZIPKIN_STORAGE_CASSANDRA_USE_SSL:false}
     maxSizeOfBatchCql: ${ZIPKIN_STORAGE_CASSANDRA_MAX_SIZE_OF_BATCH_CQL:2000}
-    asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_CASSANDRA_ASYNC_BATCH_PERSISTENT_POOL_SIZE:4}
+    asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_CASSANDRA_ASYNC_BATCH_PERSISTENT_POOL_SIZE:1}
 
 zipkin-dependency-storage-ext: *storage
 
@@ -190,6 +179,8 @@ receiver-zipkin-activemq:
     url: ${ZIPKIN_ACTIVEMQ_URL:}
     # Queue from which to collect span messages.
     queue: ${ZIPKIN_ACTIVEMQ_QUEUE:zipkin}
+    # Client ID prefix for queue consumers.
+    clientIdPrefix: ${ZIPKIN_ACTIVEMQ_CLIENT_ID_PREFIX:zipkin}
     # Number of concurrent span consumers.
     concurrency: ${ZIPKIN_ACTIVEMQ_CONCURRENCY:1}
     # Optional username to connect to the broker
@@ -198,16 +189,16 @@ receiver-zipkin-activemq:
     password: ${ZIPKIN_ACTIVEMQ_PASSWORD:}
 
 receiver-zipkin-rabbitmq:
-  selector: ${ZIPKIN_RECEIVER_ZIPKIN_rabbitmq:-}
+  selector: ${ZIPKIN_RECEIVER_ZIPKIN_RABBITMQ:-}
   default:
     # RabbitMQ server address list (comma-separated list of host:port)
     addresses: ${ZIPKIN_RECEIVER_RABBIT_ADDRESSES:}
     concurrency: ${ZIPKIN_RECEIVER_RABBIT_CONCURRENCY:1}
     # TCP connection timeout in milliseconds
     connection-timeout: ${ZIPKIN_RECEIVER_RABBIT_CONNECTION_TIMEOUT:60000}
+    username: ${ZIPKIN_RECEIVER_RABBIT_USER:guest}
     password: ${ZIPKIN_RECEIVER_RABBIT_PASSWORD:guest}
     queue: ${ZIPKIN_RECEIVER_RABBIT_QUEUE:zipkin}
-    username: ${ZIPKIN_RECEIVER_RABBIT_USER:guest}
     virtual-host: ${ZIPKIN_RECEIVER_RABBIT_VIRTUAL_HOST:/}
     useSsl: ${ZIPKIN_RECEIVER_RABBIT_USE_SSL:false}
     uri: ${ZIPKIN_RECEIVER_RABBIT_URI:}
