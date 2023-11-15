@@ -37,17 +37,15 @@ public class CassandraBatchDAO implements IBatchDAO {
 
   private CassandraClient client;
   private final DataCarrier<PrepareRequest> dataCarrier;
-  private final int maxBatchSqlSize;
 
   private static final ConcurrentHashMap<String, PreparedStatement> PREPARED_STATEMENT_MAP = new ConcurrentHashMap<>();
 
-  public CassandraBatchDAO(CassandraClient client, int maxBatchCqlSize, int asyncBatchPersistentPoolSize) {
+  public CassandraBatchDAO(CassandraClient client, int asyncBatchPersistentPoolSize) {
     this.client = client;
     String name = "CASSANDRA_ASYNCHRONOUS_BATCH_PERSISTENT";
     if (LOG.isDebugEnabled()) {
-      LOG.debug("CASSANDRA_ASYNCHRONOUS_BATCH_PERSISTENT poolSize: {}, maxBatchCqlSize:{}", asyncBatchPersistentPoolSize, maxBatchCqlSize);
+      LOG.debug("CASSANDRA_ASYNCHRONOUS_BATCH_PERSISTENT poolSize: {}", asyncBatchPersistentPoolSize);
     }
-    this.maxBatchSqlSize = maxBatchCqlSize;
     this.dataCarrier = new DataCarrier<>(name, asyncBatchPersistentPoolSize, 10000);
     this.dataCarrier.consume(new CassandraBatchConsumer(this), asyncBatchPersistentPoolSize, 20);
   }
@@ -73,7 +71,7 @@ public class CassandraBatchDAO implements IBatchDAO {
     });
 
     if (LOG.isDebugEnabled()) {
-      LOG.debug("to execute sql statements execute, data size: {}, maxBatchSqlSize: {}", cqls.size(), maxBatchSqlSize);
+      LOG.debug("to execute sql statements execute, data size: {}", cqls.size());
     }
     if (CollectionUtils.isEmpty(cqls)) {
       return CompletableFuture.completedFuture(null);
@@ -108,7 +106,7 @@ public class CassandraBatchDAO implements IBatchDAO {
     if (LOG.isDebugEnabled()) {
       long end = System.currentTimeMillis();
       long cost = end - start;
-      LOG.debug("execute sync sql statements done, data size: {}, maxBatchSqlSize: {}, cost:{}ms", prepareRequests.size(), maxBatchSqlSize, cost);
+      LOG.debug("execute sync sql statements done, data size: {}, cost:{}ms", prepareRequests.size(), cost);
     }
     return CompletableFuture.completedFuture(null);
   }

@@ -38,7 +38,6 @@ core:
     serverIdleTimeOut: ${ZIPKIN_SERVER_IDLE_TIMEOUT:30000}
     serverAcceptQueueSize: ${ZIPKIN_SERVER_QUEUE_SIZE:0}
     serverMaxRequestHeaderSize: ${ZIPKIN_SERVER_MAX_REQUEST_HEADER_SIZE:8192}
-    serverThreadPoolQueueSize: ${ZIPKIN_SERVER_POOL_QUEUE_SIZE:-1}
     serverEnableTLS: ${ZIPKIN_SERVER_SSL_ENABLED:false}
     serverTLSKeyPath: ${ZIPKIN_SERVER_SSL_KEY_PATH:""}
     serverTLSCertChainPath: ${ZIPKIN_SERVER_SSL_CERT_CHAIN_PATH:""}
@@ -46,8 +45,8 @@ core:
     searchEnable: ${ZIPKIN_SEARCH_ENABLED:true}
 
 storage:
-  selector: ${ZIPKIN_STORAGE:cassandra}
-  cassandra:
+  selector: ${ZIPKIN_STORAGE:cassandra3}
+  cassandra3:
     keyspace: ${ZIPKIN_STORAGE_CASSANDRA_KEYSPACE:zipkin}
     # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
     contactPoints: ${ZIPKIN_STORAGE_CASSANDRA_CONTACT_POINTS:localhost}
@@ -59,8 +58,7 @@ storage:
     # Max pooled connections per datacenter-local host.
     maxConnections: ${ZIPKIN_STORAGE_CASSANDRA_MAX_CONNECTIONS:8}
     # Using ssl for connection, rely on Keystore
-    use-ssl: ${ZIPKIN_STORAGE_CASSANDRA_USE_SSL:false}
-    maxSizeOfBatchCql: ${ZIPKIN_STORAGE_CASSANDRA_MAX_SIZE_OF_BATCH_CQL:2000}
+    useSsl: ${ZIPKIN_STORAGE_CASSANDRA_USE_SSL:false}
     asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_CASSANDRA_ASYNC_BATCH_PERSISTENT_POOL_SIZE:4}
 
 receiver-zipkin:

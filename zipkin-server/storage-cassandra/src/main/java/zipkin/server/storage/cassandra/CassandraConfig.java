@@ -29,10 +29,6 @@ public class CassandraConfig extends ModuleConfig {
   private boolean ensureSchema = true;
 
   /**
-   * The maximum size of batch size of CQL execution
-   */
-  protected int maxSizeOfBatchCql = 2000;
-  /**
    * async batch execute pool size
    */
   protected int asyncBatchPersistentPoolSize  = 4;
@@ -91,14 +87,6 @@ public class CassandraConfig extends ModuleConfig {
 
   public void setPassword(String password) {
     this.password = password;
-  }
-
-  public int getMaxSizeOfBatchCql() {
-    return maxSizeOfBatchCql;
-  }
-
-  public void setMaxSizeOfBatchCql(int maxSizeOfBatchCql) {
-    this.maxSizeOfBatchCql = maxSizeOfBatchCql;
   }
 
   public int getAsyncBatchPersistentPoolSize() {

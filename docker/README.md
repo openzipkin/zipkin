@@ -38,8 +38,8 @@ We also provide [example compose files](examples/README.md) that integrate colle
 such as Kafka or Elasticsearch.
 
 ## Configuration
-Configuration is via environment variables, defined by [zipkin-server](https://github.com/openzipkin/zipkin/blob/master/zipkin-server/README.md). Notably, you'll want to look at the `STORAGE_TYPE` environment variables, which
-include "cassandra", "mysql" and "elasticsearch".
+Configuration is via environment variables, defined by [zipkin-server](https://github.com/openzipkin/zipkin/blob/master/zipkin-server/README.md). Notably, you'll want to look at the `ZIPKIN_STORAGE` environment variables, which
+include "cassandra3", "mysql", "h2", "postgresql", "banyandb" and "elasticsearch".
 
 Note: the `openzipkin/zipkin-slim` image only supports "elasticsearch" storage. To use other storage types, you must use the main image `openzipkin/zipkin`.
 
@@ -69,7 +69,7 @@ For example, to increase heap size, set `JAVA_OPTS` as shown in our [docker-comp
 
 For example, to add debug logging, set `command` as shown in our [docker-compose](examples/docker-compose.yml) file:
 ```yaml
-    command: --logging.level.zipkin2=DEBUG
+    command: -Dlog.level=DEBUG
 ```
 
 ## Runtime user
@@ -92,14 +92,13 @@ accordingly.
 
 Ex. If your link name is "storage" for an Elasticsearch container:
 ```
-  ES_HOSTS=http://$STORAGE_PORT_9200_TCP_ADDR:9200
+  ZIPKIN_STORAGE_ES_CLUSTER_NODES=$STORAGE_PORT_9200_TCP_ADDR:9200
 ```
 
 The above is mentioned only for historical reasons. The OpenZipkin community
 do not support Docker's deprecated container links.
 
 ### MySQL
-If using an external MySQL server or image, ensure schema and other parameters match the [docs](https://github.com/openzipkin/zipkin/tree/master/zipkin-storage/mysql-v1#applying-the-schema).
 
 ## Building images
 
