@@ -1,0 +1,73 @@
+#
+# Copyright 2015-2023 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+header:
+  license:
+    spdx-id: Apache-2.0
+    copyright-owner: The OpenZipkin Authors
+    pattern: |
+      Copyright 2015-20\d\d The OpenZipkin Authors
+
+      Licensed under the Apache License, Version 2.0 \(the "License"\); you may not use this file except
+      in compliance with the License\. You may obtain a copy of the License at
+
+      http:\/\/www\.apache\.org\/licenses\/LICENSE-2.0
+
+      Unless required by applicable law or agreed to in writing, software distributed under the License
+      is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+      or implied. See the License for the specific language governing permissions and limitations under
+      the License\.
+
+  paths-ignore:
+    - 'mvnw'
+    - 'mvnw.cmd'
+    - '.github/**'
+    - '**/.gitignore'
+    - '**/.dockerignore'
+    - '.gitmodules'
+    - '.mvn'
+    - '.editorconfig'
+    - '.gitattributes'
+    - 'skywalking/**'
+    - 'build-bin/**'
+    - 'codeStyle.xml'
+    - '**/*.md'
+    - '**/*.json'
+    - '**/*.ftl'
+    - '**/target/**'
+    - '**/*.iml'
+    - '**/*.ini'
+    - '**/*.crt'
+    - '**/*.pem'
+    - '**/*.txt'
+    - '**/*.xml'
+    - '**/pom.xml'
+    - '**/*.bnd'
+    - 'LICENSE'
+    - 'NOTICE'
+    - 'zipkin-server/server-starter/src/main/resources/version.properties'
+    - 'zipkin-lens/.env.development'
+    - 'zipkin-lens/.eslintignore'
+    - 'zipkin-lens/.linguirc'
+    - 'zipkin-lens/src/translations/**'
+    - 'zipkin-server/receiver-zipkin-scribe/src/main/java/zipkin/server/receiver/zipkin/scribe/generated/**'
+    - '**/*.cql'
+    - 'zipkin-server/storage-cassandra/src/test/resources/cassandra.yaml'
+
+  comment: on-failure
+
+dependency:
+  files:
+    - pom.xml
+    - zipkin-lens/package.json
