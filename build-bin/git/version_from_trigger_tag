@@ -27,7 +27,7 @@ trigger_tag_prefix=${1?required. Ex docker- to match docker-1.2.3}
 trigger_tag=${2?trigger_tag is required. Ex ${trigger_tag_prefix}1.2.3}
 
 # Checking sed output to determine success as exit code handling in sed or awk is awkward
-version=$(echo "${trigger_tag}" | sed -En "s/^${trigger_tag_prefix}([0-9]+\.[0-9]+\.[0-9]+)$/\1/p")
+version=$(echo "${trigger_tag}" | sed -En "s/^${trigger_tag_prefix}([0-9]+\.[0-9]+\.[0-9]+(\-rc[0-9]+))$/\1/p")
 
 if [ -z "$version" ]; then
   >&2 echo invalid trigger tag: ${trigger_tag}

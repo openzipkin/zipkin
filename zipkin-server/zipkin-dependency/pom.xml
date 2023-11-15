@@ -6,7 +6,7 @@
   <parent>
     <artifactId>zipkin-server-parent</artifactId>
     <groupId>io.zipkin</groupId>
-    <version>2.24.4-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-dependency</artifactId>
