@@ -35,7 +35,7 @@ public class ZipkinDependencyCassandraStorageProvider extends ModuleProvider {
 
   @Override
   public String name() {
-    return "cassandra";
+    return "cassandra3";
   }
 
   @Override

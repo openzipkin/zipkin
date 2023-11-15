@@ -1,5 +1,5 @@
 # zipkin-server
-Zipkin Server is a Java 1.11+ service, packaged as an executable jar.
+Zipkin Server is a Java 11+ service, packaged as an executable jar.
 
 Span storage and collectors are [configurable](#configuration). By default, storage is in-memory,
 the HTTP collector (POST /api/v2/spans endpoint) is enabled, and the server listens on port 9411.
@@ -118,7 +118,7 @@ trace_in_latency_sum | sw_backend_instance=$instance_host_$instance_port, protoc
 trace_analysis_error_count | sw_backend_instance=$instance_host_$instance_port, protocol=$transport | The error number of trace analysis
 
 ## Configuration
-We support ENV variable configuration, such as `ZIPKIN_STORAGE=cassandra`, as they are familiar to
+We support ENV variable configuration, such as `ZIPKIN_STORAGE=cassandra3`, as they are familiar to
 administrators and easy to use in runtime environments such as Docker.
 
 Here are the top-level key configuration of Zipkin:
@@ -133,7 +133,7 @@ Here are the top-level key configuration of Zipkin:
 in the collector to support search. This does not disable the entire UI, as trace by ID and
 dependency queries still operate. Disable this when you use another service (such as logs) to find
 trace IDs. Defaults to true
-* `ZIPKIN_STORAGE`: Storage of the tracing data: one of `elasticsearch`, `h2`, `mysql`, `postgresql`, `banyandb`, `cassandra`
+* `ZIPKIN_STORAGE`: Storage of the tracing data: one of `elasticsearch`, `h2`, `mysql`, `postgresql`, `banyandb`, `cassandra3`
 
 ### HTTP Service
 
@@ -232,7 +232,7 @@ $ java -Xmx1G -jar zipkin.jar
 
 ### Cassandra Storage
 Zipkin's Cassandra storage component supports Cassandra 3.11.3+
-and applies when `ZIPKIN_STORAGE` is set to `cassandra`:
+and applies when `ZIPKIN_STORAGE` is set to `cassandra3`:
 
     * `ZIPKIN_STORAGE_CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "zipkin"
     * `ZIPKIN_STORAGE_CASSANDRA_CONTACT_POINTS`: Comma separated list of host addresses part of Cassandra cluster. You can also specify a custom port with 'host:port'. Defaults to localhost on port 9042.
@@ -247,7 +247,7 @@ The following are tuning parameters which may not concern all users:
 
 Example usage with Cassandra:
 ```bash
-$ ZIPKIN_STORAGE=cassandra java -jar zipkin.jar
+$ ZIPKIN_STORAGE=cassandra3 java -jar zipkin.jar
 ```
 
 ### Elasticsearch Storage
@@ -442,8 +442,7 @@ Currently, BanyanDB is still in the PoC stage and it is not recommended to use i
 
 The following apply when `ZIPKIN_STORAGE` is set to `banyandb`:
     
-    * `ZIPKIN_STORAGE_BANYANDB_HOST`: The host of BanyanDB. Defaults to `127.0.0.1`.
-    * `ZIPKIN_STORAGE_BANYANDB_PORT`: The port of BanyanDB. Defaults to `17912`.
+    * `SW_STORAGE_BANYANDB_TARGETS`: A comma-separated list of BanyanDB targets. ex, `localhost:17912,localhost:17913`. Defaults to `localhost:17912`.
     * `ZIPKIN_STORAGE_BANYANDB_MAX_BULK_SIZE`: The max bulk size of BanyanDB. Defaults to `5000`.
     * `ZIPKIN_STORAGE_BANYANDB_FLUSH_INTERVAL`: The flush interval of BanyanDB. Defaults to `15`.
     * `ZIPKIN_STORAGE_BANYANDB_METRICS_SHARDS_NUMBER`: The number of shards of metrics index. Defaults to `1`.
@@ -461,13 +460,7 @@ Example usage:
 $ ZIPKIN_STORAGE=banyandb java -jar zipkin.jar
 ```
 
-### Legacy (v1) storage components
-The following components are no longer encouraged, but exist to help aid
-transition to supported ones. These are indicated as "v1" as they use
-data layouts based on Zipkin's V1 Thrift model, as opposed to the
-simpler v2 data model currently used.
-
-#### MySQL/PostgreSQL Storage
+### MySQL/PostgreSQL Storage
 Zipkin's MySQL/PostgreSQL component is tested against MySQL 5.7, PostgreSQL 9 and applies when `ZIPKIN_STORAGE` is set to `mysql`/`postgresql`:
 
     * `ZIPKIN_JDBC_URL`: The connection string to MySQL, ex. `jdbc:mysql://host/dbname`. 

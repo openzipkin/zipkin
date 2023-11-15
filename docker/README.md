@@ -39,7 +39,7 @@ such as Kafka or Elasticsearch.
 
 ## Configuration
 Configuration is via environment variables, defined by [zipkin-server](https://github.com/openzipkin/zipkin/blob/master/zipkin-server/README.md). Notably, you'll want to look at the `ZIPKIN_STORAGE` environment variables, which
-include "cassandra", "mysql", "h2", "postgresql", "banyandb" and "elasticsearch".
+include "cassandra3", "mysql", "h2", "postgresql", "banyandb" and "elasticsearch".
 
 Note: the `openzipkin/zipkin-slim` image only supports "elasticsearch" storage. To use other storage types, you must use the main image `openzipkin/zipkin`.
 

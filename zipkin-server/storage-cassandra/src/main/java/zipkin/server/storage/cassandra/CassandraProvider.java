@@ -70,7 +70,7 @@ public class CassandraProvider extends ModuleProvider {
 
   @Override
   public String name() {
-    return "cassandra";
+    return "cassandra3";
   }
 
   @Override
@@ -104,7 +104,7 @@ public class CassandraProvider extends ModuleProvider {
         new StorageBuilderFactory.Default());
     this.registerServiceImplementation(
         IBatchDAO.class,
-        new CassandraBatchDAO(client, moduleConfig.getMaxSizeOfBatchCql())
+        new CassandraBatchDAO(client, moduleConfig.getAsyncBatchPersistentPoolSize())
     );
     this.registerServiceImplementation(
         StorageDAO.class,

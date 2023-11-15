@@ -38,7 +38,6 @@ core:
     serverIdleTimeOut: ${ZIPKIN_SERVER_IDLE_TIMEOUT:30000}
     serverAcceptQueueSize: ${ZIPKIN_SERVER_QUEUE_SIZE:0}
     serverMaxRequestHeaderSize: ${ZIPKIN_SERVER_MAX_REQUEST_HEADER_SIZE:8192}
-    serverThreadPoolQueueSize: ${ZIPKIN_SERVER_POOL_QUEUE_SIZE:-1}
     serverEnableTLS: ${ZIPKIN_SERVER_SSL_ENABLED:false}
     serverTLSKeyPath: ${ZIPKIN_SERVER_SSL_KEY_PATH:""}
     serverTLSCertChainPath: ${ZIPKIN_SERVER_SSL_CERT_CHAIN_PATH:""}
@@ -112,8 +111,7 @@ storage: &storage
     maxSizeOfBatchSql: ${ZIPKIN_STORAGE_MAX_SIZE_OF_BATCH_SQL:2000}
     asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_ASYNC_BATCH_PERSISTENT_POOL_SIZE:4}
   banyandb:
-    host: ${ZIPKIN_STORAGE_BANYANDB_HOST:127.0.0.1}
-    port: ${ZIPKIN_STORAGE_BANYANDB_PORT:17912}
+    targets: ${SW_STORAGE_BANYANDB_TARGETS:127.0.0.1:17912}
     maxBulkSize: ${ZIPKIN_STORAGE_BANYANDB_MAX_BULK_SIZE:5000}
     flushInterval: ${ZIPKIN_STORAGE_BANYANDB_FLUSH_INTERVAL:15}
     metricsShardsNumber: ${ZIPKIN_STORAGE_BANYANDB_METRICS_SHARDS_NUMBER:1}
@@ -125,7 +123,7 @@ storage: &storage
     superDatasetBlockIntervalHours: ${ZIPKIN_STORAGE_BANYANDB_SUPER_DATASET_BLOCK_INTERVAL_HOURS:4} # Unit is hour
     superDatasetSegmentIntervalDays: ${ZIPKIN_STORAGE_BANYANDB_SUPER_DATASET_SEGMENT_INTERVAL_DAYS:1} # Unit is day
     specificGroupSettings: ${ZIPKIN_STORAGE_BANYANDB_SPECIFIC_GROUP_SETTINGS:""} # For example, {"group1": {"blockIntervalHours": 4, "segmentIntervalDays": 1}}
-  cassandra:
+  cassandra3:
     keyspace: ${ZIPKIN_STORAGE_CASSANDRA_KEYSPACE:zipkin}
     # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
     contactPoints: ${ZIPKIN_STORAGE_CASSANDRA_CONTACT_POINTS:localhost}
@@ -139,8 +137,7 @@ storage: &storage
     # Max pooled connections per datacenter-local host.
     maxConnections: ${ZIPKIN_STORAGE_CASSANDRA_MAX_CONNECTIONS:8}
     # Using ssl for connection, rely on Keystore
-    use-ssl: ${ZIPKIN_STORAGE_CASSANDRA_USE_SSL:false}
-    maxSizeOfBatchCql: ${ZIPKIN_STORAGE_CASSANDRA_MAX_SIZE_OF_BATCH_CQL:2000}
+    useSsl: ${ZIPKIN_STORAGE_CASSANDRA_USE_SSL:false}
     asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_CASSANDRA_ASYNC_BATCH_PERSISTENT_POOL_SIZE:1}
 
 zipkin-dependency-storage-ext: *storage
