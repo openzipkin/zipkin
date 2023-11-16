@@ -36,7 +36,9 @@ if [ -z "$branch_name" ]; then
   echo "Unable to determine a valid branch. Auto-selecting the default branch: $default_branch"
   branch_name=$default_branch
 fi
+echo "Ready to checkout branch $branch_name"
 git checkout "$branch_name"
 
+git submodule update --init --recursive
 # Prepare and push release commits and the version tag (N.N.N), which triggers deployment.
-./mvnw --batch-mode -nsu -DreleaseVersion=${release_version} -Denforcer.fail=false -Darguments="-DskipTests -Denforcer.fail=false" release:prepare
+./mvnw --batch-mode -nsu -DreleaseVersion=${release_version} -Denforcer.fail=false -Darguments="-DskipTests -Dcheckstyle.skip=true -Denforcer.fail=false" release:prepare
