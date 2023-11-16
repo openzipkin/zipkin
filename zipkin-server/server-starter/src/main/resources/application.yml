@@ -33,7 +33,7 @@ core:
     # The period of doing data persistence. Unit is second.Default value is 25s
     persistentPeriod: ${ZIPKIN_PERSISTENT_PERIOD:25}
     serverHost: ${ZIPKIN_SERVER_HOST:0.0.0.0}
-    serverPort: ${ZIPKIN_SERVER_PORT:9411}
+    serverPort: ${ZIPKIN_SERVER_PORT:${QUERY_PORT:9411}}
     serverMaxThreads: ${ZIPKIN_SERVER_MAX_THREADS:200}
     serverIdleTimeOut: ${ZIPKIN_SERVER_IDLE_TIMEOUT:30000}
     serverAcceptQueueSize: ${ZIPKIN_SERVER_QUEUE_SIZE:0}
@@ -45,17 +45,17 @@ core:
     searchEnable: ${ZIPKIN_SEARCH_ENABLED:true}
 
 storage: &storage
-  selector: ${ZIPKIN_STORAGE:h2}
+  selector: ${ZIPKIN_STORAGE:${STORAGE_TYPE:h2}}
   elasticsearch:
     namespace: ${ZIPKIN_NAMESPACE:"zipkin"}
-    clusterNodes: ${ZIPKIN_STORAGE_ES_CLUSTER_NODES:localhost:9200}
+    clusterNodes: ${ZIPKIN_STORAGE_ES_CLUSTER_NODES:${ES_HOSTS:localhost:9200}}
     protocol: ${ZIPKIN_STORAGE_ES_HTTP_PROTOCOL:"http"}
-    connectTimeout: ${ZIPKIN_STORAGE_ES_CONNECT_TIMEOUT:3000}
-    socketTimeout: ${ZIPKIN_STORAGE_ES_SOCKET_TIMEOUT:30000}
+    connectTimeout: ${ZIPKIN_STORAGE_ES_CONNECT_TIMEOUT:${ES_TIMEOUT:3000}}
+    socketTimeout: ${ZIPKIN_STORAGE_ES_SOCKET_TIMEOUT:${ES_TIMEOUT:30000}}
     responseTimeout: ${ZIPKIN_STORAGE_ES_RESPONSE_TIMEOUT:15000}
     numHttpClientThread: ${ZIPKIN_STORAGE_ES_NUM_HTTP_CLIENT_THREAD:0}
-    user: ${ZIPKIN_ES_USER:""}
-    password: ${ZIPKIN_ES_PASSWORD:""}
+    user: ${ZIPKIN_ES_USER:${ES_USERNAME:""}}
+    password: ${ZIPKIN_ES_PASSWORD:${ES_PASSWORD:""}}
     trustStorePath: ${ZIPKIN_STORAGE_ES_SSL_JKS_PATH:""}
     trustStorePass: ${ZIPKIN_STORAGE_ES_SSL_JKS_PASS:""}
     secretsManagementFile: ${ZIPKIN_ES_SECRETS_MANAGEMENT_FILE:""} # Secrets management file in the properties format includes the username, password, which are managed by 3rd party tool.
@@ -67,8 +67,8 @@ storage: &storage
     specificIndexSettings: ${ZIPKIN_STORAGE_ES_SPECIFIC_INDEX_SETTINGS:""}
     # Super data set has been defined in the codes, such as trace segments.The following 3 config would be improve es performance when storage super size data in es.
     superDatasetDayStep: ${ZIPKIN_STORAGE_ES_SUPER_DATASET_DAY_STEP:-1} # Represent the number of days in the super size dataset record index, the default value is the same as dayStep when the value is less than 0
-    superDatasetIndexShardsFactor: ${ZIPKIN_STORAGE_ES_SUPER_DATASET_INDEX_SHARDS_FACTOR:5} #  This factor provides more shards for the super data set, shards number = indexShardsNumber * superDatasetIndexShardsFactor. Also, this factor effects Zipkin traces.
-    superDatasetIndexReplicasNumber: ${ZIPKIN_STORAGE_ES_SUPER_DATASET_INDEX_REPLICAS_NUMBER:0} # Represent the replicas number in the super size dataset record index, the default value is 0.
+    superDatasetIndexShardsFactor: ${ZIPKIN_STORAGE_ES_SUPER_DATASET_INDEX_SHARDS_FACTOR:${ES_INDEX_SHARDS:5}} #  This factor provides more shards for the super data set, shards number = indexShardsNumber * superDatasetIndexShardsFactor. Also, this factor effects Zipkin traces.
+    superDatasetIndexReplicasNumber: ${ZIPKIN_STORAGE_ES_SUPER_DATASET_INDEX_REPLICAS_NUMBER:${ES_INDEX_REPLICAS:0}} # Represent the replicas number in the super size dataset record index, the default value is 0.
     indexTemplateOrder: ${ZIPKIN_STORAGE_ES_INDEX_TEMPLATE_ORDER:0} # the order of index template
     bulkActions: ${ZIPKIN_STORAGE_ES_BULK_ACTIONS:5000} # Execute the async bulk record data every ${ZIPKIN_STORAGE_ES_BULK_ACTIONS} requests
     batchOfBytes: ${ZIPKIN_STORAGE_ES_BATCH_OF_BYTES:10485760} # A threshold to control the max body size of ElasticSearch Bulk flush.
@@ -89,10 +89,10 @@ storage: &storage
     asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_ASYNC_BATCH_PERSISTENT_POOL_SIZE:1}
   mysql:
     properties:
-      jdbcUrl: ${ZIPKIN_JDBC_URL:"jdbc:mysql://localhost:3306/zipkin?rewriteBatchedStatements=true&allowMultiQueries=true"}
+      jdbcUrl: ${ZIPKIN_JDBC_URL:${MYSQL_JDBC_URL:"jdbc:mysql://localhost:3306/zipkin?rewriteBatchedStatements=true&allowMultiQueries=true"}}
       driverClassName: org.mariadb.jdbc.Driver
-      dataSource.user: ${ZIPKIN_DATA_SOURCE_USER:zipkin}
-      dataSource.password: ${ZIPKIN_DATA_SOURCE_PASSWORD:zipkin}
+      dataSource.user: ${ZIPKIN_DATA_SOURCE_USER:${MYSQL_USER:zipkin}}
+      dataSource.password: ${ZIPKIN_DATA_SOURCE_PASSWORD:${MYSQL_PASS:zipkin}}
       dataSource.cachePrepStmts: ${ZIPKIN_DATA_SOURCE_CACHE_PREP_STMTS:true}
       dataSource.prepStmtCacheSize: ${ZIPKIN_DATA_SOURCE_PREP_STMT_CACHE_SQL_SIZE:250}
       dataSource.prepStmtCacheSqlLimit: ${ZIPKIN_DATA_SOURCE_PREP_STMT_CACHE_SQL_LIMIT:2048}
@@ -124,20 +124,20 @@ storage: &storage
     superDatasetSegmentIntervalDays: ${ZIPKIN_STORAGE_BANYANDB_SUPER_DATASET_SEGMENT_INTERVAL_DAYS:1} # Unit is day
     specificGroupSettings: ${ZIPKIN_STORAGE_BANYANDB_SPECIFIC_GROUP_SETTINGS:""} # For example, {"group1": {"blockIntervalHours": 4, "segmentIntervalDays": 1}}
   cassandra3:
-    keyspace: ${ZIPKIN_STORAGE_CASSANDRA_KEYSPACE:zipkin}
+    keyspace: ${ZIPKIN_STORAGE_CASSANDRA_KEYSPACE:${CASSANDRA_KEYSPACE:zipkin}}
     # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
-    contactPoints: ${ZIPKIN_STORAGE_CASSANDRA_CONTACT_POINTS:localhost}
+    contactPoints: ${ZIPKIN_STORAGE_CASSANDRA_CONTACT_POINTS:${CASSANDRA_CONTACT_POINTS:localhost}}
     # Name of the datacenter that will be considered "local" for load balancing.
-    localDc: ${ZIPKIN_STORAGE_CASSANDRA_LOCAL_DC:datacenter1}
+    localDc: ${ZIPKIN_STORAGE_CASSANDRA_LOCAL_DC:${CASSANDRA_LOCAL_DC:datacenter1}}
     # Will throw an exception on startup if authentication fails.
-    username: ${ZIPKIN_STORAGE_CASSANDRA_USERNAME:}
-    password: ${ZIPKIN_STORAGE_CASSANDRA_PASSWORD:}
+    username: ${ZIPKIN_STORAGE_CASSANDRA_USERNAME:${CASSANDRA_USERNAME:}}
+    password: ${ZIPKIN_STORAGE_CASSANDRA_PASSWORD:${CASSANDRA_PASSWORD:}}
     # Ensuring that schema exists, if enabled tries to execute script /zipkin-server/storage-cassandra/resources/zipkin-schemas.cql.
-    ensureSchema: ${ZIPKIN_STORAGE_CASSANDRA_ENSURE_SCHEMA:true}
+    ensureSchema: ${ZIPKIN_STORAGE_CASSANDRA_ENSURE_SCHEMA:${CASSANDRA_ENSURE_SCHEMA:true}}
     # Max pooled connections per datacenter-local host.
-    maxConnections: ${ZIPKIN_STORAGE_CASSANDRA_MAX_CONNECTIONS:8}
+    maxConnections: ${ZIPKIN_STORAGE_CASSANDRA_MAX_CONNECTIONS:${CASSANDRA_MAX_CONNECTIONS:8}}
     # Using ssl for connection, rely on Keystore
-    useSsl: ${ZIPKIN_STORAGE_CASSANDRA_USE_SSL:false}
+    useSsl: ${ZIPKIN_STORAGE_CASSANDRA_USE_SSL:${CASSANDRA_USE_SSL:false}}
     asyncBatchPersistentPoolSize: ${ZIPKIN_STORAGE_CASSANDRA_ASYNC_BATCH_PERSISTENT_POOL_SIZE:1}
 
 zipkin-dependency-storage-ext: *storage
@@ -147,9 +147,9 @@ receiver-zipkin:
   zipkin:
     # Defines a set of span tag keys which are searchable.
     # The max length of key=value should be less than 256 or will be dropped.
-    searchableTracesTags: ${ZIPKIN_SEARCHABLE_TAG_KEYS:http.method}
+    searchableTracesTags: ${ZIPKIN_SEARCHABLE_TAG_KEYS:${AUTOCOMPLETE_KEYS:http.method}}
     # The trace sample rate precision is 0.0001, should be between 0 and 1
-    traceSampleRate: ${ZIPKIN_SAMPLE_RATE:1}
+    traceSampleRate: ${ZIPKIN_SAMPLE_RATE:${COLLECTOR_SAMPLE_RATE:1}}
 
 receiver-zipkin-http:
   selector: ${ZIPKIN_RECEIVER_ZIPKIN_HTTP:default}
@@ -158,13 +158,13 @@ receiver-zipkin-http:
 receiver-zipkin-kafka:
   selector: ${ZIPKIN_RECEIVER_ZIPKIN_KAFKA:-}
   default:
-    kafkaBootstrapServers: ${ZIPKIN_KAFKA_SERVERS:localhost:9092}
-    kafkaGroupId: ${ZIPKIN_KAFKA_GROUP_ID:zipkin}
-    kafkaTopic: ${ZIPKIN_KAFKA_TOPIC:zipkin}
+    kafkaBootstrapServers: ${ZIPKIN_KAFKA_SERVERS:${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}}
+    kafkaGroupId: ${ZIPKIN_KAFKA_GROUP_ID:${KAFKA_TOPIC:zipkin}}
+    kafkaTopic: ${ZIPKIN_KAFKA_TOPIC:${KAFKA_TOPIC:zipkin}}
     # Kafka consumer config, JSON format as Properties. If it contains the same key with above, would override.
     kafkaConsumerConfig: ${ZIPKIN_KAFKA_CONSUMER_CONFIG:"{\"auto.offset.reset\":\"earliest\",\"enable.auto.commit\":true}"}
     # The Count of the topic consumers
-    kafkaConsumers: ${ZIPKIN_KAFKA_CONSUMERS:1}
+    kafkaConsumers: ${ZIPKIN_KAFKA_CONSUMERS:${KAFKA_STREAMS:1}}
     kafkaHandlerThreadPoolSize: ${ZIPKIN_KAFKA_HANDLER_THREAD_POOL_SIZE:-1}
     kafkaHandlerThreadPoolQueueSize: ${ZIPKIN_KAFKA_HANDLER_THREAD_POOL_QUEUE_SIZE:-1}
 
@@ -172,38 +172,38 @@ receiver-zipkin-activemq:
   selector: ${ZIPKIN_RECEIVER_ZIPKIN_ACTIVEMQ:-}
   default:
     # ActiveMQ broker url. Ex. tcp://localhost:61616 or failover:(tcp://localhost:61616,tcp://remotehost:61616)
-    url: ${ZIPKIN_ACTIVEMQ_URL:}
+    url: ${ZIPKIN_ACTIVEMQ_URL:${ACTIVEMQ_URL:}}
     # Queue from which to collect span messages.
-    queue: ${ZIPKIN_ACTIVEMQ_QUEUE:zipkin}
+    queue: ${ZIPKIN_ACTIVEMQ_QUEUE:${ACTIVEMQ_QUEUE:zipkin}}
     # Client ID prefix for queue consumers.
     clientIdPrefix: ${ZIPKIN_ACTIVEMQ_CLIENT_ID_PREFIX:zipkin}
     # Number of concurrent span consumers.
-    concurrency: ${ZIPKIN_ACTIVEMQ_CONCURRENCY:1}
+    concurrency: ${ZIPKIN_ACTIVEMQ_CONCURRENCY:${ACTIVEMQ_CONCURRENCY:1}}
     # Optional username to connect to the broker
-    username: ${ZIPKIN_ACTIVEMQ_USERNAME:}
+    username: ${ZIPKIN_ACTIVEMQ_USERNAME:${ACTIVEMQ_USERNAME:}}
     # Optional password to connect to the broker
-    password: ${ZIPKIN_ACTIVEMQ_PASSWORD:}
+    password: ${ZIPKIN_ACTIVEMQ_PASSWORD:${ACTIVEMQ_PASSWORD:}}
 
 receiver-zipkin-rabbitmq:
   selector: ${ZIPKIN_RECEIVER_ZIPKIN_RABBITMQ:-}
   default:
     # RabbitMQ server address list (comma-separated list of host:port)
-    addresses: ${ZIPKIN_RECEIVER_RABBIT_ADDRESSES:}
-    concurrency: ${ZIPKIN_RECEIVER_RABBIT_CONCURRENCY:1}
+    addresses: ${ZIPKIN_RECEIVER_RABBIT_ADDRESSES:${RABBIT_ADDRESSES:}}
+    concurrency: ${ZIPKIN_RECEIVER_RABBIT_CONCURRENCY:${RABBIT_CONCURRENCY:1}}
     # TCP connection timeout in milliseconds
-    connection-timeout: ${ZIPKIN_RECEIVER_RABBIT_CONNECTION_TIMEOUT:60000}
-    username: ${ZIPKIN_RECEIVER_RABBIT_USER:guest}
-    password: ${ZIPKIN_RECEIVER_RABBIT_PASSWORD:guest}
-    queue: ${ZIPKIN_RECEIVER_RABBIT_QUEUE:zipkin}
+    connection-timeout: ${ZIPKIN_RECEIVER_RABBIT_CONNECTION_TIMEOUT:${RABBIT_CONNECTION_TIMEOUT:60000}}
+    username: ${ZIPKIN_RECEIVER_RABBIT_USER:${RABBIT_USER:guest}}
+    password: ${ZIPKIN_RECEIVER_RABBIT_PASSWORD:${RABBIT_PASSWORD:guest}}
+    queue: ${ZIPKIN_RECEIVER_RABBIT_QUEUE:${RABBIT_QUEUE:zipkin}}
     virtual-host: ${ZIPKIN_RECEIVER_RABBIT_VIRTUAL_HOST:/}
-    useSsl: ${ZIPKIN_RECEIVER_RABBIT_USE_SSL:false}
-    uri: ${ZIPKIN_RECEIVER_RABBIT_URI:}
+    useSsl: ${ZIPKIN_RECEIVER_RABBIT_USE_SSL:${RABBIT_USE_SSL:false}}
+    uri: ${ZIPKIN_RECEIVER_RABBIT_URI:${RABBIT_URI:}}
 
 receiver-zipkin-scribe:
   selector: ${ZIPKIN_RECEIVER_ZIPKIN_SCRIBE:-}
   default:
-    category: ${ZIPKIN_SCRIBE_CATEGORY:zipkin}
-    port: ${ZIPKIN_COLLECTOR_PORT:9410}
+    category: ${ZIPKIN_SCRIBE_CATEGORY:${SCRIBE_CATEGORY:zipkin}}
+    port: ${ZIPKIN_COLLECTOR_PORT:${COLLECTOR_PORT:9410}}
 
 receiver-zipkin-grpc:
   selector: ${ZIPKIN_RECEIVER_ZIPKIN_GRPC:-}
@@ -225,10 +225,10 @@ query-zipkin:
     restIdleTimeOut: ${ZIPKIN_QUERY_REST_IDLE_TIMEOUT:30000}
     restAcceptQueueSize: ${ZIPKIN_QUERY_REST_QUEUE_SIZE:0}
     restMaxRequestHeaderSize: ${ZIPKIN_QUERY_REST_MAX_REQUEST_HEADER_SIZE:8192}
-    strictTraceId: ${ZIPKIN_QUERY_STRICT_TRACE_ID:true}
+    strictTraceId: ${ZIPKIN_QUERY_STRICT_TRACE_ID:${STRICT_TRACE_ID:true}}
     allowedOrigins: ${ZIPKIN_QUERY_ALLOWED_ORIGINS:"*"}
     # Default look back for traces and autocompleteTags, 1 day in millis
-    lookback: ${ZIPKIN_QUERY_LOOKBACK:86400000}
+    lookback: ${ZIPKIN_QUERY_LOOKBACK:${QUERY_LOOKBACK:86400000}}
     # The Cache-Control max-age (seconds) for serviceNames, remoteServiceNames and spanNames
     namesMaxAge: ${ZIPKIN_QUERY_NAMES_MAX_AGE:300}
     ## The below config are OAP support for zipkin-lens UI
