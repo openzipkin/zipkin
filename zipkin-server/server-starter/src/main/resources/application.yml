@@ -42,7 +42,7 @@ core:
     serverTLSKeyPath: ${ZIPKIN_SERVER_SSL_KEY_PATH:""}
     serverTLSCertChainPath: ${ZIPKIN_SERVER_SSL_CERT_CHAIN_PATH:""}
     clusterSslTrustedCAPath: ${ZIPKIN_SERVER_SSL_TRUSTED_CA_PATH:""}
-    searchEnable: ${ZIPKIN_SEARCH_ENABLED:true}
+    searchEnable: ${ZIPKIN_SEARCH_ENABLED:${SEARCH_ENABLED:true}}
 
 storage: &storage
   selector: ${ZIPKIN_STORAGE:${STORAGE_TYPE:h2}}
