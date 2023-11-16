@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>2.24.4-SNAPSHOT</version>
+    <version>3.0.0-rc0</version>
   </parent>
 
   <artifactId>zipkin-lens</artifactId>
