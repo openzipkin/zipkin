@@ -20,7 +20,6 @@ jobs:
           # the tag MAJOR.MINOR.PATCH event, but we still need to deploy the maven-release-plugin master commit.
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 1  # only need the HEAD commit as license check isn't run
-          submodules: recursive
       - name: Cache local Maven repository
         uses: actions/cache@v2
         with:
@@ -38,4 +37,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |  # GITHUB_REF will be refs/tags/release-MAJOR.MINOR.PATCH
           build-bin/git/login_git &&
-          build-bin/maven/maven_release $(echo ${GITHUB_REF} | cut -d/ -f 3)
+          build-bin/maven/maven_release $(echo ${GITHUB_REF} | cut -d/ -f 3) zipkin-v3
