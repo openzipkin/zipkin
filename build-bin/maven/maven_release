@@ -40,5 +40,7 @@ if [ "$commit_local_release_branch" != "$commit_remote_release_branch" ]; then
   exit 1
 fi
 
+# Update the skywalking version to the same release version
+cd skywalking && ./mvnw versions:set -DnewVersion=${release_version} -DgenerateBackupPoms=false && cd ..
 # Prepare and push release commits and the version tag (N.N.N), which triggers deployment.
-./mvnw --batch-mode -nsu -DreleaseVersion=${release_version} -Denforcer.fail=false -Darguments="-DskipTests -Denforcer.fail=false -Dcheckstyle.skip=true" release:prepare
+./mvnw --batch-mode -nsu -DreleaseVersion=${release_version} -Dskywalking.version=${release_version} -Denforcer.fail=false -Darguments="-DskipTests -Denforcer.fail=false -Dcheckstyle.skip=true" release:prepare
