@@ -67,8 +67,6 @@ export const i18n = setupI18n({
   },
 });
 
-
-
 export function getTheme(): string {
   const override = localStorage.getItem(localeThemeKey);
   if (override) {

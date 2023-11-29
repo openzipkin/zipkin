@@ -27,16 +27,24 @@ import moment from 'moment';
 import React, { useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { selectColorByInfoClass } from '../../constants/color';
+import { ErrorOutline as ErrorOutlineIcon } from '@material-ui/icons';
 import TraceSummary from '../../models/TraceSummary';
 import { formatDuration } from '../../util/timestamp';
 import ServiceBadge from '../common/ServiceBadge';
+import { selectColorByInfoClass } from '../../constants/color';
 
 interface TraceSummaryRowProps {
   traceSummary: TraceSummary;
   toggleFilter: (serviceName: string) => void;
   open: boolean;
   toggleOpen: (traceId: string) => void;
+}
+
+function shouldShowIcon(traceSummary: TraceSummary) {
+  return (
+    traceSummary.infoClass === 'trace-error-critical' ||
+    traceSummary.infoClass === 'trace-error-transient'
+  );
 }
 
 const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({
@@ -69,6 +77,13 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({
         </TableCell>
         <TableCell>
           <Box display="flex" alignItems="center">
+            {shouldShowIcon(traceSummary) && (
+              <ErrorOutlineIcon
+                style={{ marginRight: '8px' }}
+                fontSize="small"
+                color="error"
+              />
+            )}
             {`${traceSummary.root.serviceName}: ${traceSummary.root.spanName}`}
           </Box>
         </TableCell>
@@ -85,10 +100,11 @@ const TraceSummaryRow: React.FC<TraceSummaryRowProps> = ({
           </Box>
         </TableCell>
         <TableCell align="right">{traceSummary.spanCount}</TableCell>
-        <TableCell align="right">
+        <TableCell align="left">
           <Box
             position="relative"
             width="100%"
+            top="-4px"
             data-testid="TraceSummaryRow-duration"
           >
             {formatDuration(traceSummary.duration)}
@@ -149,10 +165,10 @@ const DurationBar = styled.div<{ width: number; infoClass?: string }>`
   position: absolute;
   background-color: ${({ infoClass }) =>
     selectColorByInfoClass(infoClass || '')};
-  opacity: 0.3;
-  top: 0;
+  opacity: 0.9;
+  top: 80%;
   left: 0;
-  height: 100%;
+  height: 50%;
   width: ${({ width }) => width}%;
   border-top-right-radius: 3px;
   border-bottom-right-radius: 3px;
