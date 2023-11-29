@@ -7,7 +7,7 @@ import * as colors from '@material-ui/core/colors';
 import { getTheme } from '../util/locale';
 
 export const primaryColor = '#6a9fb5';
-
+export const errorColor = '#f44336';
 
 export const THEME = [
   {
@@ -17,6 +17,10 @@ export const THEME = [
         primary: {
           main: primaryColor,
           contrastText: '#fff',
+        },
+        error: {
+          main: errorColor,
+          contrastText: '#ffffff',
         },
       },
     }),
@@ -72,10 +76,14 @@ export const THEME = [
       palette: {
         type: 'dark',
         primary: {
-          main: '#dddddd',
-          contrastText: '#000000',
+          main: '#1984BB',
+          contrastText: '#fff',
         },
         secondary: {
+          main: '#f50024',
+          contrastText: '#ffffff',
+        },
+        error: {
           main: '#f50024',
           contrastText: '#ffffff',
         },
@@ -83,8 +91,8 @@ export const THEME = [
     }),
   },
   {
-    name: 'protanopia',
-    label: 'Protanopia',
+    name: 'highcontrast',
+    label: 'High Contrast',
     servicePalette: [
       '#0000FF',
       '#008000',
@@ -101,73 +109,15 @@ export const THEME = [
       palette: {
         type: 'light',
         primary: {
-          main: primaryColor,
-          dark: '#abcdff',
-          contrastText: '#fffff',
+          main: '#005B8A',
+          contrastText: '#fff',
         },
         secondary: {
-          main: '#ffe5e5',
-          dark: '#ffca02',
+          main: '#c8001d',
         },
-      },
-    }),
-  },
-  {
-    name: 'tritanopia',
-    label: 'Tritanopia',
-    servicePalette: [
-      '#0000FF',
-      '#FF0000',
-      '#ADD8E6',
-      '#FFFF00',
-      '#FFB6C1',
-      '#800080',
-      '#00CED1',
-      '#A52A2A',
-      '#FFA500',
-      '#808080',
-    ],
-    theme: createTheme({
-      palette: {
-        type: 'light',
-        primary: {
-          main: primaryColor,
-          dark: '#abcdff',
-          contrastText: '#fffff',
-        },
-        secondary: {
-          main: '#ffe5e5',
-          dark: '#ffca02',
-        },
-      },
-    }),
-  },
-  {
-    name: 'deuteranopia',
-    label: 'Deuteranopia',
-    servicePalette: [
-      '#FF0000',
-      '#008000',
-      '#800080',
-      '#FFFF00',
-      '#00CED1',
-      '#FF69B4',
-      '#A52A2A',
-      '#00008B',
-      '#808080',
-      '#FFA500',
-    ],
-    theme: createTheme({
-      palette: {
-        type: 'light',
-        primary: {
-          main: primaryColor,
-          dark: '#abcdff',
-          contrastText: '#fffff',
-        },
-        secondary: {
-          main: '#ffe5e5',
-          dark: '#ffca02',
+        error: {
+          main: '#c8001d',
+          contrastText: '#ffffff',
         },
       },
     }),
@@ -180,6 +130,10 @@ export const darkTheme = createTheme({
     primary: {
       main: primaryColor,
       contrastText: '#fff',
+    },
+    error: {
+      main: '#f50024',
+      contrastText: '#ffffff',
     },
   },
 });
@@ -271,9 +225,9 @@ export const selectServiceColor = (serviceName: string) =>
 export const selectColorByErrorType = (errorType: string) => {
   switch (errorType) {
     case 'transient':
-      return colors.red[500];
+      return theme.palette.error.main;
     case 'critical':
-      return colors.red[500];
+      return theme.palette.error.main;
     default:
       return theme.palette.primary.main;
   }

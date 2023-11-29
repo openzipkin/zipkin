@@ -15,7 +15,7 @@ import { Button, Menu, MenuItem } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import PaletteIcon from '@material-ui/icons/Palette';
 import React, { useCallback } from 'react';
-import {THEME} from '../../constants/color';
+import { THEME } from '../../constants/color';
 
 import { getTheme, setTheme } from '../../util/locale';
 
