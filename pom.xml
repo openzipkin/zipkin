@@ -512,7 +512,11 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[1.8,16)</version>
+                  <!-- Change this to control LTS JDK versions allowed to build
+                       the project. Keep in sync with .github/workflows -->
+                  <!-- TODO: JDK 15 isn't LTS, so we want at least JDK 17.
+                       However, `./mvnw clean package -pl :zipkin` fails -->
+                  <version>[11,16)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>

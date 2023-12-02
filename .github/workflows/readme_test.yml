@@ -27,22 +27,21 @@ jobs:
             os: windows-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      # Setup latest JDK. We do this to ensure users don't need to use the same version as our
-      # release process. Release uses JDK 11, the last version that can target 1.6 bytecode.
       - name: Setup java
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v4
         with:
-          java-version: 15
+          distribution: 'zulu'  # zulu as it supports a wide version range
+          java-version: '15'  # highest value allowed by maven-enforcer-plugin
       - name: Cache NPM Packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
       - name: Cache local Maven repository
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -51,10 +50,10 @@ jobs:
         run: ./mvnw -T1C -q --batch-mode -DskipTests --also-make -pl zipkin-server clean package
 
   docker:
-    runs-on: ubuntu-20.04 # newest available distribution, aka focal
+    runs-on: ubuntu-22.04 # newest available distribution, aka jellyfish
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
       # Remove apt repos that are known to break from time to time.
@@ -62,21 +61,20 @@ jobs:
       - name: Remove broken apt repos
         run: |
           for apt_file in `grep -lr microsoft /etc/apt/sources.list.d/`; do sudo rm $apt_file; done
-      # Setup latest JDK. We do this to ensure users don't need to use the same version as our
-      # release process. Release uses JDK 11, the last version that can target 1.6 bytecode.
       - name: Setup java
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v4
         with:
-          java-version: 15
+          distribution: 'zulu'  # zulu as it supports a wide version range
+          java-version: '15'  # most recent LTS we support
       # We can't cache Docker without using buildx because GH actions restricts /var/lib/docker
       # That's ok because DOCKER_PARENT_IMAGE is always ghcr.io and local anyway.
       - name: Cache NPM Packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
       - name: Cache local Maven repository
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}

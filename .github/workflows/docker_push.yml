@@ -11,10 +11,10 @@ on:
 
 jobs:
   docker_push:
-    runs-on: ubuntu-20.04  # newest available distribution, aka focal
+    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1  # only needed to get the sha label
       # We can't cache Docker without using buildx because GH actions restricts /var/lib/docker

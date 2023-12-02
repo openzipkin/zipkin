@@ -20,28 +20,33 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-20.04 # newest available distribution, aka focal
+    runs-on: ubuntu-22.04 # newest available distribution, aka jellyfish
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0 # full git history for license check
+      - name: Setup java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'  # zulu as it supports a wide version range
+          java-version: '15'  # highest value allowed by maven-enforcer-plugin
       - name: Cache local Maven repository
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Cache NPM Packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
       - name: Test without Docker
         run: build-bin/maven_go_offline && build-bin/test -Ddocker.skip=true
   test_docker:
-    runs-on: ubuntu-20.04 # newest available distribution, aka focal
+    runs-on: ubuntu-22.04 # newest available distribution, aka jellyfish
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
     strategy:
       matrix:
@@ -53,11 +58,16 @@ jobs:
           - name: zipkin-storage-mysql-v1
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1 # -Dlicense.skip=true so we don't need a full clone
+      - name: Setup java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'  # zulu as it supports a wide version range
+          java-version: '15'  # highest value allowed by maven-enforcer-plugin
       - name: Cache local Maven repository
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
