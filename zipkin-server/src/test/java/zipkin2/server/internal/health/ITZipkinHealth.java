@@ -73,7 +73,10 @@ public class ITZipkinHealth {
 
     // ensure we don't track health in prometheus
     assertThat(scrape())
-      .doesNotContain("health");
+      // "application_ready_time_seconds" includes this test's full class name
+      // which includes its package (named health). We care about the endpoint
+      // /health not being in the results, so check for that here.
+      .doesNotContain("/health");
   }
 
   String scrape() throws InterruptedException {

@@ -10,10 +10,10 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
 
       - name: Configure Git
         run: |
@@ -34,7 +34,7 @@ jobs:
           git remote set-url origin https://github.com/$GITHUB_REPOSITORY.git
 
       - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.2.1
+        uses: helm/chart-releaser-action@v1.6.0
         with:
           charts_dir: charts
         env:

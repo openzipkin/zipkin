@@ -11,17 +11,22 @@ on:
 
 jobs:
   create_release:
-    runs-on: ubuntu-20.04  # newest available distribution, aka focal
+    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           # Prevent use of implicit GitHub Actions read-only token GITHUB_TOKEN. We don't deploy on
           # the tag MAJOR.MINOR.PATCH event, but we still need to deploy the maven-release-plugin master commit.
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 1  # only need the HEAD commit as license check isn't run
+      - name: Setup java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'  # zulu as it supports a wide version range
+          java-version: '11'  # earliest LTS and last that can compile the 1.6 release profile.
       - name: Cache local Maven repository
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
