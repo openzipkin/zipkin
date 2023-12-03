@@ -58,7 +58,7 @@ final class ZipkinGrpcCollector {
       this.metrics = metrics;
     }
 
-    @Override protected CompletionStage<ByteBuf> handleMessage(ServiceRequestContext srCtx, ByteBuf bytes) {
+    @Override protected CompletionStage<ByteBuf> handleMessage(ServiceRequestContext ctx, ByteBuf bytes) {
       metrics.incrementMessages();
       metrics.incrementBytes(bytes.readableBytes());
 
@@ -68,15 +68,7 @@ final class ZipkinGrpcCollector {
 
       try {
         CompletableFutureCallback result = new CompletableFutureCallback();
-
-        // collector.accept might block so need to move off the event loop. We make sure the
-        // callback is context aware to continue the trace.
-        Executor executor = ServiceRequestContext.mapCurrent(
-          ctx -> ctx.makeContextAware(ctx.blockingTaskExecutor()),
-          CommonPools::blockingTaskExecutor);
-
-        collector.acceptSpans(bytes.nioBuffer(), SpanBytesDecoder.PROTO3, result, executor);
-
+        collector.acceptSpans(bytes.nioBuffer(), SpanBytesDecoder.PROTO3, result, ctx.blockingTaskExecutor());
         return result;
       } finally {
         bytes.release();
