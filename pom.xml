@@ -59,7 +59,7 @@
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
     <jackson.version>2.15.0</jackson.version>
 
-    <java-driver.version>4.11.3</java-driver.version>
+    <java-driver.version>4.17.0</java-driver.version>
     <micrometer.version>1.9.3</micrometer.version>
 
     <snappy.version>1.1.10.3</snappy.version>

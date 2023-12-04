@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2015-2021 The OpenZipkin Authors
+# Copyright 2015-2023 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -39,15 +39,7 @@ cat > pom.xml <<-'EOF'
       <version>${cassandra.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>com.github.jbellis</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>net.java.dev.jna</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.googlecode.concurrent-trees</groupId>
           <artifactId>*</artifactId>
         </exclusion>
         <exclusion>
@@ -60,23 +52,11 @@ cat > pom.xml <<-'EOF'
         </exclusion>
       </exclusions>
     </dependency>
-    <!-- Override until Cassandra 4.0 per CASSANDRA-9608 -->
-    <dependency>
-      <groupId>com.github.jbellis</groupId>
-      <artifactId>jamm</artifactId>
-      <version>0.3.3</version>
-    </dependency>
-    <!-- Alpine support CASSANDRA-16212 -->
+    <!-- Use latest to support alpine and additional architecture -->
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>5.6.0</version>
-    </dependency>
-    <!-- NoClassDefFoundError in TrieMemIndex CASSANDRA-16303 (Cassandra 4.0) -->
-    <dependency>
-      <groupId>com.googlecode.concurrent-trees</groupId>
-      <artifactId>concurrent-trees</artifactId>
-      <version>2.6.1</version>
+      <version>5.13.0</version>
     </dependency>
     <!-- log4j not logback -->
     <dependency>
@@ -89,7 +69,7 @@ cat > pom.xml <<-'EOF'
 EOF
 mvn -q --batch-mode -DoutputDirectory=lib \
     -Dcassandra.version=${CASSANDRA_VERSION} \
-    org.apache.maven.plugins:maven-dependency-plugin:3.1.2:copy-dependencies
+    org.apache.maven.plugins:maven-dependency-plugin:3.6.1:copy-dependencies
 rm pom.xml
 
 # Make sure you use relative paths in references like this, so that installation
@@ -133,22 +113,21 @@ log4j.appender.stdout.Target=System.out
 EOF
 
 cat zipkin-schemas/zipkin2-schema.cql zipkin-schemas/zipkin2-schema-indexes.cql > schema
-case ${CASSANDRA_VERSION} in
-  3.11* )
-    cqlversion=3.4.4
-    ;;
-  4* )
-    # read_repair_chance options were removed and make Cassandra crash starting in v4
-    # See https://cassandra.apache.org/doc/latest/operating/read_repair.html#background-read-repair
-    sed -i '/read_repair_chance/d' schema
-    cqlversion=3.4.5
-    ;;
-esac
 
-jdk11_modules="--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+# read_repair_chance options were removed and make Cassandra crash starting in v4
+# See https://cassandra.apache.org/doc/latest/operating/read_repair.html#background-read-repair
+sed -i '/read_repair_chance/d' schema
+
+# Run cassandra on a different port temporarily in order to setup the schema.
+# We also add exports and opens from Cassandra 4, except RMI, which isn't in our JRE image.
+# See https://github.com/apache/cassandra/blob/cassandra-4.0.11/conf/jvm11-server.options
+java -cp 'classes:lib/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc \
+  -Djdk.attach.allowAttachSelf=true \
+  --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
   --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
   --add-exports java.base/sun.nio.ch=ALL-UNNAMED \
   --add-exports java.sql/java.sql=ALL-UNNAMED \
+  --add-opens java.base/java.lang=ALL-UNNAMED \
   --add-opens java.base/java.lang.module=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.loader=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.ref=ALL-UNNAMED \
@@ -156,22 +135,13 @@ jdk11_modules="--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.math=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.module=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.util.jar=ALL-UNNAMED \
-  --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED"
-
-jdk17_modules="--add-opens java.base/java.io=ALL-UNNAMED \
+  --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED \
+  --add-opens java.base/java.io=ALL-UNNAMED \
   --add-opens java.base/java.nio=ALL-UNNAMED \
   --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
   --add-opens java.base/java.util=ALL-UNNAMED \
   --add-opens java.base/java.util.concurrent=ALL-UNNAMED \
-  --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED"
-
-# Run cassandra on a different port temporarily in order to setup the schema.
-# We also add exports and opens from Cassandra 4, except RMI, which isn't in our JRE image.
-# See https://github.com/apache/cassandra/blob/cassandra-4.0.9/conf/jvm11-server.options
-java -cp 'classes:lib/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc \
-  -Djdk.attach.allowAttachSelf=true \
-  ${jdk11_modules} \
-  ${jdk17_modules} \
+  --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED \
   -Dcassandra.storage_port=${temp_storage_port} \
   -Dcassandra.native_transport_port=${temp_native_transport_port} \
   -Dcassandra.storagedir=${PWD} \
@@ -181,7 +151,7 @@ java -cp 'classes:lib/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc
   org.apache.cassandra.service.CassandraDaemon > temp_cassandra.out 2>&1 &
 temp_cassandra_pid=$!
 
-function is_cassandra_alive() {
+is_cassandra_alive() {
   if ! kill -0 ${temp_cassandra_pid}; then
     cat temp_cassandra.out
     maybe_crash_file=hs_err_pid${temp_cassandra_pid}.log
@@ -199,14 +169,14 @@ apk add --update --no-cache python3 py3-pip
 # to be compiled, but something isn't right with aarch64 when installing
 # cqlsh it needs to build cffi. To unblock support for aarch64, adding
 # the following are necessary for compiling cffi. If pip someday changes and
-# doesn't compile cffi on arrch64 then we can remove these dependencies.
+# doesn't compile cffi on aarch64 then we can remove these dependencies.
 apk add --update --no-cache gcc python3-dev musl-dev libffi-dev
 # PEP 668 protects against mixing system and pip packages. Setup virtual env to avoid this.
 python3 -m venv .venv
-source .venv/bin/activate
+. .venv/bin/activate
 pip install -Iq cqlsh
-function cql() {
-  cqlsh --cqlversion=${cqlversion} "$@" 127.0.0.1 ${temp_native_transport_port}
+cql() {
+  cqlsh "$@" 127.0.0.1 ${temp_native_transport_port}
 }
 
 # Excessively long timeout to avoid having to create an ENV variable, decide its name, etc.
