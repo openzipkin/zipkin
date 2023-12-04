@@ -91,7 +91,7 @@ class ServerIntegratedBenchmark {
 
   @Test void elasticsearch() throws Exception {
     GenericContainer<?> elasticsearch =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch7:2.23.2"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch7:2.24.3"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("elasticsearch")
         .withLabel("name", "elasticsearch")
@@ -105,7 +105,7 @@ class ServerIntegratedBenchmark {
 
   @Test void cassandra3() throws Exception {
     GenericContainer<?> cassandra =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-cassandra:2.23.2"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-cassandra:2.24.3"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("cassandra")
         .withLabel("name", "cassandra")
@@ -119,7 +119,7 @@ class ServerIntegratedBenchmark {
 
   @Test void mysql() throws Exception {
     GenericContainer<?> mysql =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:2.23.2"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:2.24.3"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("mysql")
         .withLabel("name", "mysql")
@@ -157,7 +157,7 @@ class ServerIntegratedBenchmark {
     // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     // Use same version as in docker/examples/docker-compose-prometheus.yml
     GenericContainer<?> prometheus =
-      new GenericContainer<>(parse("quay.io/prometheus/prometheus:v2.23.0"))
+      new GenericContainer<>(parse("quay.io/prometheus/prometheus:v2.48.0"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("prometheus")
         .withExposedPorts(9090)

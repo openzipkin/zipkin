@@ -25,7 +25,7 @@ services:
   prometheus:
     # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     # Use latest from https://quay.io/repository/prometheus/prometheus?tab=tags
-    image: quay.io/prometheus/prometheus:v2.23.0
+    image: quay.io/prometheus/prometheus:v2.48.0
     container_name: prometheus
     ports:
       - 9090:9090
