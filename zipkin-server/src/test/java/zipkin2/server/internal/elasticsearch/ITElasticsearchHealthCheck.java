@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,12 +13,15 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import com.linecorp.armeria.client.endpoint.EmptyEndpointGroupException;
 import com.linecorp.armeria.client.endpoint.EndpointSelectionTimeoutException;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
+import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.healthcheck.HealthCheckService;
 import com.linecorp.armeria.server.healthcheck.SettableHealthChecker;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLException;
 import org.awaitility.core.ConditionFactory;
@@ -47,26 +50,36 @@ public class ITElasticsearchHealthCheck {
 
   static final SettableHealthChecker server1Health = new SettableHealthChecker(true);
 
-  static {
-    // Gives better context when there's an exception such as AbortedStreamException
-    System.setProperty("com.linecorp.armeria.verboseExceptions", "always");
-  }
-
   @ClassRule public static ServerRule server1 = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) {
-      sb.service("/", (ctx, req) -> VERSION_RESPONSE.toHttpResponse());
+      sb.service("/", (ctx, req) -> sendResponseAfterAggregate(req, VERSION_RESPONSE));
       sb.service("/_cluster/health", HealthCheckService.of(server1Health));
       sb.serviceUnder("/_cluster/health/", (ctx, req) -> GREEN_RESPONSE.toHttpResponse());
     }
   };
 
+  /** This ensures the response is sent after the request is fully read. */
+  private static HttpResponse sendResponseAfterAggregate(HttpRequest req,
+    AggregatedHttpResponse response) {
+    final CompletableFuture<HttpResponse> future = new CompletableFuture<>();
+    req.aggregate().whenComplete((aggregatedReq, cause) -> {
+      if (cause != null) {
+        future.completeExceptionally(cause);
+      } else {
+        future.complete(response.toHttpResponse());
+      }
+    });
+    return HttpResponse.from(future);
+  }
+
   static final SettableHealthChecker server2Health = new SettableHealthChecker(true);
 
   @ClassRule public static ServerRule server2 = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) {
-      sb.service("/", (ctx, req) -> VERSION_RESPONSE.toHttpResponse());
+      sb.service("/", (ctx, req) -> sendResponseAfterAggregate(req, VERSION_RESPONSE));
       sb.service("/_cluster/health", HealthCheckService.of(server2Health));
-      sb.serviceUnder("/_cluster/health/", (ctx, req) -> GREEN_RESPONSE.toHttpResponse());
+      sb.serviceUnder("/_cluster/health/",
+        (ctx, req) -> sendResponseAfterAggregate(req, GREEN_RESPONSE));
     }
   };
 
@@ -99,7 +112,9 @@ public class ITElasticsearchHealthCheck {
 
   @Test public void allHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      assertOk(storage.check());
+
+      // There's an initialization delay, so await instead of expect everything up now.
+      awaitTimeout.untilAsserted(() -> assertThat(storage.check().ok()).isTrue());
     }
   }
 

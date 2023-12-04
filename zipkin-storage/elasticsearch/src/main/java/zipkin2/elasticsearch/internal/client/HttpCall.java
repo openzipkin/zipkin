@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -23,7 +23,6 @@ import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpRequest;
-import com.linecorp.armeria.common.HttpRequestWriter;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.HttpStatusClass;
@@ -56,33 +55,14 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   /**
-   * A request stream which can have {@link HttpData} of the request body written to it.
-   */
-  public interface RequestStream {
-    /**
-     * Writes the {@link HttpData} to the stream. Returns {@code false} if the stream has been
-     * aborted (e.g., the request timed out while writing), or {@code true} otherwise.
-     */
-    boolean tryWrite(HttpData obj);
-  }
-
-  /**
    * A supplier of {@linkplain HttpHeaders headers} and {@linkplain HttpData body} of a request to
    * Elasticsearch.
    */
-  public interface RequestSupplier {
+  public interface RequestSupplier extends Supplier<HttpRequest> {
     /**
      * Returns the {@linkplain HttpHeaders headers} for this request.
      */
     RequestHeaders headers();
-
-    /**
-     * Writes the body of this request into the {@link RequestStream}. {@link
-     * RequestStream#tryWrite(HttpData)} can be called any number of times to publish any number of
-     * payload objects. It can be useful to split up a large payload into smaller chunks instead of
-     * buffering everything as one payload.
-     */
-    void writeBody(RequestStream requestStream);
   }
 
   static class AggregatedRequestSupplier implements RequestSupplier {
@@ -106,8 +86,8 @@ public final class HttpCall<V> extends Call.Base<V> {
       return request.headers();
     }
 
-    @Override public void writeBody(RequestStream requestStream) {
-      requestStream.tryWrite(request.content());
+    @Override public HttpRequest get() {
+      return request.toHttpRequest();
     }
   }
 
@@ -205,10 +185,7 @@ public final class HttpCall<V> extends Call.Base<V> {
     final HttpResponse response;
     try (SafeCloseable ignored =
            Clients.withContextCustomizer(ctx -> ctx.logBuilder().name(name))) {
-      HttpRequestWriter httpRequest = HttpRequest.streaming(request.headers());
-      response = httpClient.execute(httpRequest);
-      request.writeBody(httpRequest::tryWrite);
-      httpRequest.close();
+      response = httpClient.execute(request.get());
     }
     CompletableFuture<AggregatedHttpResponse> responseFuture =
       RequestContext.mapCurrent(
