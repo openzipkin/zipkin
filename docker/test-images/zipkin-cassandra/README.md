@@ -1,6 +1,6 @@
 ## zipkin-cassandra Docker image
 
-The `zipkin-cassandra` testing image runs Cassandra 3.11.x initialized with Zipkin's schema for
+The `zipkin-cassandra` testing image runs Cassandra 4.x initialized with Zipkin's schema for
 [Cassandra storage](../../../zipkin-storage/cassandra) integration.
 
 Besides norms defined in [docker-java](https://github.com/openzipkin/docker-java), this accepts the

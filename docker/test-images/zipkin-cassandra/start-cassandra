@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2015-2020 The OpenZipkin Authors
+# Copyright 2015-2023 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -40,10 +40,26 @@ export HEALTHCHECK_IP=${IP}
 export HEALTHCHECK_PORT=9042
 export HEALTHCHECK_KIND=tcp
 
-jdk11_modules="--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+echo Starting Cassandra
+# -cp 'classes:lib/*' allows layers to patch the image without packaging or
+# overwriting jars.
+#
+# We also add exports and opens from both Cassandra v4 and v5, except for
+# attach, compiler and rmi because our JRE excludes these modules.
+#
+# Merging makes adding Cassandra v5 easier and lets us share a common JRE 17+
+# with other test images even if Cassandra v4 will never officially support it.
+# https://github.com/apache/cassandra/blob/cassandra-4.0.11/conf/jvm11-server.options
+# https://github.com/apache/cassandra/blob/cassandra-5.0/conf/jvm17-server.options
+exec java -cp 'classes:lib/*' ${JAVA_OPTS} \
+  -Xbootclasspath/a:${JAMM_JAR} -javaagent:${JAMM_JAR} \
+  -Djdk.attach.allowAttachSelf=true \
+  --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
   --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
   --add-exports java.base/sun.nio.ch=ALL-UNNAMED \
   --add-exports java.sql/java.sql=ALL-UNNAMED \
+  --add-exports java.base/java.lang.ref=ALL-UNNAMED \
+  --add-exports jdk.unsupported/sun.misc=ALL-UNNAMED \
   --add-opens java.base/java.lang.module=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.loader=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.ref=ALL-UNNAMED \
@@ -51,25 +67,17 @@ jdk11_modules="--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.math=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.module=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.util.jar=ALL-UNNAMED \
-  --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED"
-
-jdk17_modules="--add-opens java.base/java.io=ALL-UNNAMED \
+  --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED \
+  --add-opens java.base/java.io=ALL-UNNAMED \
   --add-opens java.base/java.nio=ALL-UNNAMED \
   --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
+  --add-opens java.base/java.io=ALL-UNNAMED \
+  --add-opens java.base/java.lang.reflect=ALL-UNNAMED \
+  --add-opens java.base/java.lang=ALL-UNNAMED \
   --add-opens java.base/java.util=ALL-UNNAMED \
+  --add-opens java.base/java.nio=ALL-UNNAMED \
   --add-opens java.base/java.util.concurrent=ALL-UNNAMED \
-  --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED"
-
-echo Starting Cassandra
-# -cp 'classes:lib/*' allows layers to patch the image without packaging or overwriting jars
-#
-# We also add exports and opens from Cassandra 4, except RMI, which isn't in our JRE image.
-# See https://github.com/apache/cassandra/blob/cassandra-4.0-beta3/conf/jvm11-server.options
-exec java -cp 'classes:lib/*' ${JAVA_OPTS} \
-  -Xbootclasspath/a:${JAMM_JAR} -javaagent:${JAMM_JAR} \
-  -Djdk.attach.allowAttachSelf=true \
-  ${jdk11_modules} \
-  ${jdk17_modules} \
+  --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED \
   -Djava.io.tmpdir=/tmp \
   -Dcassandra-foreground=yes \
   -Dcassandra.storagedir=${PWD} \
