@@ -119,15 +119,22 @@ cat zipkin-schemas/zipkin2-schema.cql zipkin-schemas/zipkin2-schema-indexes.cql 
 sed -i '/read_repair_chance/d' schema
 
 # Run cassandra on a different port temporarily in order to setup the schema.
-# We also add exports and opens from Cassandra 4, except RMI, which isn't in our JRE image.
-# See https://github.com/apache/cassandra/blob/cassandra-4.0.11/conf/jvm11-server.options
+#
+# We also add exports and opens from both Cassandra v4 and v5, except for
+# attach, compiler and rmi because our JRE excludes these modules.
+#
+# Merging makes adding Cassandra v5 easier and lets us share a common JRE 17+
+# with other test images even if Cassandra v4 will never officially support it.
+# https://github.com/apache/cassandra/blob/cassandra-4.0.11/conf/jvm11-server.options
+# https://github.com/apache/cassandra/blob/cassandra-5.0/conf/jvm17-server.options
 java -cp 'classes:lib/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc \
   -Djdk.attach.allowAttachSelf=true \
   --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
   --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
   --add-exports java.base/sun.nio.ch=ALL-UNNAMED \
   --add-exports java.sql/java.sql=ALL-UNNAMED \
-  --add-opens java.base/java.lang=ALL-UNNAMED \
+  --add-exports java.base/java.lang.ref=ALL-UNNAMED \
+  --add-exports jdk.unsupported/sun.misc=ALL-UNNAMED \
   --add-opens java.base/java.lang.module=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.loader=ALL-UNNAMED \
   --add-opens java.base/jdk.internal.ref=ALL-UNNAMED \
@@ -139,7 +146,11 @@ java -cp 'classes:lib/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc
   --add-opens java.base/java.io=ALL-UNNAMED \
   --add-opens java.base/java.nio=ALL-UNNAMED \
   --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
+  --add-opens java.base/java.io=ALL-UNNAMED \
+  --add-opens java.base/java.lang.reflect=ALL-UNNAMED \
+  --add-opens java.base/java.lang=ALL-UNNAMED \
   --add-opens java.base/java.util=ALL-UNNAMED \
+  --add-opens java.base/java.nio=ALL-UNNAMED \
   --add-opens java.base/java.util.concurrent=ALL-UNNAMED \
   --add-opens java.base/java.util.concurrent.atomic=ALL-UNNAMED \
   -Dcassandra.storage_port=${temp_storage_port} \
