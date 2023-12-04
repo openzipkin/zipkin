@@ -29,7 +29,6 @@ import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.storage.StorageComponent;
 
 import static java.lang.String.format;
-import static java.util.logging.Level.FINE;
 import static zipkin2.Call.propagateIfFatal;
 
 /**
