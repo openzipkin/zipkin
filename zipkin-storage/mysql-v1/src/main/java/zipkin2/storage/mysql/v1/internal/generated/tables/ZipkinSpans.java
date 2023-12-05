@@ -48,7 +48,8 @@ public class ZipkinSpans extends TableImpl<Record> {
     }
 
     /**
-     * The column <code>zipkin.zipkin_spans.trace_id_high</code>. If non zero, this means the trace uses 128 bit traceIds instead of 64 bit
+     * The column <code>zipkin.zipkin_spans.trace_id_high</code>. If non zero,
+     * this means the trace uses 128 bit traceIds instead of 64 bit
      */
     public final TableField<Record, Long> TRACE_ID_HIGH = createField(DSL.name("trace_id_high"), SQLDataType.BIGINT.nullable(false).defaultValue(DSL.inline("0", SQLDataType.BIGINT)), this, "If non zero, this means the trace uses 128 bit traceIds instead of 64 bit");
 
@@ -83,12 +84,14 @@ public class ZipkinSpans extends TableImpl<Record> {
     public final TableField<Record, Boolean> DEBUG = createField(DSL.name("debug"), SQLDataType.BIT, this, "");
 
     /**
-     * The column <code>zipkin.zipkin_spans.start_ts</code>. Span.timestamp(): epoch micros used for endTs query and to implement TTL
+     * The column <code>zipkin.zipkin_spans.start_ts</code>. Span.timestamp():
+     * epoch micros used for endTs query and to implement TTL
      */
     public final TableField<Record, Long> START_TS = createField(DSL.name("start_ts"), SQLDataType.BIGINT, this, "Span.timestamp(): epoch micros used for endTs query and to implement TTL");
 
     /**
-     * The column <code>zipkin.zipkin_spans.duration</code>. Span.duration(): micros used for minDuration and maxDuration query
+     * The column <code>zipkin.zipkin_spans.duration</code>. Span.duration():
+     * micros used for minDuration and maxDuration query
      */
     public final TableField<Record, Long> DURATION = createField(DSL.name("duration"), SQLDataType.BIGINT, this, "Span.duration(): micros used for minDuration and maxDuration query");
 
@@ -127,22 +130,17 @@ public class ZipkinSpans extends TableImpl<Record> {
 
     @Override
     public Schema getSchema() {
-        return Zipkin.ZIPKIN;
+        return aliased() ? null : Zipkin.ZIPKIN;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.ZIPKIN_SPANS_NAME, Indexes.ZIPKIN_SPANS_REMOTE_SERVICE_NAME, Indexes.ZIPKIN_SPANS_START_TS, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH);
+        return Arrays.asList(Indexes.ZIPKIN_SPANS_NAME, Indexes.ZIPKIN_SPANS_REMOTE_SERVICE_NAME, Indexes.ZIPKIN_SPANS_START_TS, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH);
     }
 
     @Override
     public UniqueKey<Record> getPrimaryKey() {
         return Keys.KEY_ZIPKIN_SPANS_PRIMARY;
-    }
-
-    @Override
-    public List<UniqueKey<Record>> getKeys() {
-        return Arrays.<UniqueKey<Record>>asList(Keys.KEY_ZIPKIN_SPANS_PRIMARY);
     }
 
     @Override
@@ -153,6 +151,11 @@ public class ZipkinSpans extends TableImpl<Record> {
     @Override
     public ZipkinSpans as(Name alias) {
         return new ZipkinSpans(alias, this);
+    }
+
+    @Override
+    public ZipkinSpans as(Table<?> alias) {
+        return new ZipkinSpans(alias.getQualifiedName(), this);
     }
 
     /**
@@ -169,5 +172,13 @@ public class ZipkinSpans extends TableImpl<Record> {
     @Override
     public ZipkinSpans rename(Name name) {
         return new ZipkinSpans(name, null);
+    }
+
+    /**
+     * Rename this table
+     */
+    @Override
+    public ZipkinSpans rename(Table<?> name) {
+        return new ZipkinSpans(name.getQualifiedName(), null);
     }
 }

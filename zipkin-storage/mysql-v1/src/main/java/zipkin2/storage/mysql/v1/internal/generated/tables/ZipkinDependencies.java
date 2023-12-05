@@ -5,8 +5,6 @@ package zipkin2.storage.mysql.v1.internal.generated.tables;
 
 
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.List;
 
 import org.jooq.Field;
 import org.jooq.ForeignKey;
@@ -106,17 +104,12 @@ public class ZipkinDependencies extends TableImpl<Record> {
 
     @Override
     public Schema getSchema() {
-        return Zipkin.ZIPKIN;
+        return aliased() ? null : Zipkin.ZIPKIN;
     }
 
     @Override
     public UniqueKey<Record> getPrimaryKey() {
         return Keys.KEY_ZIPKIN_DEPENDENCIES_PRIMARY;
-    }
-
-    @Override
-    public List<UniqueKey<Record>> getKeys() {
-        return Arrays.<UniqueKey<Record>>asList(Keys.KEY_ZIPKIN_DEPENDENCIES_PRIMARY);
     }
 
     @Override
@@ -127,6 +120,11 @@ public class ZipkinDependencies extends TableImpl<Record> {
     @Override
     public ZipkinDependencies as(Name alias) {
         return new ZipkinDependencies(alias, this);
+    }
+
+    @Override
+    public ZipkinDependencies as(Table<?> alias) {
+        return new ZipkinDependencies(alias.getQualifiedName(), this);
     }
 
     /**
@@ -143,5 +141,13 @@ public class ZipkinDependencies extends TableImpl<Record> {
     @Override
     public ZipkinDependencies rename(Name name) {
         return new ZipkinDependencies(name, null);
+    }
+
+    /**
+     * Rename this table
+     */
+    @Override
+    public ZipkinDependencies rename(Table<?> name) {
+        return new ZipkinDependencies(name.getQualifiedName(), null);
     }
 }

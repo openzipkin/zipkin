@@ -59,9 +59,10 @@ public class Zipkin extends SchemaImpl {
 
     @Override
     public final List<Table<?>> getTables() {
-        return Arrays.<Table<?>>asList(
+        return Arrays.asList(
             ZipkinAnnotations.ZIPKIN_ANNOTATIONS,
             ZipkinDependencies.ZIPKIN_DEPENDENCIES,
-            ZipkinSpans.ZIPKIN_SPANS);
+            ZipkinSpans.ZIPKIN_SPANS
+        );
     }
 }
