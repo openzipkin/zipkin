@@ -45,14 +45,14 @@ cat > pom.xml <<-'EOF'
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-      <version>1.7.30</version>
+      <version>1.7.36</version>
     </dependency>
   </dependencies>
 </project>
 EOF
 mvn -q --batch-mode -DoutputDirectory=lib \
     -Dscala.version=${SCALA_VERSION} -Dkafka.version=${KAFKA_VERSION} \
-    org.apache.maven.plugins:maven-dependency-plugin:3.1.2:copy-dependencies
+    org.apache.maven.plugins:maven-dependency-plugin:3.6.1:copy-dependencies
 rm pom.xml
 
 # Make sure you use relative paths in references like this, so that installation

@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2021 The OpenZipkin Authors
+# Copyright 2015-2023 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -17,7 +17,7 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/java
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG java_version=17.0.8_p7
+ARG java_version=17.0.9_p8
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -35,7 +35,7 @@ WORKDIR /install
 # Use latest 6.x version from https://www.elastic.co/downloads/past-releases#elasticsearch
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG elasticsearch6_version=6.8.13
+ARG elasticsearch6_version=6.8.23
 
 # Download only the OSS distribution (lacks X-Pack)
 RUN \
@@ -49,7 +49,7 @@ COPY --from=scratch /config/ ./config/
 
 FROM ghcr.io/openzipkin/java:${java_version}-jre as zipkin-elasticsearch6
 LABEL org.opencontainers.image.description="Elasticsearch OSS distribution on OpenJDK and Alpine Linux"
-ARG elasticsearch6_version=6.8.13
+ARG elasticsearch6_version=6.8.23
 LABEL elasticsearch-version=$elasticsearch6_version
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path

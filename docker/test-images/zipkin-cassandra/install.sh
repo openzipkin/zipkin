@@ -62,7 +62,7 @@ cat > pom.xml <<-'EOF'
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-      <version>1.7.30</version>
+      <version>1.7.36</version>
     </dependency>
   </dependencies>
 </project>

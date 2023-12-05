@@ -21,6 +21,8 @@
 set -ue
 
 # Normalize docker_arch to what's available
+#
+# Note: s390x and ppc64le were added for Knative
 docker_arch=${DOCKER_ARCH:-$(uname -m)}
 case ${docker_arch} in
   amd64* )
@@ -37,6 +39,9 @@ case ${docker_arch} in
     ;;
   s390x* )
     docker_arch=s390x
+    ;;
+  ppc64le* )
+    docker_arch=ppc64le
     ;;
   * )
     >&2 echo "Unsupported DOCKER_ARCH: ${docker_arch}"

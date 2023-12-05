@@ -20,4 +20,4 @@ version=${2:-}
 docker_args=$($(dirname "$0")/docker_args ${version})
 
 echo "Building image ${docker_tag}"
-DOCKER_BUILDKIT=1 docker build --pull ${docker_args} --tag ${docker_tag} .
+DOCKER_BUILDKIT=1 docker build --network=host --pull ${docker_args} --tag ${docker_tag} .

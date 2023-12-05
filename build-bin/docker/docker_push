@@ -64,7 +64,8 @@ for repo in ${docker_repos}; do
 done
 
 docker_args=$($(dirname "$0")/docker_args ${version})
-docker_archs=${DOCKER_ARCHS:-amd64 arm64}
+# Note: s390x and ppc64le were added for Knative
+docker_archs=${DOCKER_ARCHS:-amd64 arm64 s390x ppc64le}
 
 echo "Will build the following architectures: ${docker_archs}"
 
@@ -114,4 +115,3 @@ else
     docker manifest push -p ${tag}
   done
 fi
-

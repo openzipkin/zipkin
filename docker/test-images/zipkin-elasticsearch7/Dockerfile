@@ -17,7 +17,7 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/java
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG java_version=17.0.8_p7
+ARG java_version=17.0.9_p8
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -35,11 +35,14 @@ WORKDIR /install
 # Use latest 7.x version from https://www.elastic.co/downloads/past-releases#elasticsearch
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG elasticsearch7_version=7.10.1
+#
+# TODO: 7.10.2 is the last OSS no-jdk version. To update requires a switch to non OSS.
+# See https://www.elastic.co/downloads/past-releases#elasticsearch-oss-no-jdk
+ARG elasticsearch7_version=7.10.2
 
 # Download only the OSS distribution (lacks X-Pack)
 RUN \
-# Connection resets are frequent in GitHub Actions workflows
+# Connection resets are frequent in GitHub Actions workflows \
 wget --random-wait --tries=5 -qO- \
 # We don't download bin scripts as we customize for reasons including BusyBox problems
 https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-${elasticsearch7_version}-no-jdk-linux-x86_64.tar.gz| tar xz \
@@ -49,7 +52,7 @@ COPY --from=scratch /config/ ./config/
 
 FROM ghcr.io/openzipkin/java:${java_version}-jre as zipkin-elasticsearch7
 LABEL org.opencontainers.image.description="Elasticsearch OSS distribution on OpenJDK and Alpine Linux"
-ARG elasticsearch7_version=7.10.0
+ARG elasticsearch7_version=7.10.2
 LABEL elasticsearch-version=$elasticsearch7_version
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path

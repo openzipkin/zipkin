@@ -10,11 +10,18 @@ case ${version} in
     ;;
 esac
 
+# Don't attempt ppc64le until there's a package for recent LTS versions.
+# See https://github.com/openzipkin/zipkin/issues/3443
+export DOCKER_ARCHS="amd64 arm64 s390x"
+
 build-bin/docker/docker_push openzipkin/zipkin ${version}
 DOCKER_TARGET=zipkin-slim build-bin/docker/docker_push openzipkin/zipkin-slim ${version}
 
 # testing images only push to ghcro.io
 export DOCKER_RELEASE_REPOS=ghcr.io
+# Don't attempt unfamiliar archs on test images
+export DOCKER_ARCHS="amd64 arm64"
+
 for name in $(ls docker/test-images/*/Dockerfile|cut -f3 -d/); do
   DOCKER_FILE=docker/test-images/${name}/Dockerfile build-bin/docker/docker_push openzipkin/${name} ${version}
 done
