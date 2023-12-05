@@ -29,7 +29,9 @@
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
 
-    <jooq.version>3.18.7</jooq.version>
+    <!-- TODO: upgrade when we make floor JDK 11 or 17
+         3.16 is the last to compile with JDK <17; 3.14 last for Java 8 -->
+    <jooq.version>3.14.16</jooq.version>
 
     <!-- jOOQ doesn't add the Generated annotation, so we have to explicitly disable rules -->
     <errorprone.args>-Xep:InconsistentCapitalization:OFF</errorprone.args>

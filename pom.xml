@@ -78,7 +78,7 @@
     <HikariCP.version>5.1.0</HikariCP.version>
     <slf4j.version>1.7.36</slf4j.version>
     <auto-value.version>1.10.4</auto-value.version>
-    <git-commit-id.version>7.0.0</git-commit-id.version>
+    <git-commit-id.version>4.9.10</git-commit-id.version>
 
     <!-- Test only dependencies -->
     <junit.version>4.13.2</junit.version>

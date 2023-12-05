@@ -48,68 +48,57 @@ public class ZipkinAnnotations extends TableImpl<Record> {
     }
 
     /**
-     * The column <code>zipkin.zipkin_annotations.trace_id_high</code>. If non
-     * zero, this means the trace uses 128 bit traceIds instead of 64 bit
+     * The column <code>zipkin.zipkin_annotations.trace_id_high</code>. If non zero, this means the trace uses 128 bit traceIds instead of 64 bit
      */
     public final TableField<Record, Long> TRACE_ID_HIGH = createField(DSL.name("trace_id_high"), SQLDataType.BIGINT.nullable(false).defaultValue(DSL.inline("0", SQLDataType.BIGINT)), this, "If non zero, this means the trace uses 128 bit traceIds instead of 64 bit");
 
     /**
-     * The column <code>zipkin.zipkin_annotations.trace_id</code>. coincides
-     * with zipkin_spans.trace_id
+     * The column <code>zipkin.zipkin_annotations.trace_id</code>. coincides with zipkin_spans.trace_id
      */
     public final TableField<Record, Long> TRACE_ID = createField(DSL.name("trace_id"), SQLDataType.BIGINT.nullable(false), this, "coincides with zipkin_spans.trace_id");
 
     /**
-     * The column <code>zipkin.zipkin_annotations.span_id</code>. coincides with
-     * zipkin_spans.id
+     * The column <code>zipkin.zipkin_annotations.span_id</code>. coincides with zipkin_spans.id
      */
     public final TableField<Record, Long> SPAN_ID = createField(DSL.name("span_id"), SQLDataType.BIGINT.nullable(false), this, "coincides with zipkin_spans.id");
 
     /**
-     * The column <code>zipkin.zipkin_annotations.a_key</code>.
-     * BinaryAnnotation.key or Annotation.value if type == -1
+     * The column <code>zipkin.zipkin_annotations.a_key</code>. BinaryAnnotation.key or Annotation.value if type == -1
      */
     public final TableField<Record, String> A_KEY = createField(DSL.name("a_key"), SQLDataType.VARCHAR(255).nullable(false), this, "BinaryAnnotation.key or Annotation.value if type == -1");
 
     /**
-     * The column <code>zipkin.zipkin_annotations.a_value</code>.
-     * BinaryAnnotation.value(), which must be smaller than 64KB
+     * The column <code>zipkin.zipkin_annotations.a_value</code>. BinaryAnnotation.value(), which must be smaller than 64KB
      */
     public final TableField<Record, byte[]> A_VALUE = createField(DSL.name("a_value"), SQLDataType.BLOB, this, "BinaryAnnotation.value(), which must be smaller than 64KB");
 
     /**
-     * The column <code>zipkin.zipkin_annotations.a_type</code>.
-     * BinaryAnnotation.type() or -1 if Annotation
+     * The column <code>zipkin.zipkin_annotations.a_type</code>. BinaryAnnotation.type() or -1 if Annotation
      */
     public final TableField<Record, Integer> A_TYPE = createField(DSL.name("a_type"), SQLDataType.INTEGER.nullable(false), this, "BinaryAnnotation.type() or -1 if Annotation");
 
     /**
-     * The column <code>zipkin.zipkin_annotations.a_timestamp</code>. Used to
-     * implement TTL; Annotation.timestamp or zipkin_spans.timestamp
+     * The column <code>zipkin.zipkin_annotations.a_timestamp</code>. Used to implement TTL; Annotation.timestamp or zipkin_spans.timestamp
      */
     public final TableField<Record, Long> A_TIMESTAMP = createField(DSL.name("a_timestamp"), SQLDataType.BIGINT, this, "Used to implement TTL; Annotation.timestamp or zipkin_spans.timestamp");
 
     /**
-     * The column <code>zipkin.zipkin_annotations.endpoint_ipv4</code>. Null
-     * when Binary/Annotation.endpoint is null
+     * The column <code>zipkin.zipkin_annotations.endpoint_ipv4</code>. Null when Binary/Annotation.endpoint is null
      */
     public final TableField<Record, Integer> ENDPOINT_IPV4 = createField(DSL.name("endpoint_ipv4"), SQLDataType.INTEGER, this, "Null when Binary/Annotation.endpoint is null");
 
     /**
-     * The column <code>zipkin.zipkin_annotations.endpoint_ipv6</code>. Null
-     * when Binary/Annotation.endpoint is null, or no IPv6 address
+     * The column <code>zipkin.zipkin_annotations.endpoint_ipv6</code>. Null when Binary/Annotation.endpoint is null, or no IPv6 address
      */
     public final TableField<Record, byte[]> ENDPOINT_IPV6 = createField(DSL.name("endpoint_ipv6"), SQLDataType.BINARY(16), this, "Null when Binary/Annotation.endpoint is null, or no IPv6 address");
 
     /**
-     * The column <code>zipkin.zipkin_annotations.endpoint_port</code>. Null
-     * when Binary/Annotation.endpoint is null
+     * The column <code>zipkin.zipkin_annotations.endpoint_port</code>. Null when Binary/Annotation.endpoint is null
      */
     public final TableField<Record, Short> ENDPOINT_PORT = createField(DSL.name("endpoint_port"), SQLDataType.SMALLINT, this, "Null when Binary/Annotation.endpoint is null");
 
     /**
-     * The column <code>zipkin.zipkin_annotations.endpoint_service_name</code>.
-     * Null when Binary/Annotation.endpoint is null
+     * The column <code>zipkin.zipkin_annotations.endpoint_service_name</code>. Null when Binary/Annotation.endpoint is null
      */
     public final TableField<Record, String> ENDPOINT_SERVICE_NAME = createField(DSL.name("endpoint_service_name"), SQLDataType.VARCHAR(255), this, "Null when Binary/Annotation.endpoint is null");
 
@@ -148,17 +137,17 @@ public class ZipkinAnnotations extends TableImpl<Record> {
 
     @Override
     public Schema getSchema() {
-        return aliased() ? null : Zipkin.ZIPKIN;
+        return Zipkin.ZIPKIN;
     }
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.ZIPKIN_ANNOTATIONS_A_KEY, Indexes.ZIPKIN_ANNOTATIONS_A_TYPE, Indexes.ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_2, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_3);
+        return Arrays.<Index>asList(Indexes.ZIPKIN_ANNOTATIONS_A_KEY, Indexes.ZIPKIN_ANNOTATIONS_A_TYPE, Indexes.ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_2, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_3);
     }
 
     @Override
-    public List<UniqueKey<Record>> getUniqueKeys() {
-        return Arrays.asList(Keys.KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH);
+    public List<UniqueKey<Record>> getKeys() {
+        return Arrays.<UniqueKey<Record>>asList(Keys.KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH);
     }
 
     @Override
@@ -169,11 +158,6 @@ public class ZipkinAnnotations extends TableImpl<Record> {
     @Override
     public ZipkinAnnotations as(Name alias) {
         return new ZipkinAnnotations(alias, this);
-    }
-
-    @Override
-    public ZipkinAnnotations as(Table<?> alias) {
-        return new ZipkinAnnotations(alias.getQualifiedName(), this);
     }
 
     /**
@@ -190,13 +174,5 @@ public class ZipkinAnnotations extends TableImpl<Record> {
     @Override
     public ZipkinAnnotations rename(Name name) {
         return new ZipkinAnnotations(name, null);
-    }
-
-    /**
-     * Rename this table
-     */
-    @Override
-    public ZipkinAnnotations rename(Table<?> name) {
-        return new ZipkinAnnotations(name.getQualifiedName(), null);
     }
 }
