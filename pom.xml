@@ -80,7 +80,7 @@
     -->
     <mariadb-java-client.version>2.7.1</mariadb-java-client.version>
     <HikariCP.version>3.4.5</HikariCP.version>
-    <slf4j.version>1.7.30</slf4j.version>
+    <slf4j.version>1.7.36</slf4j.version>
     <auto-value.version>1.7.4</auto-value.version>
     <git-commit-id.version>4.0.3</git-commit-id.version>
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2015-2021 The OpenZipkin Authors
+# Copyright 2019-2023 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -46,21 +46,21 @@ if [ -n "${DOCKER_TARGET}" ]; then
 fi
 
 # When non-empty, becomes the base layer including tag appropriate for the image being built.
-# Ex. ghcr.io/openzipkin/java:17.0.8_p7-jre
+# e.g. ghcr.io/openzipkin/java:21.0.1_p12-jre
 #
-# This is not required to be a base (FROM scratch) image like ghcr.io/openzipkin/alpine:3.14.2
+# This is not required to be a base (FROM scratch) image like ghcr.io/openzipkin/alpine:3.12.3
 # See https://docs.docker.com/glossary/#parent-image
 if [ -n "${DOCKER_PARENT_IMAGE}" ]; then
   docker_args="${docker_args} --build-arg docker_parent_image=${DOCKER_PARENT_IMAGE}"
 fi
 
-# When non-empty, becomes the build-arg alpine_version. Ex. "3.18.2"
+# When non-empty, becomes the build-arg alpine_version. e.g. "3.12.3"
 # Used to align base layers from https://github.com/orgs/openzipkin/packages/container/package/alpine
 if [ -n "${ALPINE_VERSION}" ]; then
   docker_args="${docker_args} --build-arg alpine_version=${ALPINE_VERSION}"
 fi
 
-# When non-empty, becomes the build-arg java_version. Ex. "17.0.8_p7"
+# When non-empty, becomes the build-arg java_version. e.g. "21.0.1_p12"
 # Used to align base layers from https://github.com/orgs/openzipkin/packages/container/package/java
 if [ -n "${JAVA_VERSION}" ]; then
   docker_args="${docker_args} --build-arg java_version=${JAVA_VERSION}"
@@ -69,13 +69,13 @@ if [ -n "${JAVA_VERSION}" ]; then
   java_major_version=$(echo ${JAVA_VERSION}| cut -f1 -d .)
   case ${java_major_version} in
     8) java_home=/usr/lib/jvm/java-1.8-openjdk;;
-    1?) java_home=/usr/lib/jvm/java-${java_major_version}-openjdk;;
+    1?|2?|3?) java_home=/usr/lib/jvm/java-${java_major_version}-openjdk;;
   esac
 
   if [ -n "${java_home}" ]; then docker_args="${docker_args} --build-arg java_home=${java_home}"; fi
 fi
 
-# When non-empty, becomes the build-arg maven_classifier. Ex. "module" or "exec"
+# When non-empty, becomes the build-arg maven_classifier. e.g. "module" or "exec"
 # Used as the classifier arg to ./build-bin/maven/maven_unjar. Allows building two images with the
 # same Dockerfile, varying on classifier, like openzipkin/zipkin vs openzipkin/zipkin-slim
 if [ -n "${MAVEN_CLASSIFIER}" ]; then

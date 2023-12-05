@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2015-2021 The OpenZipkin Authors
+# Copyright 2019-2023 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -64,7 +64,8 @@ for repo in ${docker_repos}; do
 done
 
 docker_args=$($(dirname "$0")/docker_args ${version})
-docker_archs=${DOCKER_ARCHS:-amd64 arm64}
+# Note: s390x and ppc64le were added for Knative
+docker_archs=${DOCKER_ARCHS:-amd64 arm64 s390x ppc64le}
 
 echo "Will build the following architectures: ${docker_archs}"
 
@@ -114,4 +115,3 @@ else
     docker manifest push -p ${tag}
   done
 fi
-

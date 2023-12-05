@@ -1,6 +1,6 @@
 ## zipkin-mysql Docker image
 
-The `zipkin-mysql` testing image runs MySQL 3.11.x initialized with Zipkin's schema for
+The `zipkin-mysql` testing image runs MySQL 10.x initialized with Zipkin's schema for
 [MySQL storage](../../../zipkin-storage/mysql-v1) integration.
 
 To build `openzipkin/zipkin-mysql:test`, from the top-level of the repository, run:
