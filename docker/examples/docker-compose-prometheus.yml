@@ -37,7 +37,7 @@ services:
   grafana:
     # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     # Use latest from https://quay.io/repository/app-sre/grafana?tab=tags
-    image: quay.io/app-sre/grafana:7.3.4
+    image: quay.io/giantswarm/grafana:7.5.4
     container_name: grafana
     ports:
       - 3000:3000
@@ -51,7 +51,7 @@ services:
     # This is an arbitrary small image that has curl installed
     # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     # Use latest from https://quay.io/repository/quay.io/rackspace/curl?tab=tags
-    image: quay.io/rackspace/curl:7.70.0
+    image: quay.io/cilium/alpine-curl:v1.8.0
     container_name: setup_grafana_datasource
     depends_on:
       - grafana

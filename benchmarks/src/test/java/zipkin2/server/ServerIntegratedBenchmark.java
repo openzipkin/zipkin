@@ -167,7 +167,7 @@ class ServerIntegratedBenchmark {
 
     // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     // Use same version as in docker/examples/docker-compose-prometheus.yml
-    GenericContainer<?> grafana = new GenericContainer<>(parse("quay.io/app-sre/grafana:7.3.4"))
+    GenericContainer<?> grafana = new GenericContainer<>(parse("quay.io/giantswarm/grafana:7.5.4"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("grafana")
       .withExposedPorts(3000)
@@ -179,7 +179,7 @@ class ServerIntegratedBenchmark {
     // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     // Use same version as in docker/examples/docker-compose-prometheus.yml
     GenericContainer<?> grafanaDashboards =
-      new GenericContainer<>(parse("quay.io/rackspace/curl:7.70.0"))
+      new GenericContainer<>(parse("quay.io/cilium/alpine-curl:v1.8.0"))
         .withNetwork(Network.SHARED)
         .withWorkingDirectory("/tmp")
         .withLogConsumer(new Slf4jLogConsumer(LOG))
