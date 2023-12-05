@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2021 The OpenZipkin Authors
+    Copyright 2015-2023 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -29,7 +29,9 @@
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
 
-    <jooq.version>3.14.4</jooq.version>
+    <!-- TODO: upgrade when we make floor JDK 11 or 17
+         3.16 is the last to compile with JDK <17; 3.14 last for Java 8 -->
+    <jooq.version>3.14.16</jooq.version>
 
     <!-- jOOQ doesn't add the Generated annotation, so we have to explicitly disable rules -->
     <errorprone.args>-Xep:InconsistentCapitalization:OFF</errorprone.args>
