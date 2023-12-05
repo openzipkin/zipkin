@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2019-2023 The OpenZipkin Authors
+# Copyright 2015-2021 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -23,6 +23,7 @@ set -ue
 # this is Docker related, it is coupled to integration tests configuration invoked with Maven.
 # * See https://www.testcontainers.org/supported_docker_environment/image_registry_rate_limiting/
 # * checks.disable=true - saves time and a docker.io pull of alpine
+# * ryuk doesn't count against docker.io rate limits because Docker approved testcontainers as OSS
 echo checks.disable=true >> ~/.testcontainers.properties
 
 # We don't use any docker.io images, but add a Google's mirror in case something implicitly does
