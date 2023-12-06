@@ -33,7 +33,9 @@ export HEALTHCHECK_PORT=9200
 export HEALTHCHECK_PATH=/_cluster/health
 
 # -cp 'classes:lib/*' allows layers to patch the image without packaging or overwriting jars
+# We allow security manager (via flag to prevent JRE 21 crash) as Elasticsearch.main needs it.
 exec java -cp 'classes:lib/*' ${JAVA_OPTS} \
+  -Djava.security.manager=allow \
   -Djava.io.tmpdir=/tmp \
   -Dlog4j2.disable.jmx=true \
   -Des.path.home=$PWD -Des.path.conf=$PWD/config \

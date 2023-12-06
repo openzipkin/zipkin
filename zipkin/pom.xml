@@ -39,10 +39,10 @@
 
     <main.basedir>${project.basedir}/..</main.basedir>
 
-    <!-- CI should run the "release" profile during tests to ensure no 1.7 features are in use.
-         TODO: for JDK 21, bump to 1.8: https://bugs.openjdk.org/browse/JDK-8173605 -->
-    <main.java.version>1.7</main.java.version>
-    <main.signature.artifact>java17</main.signature.artifact>
+    <!-- CI should run the "release" profile during tests to ensure no 1.8
+         features are in use. -->
+    <main.java.version>1.8</main.java.version>
+    <main.signature.artifact>java18</main.signature.artifact>
   </properties>
 
   <dependencies>
@@ -143,10 +143,10 @@
                 </goals>
                 <configuration>
                   <rules>
-                    <!-- Only 1.8 and 11 are LTS JDKs that can compile 1.6 bytecode.
+                    <!-- The only LTS JDK we support that can compile 1.6 bytecode is 11.
                          https://www.oracle.com/java/technologies/javase/12-relnote-issues.html -->
                     <requireJavaVersion>
-                      <version>1.8,11</version>
+                      <version>[11,12)</version>
                     </requireJavaVersion>
                   </rules>
                 </configuration>

@@ -432,7 +432,7 @@
         <version>${maven-help-plugin.version}</version>
       </plugin>
 
-      <!-- Top-level to ensure our server can use JDK 1.8
+      <!-- Top-level to ensure our server can use JRE 8
              (by checking we don't accidentally use later apis) -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -461,6 +461,9 @@
         <configuration>
           <!-- Ensures root cause ends up in the console -->
           <trimStackTrace>false</trimStackTrace>
+          <!-- TODO: remove when assertj releases a new version, and includes updated bytebuddy.
+               https://github.com/mockito/mockito/issues/3119#issuecomment-1732179039 -->
+          <argLine>-Dnet.bytebuddy.experimental=true</argLine>
         </configuration>
       </plugin>
 
@@ -493,6 +496,9 @@
           <useModulePath>false</useModulePath>
           <!-- Ensures root cause ends up in the console -->
           <trimStackTrace>false</trimStackTrace>
+          <!-- TODO: remove when assertj releases a new version, and includes updated bytebuddy.
+                https://github.com/mockito/mockito/issues/3119#issuecomment-1732179039 -->
+          <argLine>-Dnet.bytebuddy.experimental=true</argLine>
         </configuration>
       </plugin>
 
@@ -510,7 +516,7 @@
                 <requireJavaVersion>
                   <!-- Change this to control LTS JDK versions allowed to build
                        the project. Keep in sync with .github/workflows -->
-                  <version>11,17</version>
+                  <version>[11,12),[17,18),[21,22)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -662,7 +668,8 @@
     <profile>
       <id>error-prone-11+</id>
       <activation>
-        <jdk>11,17</jdk>
+        <!-- Only LTS versions -->
+        <jdk>[11,12),[17,18),[21,22)</jdk>
       </activation>
       <build>
         <plugins>

@@ -51,7 +51,11 @@ echo Starting Cassandra
 # with other test images even if Cassandra v4 will never officially support it.
 # https://github.com/apache/cassandra/blob/cassandra-4.0.11/conf/jvm11-server.options
 # https://github.com/apache/cassandra/blob/cassandra-5.0/conf/jvm17-server.options
+#
+# Finally, we allow security manager to prevent JRE 21 crashing when Cassandra
+# attempts ThreadAwareSecurityManager.install()
 exec java -cp 'classes:lib/*' ${JAVA_OPTS} \
+  -Djava.security.manager=allow \
   -Xbootclasspath/a:${JAMM_JAR} -javaagent:${JAMM_JAR} \
   -Djdk.attach.allowAttachSelf=true \
   --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
