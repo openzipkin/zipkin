@@ -29,7 +29,7 @@ jobs:
         include:
           - java_version: 11  # Last that can compile zipkin core to 1.6 for zipkin-reporter
             maven_args: -Prelease -Dgpg.skip
-          - java_version: 17  # Most recent LTS (TODO: change to 21 including docker images as a separate step)
+          - java_version: 21  # Most recent LTS
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -74,7 +74,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'  # zulu as it supports a wide version range
-          java-version: '17'  # Most recent LTS (TODO: change to 21 including docker images as a separate step)
+          java-version: '21'  # Most recent LTS
       - name: Cache local Maven repository
         uses: actions/cache@v3
         with:

@@ -127,7 +127,11 @@ sed -i '/read_repair_chance/d' schema
 # with other test images even if Cassandra v4 will never officially support it.
 # https://github.com/apache/cassandra/blob/cassandra-4.0.11/conf/jvm11-server.options
 # https://github.com/apache/cassandra/blob/cassandra-5.0/conf/jvm17-server.options
+#
+# Finally, we allow security manager to prevent JRE 21 crashing when Cassandra
+# attempts ThreadAwareSecurityManager.install()
 java -cp 'classes:lib/*' -Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError -verbose:gc \
+  -Djava.security.manager=allow \
   -Djdk.attach.allowAttachSelf=true \
   --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
   --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
