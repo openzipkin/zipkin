@@ -71,6 +71,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
       HealthCheckedEndpointGroup.builder(endpointGroup, "/_cluster/health")
         .protocol(protocol)
         .useGet(true)
+        .selectionTimeoutMillis(timeoutMillis)
         .clientFactory(factory.clientFactory)
         .withClientOptions(options -> {
           factory.configureHttpLogging(healthCheck.getHttpLogging(), options);
