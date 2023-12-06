@@ -20,8 +20,16 @@ on:
 
 jobs:
   test:
+    name: test (JDK ${{ matrix.java_version }})
     runs-on: ubuntu-22.04 # newest available distribution, aka jellyfish
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
+    strategy:
+      fail-fast: false  # don't fail fast as sometimes failures are operating system specific
+      matrix:  # use latest available versions and be consistent on all workflows!
+        include:
+          - java_version: 11  # Last that can compile zipkin core to 1.6 for zipkin-reporter
+            maven_args: -Prelease -Dgpg.skip
+          - java_version: 17  # Most recent LTS (TODO: change to 21 including docker images as a separate step)
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -31,7 +39,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'  # zulu as it supports a wide version range
-          java-version: '15'  # highest value allowed by maven-enforcer-plugin
+          java-version: ${{ matrix.java_version }}
       - name: Cache local Maven repository
         uses: actions/cache@v3
         with:
@@ -44,7 +52,8 @@ jobs:
           path: ~/.npm
           key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
       - name: Test without Docker
-        run: build-bin/maven_go_offline && build-bin/test -Ddocker.skip=true
+        run: build-bin/maven_go_offline && build-bin/test -Ddocker.skip=true ${{ matrix.maven_args }}
+
   test_docker:
     runs-on: ubuntu-22.04 # newest available distribution, aka jellyfish
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
@@ -65,7 +74,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'  # zulu as it supports a wide version range
-          java-version: '15'  # highest value allowed by maven-enforcer-plugin
+          java-version: '17'  # Most recent LTS (TODO: change to 21 including docker images as a separate step)
       - name: Cache local Maven repository
         uses: actions/cache@v3
         with:

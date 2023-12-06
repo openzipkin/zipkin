@@ -63,12 +63,11 @@ inconvenience to core library maintainers.
 
 #### Why is the compiler plugin set to source level 1.7?
 JDK 11 was the last JDK to allow writing Java 1.6 bytecode. We set the default
-compile target to 1.7 in order to allow passing users to use any recent JDK.
+compile target to 1.7 in order to allow passing users to the LTS JDK 17.
 
 We enforce 1.6 only on the `release` Maven profile. This also requires a JDK no
-later than 11. We will have a decision to make when JDK 11 goes out of support
-in September 2023. Choices could include switching to a more flexibly supported
-JDK such as Zulu for the release process.
+later than 11. JDK 11 went out of Oracle support in September 2023, but not for
+Zulu. Hence, we use Zulu for both testing and releasing Zipkin using JDK 11.
 
 The disparity between 1.7 and 1.6 can cause some problems in maintenance. For
 example, the IDE may suggest switching to diamond syntax, which will break
@@ -76,8 +75,7 @@ compilation in 1.6. This is why the `release` profile is used in at least one
 CI matrix. The poor experience is limited to a rarely modified and smaller part
 of the project (this library).
 
-
-Note, an alternative is to use [Retrolambda](https://github.com/luontola/retrolambda) to backport 1.7 features to 1.6
+Note, an alternative is to use [Retrolambda](https://github.com/luontola/retrolambda) to backport 1.8 features to 1.6
 bytecode. However, this [stopped working in JDK 15](https://github.com/luontola/retrolambda/issues/161), so we can't use this tactic
 until that's resolved or another tool surfaces to do the same.
 

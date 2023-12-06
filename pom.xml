@@ -510,9 +510,7 @@
                 <requireJavaVersion>
                   <!-- Change this to control LTS JDK versions allowed to build
                        the project. Keep in sync with .github/workflows -->
-                  <!-- TODO: JDK 15 isn't LTS, so we want at least JDK 17.
-                       However, `./mvnw clean package -pl :zipkin` fails -->
-                  <version>[11,16)</version>
+                  <version>11,17</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -662,9 +660,9 @@
     </profile>
 
     <profile>
-      <id>error-prone-9+</id>
+      <id>error-prone-11+</id>
       <activation>
-        <jdk>[9,)</jdk>
+        <jdk>11,17</jdk>
       </activation>
       <build>
         <plugins>
@@ -691,6 +689,17 @@
                   <compilerArgs>
                     <arg>-XDcompilePolicy=simple</arg>
                     <arg>-Xplugin:ErrorProne ${errorprone.args}</arg>
+                    <!-- below needed for JDK16+ per https://errorprone.info/docs/installation -->
+                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+                    <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+                    <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
                   </compilerArgs>
                   <annotationProcessorPaths>
                     <processorPath>
