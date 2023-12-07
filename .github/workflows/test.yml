@@ -81,8 +81,9 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
-      # We can't cache Docker without using buildx because GH actions restricts /var/lib/docker
-      # That's ok because DOCKER_PARENT_IMAGE is always ghcr.io and local anyway.
+      # Don't attempt to cache Docker. Sensitive information can be stolen
+      # via forks, and login session ends up in ~/.docker. This is ok because
+      # we publish DOCKER_PARENT_IMAGE to ghcr.io, hence local to the runner.
       - name: Test with Docker
         run:
           | # configure_test seeds NPM cache, which isn't needed for these tests
