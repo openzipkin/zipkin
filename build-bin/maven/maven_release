@@ -25,18 +25,19 @@ export MAVEN_OPTS="$($(dirname "$0")/maven_opts)"
 
 trigger_tag=${1?trigger_tag is required. Ex release-1.2.3}
 release_version=$(build-bin/git/version_from_trigger_tag release- ${trigger_tag})
+release_branch=${2:-master}
 
-# Checkout the branch that triggered this build
-git fetch --tags origin
-commit_sha=$(git rev-parse "$trigger_tag")
-branches=$(git branch --contains "$commit_sha")
-branch_name=$(echo "$branches" | head -n 1 | awk '{print $2}')
-if [ -z "$branch_name" ]; then
-  default_branch="master"
-  echo "Unable to determine a valid branch. Auto-selecting the default branch: $default_branch"
-  branch_name=$default_branch
+# Checkout master, as we release from master, not a tag ref
+git fetch --no-tags --prune --depth=1 origin +refs/heads/${release_branch}:refs/remotes/origin/${release_branch}
+git checkout ${release_branch}
+
+# Ensure no one pushed commits since this release tag as it would fail later commands
+commit_local_release_branch=$(git show --pretty='format:%H' ${release_branch})
+commit_remote_release_branch=$(git show --pretty='format:%H' origin/${release_branch})
+if [ "$commit_local_release_branch" != "$commit_remote_release_branch" ]; then
+  >&2 echo "${release_branch} on remote 'origin' has commits since the version to release, aborting"
+  exit 1
 fi
-git checkout "$branch_name"
 
 # Prepare and push release commits and the version tag (N.N.N), which triggers deployment.
 ./mvnw --batch-mode -nsu -DreleaseVersion=${release_version} -Denforcer.fail=false -Darguments="-DskipTests -Denforcer.fail=false" release:prepare
