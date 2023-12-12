@@ -78,7 +78,7 @@
     "redux": "^4.0.0",
     "redux-mock-store": "^1.5.4",
     "redux-thunk": "^2.3.0",
-    "shortid": "^2.2.14",
+    "shortid": "2.2.16",
     "styled-components": "^5.1.1",
     "vizceral-react": "^4.6.5"
   },
