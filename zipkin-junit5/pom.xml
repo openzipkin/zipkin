@@ -58,8 +58,9 @@
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
+      <artifactId>junit-jupiter-api</artifactId>
       <version>${junit-jupiter.version}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
