@@ -224,7 +224,7 @@ public class ITActiveMQCollector {
     latch.countDown();
     assertThat(receivedSpans.take()).containsExactlyElementsOf(spans);
 
-    assertThat(threadsProvidingSpans.size()).isEqualTo(2);
+    assertThat(threadsProvidingSpans).hasSize(2);
 
     assertThat(activemqMetrics.messages()).isEqualTo(3); // 2 + empty body for warmup
     assertThat(activemqMetrics.messagesDropped()).isZero();
