@@ -22,32 +22,38 @@ ARG alpine_version=3.19.0
 # COPY --from= works around the issue.
 FROM scratch as scratch
 
+WORKDIR /docker-bin
 COPY build-bin/docker/docker-healthcheck /docker-bin/
-COPY docker/test-images/zipkin-mysql/start-mysql /docker-bin/
-COPY docker/test-images/zipkin-mysql/install.sh /install/
-COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /zipkin-schemas/
+COPY docker/test-images/zipkin-rabbitmq/start-rabbitmq /docker-bin/
+COPY docker/test-images/zipkin-rabbitmq/install.sh /install/
 
-FROM ghcr.io/openzipkin/alpine:${alpine_version} as zipkin-mysql
-LABEL org.opencontainers.image.description="MySQL on Alpine Linux with Zipkin schema pre-installed"
+FROM ghcr.io/openzipkin/alpine:${alpine_version} as zipkin-rabbitmq
+LABEL org.opencontainers.image.description="RabbitMQ on Alpine Linux"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=scratch /docker-bin/* /usr/local/bin/
 # We use start period of 30s to avoid marking the container unhealthy on slow or contended CI hosts
 HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
-ENTRYPOINT ["start-mysql"]
+ENTRYPOINT ["start-rabbitmq"]
 
-# Use latest from https://pkgs.alpinelinux.org/packages?name=mysql
-ARG mysql_version=10.11.5
-LABEL mysql-version=$mysql_version
-ENV MYSQL_VERSION=$mysql_version
+# Use latest from https://pkgs.alpinelinux.org/packages?name=rabbitmq-server
+ARG rabbitmq_version=3.12.8
+LABEL rabbitmq-version=$rabbitmq_version
+ENV RABBITMQ_SERVER_VERSION=$rabbitmq_version
+# Use latest from https://pkgs.alpinelinux.org/packages?name=rabbitmq-c-utils
+ARG rabbitmq_c_utils_version=0.13.0
+ENV RABBITMQ_C_UTILS_VERSION=$rabbitmq_c_utils_version
 
-WORKDIR /tmp
-COPY --from=scratch /zipkin-schemas/* ./install/zipkin-schemas/
-COPY --from=scratch /install/install.sh ./install
-RUN (cd install && ./install.sh) && rm -rf ./install
+COPY --from=scratch /install/install.sh /tmp/install/
 
-# All content including binaries and logs write under WORKDIR
-ARG USER=mysql
-WORKDIR /${USER}
+ARG USER=rabbitmq
+# We don't set USER because rabbitmq-server needs to start as root.
+RUN adduser -g '' -h ${PWD} -D ${USER} && \
+    (cd /tmp/install && ./install.sh) && rm -rf /tmp/install
 
-EXPOSE 3306
+# Usually, we read env set from pid 1 to get docker-healthcheck parameters.
+# However, rabbitmq-server has to start as root even if permissions are dropped
+# later. So, we expose it in the Dockerfile instead.
+ENV HEALTHCHECK_PORT=5672
+ENV HEALTHCHECK_KIND=tcp
+EXPOSE 5672

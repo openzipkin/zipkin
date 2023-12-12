@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2021 The OpenZipkin Authors
+# Copyright 2015-2023 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,7 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/alpine
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG alpine_version=3.18.5
+ARG alpine_version=3.19.0
 
 # java_version is used during the installation process to build or download the zipkin-lens jar.
 #

@@ -132,3 +132,9 @@ jobs:
           build-bin/docker/docker_test_image openzipkin/zipkin-mysql:test
         env:
           DOCKER_FILE: docker/test-images/zipkin-mysql/Dockerfile
+      - name: docker/test-images/zipkin-rabbitmq/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-rabbitmq:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-rabbitmq:test
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-rabbitmq/Dockerfile
