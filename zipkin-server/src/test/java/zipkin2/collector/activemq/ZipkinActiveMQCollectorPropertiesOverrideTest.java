@@ -15,13 +15,14 @@ package zipkin2.collector.activemq;
 
 import java.util.Arrays;
 import java.util.function.Function;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.server.internal.activemq.Access;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ZipkinActiveMQCollectorPropertiesOverrideTest {
 
@@ -76,7 +77,7 @@ public class ZipkinActiveMQCollectorPropertiesOverrideTest {
     Access.registerActiveMQProperties(context);
     context.refresh();
 
-    Assertions.assertThat(Access.collectorBuilder(context))
+    assertThat(Access.collectorBuilder(context))
       .extracting(builderExtractor)
       .isEqualTo(value);
   }
