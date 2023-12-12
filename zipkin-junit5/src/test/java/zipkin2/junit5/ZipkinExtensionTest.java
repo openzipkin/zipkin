@@ -37,19 +37,17 @@ import static zipkin2.TestObjects.LOTS_OF_SPANS;
 
 public class ZipkinExtensionTest {
 
-  @RegisterExtension
-  public ZipkinExtension zipkin = new ZipkinExtension();
+  @RegisterExtension public ZipkinExtension zipkin = new ZipkinExtension();
 
   List<Span> spans = Arrays.asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
   OkHttpClient client = new OkHttpClient();
 
   @Test void getTraces_storedViaPost() throws IOException {
-    List<Span> trace = asList(CLIENT_SPAN);
     // write the span to the zipkin using http
-    assertThat(postSpansV1(trace).code()).isEqualTo(202);
+    assertPostSpansV1Success(CLIENT_SPAN);
 
     // read the traces directly
-    assertThat(zipkin.getTraces()).containsOnly(trace);
+    assertThat(zipkin.getTraces()).containsOnly(asList(CLIENT_SPAN));
   }
 
   @Test void getTraces_storedViaPostVersion2_json() throws IOException {
@@ -66,15 +64,12 @@ public class ZipkinExtensionTest {
     byte[] message = encoder.encodeList(spans);
 
     // write the span to the zipkin using http api v2
-    Response response =
-        client
-            .newCall(
-                new Request.Builder()
-                    .url(zipkin.httpUrl() + "/api/v2/spans")
-                    .post(RequestBody.create(MediaType.parse(mediaType), message))
-                    .build())
-            .execute();
-    assertThat(response.code()).isEqualTo(202);
+    try (Response response = client.newCall(
+      new Request.Builder().url(zipkin.httpUrl() + "/api/v2/spans")
+        .post(RequestBody.create(MediaType.parse(mediaType), message))
+        .build()).execute()) {
+      assertThat(response.code()).isEqualTo(202);
+    }
 
     // read the traces directly
     assertThat(zipkin.getTraces()).containsOnly(asList(spans.get(0)), asList(spans.get(1)));
@@ -84,7 +79,7 @@ public class ZipkinExtensionTest {
   @Test void getTraces_whenMissingTimestamps() throws IOException {
     Span span = Span.newBuilder().traceId("1").id("1").name("foo").build();
     // write the span to the zipkin using http
-    assertThat(postSpansV1(asList(span)).code()).isEqualTo(202);
+    assertPostSpansV1Success(span);
 
     // read the traces directly
     assertThat(zipkin.getTraces()).containsOnly(asList(span));
@@ -99,13 +94,13 @@ public class ZipkinExtensionTest {
     zipkin.storeSpans(asList(missingDuration));
     zipkin.storeSpans(asList(withDuration));
 
-    assertThat(zipkin.getTrace(missingDuration.traceId()))
-      .containsExactly(missingDuration, withDuration);
+    assertThat(zipkin.getTrace(missingDuration.traceId())).containsExactly(missingDuration,
+      withDuration);
   }
 
   @Test void httpRequestCountIncrements() throws IOException {
-    postSpansV1(spans);
-    postSpansV1(spans);
+    assertPostSpansV1Success(spans);
+    assertPostSpansV1Success(spans);
 
     assertThat(zipkin.httpRequestCount()).isEqualTo(2);
   }
@@ -116,17 +111,15 @@ public class ZipkinExtensionTest {
    * can be used to help ensure a span isn't reported more times than expected.
    */
   @Test void collectorMetrics_spans() throws IOException {
-    postSpansV1(asList(LOTS_OF_SPANS[0]));
-    postSpansV1(asList(LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]));
-
+    assertPostSpansV1Success(LOTS_OF_SPANS[0]);
+    assertPostSpansV1Success(LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
     assertThat(zipkin.collectorMetrics().spans()).isEqualTo(3);
   }
 
   @Test void postSpans_disconnectDuringBody() throws IOException {
     zipkin.enqueueFailure(HttpFailure.disconnectDuringBody());
 
-    try {
-      postSpansV1(spans);
+    try (Response response = postSpansV1(spans)) {
       failBecauseExceptionWasNotThrown(IOException.class);
     } catch (IOException expected) { // not always a ConnectException!
     }
@@ -135,49 +128,61 @@ public class ZipkinExtensionTest {
     assertThat(zipkin.getTraces()).isEmpty();
 
     // The failure shouldn't affect later requests
-    assertThat(postSpansV1(spans).code()).isEqualTo(202);
+    assertPostSpansV1Success(spans);
   }
 
   @Test void postSpans_sendErrorResponse400() throws IOException {
     zipkin.enqueueFailure(HttpFailure.sendErrorResponse(400, "Invalid Format"));
 
-    Response response = postSpansV1(spans);
-    assertThat(response.code()).isEqualTo(400);
-    assertThat(response.body().string()).isEqualTo("Invalid Format");
+    try (Response response = postSpansV1(spans)) {
+      assertThat(response.code()).isEqualTo(400);
+      assertThat(response.body().string()).isEqualTo("Invalid Format");
+    }
 
     // Zipkin didn't store the spans, as they shouldn't have been readable, due to the error
     assertThat(zipkin.getTraces()).isEmpty();
 
     // The failure shouldn't affect later requests
-    assertThat(postSpansV1(spans).code()).isEqualTo(202);
+    assertPostSpansV1Success(spans);
   }
 
   @Test void gzippedSpans() throws IOException {
     byte[] spansInJson = SpanBytesEncoder.JSON_V1.encodeList(spans);
 
-    Buffer sink = new Buffer();
-    GzipSink gzipSink = new GzipSink(sink);
-    gzipSink.write(new Buffer().write(spansInJson), spansInJson.length);
-    gzipSink.close();
-    ByteString gzippedJson = sink.readByteString();
+    ByteString gzippedJson;
+    try (Buffer sink = new Buffer(); Buffer source = new Buffer()) {
+      source.write(spansInJson);
+      GzipSink gzipSink = new GzipSink(sink);
+      gzipSink.write(source, spansInJson.length);
+      gzipSink.close();
+      gzippedJson = sink.readByteString();
+    }
 
-    client.newCall(new Request.Builder()
-      .url(zipkin.httpUrl() + "/api/v1/spans")
-      .addHeader("Content-Encoding", "gzip")
-      .post(RequestBody.create(MediaType.parse("application/json"), gzippedJson))
-      .build()).execute();
+    try (Response response = client.newCall(
+      new Request.Builder().url(zipkin.httpUrl() + "/api/v1/spans")
+        .addHeader("Content-Encoding", "gzip")
+        .post(RequestBody.create(MediaType.parse("application/json"), gzippedJson))
+        .build()).execute()) {
+      assertThat(response.code()).isEqualTo(202);
+    }
 
     assertThat(zipkin.collectorMetrics().bytes()).isEqualTo(spansInJson.length);
   }
 
   Response postSpansV1(List<Span> spans) throws IOException {
     byte[] spansInJson = SpanBytesEncoder.JSON_V1.encodeList(spans);
-    return client
-        .newCall(
-            new Request.Builder()
-                .url(zipkin.httpUrl() + "/api/v1/spans")
-                .post(RequestBody.create(MediaType.parse("application/json"), spansInJson))
-                .build())
-        .execute();
+    return client.newCall(new Request.Builder().url(zipkin.httpUrl() + "/api/v1/spans")
+      .post(RequestBody.create(MediaType.parse("application/json"), spansInJson))
+      .build()).execute();
+  }
+
+  void assertPostSpansV1Success(Span... spans) throws IOException {
+    assertPostSpansV1Success(asList(spans));
+  }
+
+  void assertPostSpansV1Success(List<Span> spans) throws IOException {
+    try (Response response = postSpansV1(spans)) {
+      assertThat(response.code()).isEqualTo(202);
+    }
   }
 }
