@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,12 +20,10 @@ import java.io.IOException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 import zipkin2.storage.InMemoryStorage;
 
@@ -40,7 +38,6 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "spring.config.name=zipkin-server"
   }
 )
-@RunWith(SpringRunner.class)
 public class ITZipkinHealth {
   @Autowired InMemoryStorage storage;
   @Autowired PrometheusMeterRegistry registry;
@@ -48,11 +45,11 @@ public class ITZipkinHealth {
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
-  @Before public void init() {
+  @BeforeEach public void init() {
     storage.clear();
   }
 
-  @Test public void healthIsOK() throws Exception {
+  @Test void healthIsOK() throws Exception {
     Response health = get("/health");
     assertThat(health.isSuccessful()).isTrue();
     assertThat(health.body().contentType())
@@ -84,7 +81,7 @@ public class ITZipkinHealth {
     return registry.scrape();
   }
 
-  @Test public void readsHealth() throws Exception {
+  @Test void readsHealth() throws Exception {
     String json = getAsString("/health");
     assertThat(readString(json, "$.status"))
       .isIn("UP", "DOWN", "UNKNOWN");

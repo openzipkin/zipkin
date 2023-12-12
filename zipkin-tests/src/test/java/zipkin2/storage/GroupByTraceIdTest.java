@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,7 @@
 package zipkin2.storage;
 
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Span;
 
 import static java.util.Arrays.asList;
@@ -25,20 +25,20 @@ public class GroupByTraceIdTest {
   Span twoOne = Span.newBuilder().traceId(2, 1).id(1).build();
   Span zeroOne = Span.newBuilder().traceId(0, 1).id(1).build();
 
-  @Test public void map_groupsEverythingWhenNotStrict() {
+  @Test void map_groupsEverythingWhenNotStrict() {
     List<Span> spans = asList(oneOne, twoOne, zeroOne);
 
     assertThat(GroupByTraceId.create(false).map(spans)).containsExactly(spans);
   }
 
-  @Test public void map_groupsByTraceIdHighWheStrict() {
+  @Test void map_groupsByTraceIdHighWheStrict() {
     List<Span> spans = asList(oneOne, twoOne, zeroOne);
 
     assertThat(GroupByTraceId.create(true).map(spans))
       .containsExactly(asList(oneOne), asList(twoOne), asList(zeroOne));
   }
 
-  @Test public void map_modifiable() {
+  @Test void map_modifiable() {
     List<Span> spans = asList(oneOne, twoOne, zeroOne);
 
     List<List<Span>> modifiable = GroupByTraceId.create(true).map(spans);

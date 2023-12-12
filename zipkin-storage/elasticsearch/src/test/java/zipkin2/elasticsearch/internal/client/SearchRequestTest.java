@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,13 +23,13 @@ public class SearchRequestTest {
 
   SearchRequest request = SearchRequest.create(asList("zipkin-2016.11.31"));
 
-  @Test public void defaultSizeIsMaxResultWindow() {
+  @Test void defaultSizeIsMaxResultWindow() {
     assertThat(request.size)
       .isEqualTo(10000);
   }
 
   /** Indices and type affect the request URI, not the json body */
-  @Test public void doesntSerializeIndicesOrType() throws Exception {
+  @Test void doesntSerializeIndicesOrType() throws Exception {
     assertThat(OBJECT_MAPPER.writeValueAsString(request))
       .isEqualTo("{\"size\":10000}");
   }

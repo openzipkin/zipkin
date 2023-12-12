@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,33 +22,33 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import zipkin2.internal.Nullable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 
+@ExtendWith(MockitoExtension.class)
 public class CallTest {
-
-  @Rule public MockitoRule mocks = MockitoJUnit.rule();
 
   @Mock Callback callback;
 
-  @Test public void constant_execute() throws Exception {
+  @Test void constant_execute() throws Exception {
     Call<String> call = Call.create("foo");
 
     assertThat(call.execute())
       .isEqualTo("foo");
   }
 
-  @Test public void constant_submit() {
+  @Test void constant_submit() {
     Call<String> call = Call.create("foo");
 
     call.enqueue(callback);
@@ -56,13 +56,13 @@ public class CallTest {
     verify(callback).onSuccess("foo");
   }
 
-  @Test public void constant_execute_null() throws Exception {
+  @Test void constant_execute_null() throws Exception {
     Call<Void> call = Call.create(null);
 
     assertThat(call.execute()).isNull();
   }
 
-  @Test public void constant_submit_null() {
+  @Test void constant_submit_null() {
     Call<Void> call = Call.create(null);
 
     call.enqueue(callback);
@@ -70,7 +70,7 @@ public class CallTest {
     verify(callback).onSuccess(isNull());
   }
 
-  @Test public void constant_submit_cancel() {
+  @Test void constant_submit_cancel() {
     Call<Void> call = Call.create(null);
     call.cancel();
 
@@ -81,7 +81,7 @@ public class CallTest {
     verify(callback).onError(isA(IOException.class));
   }
 
-  @Test public void executesOnce() throws Exception {
+  @Test void executesOnce() throws Exception {
     Call<Void> call = Call.create(null);
     call.execute();
 
@@ -92,7 +92,7 @@ public class CallTest {
       .isInstanceOf(IllegalStateException.class);
   }
 
-  @Test public void enqueuesOnce() {
+  @Test void enqueuesOnce() {
     Call<Void> call = Call.create(null);
     call.enqueue(callback);
 
@@ -103,8 +103,9 @@ public class CallTest {
       .isInstanceOf(IllegalStateException.class);
   }
 
-  @Test(timeout = 1000L)
-  public void concurrent_executesOrSubmitsOnce() throws InterruptedException {
+  @Test
+  @Timeout(1000L)
+  void concurrent_executesOrSubmitsOnce() throws InterruptedException {
     Call<Void> call = Call.create(null);
 
     int tryCount = 100;
@@ -139,23 +140,23 @@ public class CallTest {
     assertThat(executeOrSubmit.get()).isEqualTo(1);
   }
 
-  @Test public void constantEqualsConstant() {
+  @Test void constantEqualsConstant() {
     assertThat(Call.create(null))
       .isEqualTo(Call.create(null));
   }
 
-  @Test public void emptyList() throws Exception {
+  @Test void emptyList() throws Exception {
     Call<List<String>> call = Call.emptyList();
 
     assertThat(call.execute()).isEmpty();
   }
 
-  @Test public void emptyList_independentInstances() {
+  @Test void emptyList_independentInstances() {
     assertThat(Call.emptyList())
       .isNotSameAs(Call.emptyList());
   }
 
-  @Test public void map_execute() throws Exception {
+  @Test void map_execute() throws Exception {
     Call<String> fooCall = Call.create("foo");
     Call<String> fooBarCall = fooCall.map(foo -> {
       assertThat(foo).isEqualTo("foo");
@@ -166,7 +167,7 @@ public class CallTest {
       .isEqualTo("bar");
   }
 
-  @Test public void map_enqueue() {
+  @Test void map_enqueue() {
     Call<String> fooCall = Call.create("foo");
     Call<String> fooBarCall = fooCall.map(foo -> "bar");
 
@@ -175,7 +176,7 @@ public class CallTest {
     verify(callback).onSuccess("bar");
   }
 
-  @Test public void map_enqueue_mappingException() {
+  @Test void map_enqueue_mappingException() {
     IllegalArgumentException error = new IllegalArgumentException();
     Call<String> fooCall = Call.create("foo");
     Call<String> fooBarCall = fooCall.map(foo -> {
@@ -187,7 +188,7 @@ public class CallTest {
     verify(callback).onError(error);
   }
 
-  @Test public void flatMap_execute() throws Exception {
+  @Test void flatMap_execute() throws Exception {
     Call<String> fooCall = Call.create("foo");
     Call<String> barCall = Call.create("bar");
     Call<String> fooBarCall = fooCall.flatMap(foo -> {
@@ -199,7 +200,7 @@ public class CallTest {
       .isEqualTo("bar");
   }
 
-  @Test public void flatMap_enqueue() {
+  @Test void flatMap_enqueue() {
     Call<String> fooCall = Call.create("foo");
     Call<String> barCall = Call.create("bar");
     Call<String> fooBarCall = fooCall.flatMap(foo -> barCall);
@@ -209,7 +210,7 @@ public class CallTest {
     verify(callback).onSuccess("bar");
   }
 
-  @Test public void flatMap_enqueue_mappingException() {
+  @Test void flatMap_enqueue_mappingException() {
     IllegalArgumentException error = new IllegalArgumentException();
     Call<String> fooCall = Call.create("foo");
     Call<String> fooBarCall = fooCall.flatMap(foo -> {
@@ -222,7 +223,7 @@ public class CallTest {
     verify(callback).onError(error);
   }
 
-  @Test public void flatMap_enqueue_callException() {
+  @Test void flatMap_enqueue_callException() {
     IllegalArgumentException error = new IllegalArgumentException();
     Call<String> fooCall = Call.create("foo");
     Call<String> exceptionCall = errorCall(error);
@@ -234,7 +235,7 @@ public class CallTest {
     verify(callback).onError(error);
   }
 
-  @Test public void flatMap_cancelPropagates() throws Exception {
+  @Test void flatMap_cancelPropagates() throws Exception {
     Call<String> fooCall = Call.create("foo");
     Call<String> barCall = Call.create("bar");
     Call<String> fooBarCall = fooCall.flatMap(foo -> barCall);
@@ -247,19 +248,20 @@ public class CallTest {
     assertThat(barCall.isCanceled()).isTrue();
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void onErrorReturn_execute_onError() throws Exception {
-    IllegalArgumentException exception = new IllegalArgumentException();
-    Call<String> errorCall = errorCall(exception);
+  @Test void onErrorReturn_execute_onError() throws Exception {
+    assertThrows(IllegalArgumentException.class, () -> {
+      IllegalArgumentException exception = new IllegalArgumentException();
+      Call<String> errorCall = errorCall(exception);
 
-    Call<String> resolvedCall = errorCall.handleError(
-      (error, callback) -> callback.onError(error)
-    );
+      Call<String> resolvedCall = errorCall.handleError(
+        (error, callback) -> callback.onError(error)
+      );
 
-    resolvedCall.execute();
+      resolvedCall.execute();
+    });
   }
 
-  @Test public void onErrorReturn_execute_onSuccess() throws Exception {
+  @Test void onErrorReturn_execute_onSuccess() throws Exception {
     IllegalArgumentException exception = new IllegalArgumentException();
     Call<String> errorCall = errorCall(exception);
 
@@ -271,7 +273,7 @@ public class CallTest {
       .isEqualTo("foo");
   }
 
-  @Test public void onErrorReturn_execute_onSuccess_null() throws Exception {
+  @Test void onErrorReturn_execute_onSuccess_null() throws Exception {
     IllegalArgumentException exception = new IllegalArgumentException();
     Call<String> errorCall = errorCall(exception);
 
@@ -283,7 +285,7 @@ public class CallTest {
       .isNull();
   }
 
-  @Test public void onErrorReturn_enqueue_onError() {
+  @Test void onErrorReturn_enqueue_onError() {
     IllegalArgumentException exception = new IllegalArgumentException();
     Call<String> errorCall = errorCall(exception);
 
@@ -296,7 +298,7 @@ public class CallTest {
     verify(callback).onError(exception);
   }
 
-  @Test public void onErrorReturn_enqueue_onSuccess() {
+  @Test void onErrorReturn_enqueue_onSuccess() {
     IllegalArgumentException exception = new IllegalArgumentException();
     Call<String> errorCall = errorCall(exception);
 
@@ -309,7 +311,7 @@ public class CallTest {
     verify(callback).onSuccess("foo");
   }
 
-  @Test public void onErrorReturn_enqueue_onSuccess_null() {
+  @Test void onErrorReturn_enqueue_onSuccess_null() {
     NoSuchElementException exception = new NoSuchElementException();
     Call<List<String>> call = errorCall(exception);
 

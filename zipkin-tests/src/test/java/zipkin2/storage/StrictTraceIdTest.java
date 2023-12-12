@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,7 @@ package zipkin2.storage;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Span;
 
 import static java.util.Arrays.asList;
@@ -24,12 +24,11 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.FRONTEND;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.TestObjects.TRACE;
-import static zipkin2.TestObjects.newTrace;
 import static zipkin2.storage.ITSpanStore.requestBuilder;
 
 public class StrictTraceIdTest {
 
-  @Test public void filterTraces_skipsOnNoClash() {
+  @Test void filterTraces_skipsOnNoClash() {
     Span oneOne = Span.newBuilder().traceId(1, 1).id(1).build();
     Span oneTwo = Span.newBuilder().traceId(1, 2).id(1).build();
     List<List<Span>> traces = asList(asList(oneOne), asList(oneTwo));
@@ -39,7 +38,7 @@ public class StrictTraceIdTest {
     ).map(traces)).isSameAs(traces);
   }
 
-  @Test public void filterTraces_onSpanName() {
+  @Test void filterTraces_onSpanName() {
     assertThat(StrictTraceId.filterTraces(
       requestBuilder().spanName("11").build()
     ).map(traces())).flatExtracting(l -> l).isEmpty();
@@ -49,7 +48,7 @@ public class StrictTraceIdTest {
     ).map(traces())).containsExactly(traces().get(0));
   }
 
-  @Test public void filterTraces_onTag() {
+  @Test void filterTraces_onTag() {
     assertThat(StrictTraceId.filterTraces(
       requestBuilder().parseAnnotationQuery("foo=0").build()
     ).map(traces())).flatExtracting(l -> l).isEmpty();
@@ -59,7 +58,7 @@ public class StrictTraceIdTest {
     ).map(traces())).containsExactly(traces().get(0));
   }
 
-  @Test public void filterSpans() {
+  @Test void filterSpans() {
     ArrayList<Span> trace = new ArrayList<>(TRACE);
 
     assertThat(StrictTraceId.filterSpans(CLIENT_SPAN.traceId()).map(trace))
@@ -88,7 +87,7 @@ public class StrictTraceIdTest {
     return new ArrayList<>(asList(asList(span1), asList(span2), asList(span3)));
   }
 
-  @Test public void hasClashOnLowerTraceId() {
+  @Test void hasClashOnLowerTraceId() {
     Span oneOne = Span.newBuilder().traceId(1, 1).id(1).build();
     Span twoOne = Span.newBuilder().traceId(2, 1).id(1).build();
     Span zeroOne = Span.newBuilder().traceId(0, 1).id(1).build();

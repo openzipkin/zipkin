@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -29,8 +29,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.function.Predicate;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.reporter.AwaitableCallback;
@@ -57,11 +57,11 @@ public class ThrottledCallTest {
   int numThreads = 1;
   ExecutorService executor = Executors.newSingleThreadExecutor();
 
-  @After public void shutdownExecutor() {
+  @AfterEach public void shutdownExecutor() {
     executor.shutdown();
   }
 
-  @Test public void niceToString() {
+  @Test void niceToString() {
     Call<Void> delegate = mock(Call.class);
     when(delegate.toString()).thenReturn("StoreSpansCall{}");
 
@@ -69,7 +69,7 @@ public class ThrottledCallTest {
       .hasToString("Throttled(StoreSpansCall{})");
   }
 
-  @Test public void execute_isThrottled() throws Exception {
+  @Test void execute_isThrottled() throws Exception {
     int queueSize = 1;
     int totalTasks = numThreads + queueSize;
     limit.setLimit(totalTasks);
@@ -124,7 +124,7 @@ public class ThrottledCallTest {
     }
   }
 
-  @Test public void execute_throttlesBack_whenStorageRejects() throws Exception {
+  @Test void execute_throttlesBack_whenStorageRejects() throws Exception {
     Listener listener = mock(Listener.class);
     FakeCall call = new FakeCall();
     call.overCapacity = true;
@@ -140,7 +140,7 @@ public class ThrottledCallTest {
     }
   }
 
-  @Test public void execute_ignoresLimit_whenPoolFull() throws Exception {
+  @Test void execute_ignoresLimit_whenPoolFull() throws Exception {
     Listener listener = mock(Listener.class);
 
     ThrottledCall throttle = new ThrottledCall(new FakeCall(), mockExhaustedPool(),
@@ -154,7 +154,7 @@ public class ThrottledCallTest {
     }
   }
 
-  @Test public void enqueue_isThrottled() throws Exception {
+  @Test void enqueue_isThrottled() throws Exception {
     int queueSize = 1;
     int totalTasks = numThreads + queueSize;
     limit.setLimit(totalTasks);
@@ -181,7 +181,7 @@ public class ThrottledCallTest {
       .isEqualTo(STORAGE_THROTTLE_MAX_CONCURRENCY);
   }
 
-  @Test public void enqueue_throttlesBack_whenStorageRejects() {
+  @Test void enqueue_throttlesBack_whenStorageRejects() {
     Listener listener = mock(Listener.class);
     FakeCall call = new FakeCall();
     call.overCapacity = true;
@@ -197,7 +197,7 @@ public class ThrottledCallTest {
     verify(listener).onDropped();
   }
 
-  @Test public void enqueue_ignoresLimit_whenPoolFull() {
+  @Test void enqueue_ignoresLimit_whenPoolFull() {
     Listener listener = mock(Listener.class);
 
     ThrottledCall throttle = new ThrottledCall(new FakeCall(), mockExhaustedPool(),

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,7 @@ package zipkin2.storage.cassandra;
 
 import java.util.Collections;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.storage.QueryRequest;
@@ -33,20 +33,20 @@ public class CassandraSpanStoreTest {
   CassandraSpanStore spanStore = spanStore(CassandraStorage.newBuilder());
   QueryRequest.Builder queryBuilder = QueryRequest.newBuilder().endTs(TODAY).lookback(DAY).limit(5);
 
-  @Test public void timestampRange_withIndexTtlProvidedAvoidsOverflow() {
+  @Test void timestampRange_withIndexTtlProvidedAvoidsOverflow() {
     QueryRequest query = QueryRequest.newBuilder().endTs(TODAY).lookback(TODAY).limit(5).build();
     CassandraSpanStore.TimestampRange timestampRange = spanStore.timestampRange(query, 7890000);
 
     assertThat(timestampRange.startMillis).isLessThan(timestampRange.endMillis);
   }
 
-  @Test public void getTraces_fansOutAgainstServices() {
+  @Test void getTraces_fansOutAgainstServices() {
     Call<List<List<Span>>> call = spanStore.getTraces(queryBuilder.build());
 
     assertThat(call.toString()).contains(FlatMapServicesToInputs.class.getSimpleName());
   }
 
-  @Test public void getTraces_withSpanNameButNoServiceName() {
+  @Test void getTraces_withSpanNameButNoServiceName() {
     Call<List<List<Span>>> call = spanStore.getTraces(queryBuilder.spanName("get").build());
 
     assertThat(call.toString())
@@ -54,7 +54,7 @@ public class CassandraSpanStoreTest {
       .contains("span=get"); // no need to look at two indexes
   }
 
-  @Test public void getTraces_withTagButNoServiceName() {
+  @Test void getTraces_withTagButNoServiceName() {
     Call<List<List<Span>>> call = spanStore.getTraces(
       queryBuilder.annotationQuery(Collections.singletonMap("environment", "production")).build());
 
@@ -63,7 +63,7 @@ public class CassandraSpanStoreTest {
       .contains("l_service=null, annotation_query=environment=production");
   }
 
-  @Test public void getTraces_withDurationButNoServiceName() {
+  @Test void getTraces_withDurationButNoServiceName() {
     Call<List<List<Span>>> call = spanStore.getTraces(queryBuilder.minDuration(1000L).build());
 
     assertThat(call.toString())
@@ -71,7 +71,7 @@ public class CassandraSpanStoreTest {
       .contains("start_duration=1,");
   }
 
-  @Test public void getTraces_withRemoteServiceNameButNoServiceName() {
+  @Test void getTraces_withRemoteServiceNameButNoServiceName() {
     Call<List<List<Span>>> call =
       spanStore.getTraces(queryBuilder.remoteServiceName("backend").build());
 
@@ -81,13 +81,13 @@ public class CassandraSpanStoreTest {
       .doesNotContain("span="); // no need to look at two indexes
   }
 
-  @Test public void getTraces() {
+  @Test void getTraces() {
     Call<List<List<Span>>> call = spanStore.getTraces(queryBuilder.serviceName("frontend").build());
 
     assertThat(call.toString()).contains("service=frontend, span=,");
   }
 
-  @Test public void getTraces_withSpanName() {
+  @Test void getTraces_withSpanName() {
     Call<List<List<Span>>> call = spanStore.getTraces(
       queryBuilder.serviceName("frontend").spanName("get").build());
 
@@ -95,7 +95,7 @@ public class CassandraSpanStoreTest {
       .contains("service=frontend, span=get,");
   }
 
-  @Test public void getTraces_withRemoteServiceName() {
+  @Test void getTraces_withRemoteServiceName() {
     Call<List<List<Span>>> call = spanStore.getTraces(
       queryBuilder.serviceName("frontend").remoteServiceName("backend").build());
 
@@ -104,7 +104,7 @@ public class CassandraSpanStoreTest {
       .doesNotContain("service=frontend, span="); // no need to look at two indexes
   }
 
-  @Test public void getTraces_withSpanNameAndRemoteServiceName() {
+  @Test void getTraces_withSpanNameAndRemoteServiceName() {
     Call<List<List<Span>>> call = spanStore.getTraces(
       queryBuilder.serviceName("frontend").remoteServiceName("backend").spanName("get").build());
 
@@ -113,7 +113,7 @@ public class CassandraSpanStoreTest {
       .contains("service=frontend, span=get,");
   }
 
-  @Test public void searchDisabled_doesntMakeRemoteQueryRequests() {
+  @Test void searchDisabled_doesntMakeRemoteQueryRequests() {
     CassandraSpanStore spanStore = spanStore(CassandraStorage.newBuilder().searchEnabled(false));
 
     assertThat(spanStore.getTraces(queryBuilder.build())).hasToString("ConstantCall{value=[]}");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,13 +18,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.TRACE;
 import static zipkin2.codec.SpanBytesEncoderTest.ERROR_SPAN;
@@ -37,95 +37,97 @@ import static zipkin2.codec.SpanBytesEncoderTest.UTF_8;
 public class SpanBytesDecoderTest {
   Span span = SPAN;
 
-  @Rule public ExpectedException thrown = ExpectedException.none();
+  @Test void niceErrorOnTruncatedSpans_PROTO3() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-  @Test public void niceErrorOnTruncatedSpans_PROTO3() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Truncated: length 66 > bytes available 8 reading List<Span> from proto3");
-
-    byte[] encoded = SpanBytesEncoder.PROTO3.encodeList(TRACE);
-    SpanBytesDecoder.PROTO3.decodeList(Arrays.copyOfRange(encoded, 0, 10));
+      byte[] encoded = SpanBytesEncoder.PROTO3.encodeList(TRACE);
+      SpanBytesDecoder.PROTO3.decodeList(Arrays.copyOfRange(encoded, 0, 10));
+    });
+    assertTrue(exception.getMessage()
+      .contains("Truncated: length 66 > bytes available 8 reading List<Span> from proto3"));
   }
 
-  @Test public void niceErrorOnTruncatedSpan_PROTO3() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Truncated: length 179 > bytes available 7 reading Span from proto3");
+  @Test void niceErrorOnTruncatedSpan_PROTO3() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    byte[] encoded = SpanBytesEncoder.PROTO3.encode(SPAN);
-    SpanBytesDecoder.PROTO3.decodeOne(Arrays.copyOfRange(encoded, 0, 10));
+      byte[] encoded = SpanBytesEncoder.PROTO3.encode(SPAN);
+      SpanBytesDecoder.PROTO3.decodeOne(Arrays.copyOfRange(encoded, 0, 10));
+    });
+    assertTrue(exception.getMessage()
+      .contains("Truncated: length 179 > bytes available 7 reading Span from proto3"));
   }
 
-  @Test public void emptyListOk_JSON_V1() {
+  @Test void emptyListOk_JSON_V1() {
     assertThat(SpanBytesDecoder.JSON_V1.decodeList(new byte[0]))
       .isEmpty(); // instead of throwing an exception
     assertThat(SpanBytesDecoder.JSON_V1.decodeList(new byte[] {'[', ']'}))
       .isEmpty(); // instead of throwing an exception
   }
 
-  @Test public void emptyListOk_JSON_V2() {
+  @Test void emptyListOk_JSON_V2() {
     assertThat(SpanBytesDecoder.JSON_V2.decodeList(new byte[0]))
       .isEmpty(); // instead of throwing an exception
     assertThat(SpanBytesDecoder.JSON_V2.decodeList(new byte[] {'[', ']'}))
       .isEmpty(); // instead of throwing an exception
   }
 
-  @Test public void emptyListOk_PROTO3() {
+  @Test void emptyListOk_PROTO3() {
     assertThat(SpanBytesDecoder.PROTO3.decodeList(new byte[0]))
       .isEmpty(); // instead of throwing an exception
   }
 
-  @Test public void spanRoundTrip_JSON_V2() {
+  @Test void spanRoundTrip_JSON_V2() {
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(span)))
       .isEqualTo(span);
   }
 
-  @Test public void spanRoundTrip_PROTO3() {
+  @Test void spanRoundTrip_PROTO3() {
     assertThat(SpanBytesDecoder.PROTO3.decodeOne(SpanBytesEncoder.PROTO3.encode(span)))
       .isEqualTo(span);
   }
 
-  @Test public void localSpanRoundTrip_JSON_V2() {
+  @Test void localSpanRoundTrip_JSON_V2() {
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(LOCAL_SPAN)))
       .isEqualTo(LOCAL_SPAN);
   }
 
-  @Test public void localSpanRoundTrip_PROTO3() {
+  @Test void localSpanRoundTrip_PROTO3() {
     assertThat(SpanBytesDecoder.PROTO3.decodeOne(SpanBytesEncoder.PROTO3.encode(LOCAL_SPAN)))
       .isEqualTo(LOCAL_SPAN);
   }
 
-  @Test public void errorSpanRoundTrip_JSON_V2() {
+  @Test void errorSpanRoundTrip_JSON_V2() {
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(ERROR_SPAN)))
       .isEqualTo(ERROR_SPAN);
   }
 
-  @Test public void errorSpanRoundTrip_PROTO3() {
+  @Test void errorSpanRoundTrip_PROTO3() {
     assertThat(SpanBytesDecoder.PROTO3.decodeOne(SpanBytesEncoder.PROTO3.encode(ERROR_SPAN)))
       .isEqualTo(ERROR_SPAN);
   }
 
-  @Test public void spanRoundTrip_64bitTraceId_JSON_V2() {
+  @Test void spanRoundTrip_64bitTraceId_JSON_V2() {
     span = span.toBuilder().traceId(span.traceId().substring(16)).build();
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(span)))
       .isEqualTo(span);
   }
 
-  @Test public void spanRoundTrip_64bitTraceId_PROTO3() {
+  @Test void spanRoundTrip_64bitTraceId_PROTO3() {
     span = span.toBuilder().traceId(span.traceId().substring(16)).build();
 
     assertThat(SpanBytesDecoder.PROTO3.decodeOne(SpanBytesEncoder.PROTO3.encode(span)))
       .isEqualTo(span);
   }
 
-  @Test public void spanRoundTrip_shared_JSON_V2() {
+  @Test void spanRoundTrip_shared_JSON_V2() {
     span = span.toBuilder().kind(Span.Kind.SERVER).shared(true).build();
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(span)))
       .isEqualTo(span);
   }
 
-  @Test public void spanRoundTrip_shared_PROTO3() {
+  @Test void spanRoundTrip_shared_PROTO3() {
     span = span.toBuilder().kind(Span.Kind.SERVER).shared(true).build();
 
     assertThat(SpanBytesDecoder.PROTO3.decodeOne(SpanBytesEncoder.PROTO3.encode(span)))
@@ -136,24 +138,24 @@ public class SpanBytesDecoderTest {
    * This isn't a test of what we "should" accept as a span, rather that characters that trip-up
    * json don't fail in codec.
    */
-  @Test public void specialCharsInJson_JSON_V2() {
+  @Test void specialCharsInJson_JSON_V2() {
     assertThat(
       SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(UTF8_SPAN)))
       .isEqualTo(UTF8_SPAN);
   }
 
-  @Test public void specialCharsInJson_PROTO3() {
+  @Test void specialCharsInJson_PROTO3() {
     assertThat(
       SpanBytesDecoder.PROTO3.decodeOne(SpanBytesEncoder.PROTO3.encode(UTF8_SPAN)))
       .isEqualTo(UTF8_SPAN);
   }
 
-  @Test public void falseOnEmpty_inputSpans_JSON_V2() {
+  @Test void falseOnEmpty_inputSpans_JSON_V2() {
     assertThat(SpanBytesDecoder.JSON_V2.decodeList(new byte[0], new ArrayList<>()))
       .isFalse();
   }
 
-  @Test public void falseOnEmpty_inputSpans_PROTO3() {
+  @Test void falseOnEmpty_inputSpans_PROTO3() {
     assertThat(SpanBytesDecoder.PROTO3.decodeList(new byte[0], new ArrayList<>()))
       .isFalse();
   }
@@ -161,36 +163,36 @@ public class SpanBytesDecoderTest {
   /**
    * Particular, thrift can mistake malformed content as a huge list. Let's not blow up.
    */
-  @Test public void niceErrorOnMalformed_inputSpans_JSON_V2() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Malformed reading List<Span> from ");
+  @Test void niceErrorOnMalformed_inputSpans_JSON_V2() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    SpanBytesDecoder.JSON_V2.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
+      SpanBytesDecoder.JSON_V2.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
+    });
+    assertTrue(exception.getMessage().contains("Malformed reading List<Span> from "));
   }
 
-  @Test public void niceErrorOnMalformed_inputSpans_PROTO3() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Truncated: length 101 > bytes available 3 reading List<Span> from proto3");
+  @Test void niceErrorOnMalformed_inputSpans_PROTO3() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    SpanBytesDecoder.PROTO3.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
+      SpanBytesDecoder.PROTO3.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
+    });
+    assertTrue(exception.getMessage()
+      .contains("Truncated: length 101 > bytes available 3 reading List<Span> from proto3"));
   }
 
-  @Test
-  public void traceRoundTrip_JSON_V2() {
+  @Test void traceRoundTrip_JSON_V2() {
     byte[] message = SpanBytesEncoder.JSON_V2.encodeList(TRACE);
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeList(message)).isEqualTo(TRACE);
   }
 
-  @Test
-  public void traceRoundTrip_PROTO3() {
+  @Test void traceRoundTrip_PROTO3() {
     byte[] message = SpanBytesEncoder.PROTO3.encodeList(TRACE);
 
     assertThat(SpanBytesDecoder.PROTO3.decodeList(message)).isEqualTo(TRACE);
   }
 
-  @Test
-  public void traceRoundTrip_PROTO3_directBuffer() {
+  @Test void traceRoundTrip_PROTO3_directBuffer() {
     byte[] message = SpanBytesEncoder.PROTO3.encodeList(TRACE);
     ByteBuffer buf = ByteBuffer.allocateDirect(message.length);
     buf.put(message);
@@ -199,16 +201,14 @@ public class SpanBytesDecoderTest {
     assertThat(SpanBytesDecoder.PROTO3.decodeList(buf)).isEqualTo(TRACE);
   }
 
-  @Test
-  public void traceRoundTrip_PROTO3_heapBuffer() {
+  @Test void traceRoundTrip_PROTO3_heapBuffer() {
     byte[] message = SpanBytesEncoder.PROTO3.encodeList(TRACE);
     ByteBuffer buf = ByteBuffer.wrap(message);
 
     assertThat(SpanBytesDecoder.PROTO3.decodeList(buf)).isEqualTo(TRACE);
   }
 
-  @Test
-  public void traceRoundTrip_PROTO3_heapBufferOffset() {
+  @Test void traceRoundTrip_PROTO3_heapBufferOffset() {
     byte[] message = SpanBytesEncoder.PROTO3.encodeList(TRACE);
     byte[] array = new byte[message.length + 4 + 5];
     System.arraycopy(message, 0, array, 4, message.length);
@@ -217,7 +217,7 @@ public class SpanBytesDecoderTest {
     assertThat(SpanBytesDecoder.PROTO3.decodeList(buf)).isEqualTo(TRACE);
   }
 
-  @Test public void spansRoundTrip_JSON_V2() {
+  @Test void spansRoundTrip_JSON_V2() {
     List<Span> tenClientSpans = Collections.nCopies(10, span);
 
     byte[] message = SpanBytesEncoder.JSON_V2.encodeList(tenClientSpans);
@@ -226,7 +226,7 @@ public class SpanBytesDecoderTest {
       .isEqualTo(tenClientSpans);
   }
 
-  @Test public void spansRoundTrip_PROTO3() {
+  @Test void spansRoundTrip_PROTO3() {
     List<Span> tenClientSpans = Collections.nCopies(10, span);
 
     byte[] message = SpanBytesEncoder.PROTO3.encodeList(tenClientSpans);
@@ -235,7 +235,7 @@ public class SpanBytesDecoderTest {
       .isEqualTo(tenClientSpans);
   }
 
-  @Test public void spanRoundTrip_noRemoteServiceName_JSON_V2() {
+  @Test void spanRoundTrip_noRemoteServiceName_JSON_V2() {
     span = span.toBuilder()
       .remoteEndpoint(BACKEND.toBuilder().serviceName(null).build())
       .build();
@@ -244,7 +244,7 @@ public class SpanBytesDecoderTest {
       .isEqualTo(span);
   }
 
-  @Test public void spanRoundTrip_noRemoteServiceName_PROTO3() {
+  @Test void spanRoundTrip_noRemoteServiceName_PROTO3() {
     span = span.toBuilder()
       .remoteEndpoint(BACKEND.toBuilder().serviceName(null).build())
       .build();
@@ -253,62 +253,64 @@ public class SpanBytesDecoderTest {
       .isEqualTo(span);
   }
 
-  @Test public void spanRoundTrip_noAnnotations_rootServerSpan_JSON_V2() {
+  @Test void spanRoundTrip_noAnnotations_rootServerSpan_JSON_V2() {
     span = NO_ANNOTATIONS_ROOT_SERVER_SPAN;
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(span)))
       .isEqualTo(span);
   }
 
-  @Test public void spanRoundTrip_noAnnotations_rootServerSpan_PROTO3() {
+  @Test void spanRoundTrip_noAnnotations_rootServerSpan_PROTO3() {
     span = NO_ANNOTATIONS_ROOT_SERVER_SPAN;
 
     assertThat(SpanBytesDecoder.PROTO3.decodeOne(SpanBytesEncoder.PROTO3.encode(span)))
       .isEqualTo(span);
   }
 
-  @Test public void spanRoundTrip_noAnnotations_rootServerSpan_incomplete_JSON_V2() {
+  @Test void spanRoundTrip_noAnnotations_rootServerSpan_incomplete_JSON_V2() {
     span = NO_ANNOTATIONS_ROOT_SERVER_SPAN.toBuilder().duration(null).build();
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(span)))
       .isEqualTo(span);
   }
 
-  @Test public void spanRoundTrip_noAnnotations_rootServerSpan_incomplete_PROTO3() {
+  @Test void spanRoundTrip_noAnnotations_rootServerSpan_incomplete_PROTO3() {
     span = NO_ANNOTATIONS_ROOT_SERVER_SPAN.toBuilder().duration(null).build();
 
     assertThat(SpanBytesDecoder.PROTO3.decodeOne(SpanBytesEncoder.PROTO3.encode(span)))
       .isEqualTo(span);
   }
 
-  @Test public void spanRoundTrip_noAnnotations_rootServerSpan_shared_JSON_V2() {
+  @Test void spanRoundTrip_noAnnotations_rootServerSpan_shared_JSON_V2() {
     span = NO_ANNOTATIONS_ROOT_SERVER_SPAN.toBuilder().shared(true).build();
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(span)))
       .isEqualTo(span);
   }
 
-  @Test public void spanRoundTrip_noAnnotations_rootServerSpan_shared_PROTO3() {
+  @Test void spanRoundTrip_noAnnotations_rootServerSpan_shared_PROTO3() {
     span = NO_ANNOTATIONS_ROOT_SERVER_SPAN.toBuilder().shared(true).build();
 
     assertThat(SpanBytesDecoder.PROTO3.decodeOne(SpanBytesEncoder.PROTO3.encode(span)))
       .isEqualTo(span);
   }
 
-  @Test public void niceErrorOnUppercase_traceId_JSON_V2() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("48485A3953BB6124 should be lower-hex encoded with no prefix");
+  @Test void niceErrorOnUppercase_traceId_JSON_V2() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    String json = "{\n"
-      + "  \"traceId\": \"48485A3953BB6124\",\n"
-      + "  \"name\": \"get-traces\",\n"
-      + "  \"id\": \"6b221d5bc9e6496c\"\n"
-      + "}";
+      String json = "{\n"
+        + "  \"traceId\": \"48485A3953BB6124\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\"\n"
+        + "}";
 
-    SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+      SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+    });
+    assertTrue(exception.getMessage()
+      .contains("48485A3953BB6124 should be lower-hex encoded with no prefix"));
   }
 
-  @Test public void readsTraceIdHighFromTraceIdField() {
+  @Test void readsTraceIdHighFromTraceIdField() {
     byte[] with128BitTraceId = ("{\n"
       + "  \"traceId\": \"48485a3953bb61246b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
@@ -325,7 +327,7 @@ public class SpanBytesDecoderTest {
         .traceId("48485a3953bb61246b221d5bc9e6496c").build());
   }
 
-  @Test public void ignoresNull_topLevelFields() {
+  @Test void ignoresNull_topLevelFields() {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"parentId\": null,\n"
@@ -344,7 +346,7 @@ public class SpanBytesDecoderTest {
     SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
   }
 
-  @Test public void ignoresNull_endpoint_topLevelFields() {
+  @Test void ignoresNull_endpoint_topLevelFields() {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
@@ -361,7 +363,7 @@ public class SpanBytesDecoderTest {
       .isEqualTo(Endpoint.newBuilder().ip("127.0.0.1").build());
   }
 
-  @Test public void skipsIncompleteEndpoint() {
+  @Test void skipsIncompleteEndpoint() {
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(("{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
@@ -400,97 +402,104 @@ public class SpanBytesDecoderTest {
       .getBytes(UTF_8)).remoteEndpoint()).isNull();
   }
 
-  @Test public void niceErrorOnIncomplete_annotation() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Incomplete annotation at $.annotations[0].timestamp");
+  @Test void niceErrorOnIncomplete_annotation() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    String json = "{\n"
-      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-      + "  \"name\": \"get-traces\",\n"
-      + "  \"id\": \"6b221d5bc9e6496c\",\n"
-      + "  \"annotations\": [\n"
-      + "    { \"timestamp\": 1472470996199000}\n"
-      + "  ]\n"
-      + "}";
+      String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"annotations\": [\n"
+        + "    { \"timestamp\": 1472470996199000}\n"
+        + "  ]\n"
+        + "}";
 
-    SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+      SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+    });
+    assertTrue(
+      exception.getMessage().contains("Incomplete annotation at $.annotations[0].timestamp"));
   }
 
-  @Test public void niceErrorOnNull_traceId() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Expected a string but was NULL");
+  @Test void niceErrorOnNull_traceId() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    String json = "{\n"
-      + "  \"traceId\": null,\n"
-      + "  \"name\": \"get-traces\",\n"
-      + "  \"id\": \"6b221d5bc9e6496c\"\n"
-      + "}";
+      String json = "{\n"
+        + "  \"traceId\": null,\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\"\n"
+        + "}";
 
-    SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+      SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+    });
+    assertTrue(exception.getMessage().contains("Expected a string but was NULL"));
   }
 
-  @Test public void niceErrorOnNull_id() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Expected a string but was NULL");
+  @Test void niceErrorOnNull_id() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    String json = "{\n"
-      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-      + "  \"name\": \"get-traces\",\n"
-      + "  \"id\": null\n"
-      + "}";
+      String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": null\n"
+        + "}";
 
-    SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+      SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+    });
+    assertTrue(exception.getMessage().contains("Expected a string but was NULL"));
   }
 
-  @Test public void niceErrorOnNull_tagValue() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("No value at $.tags.foo");
+  @Test void niceErrorOnNull_tagValue() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    String json = "{\n"
-      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-      + "  \"name\": \"get-traces\",\n"
-      + "  \"id\": \"6b221d5bc9e6496c\",\n"
-      + "  \"tags\": {\n"
-      + "    \"foo\": NULL\n"
-      + "  }\n"
-      + "}";
+      String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"tags\": {\n"
+        + "    \"foo\": NULL\n"
+        + "  }\n"
+        + "}";
 
-    SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+      SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+    });
+    assertTrue(exception.getMessage().contains("No value at $.tags.foo"));
   }
 
-  @Test public void niceErrorOnNull_annotationValue() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("$.annotations[0].value");
+  @Test void niceErrorOnNull_annotationValue() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    String json = "{\n"
-      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-      + "  \"name\": \"get-traces\",\n"
-      + "  \"id\": \"6b221d5bc9e6496c\",\n"
-      + "  \"annotations\": [\n"
-      + "    { \"timestamp\": 1472470996199000, \"value\": NULL}\n"
-      + "  ]\n"
-      + "}";
+      String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"annotations\": [\n"
+        + "    { \"timestamp\": 1472470996199000, \"value\": NULL}\n"
+        + "  ]\n"
+        + "}";
 
-    SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+      SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+    });
+    assertTrue(exception.getMessage().contains("$.annotations[0].value"));
   }
 
-  @Test public void niceErrorOnNull_annotationTimestamp() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("$.annotations[0].timestamp");
+  @Test void niceErrorOnNull_annotationTimestamp() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    String json = "{\n"
-      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-      + "  \"name\": \"get-traces\",\n"
-      + "  \"id\": \"6b221d5bc9e6496c\",\n"
-      + "  \"annotations\": [\n"
-      + "    { \"timestamp\": NULL, \"value\": \"foo\"}\n"
-      + "  ]\n"
-      + "}";
+      String json = "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"annotations\": [\n"
+        + "    { \"timestamp\": NULL, \"value\": \"foo\"}\n"
+        + "  ]\n"
+        + "}";
 
-    SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+      SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+    });
+    assertTrue(exception.getMessage().contains("$.annotations[0].timestamp"));
   }
 
-  @Test public void readSpan_localEndpoint_noServiceName() {
+  @Test void readSpan_localEndpoint_noServiceName() {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"
@@ -504,7 +513,7 @@ public class SpanBytesDecoderTest {
       .isNull();
   }
 
-  @Test public void readSpan_remoteEndpoint_noServiceName() {
+  @Test void readSpan_remoteEndpoint_noServiceName() {
     String json = "{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
       + "  \"name\": \"get-traces\",\n"

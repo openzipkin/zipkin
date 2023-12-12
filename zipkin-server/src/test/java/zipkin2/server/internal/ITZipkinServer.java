@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,12 +24,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okio.Okio;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 import zipkin2.Endpoint;
 import zipkin2.Span;
@@ -52,7 +50,6 @@ import static zipkin2.TestObjects.UTF_8;
     "spring.config.name=zipkin-server"
   }
 )
-@RunWith(SpringRunner.class)
 public class ITZipkinServer {
   static final List<Span> TRACE = asList(TestObjects.CLIENT_SPAN);
 
@@ -61,11 +58,11 @@ public class ITZipkinServer {
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
-  @Before public void init() {
+  @BeforeEach public void init() {
     storage.clear();
   }
 
-  @Test public void getTrace() throws Exception {
+  @Test void getTrace() throws Exception {
     storage.accept(TRACE).execute();
 
     Response response = get("/api/v2/trace/" + TRACE.get(0).traceId());
@@ -75,7 +72,7 @@ public class ITZipkinServer {
       .containsExactly(SpanBytesEncoder.JSON_V2.encodeList(TRACE));
   }
 
-  @Test public void getTrace_notFound() throws Exception {
+  @Test void getTrace_notFound() throws Exception {
     Response response = get("/api/v2/trace/" + TRACE.get(0).traceId());
     assertThat(response.code()).isEqualTo(404);
 
@@ -83,7 +80,7 @@ public class ITZipkinServer {
       .isEqualTo(TRACE.get(0).traceId() + " not found");
   }
 
-  @Test public void getTrace_malformed() throws Exception {
+  @Test void getTrace_malformed() throws Exception {
     storage.accept(TRACE).execute();
 
     Response response = get("/api/v2/trace/0e8b46e1-81b");
@@ -93,7 +90,7 @@ public class ITZipkinServer {
       .isEqualTo("0e8b46e1-81b should be lower-hex encoded with no prefix");
   }
 
-  @Test public void getTraces() throws Exception {
+  @Test void getTraces() throws Exception {
     storage.accept(TRACE).execute();
 
     Response response = get("/api/v2/traceMany?traceIds=abcd," + TRACE.get(0).traceId());
@@ -103,7 +100,7 @@ public class ITZipkinServer {
       .isEqualTo("[" + new String(SpanBytesEncoder.JSON_V2.encodeList(TRACE), UTF_8) + "]");
   }
 
-  @Test public void getTraces_emptyNotOk() throws Exception {
+  @Test void getTraces_emptyNotOk() throws Exception {
     storage.accept(TRACE).execute();
 
     Response response = get("/api/v2/traceMany?traceIds=");
@@ -113,7 +110,7 @@ public class ITZipkinServer {
       .isEqualTo("traceIds parameter is empty");
   }
 
-  @Test public void getTraces_singleNotOk() throws Exception {
+  @Test void getTraces_singleNotOk() throws Exception {
     storage.accept(TRACE).execute();
 
     Response response = get("/api/v2/traceMany?traceIds=" + TRACE.get(0).traceId());
@@ -123,7 +120,7 @@ public class ITZipkinServer {
       .isEqualTo("Use /api/v2/trace/{traceId} endpoint to retrieve a single trace");
   }
 
-  @Test public void getTraces_malformed() throws Exception {
+  @Test void getTraces_malformed() throws Exception {
     storage.accept(TRACE).execute();
 
     Response response = get("/api/v2/traceMany?traceIds=abcd,0e8b46e1-81b");
@@ -133,7 +130,7 @@ public class ITZipkinServer {
       .isEqualTo("0e8b46e1-81b should be lower-hex encoded with no prefix");
   }
 
-  @Test public void tracesQueryRequiresNoParameters() throws Exception {
+  @Test void tracesQueryRequiresNoParameters() throws Exception {
     storage.accept(TRACE).execute();
 
     Response response = get("/api/v2/traces");
@@ -142,12 +139,12 @@ public class ITZipkinServer {
       .isEqualTo("[" + new String(SpanBytesEncoder.JSON_V2.encodeList(TRACE), UTF_8) + "]");
   }
 
-  @Test public void v2WiresUp() throws Exception {
+  @Test void v2WiresUp() throws Exception {
     assertThat(get("/api/v2/services").isSuccessful())
       .isTrue();
   }
 
-  @Test public void doesntSetCacheControlOnNameEndpointsWhenLessThan4Services() throws Exception {
+  @Test void doesntSetCacheControlOnNameEndpointsWhenLessThan4Services() throws Exception {
     storage.accept(TRACE).execute();
 
     assertThat(get("/api/v2/services").header("Cache-Control"))
@@ -160,17 +157,17 @@ public class ITZipkinServer {
       .isNull();
   }
 
-  @Test public void spanNameQueryWorksWithNonAsciiServiceName() throws Exception {
+  @Test void spanNameQueryWorksWithNonAsciiServiceName() throws Exception {
     assertThat(get("/api/v2/spans?serviceName=个人信息服务").code())
       .isEqualTo(200);
   }
 
-  @Test public void remoteServiceNameQueryWorksWithNonAsciiServiceName() throws Exception {
+  @Test void remoteServiceNameQueryWorksWithNonAsciiServiceName() throws Exception {
     assertThat(get("/api/v2/remoteServices?serviceName=个人信息服务").code())
       .isEqualTo(200);
   }
 
-  @Test public void remoteServiceNameReturnsCorrectJsonForEscapedWhitespaceInName()
+  @Test void remoteServiceNameReturnsCorrectJsonForEscapedWhitespaceInName()
     throws Exception {
     storage.accept(Arrays.asList(CLIENT_SPAN.toBuilder()
       .localEndpoint(FRONTEND.toBuilder().serviceName("foo\tbar").build())
@@ -181,7 +178,7 @@ public class ITZipkinServer {
     assertThat(response.body().string()).isEqualTo("[\"foo\\tbar\"]");
   }
 
-  @Test public void setsCacheControlOnNameEndpointsWhenMoreThan3Services() throws Exception {
+  @Test void setsCacheControlOnNameEndpointsWhenMoreThan3Services() throws Exception {
     List<String> services = asList("foo", "bar", "baz", "quz");
     for (int i = 0; i < services.size(); i++) {
       storage.accept(asList(
@@ -206,7 +203,7 @@ public class ITZipkinServer {
       .isEqualTo("[\"bar\",\"baz\",\"foo\",\"quz\"]");
   }
 
-  @Test public void shouldAllowAnyOriginByDefault() throws Exception {
+  @Test void shouldAllowAnyOriginByDefault() throws Exception {
     Response response = client.newCall(new Request.Builder()
       .url(url(server, "/api/v2/traces"))
       .header("Origin", "http://foo.example.com")
@@ -218,13 +215,13 @@ public class ITZipkinServer {
     assertThat(response.header("access-control-allow-origin")).contains("*");
   }
 
-  @Test public void forwardsApiForUi() throws Exception {
+  @Test void forwardsApiForUi() throws Exception {
     assertThat(get("/zipkin/api/v2/traces").isSuccessful()).isTrue();
     assertThat(get("/zipkin/api/v2/traces").isSuccessful()).isTrue();
   }
 
   /** Simulate a proxy which forwards / to zipkin as opposed to resolving / -> /zipkin first */
-  @Test public void redirectedHeaderUsesOriginalHostAndPort() throws Exception {
+  @Test void redirectedHeaderUsesOriginalHostAndPort() throws Exception {
     Request forwarded = new Request.Builder()
       .url(url(server, "/"))
       .addHeader("Host", "zipkin.com")
@@ -240,7 +237,7 @@ public class ITZipkinServer {
       .isEqualTo("/zipkin/");
   }
 
-  @Test public void infoEndpointIsAvailable() throws IOException {
+  @Test void infoEndpointIsAvailable() throws IOException {
     Response info = get("/info");
     assertThat(info.isSuccessful()).isTrue();
     assertThat(info.body().contentType().toString())
@@ -249,7 +246,7 @@ public class ITZipkinServer {
       .isEqualToIgnoringWhitespace(stringFromClasspath(getClass(), "info.json"));
   }
 
-  @Test public void getTrace_spaceAfterTraceId() throws Exception {
+  @Test void getTrace_spaceAfterTraceId() throws Exception {
     storage.accept(TRACE).execute();
 
     Response response = get("/api/v2/trace/" + TRACE.get(0).traceId() + " ");
@@ -259,7 +256,7 @@ public class ITZipkinServer {
       .containsExactly(SpanBytesEncoder.JSON_V2.encodeList(TRACE));
   }
 
-  @Test public void traceMethodDisallowed() {
+  @Test void traceMethodDisallowed() {
     // trace method is disallowed for any route but we just test couple of paths here, can't test them all
     Arrays.stream(new String[]{"/", "/api/v2/traces", "/whatever/and/not"}).forEach(path -> {
       final Response response;
@@ -274,7 +271,6 @@ public class ITZipkinServer {
       }
     });
   }
-
 
   private Response get(String path) throws IOException {
     return client.newCall(new Request.Builder()

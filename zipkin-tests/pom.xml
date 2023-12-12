@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2021 The OpenZipkin Authors
+    Copyright 2015-2023 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>2.24.5-SNAPSHOT</version>
+    <version>2.25.0-SNAPSHOT</version>
   </parent>
 
   <groupId>io.zipkin.zipkin2</groupId>
@@ -40,39 +40,11 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- This prevents us from interfering with JUnit 4 runtimes.
-         See https://github.com/openzipkin/zipkin-gcp/issues/130 -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>${junit-jupiter.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-      <version>${junit-jupiter.version}</version>
-    </dependency>
-
-    <!-- Current versions of JUnit5 provide the above junit-jupiter artifact for convenience, but we
-         may still have transitive dependencies on these older artifacts and have to make sure
-         they're all using the same version. -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <version>${junit-jupiter.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <version>${junit-jupiter.version}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,8 +14,8 @@
 package zipkin2.server.internal.prometheus;
 
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -33,25 +33,26 @@ public class ZipkinPrometheusMetricsConfigurationTest {
     context.refresh();
   }
 
-  @After public void close() {
+  @AfterEach public void close() {
     context.close();
   }
 
-  @Test public void providesHttpRequestDurationCustomizer() {
+  @Test void providesHttpRequestDurationCustomizer() {
     refresh();
 
     context.getBeansOfType(ArmeriaServerConfigurator.class);
   }
 
-  @Test public void defaultMetricName() {
+  @Test void defaultMetricName() {
     refresh();
 
     assertThat(context.getBean(ZipkinPrometheusMetricsConfiguration.class).metricName)
       .isEqualTo("http.server.requests");
   }
 
-  @Test public void overrideMetricName() {
-    TestPropertyValues.of("management.metrics.web.server.requests-metric-name:foo").applyTo(context);
+  @Test void overrideMetricName() {
+    TestPropertyValues.of("management.metrics.web.server.requests-metric-name:foo")
+      .applyTo(context);
     refresh();
 
     assertThat(context.getBean(ZipkinPrometheusMetricsConfiguration.class).metricName)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,7 +18,7 @@ import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.JavaSerializer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Annotation;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class KryoTest {
 
-  @Test public void kryoJavaSerialization_annotation() {
+  @Test void kryoJavaSerialization_annotation() {
     Kryo kryo = new Kryo();
     kryo.register(Annotation.class, new JavaSerializer());
 
@@ -42,7 +42,7 @@ public class KryoTest {
       .isEqualTo(Annotation.create(1L, "foo"));
   }
 
-  @Test public void kryoJavaSerialization_endpoint() {
+  @Test void kryoJavaSerialization_endpoint() {
     Kryo kryo = new Kryo();
     kryo.register(Endpoint.class, new JavaSerializer());
 
@@ -55,7 +55,7 @@ public class KryoTest {
       .isEqualTo(TestObjects.BACKEND);
   }
 
-  @Test public void kryoJavaSerialization_span() {
+  @Test void kryoJavaSerialization_span() {
     Kryo kryo = new Kryo();
     kryo.register(Span.class, new JavaSerializer());
 
@@ -68,7 +68,7 @@ public class KryoTest {
       .isEqualTo(TestObjects.CLIENT_SPAN);
   }
 
-  @Test public void kryoJavaSerialization_dependencyLink() {
+  @Test void kryoJavaSerialization_dependencyLink() {
     Kryo kryo = new Kryo();
     kryo.register(DependencyLink.class, new JavaSerializer());
 
@@ -99,7 +99,7 @@ public class KryoTest {
     }
   }
 
-  @Test public void kryoJson2() {
+  @Test void kryoJson2() {
     Kryo kryo = new Kryo();
     kryo.register(Span.class, new JsonV2SpanSerializer());
 

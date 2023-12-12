@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,8 +13,8 @@
  */
 package zipkin2.internal;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
@@ -40,12 +40,11 @@ public class V1ThriftSpanWriterTest {
   V1ThriftSpanWriter writer = new V1ThriftSpanWriter();
   byte[] endpointBytes = new byte[ThriftEndpointCodec.sizeInBytes(endpoint)];
 
-  @Before public void init() {
+  @BeforeEach public void init() {
     ThriftEndpointCodec.write(endpoint, WriteBuffer.wrap(endpointBytes, 0));
   }
 
-  @Test
-  public void endpoint_highPort() {
+  @Test void endpoint_highPort() {
     int highPort = 63840;
     Endpoint endpoint = Endpoint.newBuilder().ip("127.0.0.1").port(63840).build();
     byte[] buff = new byte[ThriftEndpointCodec.sizeInBytes(endpoint)];
@@ -59,8 +58,7 @@ public class V1ThriftSpanWriterTest {
       .isEqualTo(highPort);
   }
 
-  @Test
-  public void write_startsWithI64Prefix() {
+  @Test void write_startsWithI64Prefix() {
     byte[] buff = writer.write(span);
 
     assertThat(buff)
@@ -68,8 +66,7 @@ public class V1ThriftSpanWriterTest {
       .startsWith(TYPE_I64, 0, 1); // short value of field number 1
   }
 
-  @Test
-  public void writeList_startsWithListPrefix() {
+  @Test void writeList_startsWithListPrefix() {
     byte[] buff = writer.writeList(asList(span));
 
     assertThat(buff)
@@ -78,8 +75,7 @@ public class V1ThriftSpanWriterTest {
         TYPE_STRUCT, 0, 0, 0, 1);
   }
 
-  @Test
-  public void writeList_startsWithListPrefix_multiple() {
+  @Test void writeList_startsWithListPrefix_multiple() {
     byte[] buff = writer.writeList(asList(span, span));
 
     assertThat(buff)
@@ -88,13 +84,11 @@ public class V1ThriftSpanWriterTest {
         TYPE_STRUCT, 0, 0, 0, 2);
   }
 
-  @Test
-  public void writeList_empty() {
+  @Test void writeList_empty() {
     assertThat(writer.writeList(asList())).isEmpty();
   }
 
-  @Test
-  public void writeList_offset_startsWithListPrefix() {
+  @Test void writeList_offset_startsWithListPrefix() {
     writer.writeList(asList(span, span), bytes, 1);
 
     assertThat(bytes)
@@ -102,8 +96,7 @@ public class V1ThriftSpanWriterTest {
         0, TYPE_STRUCT, 0, 0, 0, 2);
   }
 
-  @Test
-  public void doesntWriteAnnotationsWhenMissingTimestamp() {
+  @Test void doesntWriteAnnotationsWhenMissingTimestamp() {
     writer.write(span.toBuilder().kind(CLIENT).build(), buf);
 
     byte[] bytes2 = new byte[2048];
@@ -112,23 +105,19 @@ public class V1ThriftSpanWriterTest {
     assertThat(bytes).containsExactly(bytes2);
   }
 
-  @Test
-  public void writesCoreAnnotations_client_noEndpoint() {
+  @Test void writesCoreAnnotations_client_noEndpoint() {
     writesCoreAnnotationsNoEndpoint(CLIENT, "cs", "cr");
   }
 
-  @Test
-  public void writesCoreAnnotations_server_noEndpoint() {
+  @Test void writesCoreAnnotations_server_noEndpoint() {
     writesCoreAnnotationsNoEndpoint(SERVER, "sr", "ss");
   }
 
-  @Test
-  public void writesCoreAnnotations_producer_noEndpoint() {
+  @Test void writesCoreAnnotations_producer_noEndpoint() {
     writesCoreAnnotationsNoEndpoint(PRODUCER, "ms", "ws");
   }
 
-  @Test
-  public void writesCoreAnnotations_consumer_noEndpoint() {
+  @Test void writesCoreAnnotations_consumer_noEndpoint() {
     writesCoreAnnotationsNoEndpoint(CONSUMER, "wr", "mr");
   }
 
@@ -144,23 +133,19 @@ public class V1ThriftSpanWriterTest {
       .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 2, end.charAt(0), end.charAt(1));
   }
 
-  @Test
-  public void writesBeginAnnotation_client_noEndpoint() {
+  @Test void writesBeginAnnotation_client_noEndpoint() {
     writesBeginAnnotationNoEndpoint(CLIENT, "cs");
   }
 
-  @Test
-  public void writesBeginAnnotation_server_noEndpoint() {
+  @Test void writesBeginAnnotation_server_noEndpoint() {
     writesBeginAnnotationNoEndpoint(SERVER, "sr");
   }
 
-  @Test
-  public void writesBeginAnnotation_producer_noEndpoint() {
+  @Test void writesBeginAnnotation_producer_noEndpoint() {
     writesBeginAnnotationNoEndpoint(PRODUCER, "ms");
   }
 
-  @Test
-  public void writesBeginAnnotation_consumer_noEndpoint() {
+  @Test void writesBeginAnnotation_consumer_noEndpoint() {
     writesBeginAnnotationNoEndpoint(CONSUMER, "mr");
   }
 
@@ -174,23 +159,19 @@ public class V1ThriftSpanWriterTest {
       .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 2, begin.charAt(0), begin.charAt(1));
   }
 
-  @Test
-  public void writesAddressBinaryAnnotation_client() {
+  @Test void writesAddressBinaryAnnotation_client() {
     writesAddressBinaryAnnotation(CLIENT, "sa");
   }
 
-  @Test
-  public void writesAddressBinaryAnnotation_server() {
+  @Test void writesAddressBinaryAnnotation_server() {
     writesAddressBinaryAnnotation(SERVER, "ca");
   }
 
-  @Test
-  public void writesAddressBinaryAnnotation_producer() {
+  @Test void writesAddressBinaryAnnotation_producer() {
     writesAddressBinaryAnnotation(PRODUCER, "ma");
   }
 
-  @Test
-  public void writesAddressBinaryAnnotation_consumer() {
+  @Test void writesAddressBinaryAnnotation_consumer() {
     writesAddressBinaryAnnotation(CONSUMER, "ma");
   }
 
@@ -205,8 +186,7 @@ public class V1ThriftSpanWriterTest {
       .containsSequence(endpointBytes);
   }
 
-  @Test
-  public void annotationsHaveEndpoints() {
+  @Test void annotationsHaveEndpoints() {
     writer.write(span.toBuilder().localEndpoint(endpoint).addAnnotation(5, "foo").build(), buf);
 
     assertThat(bytes)
@@ -216,8 +196,7 @@ public class V1ThriftSpanWriterTest {
       .containsSequence(endpointBytes);
   }
 
-  @Test
-  public void writesTimestampAndDuration() {
+  @Test void writesTimestampAndDuration() {
     writer.write(span.toBuilder().timestamp(5).duration(10).build(), buf);
 
     assertThat(bytes)
@@ -225,8 +204,7 @@ public class V1ThriftSpanWriterTest {
       .containsSequence(TYPE_I64, 0, 11, 0, 0, 0, 0, 0, 0, 0, 10); // duration
   }
 
-  @Test
-  public void writesEmptySpanName() {
+  @Test void writesEmptySpanName() {
     Span span = Span.newBuilder().traceId("1").id("2").build();
 
     writer.write(span, buf);
@@ -236,8 +214,7 @@ public class V1ThriftSpanWriterTest {
         ThriftField.TYPE_STRING, 0, 3, 0, 0, 0, 0); // name (empty is 32 zero bits)
   }
 
-  @Test
-  public void writesTraceAndSpanIds() {
+  @Test void writesTraceAndSpanIds() {
     writer.write(span, buf);
 
     assertThat(bytes)
@@ -245,8 +222,7 @@ public class V1ThriftSpanWriterTest {
       .containsSequence(TYPE_I64, 0, 4, 0, 0, 0, 0, 0, 0, 0, 2); // ID
   }
 
-  @Test
-  public void writesParentAnd128BitTraceId() {
+  @Test void writesParentAnd128BitTraceId() {
     writer.write(
       Span.newBuilder().traceId("00000000000000010000000000000002").parentId("3").id("4").build(),
       buf);
@@ -257,9 +233,10 @@ public class V1ThriftSpanWriterTest {
       .containsSequence(TYPE_I64, 0, 5, 0, 0, 0, 0, 0, 0, 0, 3); // parent ID
   }
 
-  /** For finagle compatibility */
-  @Test
-  public void writesEmptyAnnotationAndBinaryAnnotations() {
+  /**
+   * For finagle compatibility
+   */
+  @Test void writesEmptyAnnotationAndBinaryAnnotations() {
     Span span = Span.newBuilder().traceId("1").id("2").build();
 
     writer.write(span, buf);
@@ -269,8 +246,7 @@ public class V1ThriftSpanWriterTest {
       .containsSequence(TYPE_LIST, 0, 8, TYPE_STRUCT, 0, 0, 0, 0); // empty binary annotations
   }
 
-  @Test
-  public void writesEmptyLocalComponentWhenNoAnnotationsOrTags() {
+  @Test void writesEmptyLocalComponentWhenNoAnnotationsOrTags() {
     span = span.toBuilder().name("foo").localEndpoint(endpoint).build();
 
     writer.write(span, buf);
@@ -283,8 +259,7 @@ public class V1ThriftSpanWriterTest {
       .containsSequence(endpointBytes);
   }
 
-  @Test
-  public void writesEmptyServiceName() {
+  @Test void writesEmptyServiceName() {
     span =
       span.toBuilder()
         .name("foo")
@@ -299,8 +274,7 @@ public class V1ThriftSpanWriterTest {
   }
 
   /** To match finagle */
-  @Test
-  public void writesDebugFalse() {
+  @Test void writesDebugFalse() {
     span = span.toBuilder().debug(false).build();
 
     writer.write(span, buf);
@@ -308,8 +282,7 @@ public class V1ThriftSpanWriterTest {
     assertThat(bytes).containsSequence(ThriftField.TYPE_BOOL, 0);
   }
 
-  @Test
-  public void tagsAreBinaryAnnotations() {
+  @Test void tagsAreBinaryAnnotations() {
     writer.write(span.toBuilder().putTag("foo", "bar").build(), buf);
 
     assertThat(bytes)

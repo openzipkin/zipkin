@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,13 +19,11 @@ import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
@@ -50,7 +48,6 @@ import static org.mockito.Mockito.when;
     "spring.config.name=zipkin-server"
   }
 )
-@RunWith(SpringRunner.class)
 public class ITZipkinServerTimeout {
   static final List<Span> TRACE = asList(TestObjects.CLIENT_SPAN);
 
@@ -61,13 +58,13 @@ public class ITZipkinServerTimeout {
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
-  @Before public void init() {
+  @BeforeEach public void init() {
     spanStore = new SlowSpanStore();
     when(storage.spanStore()).thenReturn(spanStore);
     when(storage.traces()).thenReturn(new TracesAdapter(spanStore));
   }
 
-  @Test public void getTrace() throws Exception {
+  @Test void getTrace() throws Exception {
     spanStore.storage.accept(TRACE).execute();
 
     Response response = get("/api/v2/trace/" + TRACE.get(0).traceId());

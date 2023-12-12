@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,34 +16,25 @@ package zipkin2.collector.kafka;
 import java.util.Arrays;
 import java.util.function.Function;
 import org.assertj.core.api.Assertions;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.server.internal.kafka.Access;
 
-@RunWith(Parameterized.class)
 public class ZipkinKafkaCollectorPropertiesOverrideTest {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @After
-  public void close() {
+  @AfterEach public void close() {
     if (context != null) context.close();
   }
 
-  @Parameterized.Parameter(0)
   public String property;
-
-  @Parameterized.Parameter(1)
   public Object value;
-
-  @Parameterized.Parameter(2)
   public Function<KafkaCollector.Builder, Object> builderExtractor;
 
-  @Parameterized.Parameters(name = "{0}")
   public static Iterable<Object[]> data() {
     return Arrays.asList(
         parameters(
@@ -65,14 +56,24 @@ public class ZipkinKafkaCollectorPropertiesOverrideTest {
     return new Object[] {"zipkin.collector.kafka." + propertySuffix, value, builderExtractor};
   }
 
-  @Test
-  public void propertyTransferredToCollectorBuilder() {
+  @MethodSource("data")
+  @ParameterizedTest(name = "{0}")
+  void propertyTransferredToCollectorBuilder(String property, Object value,
+    Function<KafkaCollector.Builder, Object> builderExtractor) {
+    initZipkinKafkaCollectorPropertiesOverrideTest(property, value, builderExtractor);
     TestPropertyValues.of(property + ":" + value).applyTo(context);
     Access.registerKafkaProperties(context);
     context.refresh();
 
     Assertions.assertThat(Access.collectorBuilder(context))
-        .extracting(builderExtractor)
-        .isEqualTo(value);
+      .extracting(builderExtractor)
+      .isEqualTo(value);
+  }
+
+  void initZipkinKafkaCollectorPropertiesOverrideTest(String property, Object value,
+    Function<KafkaCollector.Builder, Object> builderExtractor) {
+    this.property = property;
+    this.value = value;
+    this.builderExtractor = builderExtractor;
   }
 }

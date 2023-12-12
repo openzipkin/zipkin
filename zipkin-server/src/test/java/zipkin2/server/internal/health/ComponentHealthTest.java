@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,14 +15,14 @@ package zipkin2.server.internal.health;
 
 import com.linecorp.armeria.common.ClosedSessionException;
 import java.io.IOException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.CheckResult;
 import zipkin2.Component;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ComponentHealthTest {
-  @Test public void addsMessageToDetails() {
+  @Test void addsMessageToDetails() {
     ComponentHealth health = ComponentHealth.ofComponent(new Component() {
       @Override public CheckResult check() {
         return CheckResult.failed(new IOException("socket disconnect"));
@@ -33,7 +33,7 @@ public class ComponentHealthTest {
       .isEqualTo("java.io.IOException: socket disconnect");
   }
 
-  @Test public void doesntAddNullMessageToDetails() {
+  @Test void doesntAddNullMessageToDetails() {
     ComponentHealth health = ComponentHealth.ofComponent(new Component() {
       @Override public CheckResult check() {
         return CheckResult.failed(ClosedSessionException.get());

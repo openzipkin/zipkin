@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,15 +15,16 @@ package zipkin2.elasticsearch;
 
 import java.io.IOException;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.elasticsearch.internal.JsonReaders;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static zipkin2.elasticsearch.internal.JsonReaders.collectValuesNamed;
 import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 public class JsonReadersTest {
-  @Test public void enterPath_nested() throws IOException {
+  @Test void enterPath_nested() throws IOException {
     String content = "{\n"
       + "  \"name\" : \"Kamal\",\n"
       + "  \"cluster_name\" : \"elasticsearch\",\n"
@@ -42,17 +43,17 @@ public class JsonReadersTest {
       .isEqualTo("2.4.0");
   }
 
-  @Test public void enterPath_nullOnNoInput() throws IOException {
+  @Test void enterPath_nullOnNoInput() throws IOException {
     assertThat(JsonReaders.enterPath(JSON_FACTORY.createParser(""), "message"))
       .isNull();
   }
 
-  @Test public void enterPath_nullOnWrongInput() throws IOException {
+  @Test void enterPath_nullOnWrongInput() throws IOException {
     assertThat(JsonReaders.enterPath(JSON_FACTORY.createParser("[]"), "message"))
       .isNull();
   }
 
-  @Test public void collectValuesNamed_emptyWhenNotFound() throws IOException {
+  @Test void collectValuesNamed_emptyWhenNotFound() throws IOException {
     String content = "{\n"
       + "  \"took\": 1,\n"
       + "  \"timed_out\": false,\n"
@@ -72,26 +73,27 @@ public class JsonReadersTest {
   }
 
   // All elasticsearch results start with an object, not an array.
-  @Test(expected = IllegalArgumentException.class)
-  public void collectValuesNamed_exceptionOnWrongData() throws IOException {
-    assertThat(collectValuesNamed(JSON_FACTORY.createParser("[]"), "key")).isEmpty();
+  @Test void collectValuesNamed_exceptionOnWrongData() throws IOException {
+    assertThrows(IllegalArgumentException.class, () -> {
+      assertThat(collectValuesNamed(JSON_FACTORY.createParser("[]"), "key")).isEmpty();
+    });
   }
 
-  @Test public void collectValuesNamed_mergesArrays() throws IOException {
+  @Test void collectValuesNamed_mergesArrays() throws IOException {
     List<String> result =
       collectValuesNamed(JSON_FACTORY.createParser(TestResponses.SPAN_NAMES), "key");
 
     assertThat(result).containsExactly("methodcall", "yak");
   }
 
-  @Test public void collectValuesNamed_mergesChildren() throws IOException {
+  @Test void collectValuesNamed_mergesChildren() throws IOException {
     List<String> result =
       collectValuesNamed(JSON_FACTORY.createParser(TestResponses.SERVICE_NAMES), "key");
 
     assertThat(result).containsExactly("yak", "service");
   }
 
-  @Test public void collectValuesNamed_nested() throws IOException {
+  @Test void collectValuesNamed_nested() throws IOException {
     String content = "{\n"
       + "  \"took\": 49,\n"
       + "  \"timed_out\": false,\n"

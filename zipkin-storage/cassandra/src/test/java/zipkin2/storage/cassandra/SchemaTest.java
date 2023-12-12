@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -23,7 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SchemaTest {
-  @Test public void ensureKeyspaceMetadata_failsWhenVersionLessThan3_11_3() {
+  @Test void ensureKeyspaceMetadata_failsWhenVersionLessThan3_11_3() {
     CqlSession session = mock(CqlSession.class);
     Metadata metadata = mock(Metadata.class);
     Node node = mock(Node.class);
@@ -48,7 +48,7 @@ public class SchemaTest {
         "Node 11111111-1111-1111-1111-111111111111 is running Cassandra 3.11.2, but minimum version is 3.11.3");
   }
 
-  @Test public void ensureKeyspaceMetadata_failsWhenOneVersionLessThan3_11_3() {
+  @Test void ensureKeyspaceMetadata_failsWhenOneVersionLessThan3_11_3() {
     CqlSession session = mock(CqlSession.class);
     Metadata metadata = mock(Metadata.class);
     Node node1 = mock(Node.class);
@@ -68,7 +68,7 @@ public class SchemaTest {
         "Node 22222222-2222-2222-2222-222222222222 is running Cassandra 3.11.2, but minimum version is 3.11.3");
   }
 
-  @Test public void ensureKeyspaceMetadata_passesWhenVersion3_11_3AndKeyspaceMetadataIsNotNull() {
+  @Test void ensureKeyspaceMetadata_passesWhenVersion3_11_3AndKeyspaceMetadataIsNotNull() {
     CqlSession session = mock(CqlSession.class);
     Metadata metadata = mock(Metadata.class);
     Node node = mock(Node.class);
@@ -85,7 +85,7 @@ public class SchemaTest {
       .isSameAs(keyspaceMetadata);
   }
 
-  @Test public void ensureKeyspaceMetadata_passesWhenVersion3_11_4AndKeyspaceMetadataIsNotNull() {
+  @Test void ensureKeyspaceMetadata_passesWhenVersion3_11_4AndKeyspaceMetadataIsNotNull() {
     CqlSession session = mock(CqlSession.class);
     Metadata metadata = mock(Metadata.class);
     Node node = mock(Node.class);
@@ -102,7 +102,7 @@ public class SchemaTest {
       .isSameAs(keyspaceMetadata);
   }
 
-  @Test public void ensureKeyspaceMetadata_failsWhenKeyspaceMetadataIsNotNull() {
+  @Test void ensureKeyspaceMetadata_failsWhenKeyspaceMetadataIsNotNull() {
     CqlSession session = mock(CqlSession.class);
     Metadata metadata = mock(Metadata.class);
     Node node = mock(Node.class);
@@ -133,12 +133,12 @@ public class SchemaTest {
     + "    AND speculative_retry = '95percentile'\n"
     + "    AND comment = 'Secondary table for looking up remote service names by a service name.';";
 
-  @Test public void reviseCql_leaves_read_repair_chance_on_v3() {
+  @Test void reviseCql_leaves_read_repair_chance_on_v3() {
     assertThat(Schema.reviseCQL(Version.parse("3.11.9"), schemaWithReadRepair))
       .isSameAs(schemaWithReadRepair);
   }
 
-  @Test public void reviseCql_removes_dclocal_read_repair_chance_on_v4() {
+  @Test void reviseCql_removes_dclocal_read_repair_chance_on_v4() {
     assertThat(Schema.reviseCQL(Version.V4_0_0, schemaWithReadRepair))
       // literal used to show newlines etc are in-tact
       .isEqualTo(""

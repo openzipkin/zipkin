@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  */
 package zipkin2.internal;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
@@ -21,14 +21,12 @@ import static zipkin2.internal.HexCodec.lowerHexToUnsignedLong;
 
 public class HexCodecTest {
 
-  @Test
-  public void lowerHexToUnsignedLong_downgrades128bitIdsByDroppingHighBits() {
+  @Test void lowerHexToUnsignedLong_downgrades128bitIdsByDroppingHighBits() {
     assertThat(lowerHexToUnsignedLong("463ac35c9f6413ad48485a3953bb6124"))
         .isEqualTo(lowerHexToUnsignedLong("48485a3953bb6124"));
   }
 
-  @Test
-  public void lowerHexToUnsignedLongTest() {
+  @Test void lowerHexToUnsignedLongTest() {
     assertThat(lowerHexToUnsignedLong("ffffffffffffffff")).isEqualTo(-1);
     assertThat(lowerHexToUnsignedLong("0")).isEqualTo(0);
     assertThat(lowerHexToUnsignedLong(Long.toHexString(Long.MAX_VALUE))).isEqualTo(Long.MAX_VALUE);

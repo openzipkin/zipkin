@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,14 +16,14 @@ package zipkin2.internal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class WriteBufferTest {
   // Adapted from http://stackoverflow.com/questions/8511490/calculating-length-in-utf-8-of-java-string-without-actually-encoding-it
-  @Test public void utf8SizeInBytes() {
+  @Test void utf8SizeInBytes() {
     for (int codepoint = 0; codepoint <= 0x10FFFF; codepoint++) {
       if (codepoint == 0xD800) codepoint = 0xDFFF + 1; // skip surrogates
       if (Character.isDefined(codepoint)) {
@@ -38,7 +38,7 @@ public class WriteBufferTest {
   }
 
   /** Uses test data and codepoint wrapping trick from okhttp3.FormBodyTest */
-  @Test public void utf8_malformed() {
+  @Test void utf8_malformed() {
     for (int codepoint : Arrays.asList(0xD800, 0xDFFF, 0xD83D)) {
       String test = new String(new int[] {'a', codepoint, 'c'}, 0, 3);
       assertThat(WriteBuffer.utf8SizeInBytes(test))
@@ -51,7 +51,7 @@ public class WriteBufferTest {
     }
   }
 
-  @Test public void utf8_21Bit_truncated() {
+  @Test void utf8_21Bit_truncated() {
     // https://en.wikipedia.org/wiki/Mahjong_Tiles_(Unicode_block)
     char[] array = "\uD83C\uDC00\uD83C\uDC01".toCharArray();
     array[array.length - 1] = 'c';
@@ -65,7 +65,7 @@ public class WriteBufferTest {
       .isEqualTo("\uD83C\uDC00?");
   }
 
-  @Test public void utf8_21Bit_brokenLowSurrogate() {
+  @Test void utf8_21Bit_brokenLowSurrogate() {
     // https://en.wikipedia.org/wiki/Mahjong_Tiles_(Unicode_block)
     char[] array = "\uD83C\uDC00\uD83C\uDC01".toCharArray();
     array[array.length - 1] = 'c';
@@ -79,7 +79,7 @@ public class WriteBufferTest {
       .isEqualTo("\uD83C\uDC00?c");
   }
 
-  @Test public void utf8_matchesJRE() {
+  @Test void utf8_matchesJRE() {
     // examples from http://utf8everywhere.org/
     for (String string : Arrays.asList(
       "Приве́т नमस्ते שָׁלוֹם",
@@ -97,7 +97,7 @@ public class WriteBufferTest {
     }
   }
 
-  @Test public void utf8_matchesAscii() {
+  @Test void utf8_matchesAscii() {
     String ascii = "86154a4ba6e913854d1e00c0db9010db";
     int encodedSize = WriteBuffer.utf8SizeInBytes(ascii);
     assertThat(encodedSize)
@@ -113,7 +113,7 @@ public class WriteBufferTest {
       .isEqualTo(ascii);
   }
 
-  @Test public void emoji() {
+  @Test void emoji() {
     byte[] emojiBytes = {(byte) 0xF0, (byte) 0x9F, (byte) 0x98, (byte) 0x81};
     String emoji = new String(emojiBytes, UTF_8);
     assertThat(WriteBuffer.utf8SizeInBytes(emoji))
@@ -125,7 +125,7 @@ public class WriteBufferTest {
       .isEqualTo(emojiBytes);
   }
 
-  @Test public void writeAscii_long() {
+  @Test void writeAscii_long() {
     assertThat(writeAscii(-1005656679588439279L))
       .isEqualTo("-1005656679588439279");
     assertThat(writeAscii(0L))
@@ -143,7 +143,7 @@ public class WriteBufferTest {
   }
 
   // Test creating Buffer for a long string
-  @Test public void writeString() {
+  @Test void writeString() {
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < 100000; i++) {
       builder.append("a");
@@ -154,19 +154,19 @@ public class WriteBufferTest {
     assertThat(new String(bytes, UTF_8)).isEqualTo(string);
   }
 
-  @Test public void unsignedVarintSize_32_largest() {
+  @Test void unsignedVarintSize_32_largest() {
     // largest to encode is a negative number
     assertThat(WriteBuffer.varintSizeInBytes(Integer.MIN_VALUE))
       .isEqualTo(5);
   }
 
-  @Test public void unsignedVarintSize_64_largest() {
+  @Test void unsignedVarintSize_64_largest() {
     // largest to encode is a negative number
     assertThat(WriteBuffer.varintSizeInBytes(Long.MIN_VALUE))
       .isEqualTo(10);
   }
 
-  @Test public void writeLongLe_matchesByteBuffer() {
+  @Test void writeLongLe_matchesByteBuffer() {
     for (long number : Arrays.asList(Long.MIN_VALUE, 0L, Long.MAX_VALUE)) {
       byte[] bytes = new byte[8];
       WriteBuffer.wrap(bytes).writeLongLe(number);
@@ -181,7 +181,7 @@ public class WriteBufferTest {
   }
 
   // https://developers.google.com/protocol-buffers/docs/encoding#varints
-  @Test public void writeVarint_32() {
+  @Test void writeVarint_32() {
     int number = 300;
 
     byte[] bytes = new byte[WriteBuffer.varintSizeInBytes(number)];
@@ -192,7 +192,7 @@ public class WriteBufferTest {
   }
 
   // https://developers.google.com/protocol-buffers/docs/encoding#varints
-  @Test public void writeVarint_64() {
+  @Test void writeVarint_64() {
     long number = 300;
 
     byte[] bytes = new byte[WriteBuffer.varintSizeInBytes(number)];
@@ -202,7 +202,7 @@ public class WriteBufferTest {
       .containsExactly(0b1010_1100, 0b0000_0010);
   }
 
-  @Test public void writeVarint_ports() {
+  @Test void writeVarint_ports() {
     // normal case
     byte[] bytes = new byte[WriteBuffer.varintSizeInBytes(80)];
     WriteBuffer.wrap(bytes).writeVarint(80);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,11 +21,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoExtension;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.DependencyLink;
@@ -34,6 +34,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doAnswer;
@@ -42,31 +43,31 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 public class AggregateCallTest {
-
-  @Rule public MockitoRule mocks = MockitoJUnit.rule();
 
   @Mock Call<Void> call1, call2;
   @Mock Callback<Void> callback;
 
-  @Test(expected = IllegalArgumentException.class)
-  public void newVoidCall_emptyNotAllowed() {
-    AggregateCall.newVoidCall(asList());
+  @Test void newVoidCall_emptyNotAllowed() {
+    assertThrows(IllegalArgumentException.class, () -> {
+      AggregateCall.newVoidCall(asList());
+    });
   }
 
-  @Test public void newVoidCall_singletonReturnsOnlyElement() {
+  @Test void newVoidCall_singletonReturnsOnlyElement() {
     assertThat(AggregateCall.newVoidCall(asList(call1)))
       .isEqualTo(call1);
   }
 
-  @Test public void newVoidCall_joinsMultipleCalls() {
+  @Test void newVoidCall_joinsMultipleCalls() {
     assertThat(AggregateCall.newVoidCall(asList(call1, call2)))
       .isInstanceOf(AggregateCall.AggregateVoidCall.class)
       .extracting("delegate")
       .isEqualTo(asList(call1, call2));
   }
 
-  @Test public void execute() throws Exception {
+  @Test void execute() throws Exception {
     Call<Void> call = AggregateCall.newVoidCall(asList(call1, call2));
 
     assertThat(call.execute())
@@ -77,7 +78,7 @@ public class AggregateCallTest {
     verifyNoMoreInteractions(call1, call2);
   }
 
-  @Test public void enqueue() {
+  @Test void enqueue() {
     successCallback(call1);
     successCallback(call2);
 
@@ -92,7 +93,7 @@ public class AggregateCallTest {
     verifyNoMoreInteractions(call1, call2);
   }
 
-  @Test public void enqueue_cancel() {
+  @Test void enqueue_cancel() {
     call1 = Call.create(null);
     call2 = Call.create(null);
 
@@ -108,7 +109,7 @@ public class AggregateCallTest {
     verify(callback).onError(isA(IOException.class));
   }
 
-  @Test public void executesOnce() throws Exception {
+  @Test void executesOnce() throws Exception {
     Call<Void> call = AggregateCall.newVoidCall(asList(call1, call2));
     call.execute();
 
@@ -119,7 +120,7 @@ public class AggregateCallTest {
       .isInstanceOf(IllegalStateException.class);
   }
 
-  @Test public void enqueuesOnce() {
+  @Test void enqueuesOnce() {
     Call<Void> call = AggregateCall.newVoidCall(asList(call1, call2));
     call.enqueue(callback);
 
@@ -130,7 +131,7 @@ public class AggregateCallTest {
       .isInstanceOf(IllegalStateException.class);
   }
 
-  @Test public void execute_errorDoesntStopOtherCalls() throws Exception {
+  @Test void execute_errorDoesntStopOtherCalls() throws Exception {
     Exception e = new IllegalArgumentException();
     when(call1.execute()).thenThrow(e);
     Call<Void> call = AggregateCall.newVoidCall(asList(call1, call2));
@@ -147,8 +148,7 @@ public class AggregateCallTest {
   }
 
   /** This shows that regardless of success or error, we block on completion */
-  @Test(timeout = 1000L)
-  public void enqueue_blocksOnCompletion() throws InterruptedException {
+  @Test @Timeout(1000L) void enqueue_blocksOnCompletion() throws InterruptedException {
     CountDownLatch callsLatch = new CountDownLatch(10);
     ExecutorService exec = Executors.newFixedThreadPool(10);
 
@@ -212,7 +212,7 @@ public class AggregateCallTest {
     assertThat(result.get()).isNotNull();
   }
 
-  @Test public void enqueue_errorDoesntStopOtherCalls() {
+  @Test void enqueue_errorDoesntStopOtherCalls() {
     Exception e = new IllegalArgumentException();
     errorCallback(call1, e);
     successCallback(call2);
@@ -242,7 +242,7 @@ public class AggregateCallTest {
     }).when(call).enqueue(any(Callback.class));
   }
 
-  @Test public void execute_finish() throws Exception {
+  @Test void execute_finish() throws Exception {
     Call<List<DependencyLink>> call = new AggregateDependencyLinks(asList(
       Call.create(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(1).build())),
       Call.create(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(3).build()))
@@ -252,7 +252,7 @@ public class AggregateCallTest {
       .containsExactly(DependencyLink.newBuilder().parent("a").child("b").callCount(4).build());
   }
 
-  @Test public void enqueue_finish() {
+  @Test void enqueue_finish() {
     Call<List<DependencyLink>> call = new AggregateDependencyLinks(asList(
       Call.create(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(1).build())),
       Call.create(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(3).build()))

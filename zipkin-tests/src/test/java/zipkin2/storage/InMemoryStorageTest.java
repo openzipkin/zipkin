@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Component;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
@@ -36,7 +36,7 @@ public class InMemoryStorageTest {
   InMemoryStorage storage =
     InMemoryStorage.newBuilder().autocompleteKeys(asList("http.path")).build();
 
-  @Test public void getTraces_filteringMatchesMostRecentTraces() throws IOException {
+  @Test void getTraces_filteringMatchesMostRecentTraces() throws IOException {
     List<Endpoint> endpoints = IntStream.rangeClosed(1, 10)
       .mapToObj(i -> Endpoint.newBuilder().serviceName("service" + i).ip("127.0.0.1").build())
       .collect(Collectors.toList());
@@ -82,7 +82,7 @@ public class InMemoryStorageTest {
   }
 
   /** Ensures we don't overload a partition due to key equality being conflated with order */
-  @Test public void differentiatesOnTraceIdWhenTimestampEqual() throws IOException {
+  @Test void differentiatesOnTraceIdWhenTimestampEqual() throws IOException {
     storage.accept(asList(CLIENT_SPAN)).execute();
     storage.accept(asList(CLIENT_SPAN.toBuilder().traceId("333").build())).execute();
 
@@ -91,7 +91,7 @@ public class InMemoryStorageTest {
   }
 
   /** It should be safe to run dependency link jobs twice */
-  @Test public void replayOverwrites() throws IOException {
+  @Test void replayOverwrites() throws IOException {
     Span span = Span.newBuilder().traceId("10").id("10").name("receive")
       .kind(Span.Kind.CONSUMER)
       .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
@@ -107,7 +107,7 @@ public class InMemoryStorageTest {
     );
   }
 
-  @Test public void getSpanNames_skipsNullSpanName() throws IOException {
+  @Test void getSpanNames_skipsNullSpanName() throws IOException {
     Span span1 = Span.newBuilder().traceId("1").id("1").name("root")
       .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
       .timestamp(TODAY * 1000)
@@ -125,7 +125,7 @@ public class InMemoryStorageTest {
     );
   }
 
-  @Test public void getTagsAndThenValues() throws IOException {
+  @Test void getTagsAndThenValues() throws IOException {
     Span span1 = Span.newBuilder().traceId("1").id("1").name("root")
       .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
       .putTag("environment", "dev")
@@ -158,7 +158,7 @@ public class InMemoryStorageTest {
     assertThat(storage.getValues("http.path").execute()).containsOnlyOnce("/users");
   }
 
-  @Test public void getTraces_byTraceIds() throws IOException {
+  @Test void getTraces_byTraceIds() throws IOException {
     Span trace1Span1 = Span.newBuilder().traceId("1").id("1").name("root")
       .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
       .timestamp(TODAY * 1000)
@@ -191,7 +191,7 @@ public class InMemoryStorageTest {
    * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
    * information.
    */
-  @Test public void toStringContainsOnlySummaryInformation() {
+  @Test void toStringContainsOnlySummaryInformation() {
     try (InMemoryStorage storage = InMemoryStorage.newBuilder().build()) {
       assertThat(storage).hasToString("InMemoryStorage{}");
     }

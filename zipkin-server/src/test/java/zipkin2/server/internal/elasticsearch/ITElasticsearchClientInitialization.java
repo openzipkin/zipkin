@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,8 @@
 package zipkin2.server.internal.elasticsearch;
 
 import java.io.IOException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.CheckResult;
@@ -30,7 +31,7 @@ public class ITElasticsearchClientInitialization {
    * This blocks for less than the timeout of 2 second to prove we defer i/o until first use of the
    * storage component.
    */
-  @Test(timeout = 1900L) public void defersIOUntilFirstUse() throws IOException {
+  @Test @Timeout(1900L) void defersIOUntilFirstUse() {
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
       "zipkin.storage.type:elasticsearch",
@@ -44,7 +45,7 @@ public class ITElasticsearchClientInitialization {
   }
 
   /** blocking a little is ok, but blocking forever is not. */
-  @Test(timeout = 3000L) public void doesntHangWhenAllDown() throws IOException {
+  @Test @Timeout(3000L) void doesntHangWhenAllDown() {
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
       "zipkin.storage.type:elasticsearch",

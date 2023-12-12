@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,9 +15,7 @@ package zipkin2.storage;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.TestObjects;
@@ -25,47 +23,49 @@ import zipkin2.TestObjects;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class QueryRequestTest {
-  @Rule public ExpectedException thrown = ExpectedException.none();
-  QueryRequest.Builder queryBuilder = QueryRequest.newBuilder().endTs(TestObjects.TODAY).lookback(60).limit(10);
+  QueryRequest.Builder queryBuilder =
+    QueryRequest.newBuilder().endTs(TestObjects.TODAY).lookback(60).limit(10);
   Span span = Span.newBuilder().traceId("10").id("10").name("receive")
     .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
     .kind(Span.Kind.CONSUMER)
     .timestamp(TestObjects.TODAY * 1000)
     .build();
 
-  @Test public void serviceNameCanBeNull() {
+  @Test void serviceNameCanBeNull() {
     assertThat(queryBuilder.build().serviceName())
       .isNull();
   }
 
-  @Test public void serviceName_coercesEmptyToNull() {
+  @Test void serviceName_coercesEmptyToNull() {
     assertThat(queryBuilder.serviceName("").build().serviceName())
       .isNull();
   }
 
-  @Test public void remoteServiceNameCanBeNull() {
+  @Test void remoteServiceNameCanBeNull() {
     assertThat(queryBuilder.build().remoteServiceName())
       .isNull();
   }
 
-  @Test public void remoteServiceName_coercesEmptyToNull() {
+  @Test void remoteServiceName_coercesEmptyToNull() {
     assertThat(queryBuilder.remoteServiceName("").build().remoteServiceName())
       .isNull();
   }
 
-  @Test public void spanName_coercesAllToNull() {
+  @Test void spanName_coercesAllToNull() {
     assertThat(queryBuilder.spanName("all").build().spanName())
       .isNull();
   }
 
-  @Test public void spanName_coercesEmptyToNull() {
+  @Test void spanName_coercesEmptyToNull() {
     assertThat(queryBuilder.spanName("").build().spanName())
       .isNull();
   }
 
-  @Test public void annotationQuerySkipsEmptyKeys() {
+  @Test void annotationQuerySkipsEmptyKeys() {
     Map<String, String> query = new LinkedHashMap<>();
     query.put("", "bar");
 
@@ -73,7 +73,7 @@ public class QueryRequestTest {
       .isEmpty();
   }
 
-  @Test public void annotationQueryTrimsSpaces() {
+  @Test void annotationQueryTrimsSpaces() {
     // spaces in http.path mixed with 'and'
     assertThat(queryBuilder.parseAnnotationQuery("fo and o and bar and http.path = /a ").annotationQuery)
       .containsOnly(entry("fo", ""), entry("o", ""), entry("bar", ""), entry("http.path", "/a"));
@@ -90,7 +90,7 @@ public class QueryRequestTest {
       .containsOnly(entry("L O L", ""), entry("http.path", "/a"), entry("bar", "123"), entry("A B C", ""));
   }
 
-  @Test public void annotationQueryParameterSpecificity() {
+  @Test void annotationQueryParameterSpecificity() {
     // when a parameter is specified both as a tag and annotation, the tag wins because it's considered to be more
     // specific
     assertThat(queryBuilder.parseAnnotationQuery("a=123 and a").annotationQuery).containsOnly(entry("a", "123"));
@@ -100,28 +100,31 @@ public class QueryRequestTest {
     assertThat(queryBuilder.parseAnnotationQuery("a and a=123 and a=456").annotationQuery).containsOnly(entry("a", "456"));
   }
 
-  @Test public void endTsMustBePositive() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("endTs <= 0");
+  @Test void endTsMustBePositive() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    queryBuilder.endTs(0L).build();
+      queryBuilder.endTs(0L).build();
+    });
+    assertTrue(exception.getMessage().contains("endTs <= 0"));
   }
 
-  @Test public void lookbackMustBePositive() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("lookback <= 0");
+  @Test void lookbackMustBePositive() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    queryBuilder.lookback(0).build();
+      queryBuilder.lookback(0).build();
+    });
+    assertTrue(exception.getMessage().contains("lookback <= 0"));
   }
 
-  @Test public void limitMustBePositive() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("limit <= 0");
+  @Test void limitMustBePositive() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    queryBuilder.limit(0).build();
+      queryBuilder.limit(0).build();
+    });
+    assertTrue(exception.getMessage().contains("limit <= 0"));
   }
 
-  @Test public void annotationQuery_roundTrip() {
+  @Test void annotationQuery_roundTrip() {
     String annotationQuery = "http.method=GET and error";
 
     QueryRequest request = queryBuilder
@@ -137,7 +140,7 @@ public class QueryRequestTest {
       .isEqualTo(annotationQuery);
   }
 
-  @Test public void annotationQuery_missingValue() {
+  @Test void annotationQuery_missingValue() {
     String annotationQuery = "http.method=";
 
     QueryRequest request = queryBuilder
@@ -149,33 +152,36 @@ public class QueryRequestTest {
       .containsKey("http.method");
   }
 
-  @Test public void annotationQueryWhenNoInputIsEmpty() {
+  @Test void annotationQueryWhenNoInputIsEmpty() {
     assertThat(queryBuilder.build().annotationQuery())
       .isEmpty();
   }
 
-  @Test public void minDuration_mustBePositive() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("minDuration <= 0");
+  @Test void minDuration_mustBePositive() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    queryBuilder.minDuration(0L).build();
+      queryBuilder.minDuration(0L).build();
+    });
+    assertTrue(exception.getMessage().contains("minDuration <= 0"));
   }
 
-  @Test public void maxDuration_onlyWithMinDuration() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("maxDuration is only valid with minDuration");
+  @Test void maxDuration_onlyWithMinDuration() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    queryBuilder.maxDuration(0L).build();
+      queryBuilder.maxDuration(0L).build();
+    });
+    assertTrue(exception.getMessage().contains("maxDuration is only valid with minDuration"));
   }
 
-  @Test public void maxDuration_greaterThanOrEqualToMinDuration() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("maxDuration < minDuration");
+  @Test void maxDuration_greaterThanOrEqualToMinDuration() {
+    Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
-    queryBuilder.minDuration(1L).maxDuration(0L).build();
+      queryBuilder.minDuration(1L).maxDuration(0L).build();
+    });
+    assertTrue(exception.getMessage().contains("maxDuration < minDuration"));
   }
 
-  @Test public void test_matchesTimestamp() {
+  @Test void test_matchesTimestamp() {
     QueryRequest request = queryBuilder
       .build();
 
@@ -183,7 +189,7 @@ public class QueryRequestTest {
       .isTrue();
   }
 
-  @Test public void test_rootSpanNotFirst() {
+  @Test void test_rootSpanNotFirst() {
     QueryRequest request = queryBuilder
       .build();
 
@@ -193,7 +199,7 @@ public class QueryRequestTest {
     ))).isTrue();
   }
 
-  @Test public void test_noRootSpanLeastWins() {
+  @Test void test_noRootSpanLeastWins() {
     QueryRequest request = queryBuilder
       .build();
 
@@ -203,7 +209,7 @@ public class QueryRequestTest {
     ))).isTrue();
   }
 
-  @Test public void test_noTimestamp() {
+  @Test void test_noTimestamp() {
     QueryRequest request = queryBuilder
       .build();
 
@@ -211,7 +217,7 @@ public class QueryRequestTest {
       .isFalse();
   }
 
-  @Test public void test_timestampPastLookback() {
+  @Test void test_timestampPastLookback() {
     QueryRequest request = queryBuilder
       .endTs(TestObjects.TODAY + 70)
       .build();
@@ -220,7 +226,7 @@ public class QueryRequestTest {
       .isFalse();
   }
 
-  @Test public void test_wrongServiceName() {
+  @Test void test_wrongServiceName() {
     QueryRequest request = queryBuilder
       .serviceName("aloha")
       .build();
@@ -229,7 +235,7 @@ public class QueryRequestTest {
       .isFalse();
   }
 
-  @Test public void test_spanName() {
+  @Test void test_spanName() {
     QueryRequest request = queryBuilder
       .spanName("aloha")
       .build();
@@ -241,7 +247,7 @@ public class QueryRequestTest {
       .isTrue();
   }
 
-  @Test public void test_remoteServiceName() {
+  @Test void test_remoteServiceName() {
     QueryRequest request = queryBuilder
       .remoteServiceName("db")
       .build();
@@ -253,7 +259,7 @@ public class QueryRequestTest {
       .isTrue();
   }
 
-  @Test public void test_minDuration() {
+  @Test void test_minDuration() {
     QueryRequest request = queryBuilder
       .minDuration(100L)
       .build();
@@ -265,7 +271,7 @@ public class QueryRequestTest {
       .isTrue();
   }
 
-  @Test public void test_maxDuration() {
+  @Test void test_maxDuration() {
     QueryRequest request = queryBuilder
       .minDuration(100L)
       .maxDuration(110L)
@@ -297,7 +303,7 @@ public class QueryRequestTest {
     .putTag("baz", "qux")
     .build();
 
-  @Test public void test_annotationQuery_tagKey() {
+  @Test void test_annotationQuery_tagKey() {
     QueryRequest query = queryBuilder
       .parseAnnotationQuery("baz").build();
 
@@ -311,7 +317,7 @@ public class QueryRequestTest {
       .isTrue();
   }
 
-  @Test public void test_annotationQuery_annotation() {
+  @Test void test_annotationQuery_annotation() {
     QueryRequest query = queryBuilder
       .parseAnnotationQuery("foo").build();
 
@@ -325,7 +331,7 @@ public class QueryRequestTest {
       .isTrue();
   }
 
-  @Test public void test_annotationQuery_twoAnnotation() {
+  @Test void test_annotationQuery_twoAnnotation() {
     QueryRequest query = queryBuilder
       .parseAnnotationQuery("foo and bar").build();
 
@@ -339,7 +345,7 @@ public class QueryRequestTest {
       .isFalse();
   }
 
-  @Test public void test_annotationQuery_annotationsAndTag() {
+  @Test void test_annotationQuery_annotationsAndTag() {
     QueryRequest query = queryBuilder
       .parseAnnotationQuery("foo and bar and baz=qux").build();
 

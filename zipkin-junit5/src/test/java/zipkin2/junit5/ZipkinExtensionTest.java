@@ -13,6 +13,9 @@
  */
 package zipkin2.junit5;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -21,15 +24,10 @@ import okhttp3.Response;
 import okio.Buffer;
 import okio.ByteString;
 import okio.GzipSink;
-import org.junit.AssumptionViolatedException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,8 +43,7 @@ public class ZipkinExtensionTest {
   List<Span> spans = Arrays.asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
   OkHttpClient client = new OkHttpClient();
 
-  @Test
-  public void getTraces_storedViaPost() throws IOException {
+  @Test void getTraces_storedViaPost() throws IOException {
     List<Span> trace = asList(CLIENT_SPAN);
     // write the span to the zipkin using http
     assertThat(postSpansV1(trace).code()).isEqualTo(202);
@@ -55,18 +52,16 @@ public class ZipkinExtensionTest {
     assertThat(zipkin.getTraces()).containsOnly(trace);
   }
 
-  @Test
-  public void getTraces_storedViaPostVersion2_json() throws IOException {
+  @Test void getTraces_storedViaPostVersion2_json() throws IOException {
     getTraces_storedViaPostVersion2("application/json", SpanBytesEncoder.JSON_V2);
   }
 
-  @Test
-  public void getTraces_storedViaPostVersion2_proto3() throws IOException {
+  @Test void getTraces_storedViaPostVersion2_proto3() throws IOException {
     getTraces_storedViaPostVersion2("application/x-protobuf", SpanBytesEncoder.PROTO3);
   }
 
   void getTraces_storedViaPostVersion2(String mediaType, SpanBytesEncoder encoder)
-      throws IOException {
+    throws IOException {
 
     byte[] message = encoder.encodeList(spans);
 
@@ -86,8 +81,7 @@ public class ZipkinExtensionTest {
   }
 
   /** The rule is here to help debugging. Even partial spans should be returned */
-  @Test
-  public void getTraces_whenMissingTimestamps() throws IOException {
+  @Test void getTraces_whenMissingTimestamps() throws IOException {
     Span span = Span.newBuilder().traceId("1").id("1").name("foo").build();
     // write the span to the zipkin using http
     assertThat(postSpansV1(asList(span)).code()).isEqualTo(202);
@@ -97,8 +91,7 @@ public class ZipkinExtensionTest {
   }
 
   /** The raw query can show affects like redundant rows in the data store. */
-  @Test
-  public void storeSpans_readbackRaw() {
+  @Test void storeSpans_readbackRaw() {
     Span missingDuration = LOTS_OF_SPANS[0].toBuilder().duration(null).build();
     Span withDuration = LOTS_OF_SPANS[0];
 
@@ -110,8 +103,7 @@ public class ZipkinExtensionTest {
       .containsExactly(missingDuration, withDuration);
   }
 
-  @Test
-  public void httpRequestCountIncrements() throws IOException {
+  @Test void httpRequestCountIncrements() throws IOException {
     postSpansV1(spans);
     postSpansV1(spans);
 
@@ -123,16 +115,14 @@ public class ZipkinExtensionTest {
    * happened where several updates went to the same span id. {@link ZipkinExtension#collectorMetrics}
    * can be used to help ensure a span isn't reported more times than expected.
    */
-  @Test
-  public void collectorMetrics_spans() throws IOException {
+  @Test void collectorMetrics_spans() throws IOException {
     postSpansV1(asList(LOTS_OF_SPANS[0]));
     postSpansV1(asList(LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]));
 
     assertThat(zipkin.collectorMetrics().spans()).isEqualTo(3);
   }
 
-  @Test
-  public void postSpans_disconnectDuringBody() {
+  @Test void postSpans_disconnectDuringBody() throws IOException {
     zipkin.enqueueFailure(HttpFailure.disconnectDuringBody());
 
     try {
@@ -144,16 +134,11 @@ public class ZipkinExtensionTest {
     // Zipkin didn't store the spans, as they shouldn't have been readable, due to disconnect
     assertThat(zipkin.getTraces()).isEmpty();
 
-    try {
-      // The failure shouldn't affect later requests
-      assertThat(postSpansV1(spans).code()).isEqualTo(202);
-    } catch (IOException flake) {
-      throw new AssumptionViolatedException("test flaked", flake);
-    }
+    // The failure shouldn't affect later requests
+    assertThat(postSpansV1(spans).code()).isEqualTo(202);
   }
 
-  @Test
-  public void postSpans_sendErrorResponse400() throws IOException {
+  @Test void postSpans_sendErrorResponse400() throws IOException {
     zipkin.enqueueFailure(HttpFailure.sendErrorResponse(400, "Invalid Format"));
 
     Response response = postSpansV1(spans);
@@ -167,8 +152,7 @@ public class ZipkinExtensionTest {
     assertThat(postSpansV1(spans).code()).isEqualTo(202);
   }
 
-  @Test
-  public void gzippedSpans() throws IOException {
+  @Test void gzippedSpans() throws IOException {
     byte[] spansInJson = SpanBytesEncoder.JSON_V1.encodeList(spans);
 
     Buffer sink = new Buffer();

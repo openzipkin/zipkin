@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,7 @@
 package zipkin2.server.internal.health;
 
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,7 +22,7 @@ import static zipkin2.server.internal.health.ComponentHealth.STATUS_DOWN;
 import static zipkin2.server.internal.health.ComponentHealth.STATUS_UP;
 
 public class ZipkinHealthControllerTest {
-  @Test public void writeJsonError_writesNestedError() throws Exception {
+  @Test void writeJsonError_writesNestedError() throws Exception {
     assertThat(ZipkinHealthController.writeJsonError("robots")).isEqualTo(""
       + "{\n"
       + "  \"status\" : \"DOWN\",\n"
@@ -36,7 +36,7 @@ public class ZipkinHealthControllerTest {
     );
   }
 
-  @Test public void writeJson_mappedByName() throws Exception {
+  @Test void writeJson_mappedByName() throws Exception {
     List<ComponentHealth> healths = asList(
       new ComponentHealth("foo", STATUS_UP, null),
       new ComponentHealth("bar", STATUS_DOWN, "java.io.IOException: socket disconnect")

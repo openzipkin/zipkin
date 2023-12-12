@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,8 +13,8 @@
  */
 package zipkin2.server.internal;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.Configuration;
@@ -29,17 +29,17 @@ public class ZipkinActuatorImporterTest {
     new ZipkinActuatorImporter(ActuatorImpl.class.getName());
   GenericApplicationContext context = new GenericApplicationContext();
 
-  @After public void close() {
+  @AfterEach public void close() {
     context.close();
   }
 
-  @Test public void doesntCrashWhenNoIncludes() {
+  @Test void doesntCrashWhenNoIncludes() {
     zipkinActuatorImporter.initialize(context);
 
     context.refresh();
   }
 
-  @Test public void configuresInclude() {
+  @Test void configuresInclude() {
     TestPropertyValues.of(
       "zipkin.internal.actuator.include[0]=" + Include1.class.getName()
     ).applyTo(context);
@@ -50,7 +50,7 @@ public class ZipkinActuatorImporterTest {
     context.getBean(Include1.class);
   }
 
-  @Test public void doesntCrashOnBadActuatorImpl() {
+  @Test void doesntCrashOnBadActuatorImpl() {
     TestPropertyValues.of(
       "zipkin.internal.actuator.include[0]=" + Include1.class.getName()
     ).applyTo(context);
@@ -62,7 +62,7 @@ public class ZipkinActuatorImporterTest {
       .isInstanceOf(NoSuchBeanDefinitionException.class);
   }
 
-  @Test public void skipsWhenDisabled() {
+  @Test void skipsWhenDisabled() {
     TestPropertyValues.of(
       PROPERTY_NAME_ACTUATOR_ENABLED + "=false",
       "zipkin.internal.actuator.include[1]=" + Include2.class.getName()
@@ -76,7 +76,7 @@ public class ZipkinActuatorImporterTest {
       .isInstanceOf(NoSuchBeanDefinitionException.class);
   }
 
-  @Test public void doesntCrashWhenBadInclude() {
+  @Test void doesntCrashWhenBadInclude() {
     TestPropertyValues.of(
       "zipkin.internal.actuator.include[0]=tomatoes"
     ).applyTo(context);
@@ -86,7 +86,7 @@ public class ZipkinActuatorImporterTest {
     context.refresh();
   }
 
-  @Test public void configuresIncludes() {
+  @Test void configuresIncludes() {
     TestPropertyValues.of(
       "zipkin.internal.actuator.include[0]=" + Include1.class.getName(),
       "zipkin.internal.actuator.include[1]=" + Include2.class.getName()

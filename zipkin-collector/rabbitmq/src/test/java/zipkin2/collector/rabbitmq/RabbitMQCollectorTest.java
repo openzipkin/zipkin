@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,8 +15,8 @@ package zipkin2.collector.rabbitmq;
 
 import com.rabbitmq.client.ConnectionFactory;
 import java.io.UncheckedIOException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import zipkin2.CheckResult;
 import zipkin2.Component;
 
@@ -28,7 +28,7 @@ public class RabbitMQCollectorTest {
 
   RabbitMQCollector collector;
 
-  @Before public void before() {
+  @BeforeEach public void before() {
     ConnectionFactory connectionFactory = new ConnectionFactory();
     connectionFactory.setConnectionTimeout(100);
     // We can be pretty certain RabbitMQ isn't running on localhost port 80
@@ -36,13 +36,13 @@ public class RabbitMQCollectorTest {
         .connectionFactory(connectionFactory).addresses(asList("localhost:80")).build();
   }
 
-  @Test public void checkFalseWhenRabbitMQIsDown() {
+  @Test void checkFalseWhenRabbitMQIsDown() {
     CheckResult check = collector.check();
     assertThat(check.ok()).isFalse();
     assertThat(check.error()).isInstanceOf(UncheckedIOException.class);
   }
 
-  @Test public void startFailsWhenRabbitMQIsDown() {
+  @Test void startFailsWhenRabbitMQIsDown() {
     // NOTE.. This is probably not good as it can crash on transient failure..
     assertThatThrownBy(collector::start)
         .isInstanceOf(UncheckedIOException.class)
@@ -55,7 +55,7 @@ public class RabbitMQCollectorTest {
    * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
    * information.
    */
-  @Test public void toStringContainsOnlySummaryInformation() {
+  @Test void toStringContainsOnlySummaryInformation() {
     assertThat(collector).hasToString(
         "RabbitMQCollector{addresses=[localhost:80], queue=zipkin}"
     );

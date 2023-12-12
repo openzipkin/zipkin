@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,11 +20,9 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,7 +30,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
 
 /**
  * Integration test suite for CORS configuration.
- *
+ * <p>
  * Verifies that allowed-origins can be configured via properties (zipkin.query.allowed-origins).
  */
 @SpringBootTest(
@@ -44,7 +42,6 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "zipkin.query.allowed-origins=" + ITZipkinServerCORS.ALLOWED_ORIGIN
   }
 )
-@RunWith(SpringRunner.class)
 public class ITZipkinServerCORS {
   static final String ALLOWED_ORIGIN = "http://foo.example.com";
   static final String DISALLOWED_ORIGIN = "http://bar.example.com";
@@ -53,7 +50,7 @@ public class ITZipkinServerCORS {
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
   /** Notably, javascript makes pre-flight requests, and won't POST spans if disallowed! */
-  @Test public void shouldAllowConfiguredOrigin_preflight() throws Exception {
+  @Test void shouldAllowConfiguredOrigin_preflight() throws Exception {
     shouldPermitPreflight(optionsForOrigin("GET", "/api/v2/traces", ALLOWED_ORIGIN));
     shouldPermitPreflight(optionsForOrigin("POST", "/api/v2/spans", ALLOWED_ORIGIN));
   }
@@ -70,7 +67,7 @@ public class ITZipkinServerCORS {
     assertThat(response.header("access-control-allow-headers")).contains("content-type");
   }
 
-  @Test public void shouldAllowConfiguredOrigin() throws Exception {
+  @Test void shouldAllowConfiguredOrigin() throws Exception {
     shouldAllowConfiguredOrigin(getTracesFromOrigin(ALLOWED_ORIGIN));
     shouldAllowConfiguredOrigin(postSpansFromOrigin(ALLOWED_ORIGIN));
   }
@@ -83,7 +80,7 @@ public class ITZipkinServerCORS {
     assertThat(response.header("access-control-allow-headers")).contains("content-type");
   }
 
-  @Test public void shouldDisallowOrigin() throws Exception {
+  @Test void shouldDisallowOrigin() throws Exception {
     shouldDisallowOrigin(getTracesFromOrigin(DISALLOWED_ORIGIN));
     shouldDisallowOrigin(postSpansFromOrigin(DISALLOWED_ORIGIN));
   }
