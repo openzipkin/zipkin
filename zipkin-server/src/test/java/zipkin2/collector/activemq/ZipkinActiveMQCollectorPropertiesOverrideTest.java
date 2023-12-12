@@ -15,7 +15,6 @@ package zipkin2.collector.activemq;
 
 import java.util.Arrays;
 import java.util.function.Function;
-import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,6 +24,8 @@ import org.junit.runners.Parameterized.Parameters;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.server.internal.activemq.Access;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(Parameterized.class)
 public class ZipkinActiveMQCollectorPropertiesOverrideTest {
@@ -82,7 +83,7 @@ public class ZipkinActiveMQCollectorPropertiesOverrideTest {
     Access.registerActiveMQProperties(context);
     context.refresh();
 
-    Assertions.assertThat(Access.collectorBuilder(context))
+    assertThat(Access.collectorBuilder(context))
       .extracting(builderExtractor)
       .isEqualTo(value);
   }

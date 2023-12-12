@@ -157,7 +157,7 @@ abstract class ITElasticsearchStorage {
         storage, links, midnight));
   }
 
-  @Test void testUsageOfDeprecatedFeatures() {
+  @Test void usageOfDeprecatedFeatures() {
     WebClient webClient = WebClient.builder(elasticsearch().baseUrl()).factory(ClientFactory.builder()
       .useHttp2Preface(false).build()).build();
     final AggregatedHttpResponse response =
