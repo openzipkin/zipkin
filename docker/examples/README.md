@@ -39,18 +39,6 @@ To start the Cassandra-backed configuration, run:
 $ docker-compose -f docker-compose-cassandra.yml up
 ```
 
-## MySQL
-
-You can store traces in [MySQL](../test-images/zipkin-mysql/README.md) instead of memory, using the
-`docker-compose-mysql.yml` file. This configuration starts `zipkin`, `zipkin-mysql` and
-`zipkin-dependencies` (cron job) in their own containers.
-
-To start the MySQL-backed configuration, run:
-
-```bash
-$ docker-compose -f docker-compose-mysql.yml up
-```
-
 ## Kafka
 
 You can collect traces from [Kafka](../test-images/zipkin-kafka/README.md) in addition to HTTP, using the
@@ -71,6 +59,34 @@ In other words, if you are running a sample application on your laptop, you woul
 If you are using Docker machine, adjust `KAFKA_ADVERTISED_HOST_NAME` in `docker-compose-kafka.yml`
 and the `bootstrapServers` configuration of the kafka sender to match your Docker host IP (ex. 192.168.99.100:19092).
 
+## MySQL
+
+You can store traces in [MySQL](../test-images/zipkin-mysql/README.md) instead of memory, using the
+`docker-compose-mysql.yml` file. This configuration starts `zipkin`, `zipkin-mysql` and
+`zipkin-dependencies` (cron job) in their own containers.
+
+To start the MySQL-backed configuration, run:
+
+```bash
+$ docker-compose -f docker-compose-mysql.yml up
+```
+
+## RabbitMQ
+
+You can collect traces from [RabbitMQ](../test-images/zipkin-rabbitmq/README.md) in addition to HTTP, using the
+`docker-compose-rabbitmq.yml` file. This configuration starts `zipkin` and `zipkin-rabbitmq` in their
+own containers.
+
+To add RabbitMQ configuration, run:
+```bash
+$ docker-compose -f docker-compose-rabbitmq.yml up
+```
+
+Then configure the [RabbitMQ sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/amqp-client/src/main/java/zipkin2/reporter/amqp/RabbitMQSender.java)
+using a `host` value of `host.docker.internal` if your application is inside the docker network.
+Otherwise, an application can use the default `host` value of `localhost` to send spans to RabbitMQ
+via the AMQP protocol.
+
 # Example
 
 The docker-compose configuration can be extended to host an [example application](https://github.com/openzipkin/brave-example)
@@ -85,7 +101,7 @@ $ docker-compose -f docker-compose.yml -f docker-compose-example.yml up
 Once the services start, open http://localhost:8081/
 * This calls the backend (http://127.0.0.1:9000/api) and shows its result: a formatted date.
 
-Afterwards, you can view traces that went through the backend via http://127.0.0.1:9411/zipkin?serviceName=backend
+Afterward, you can view traces that went through the backend via http://127.0.0.1:9411/zipkin?serviceName=backend
 
 ## UI
 

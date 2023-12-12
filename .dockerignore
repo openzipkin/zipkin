@@ -27,6 +27,9 @@
 !docker/test-images/zipkin-mysql/start-mysql
 !zipkin-storage/mysql-v1/src/main/resources/mysql.sql
 
+!docker/test-images/zipkin-rabbitmq/install.sh
+!docker/test-images/zipkin-rabbitmq/start-rabbitmq
+
 !docker/test-images/zipkin-ui/nginx.conf
 !docker/test-images/zipkin-ui/start-nginx
 !zipkin-lens/target/zipkin-lens-*.jar
