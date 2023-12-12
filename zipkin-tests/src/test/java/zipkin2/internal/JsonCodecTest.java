@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,69 +14,74 @@
 package zipkin2.internal;
 
 import java.io.IOException;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static zipkin2.internal.JsonCodec.exceptionReading;
 
 public class JsonCodecTest {
-  @Rule public ExpectedException thrown = ExpectedException.none();
 
-  @Test public void doesntStackOverflowOnToBufferWriterBug_lessThanBytes() {
-    thrown.expect(AssertionError.class);
-    thrown.expectMessage("Bug found using FooWriter to write Foo as json. Wrote 1/2 bytes: a");
+  @Test void doesntStackOverflowOnToBufferWriterBug_lessThanBytes() {
+    Throwable exception = assertThrows(AssertionError.class, () -> {
 
-    class FooWriter implements WriteBuffer.Writer {
-      @Override public int sizeInBytes(Object value) {
-        return 2;
+      class FooWriter implements WriteBuffer.Writer {
+        @Override public int sizeInBytes(Object value) {
+          return 2;
+        }
+
+        @Override public void write(Object value, WriteBuffer buffer) {
+          buffer.writeByte('a');
+          throw new RuntimeException("buggy");
+        }
       }
 
-      @Override public void write(Object value, WriteBuffer buffer) {
-        buffer.writeByte('a');
-        throw new RuntimeException("buggy");
+      class Foo {
+        @Override public String toString() {
+          return new String(JsonCodec.write(new FooWriter(), this), UTF_8);
+        }
       }
-    }
 
-    class Foo {
-      @Override public String toString() {
-        return new String(JsonCodec.write(new FooWriter(), this), UTF_8);
-      }
-    }
-
-    new Foo().toString(); // cause the exception
+      new Foo().toString(); // cause the exception
+    });
+    assertTrue(exception.getMessage()
+      .contains(
+        "Bug found using FooWriter to write Foo as json. Wrote 1/2 bytes: a")); // cause the exception
   }
 
-  @Test public void doesntStackOverflowOnToBufferWriterBug_Overflow() {
-    thrown.expect(AssertionError.class);
-    thrown.expectMessage("Bug found using FooWriter to write Foo as json. Wrote 2/2 bytes: ab");
+  @Test void doesntStackOverflowOnToBufferWriterBug_Overflow() {
+    Throwable exception = assertThrows(AssertionError.class, () -> {
 
-    // pretend there was a bug calculating size, ex it calculated incorrectly as to small
-    class FooWriter implements WriteBuffer.Writer {
-      @Override public int sizeInBytes(Object value) {
-        return 2;
+      // pretend there was a bug calculating size, ex it calculated incorrectly as to small
+      class FooWriter implements WriteBuffer.Writer {
+        @Override public int sizeInBytes(Object value) {
+          return 2;
+        }
+
+        @Override public void write(Object value, WriteBuffer buffer) {
+          buffer.writeByte('a');
+          buffer.writeByte('b');
+          buffer.writeByte('c'); // wrote larger than size!
+        }
       }
 
-      @Override public void write(Object value, WriteBuffer buffer) {
-        buffer.writeByte('a');
-        buffer.writeByte('b');
-        buffer.writeByte('c'); // wrote larger than size!
+      class Foo {
+        @Override public String toString() {
+          return new String(JsonCodec.write(new FooWriter(), this), UTF_8);
+        }
       }
-    }
 
-    class Foo {
-      @Override public String toString() {
-        return new String(JsonCodec.write(new FooWriter(), this), UTF_8);
-      }
-    }
-
-    new Foo().toString(); // cause the exception
+      new Foo().toString(); // cause the exception
+    });
+    assertTrue(exception.getMessage()
+      .contains(
+        "Bug found using FooWriter to write Foo as json. Wrote 2/2 bytes: ab")); // cause the exception
   }
 
-  @Test public void exceptionReading_malformedJsonWraps() {
+  @Test void exceptionReading_malformedJsonWraps() {
     // grab a real exception from the gson library
     Exception error = null;
     byte[] bytes = "[\"='".getBytes(UTF_8);

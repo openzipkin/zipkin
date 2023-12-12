@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,9 +14,9 @@
 package zipkin2.collector;
 
 import java.util.concurrent.RejectedExecutionException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import uk.org.lidalia.slf4jext.Level;
 import uk.org.lidalia.slf4jtest.TestLogger;
@@ -47,21 +47,18 @@ public class CollectorTest {
   Collector collector;
   private TestLogger testLogger = TestLoggerFactory.getTestLogger("");
 
-  @Before
-  public void setup() {
+  @BeforeEach public void setup() {
     testLogger.clearAll();
     collector = spy(
       new Collector.Builder(testLogger).metrics(metrics).storage(storage).build());
     when(collector.idString(CLIENT_SPAN)).thenReturn("1"); // to make expectations easier to read
   }
 
-  @After
-  public void after() {
+  @AfterEach public void after() {
     verifyNoMoreInteractions(metrics, callback);
   }
 
-  @Test
-  public void unsampledSpansArentStored() {
+  @Test void unsampledSpansArentStored() {
     collector = new Collector.Builder(LoggerFactory.getLogger(""))
       .sampler(CollectorSampler.create(0.0f))
       .metrics(metrics)
@@ -77,16 +74,14 @@ public class CollectorTest {
     assertThat(storage.getTraces()).isEmpty();
   }
 
-  @Test
-  public void errorDetectingFormat() {
+  @Test void errorDetectingFormat() {
     collector.acceptSpans(new byte[] {'f', 'o', 'o'}, callback);
 
     verify(callback).onError(any(RuntimeException.class));
     verify(metrics).incrementMessagesDropped();
   }
 
-  @Test
-  public void acceptSpans_jsonV2() {
+  @Test void acceptSpans_jsonV2() {
     byte[] bytes = SpanBytesEncoder.JSON_V2.encodeList(TRACE);
     collector.acceptSpans(bytes, callback);
 
@@ -98,8 +93,7 @@ public class CollectorTest {
     assertThat(storage.getTraces()).containsOnly(TRACE);
   }
 
-  @Test
-  public void acceptSpans_decodingError() {
+  @Test void acceptSpans_decodingError() {
     byte[] bytes = "[\"='".getBytes(UTF_8); // screwed up json
     collector.acceptSpans(bytes, SpanBytesDecoder.JSON_V2, callback);
 
@@ -108,8 +102,7 @@ public class CollectorTest {
     verify(metrics).incrementMessagesDropped();
   }
 
-  @Test
-  public void accept_storageError() {
+  @Test void accept_storageError() {
     StorageComponent storage = mock(StorageComponent.class);
     RuntimeException error = new RuntimeException("storage disabled");
     when(storage.spanConsumer()).thenThrow(error);
@@ -126,8 +119,7 @@ public class CollectorTest {
     verify(metrics).incrementSpansDropped(4);
   }
 
-  @Test
-  public void acceptSpans_emptyMessageOk() {
+  @Test void acceptSpans_emptyMessageOk() {
     byte[] bytes = new byte[] {'[', ']'};
     collector.acceptSpans(bytes, callback);
 
@@ -138,8 +130,7 @@ public class CollectorTest {
     assertThat(storage.getTraces()).isEmpty();
   }
 
-  @Test
-  public void storeSpansCallback_toStringIncludesSpanIds() {
+  @Test void storeSpansCallback_toStringIncludesSpanIds() {
     Span span2 = CLIENT_SPAN.toBuilder().id("3").build();
     when(collector.idString(span2)).thenReturn("3");
 
@@ -147,14 +138,12 @@ public class CollectorTest {
       .hasToString("StoreSpans([1, 3])");
   }
 
-  @Test
-  public void storeSpansCallback_toStringIncludesSpanIds_noMoreThan3() {
+  @Test void storeSpansCallback_toStringIncludesSpanIds_noMoreThan3() {
     assertThat(unprefixIdString(collector.new StoreSpans(TRACE).toString()))
       .hasToString("StoreSpans([1, 1, 2, ...])");
   }
 
-  @Test
-  public void storeSpansCallback_onErrorWithNullMessage() {
+  @Test void storeSpansCallback_onErrorWithNullMessage() {
     RuntimeException error = new RuntimeException();
 
     Callback<Void> callback = collector.new StoreSpans(TRACE);
@@ -164,8 +153,7 @@ public class CollectorTest {
     verify(metrics).incrementSpansDropped(4);
   }
 
-  @Test
-  public void storeSpansCallback_onErrorWithMessage() {
+  @Test void storeSpansCallback_onErrorWithMessage() {
     IllegalArgumentException error = new IllegalArgumentException("no beer");
     Callback<Void> callback = collector.new StoreSpans(TRACE);
     callback.onError(error);
@@ -174,8 +162,7 @@ public class CollectorTest {
     verify(metrics).incrementSpansDropped(4);
   }
 
-  @Test
-  public void errorAcceptingSpans_onErrorRejectedExecution() {
+  @Test void errorAcceptingSpans_onErrorRejectedExecution() {
     RuntimeException error = new RejectedExecutionException("slow down");
     collector.handleStorageError(TRACE, error, callback);
 
@@ -194,8 +181,7 @@ public class CollectorTest {
     verify(metrics).incrementSpansDropped(4);
   }
 
-  @Test
-  public void handleStorageError_onErrorWithMessage() {
+  @Test void handleStorageError_onErrorWithMessage() {
     RuntimeException error = new IllegalArgumentException("no beer");
     collector.handleStorageError(TRACE, error, callback);
 
@@ -204,8 +190,7 @@ public class CollectorTest {
     verify(metrics).incrementSpansDropped(4);
   }
 
-  @Test
-  public void handleDecodeError_onErrorWithNullMessage() {
+  @Test void handleDecodeError_onErrorWithNullMessage() {
     RuntimeException error = new RuntimeException();
     collector.handleDecodeError(error, callback);
 
@@ -214,8 +199,7 @@ public class CollectorTest {
     verify(metrics).incrementMessagesDropped();
   }
 
-  @Test
-  public void handleDecodeError_onErrorWithMessage() {
+  @Test void handleDecodeError_onErrorWithMessage() {
     IllegalArgumentException error = new IllegalArgumentException("no beer");
     collector.handleDecodeError(error, callback);
 
@@ -224,8 +208,7 @@ public class CollectorTest {
     verify(metrics).incrementMessagesDropped();
   }
 
-  @Test
-  public void handleDecodeError_doesntWrapMessageOnMalformedException() {
+  @Test void handleDecodeError_doesntWrapMessageOnMalformedException() {
     IllegalArgumentException error = new IllegalArgumentException("Malformed reading spans");
     collector.handleDecodeError(error, callback);
 
@@ -234,8 +217,7 @@ public class CollectorTest {
     verify(metrics).incrementMessagesDropped();
   }
 
-  @Test
-  public void handleDecodeError_doesntWrapMessageOnTruncatedException() {
+  @Test void handleDecodeError_doesntWrapMessageOnTruncatedException() {
     IllegalArgumentException error = new IllegalArgumentException("Truncated reading spans");
     collector.handleDecodeError(error, callback);
 

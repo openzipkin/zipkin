@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,13 +21,11 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 import zipkin2.Component;
 import zipkin2.Span;
@@ -57,7 +55,6 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "zipkin.self-tracing.message-timeout=100ms",
     "zipkin.self-tracing.traces-per-second=100"
   })
-@RunWith(SpringRunner.class)
 public class ITZipkinSelfTracing {
   @Autowired TracingStorageComponent storage;
   @Autowired AsyncZipkinSpanHandler zipkinSpanHandler;
@@ -65,7 +62,7 @@ public class ITZipkinSelfTracing {
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
-  @Before public void clear() {
+  @BeforeEach public void clear() {
     inMemoryStorage().clear();
   }
 
@@ -73,7 +70,7 @@ public class ITZipkinSelfTracing {
     return (InMemoryStorage) storage.delegate;
   }
 
-  @Test public void getIsTraced_v2() throws Exception {
+  @Test void getIsTraced_v2() throws Exception {
     assertThat(getServices("v2").body().string()).isEqualTo("[]");
 
     List<List<Span>> traces = awaitSpans(2);
@@ -84,8 +81,9 @@ public class ITZipkinSelfTracing {
     assertQueryReturnsResults(QueryRequest.newBuilder().spanName("get-service-names"), traces);
   }
 
-  @Test @Ignore("https://github.com/openzipkin/zipkin/issues/2781")
-  public void postIsTraced_v1() throws Exception {
+  @Test
+  @Disabled("https://github.com/openzipkin/zipkin/issues/2781")
+  void postIsTraced_v1() throws Exception {
     postSpan("v1");
 
     List<List<Span>> traces = awaitSpans(3); // test span + POST + accept-spans
@@ -96,8 +94,9 @@ public class ITZipkinSelfTracing {
     assertQueryReturnsResults(QueryRequest.newBuilder().spanName("accept-spans"), traces);
   }
 
-  @Test @Ignore("https://github.com/openzipkin/zipkin/issues/2781")
-  public void postIsTraced_v2() throws Exception {
+  @Test
+  @Disabled("https://github.com/openzipkin/zipkin/issues/2781")
+  void postIsTraced_v2() throws Exception {
     postSpan("v2");
 
     List<List<Span>> traces = awaitSpans(3); // test span + POST + accept-spans
@@ -114,7 +113,7 @@ public class ITZipkinSelfTracing {
    * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
    * information.
    */
-  @Test public void toStringContainsOnlySummaryInformation() {
+  @Test void toStringContainsOnlySummaryInformation() {
     assertThat(storage).hasToString("Traced{InMemoryStorage{}}");
     assertThat(zipkinSpanHandler).hasToString("AsyncReporter{StorageComponent}");
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,7 +18,7 @@ import java.sql.SQLSyntaxErrorException;
 import javax.sql.DataSource;
 import org.jooq.conf.Settings;
 import org.jooq.exception.DataAccessException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -32,8 +32,7 @@ public class SchemaTest {
     true
   );
 
-  @Test
-  public void hasIpv6_falseWhenKnownSQLState() throws SQLException {
+  @Test void hasIpv6_falseWhenKnownSQLState() throws SQLException {
     SQLSyntaxErrorException sqlException = new SQLSyntaxErrorException(
         "Unknown column 'zipkin_annotations.endpoint_ipv6' in 'field list'",
         "42S22", 1054);
@@ -50,8 +49,7 @@ public class SchemaTest {
    * missing. This is to prevent zipkin from crashing due to scenarios we haven't thought up, yet.
    * The root error goes into the log in this case.
    */
-  @Test
-  public void hasIpv6_falseWhenUnknownSQLState() throws SQLException {
+  @Test void hasIpv6_falseWhenUnknownSQLState() throws SQLException {
     SQLSyntaxErrorException sqlException = new SQLSyntaxErrorException(
         "java.sql.SQLSyntaxErrorException: Table 'zipkin.zipkin_annotations' doesn't exist",
         "42S02", 1146);
@@ -64,8 +62,7 @@ public class SchemaTest {
     assertThat(schema.hasIpv6).isFalse();
   }
 
-  @Test
-  public void hasErrorCount_falseWhenKnownSQLState() throws SQLException {
+  @Test void hasErrorCount_falseWhenKnownSQLState() throws SQLException {
     SQLSyntaxErrorException sqlException = new SQLSyntaxErrorException(
       "Unknown column 'zipkin_dependencies.error_count' in 'field list'",
       "42S22", 1054);
@@ -82,8 +79,7 @@ public class SchemaTest {
    * missing. This is to prevent zipkin from crashing due to scenarios we haven't thought up, yet.
    * The root error goes into the log in this case.
    */
-  @Test
-  public void hasErrorCount_falseWhenUnknownSQLState() throws SQLException {
+  @Test void hasErrorCount_falseWhenUnknownSQLState() throws SQLException {
     SQLSyntaxErrorException sqlException = new SQLSyntaxErrorException(
       "java.sql.SQLSyntaxErrorException: Table 'zipkin.zipkin_dependencies' doesn't exist",
       "42S02", 1146);
@@ -96,8 +92,7 @@ public class SchemaTest {
     assertThat(schema.hasErrorCount).isFalse();
   }
 
-  @Test
-  public void hasDependencies_missing() throws SQLException {
+  @Test void hasDependencies_missing() throws SQLException {
     SQLSyntaxErrorException sqlException = new SQLSyntaxErrorException(
         "SQL [select count(*) from `zipkin_dependencies`]; Table 'zipkin.zipkin_dependencies' doesn't exist\n"
             + "  Query is : select count(*) from `zipkin_dependencies`",
@@ -111,8 +106,7 @@ public class SchemaTest {
     assertThat(schema.hasPreAggregatedDependencies).isFalse();
   }
 
-  @Test
-  public void hasRemoteServiceName_falseWhenKnownSQLState() throws SQLException {
+  @Test void hasRemoteServiceName_falseWhenKnownSQLState() throws SQLException {
     SQLSyntaxErrorException sqlException = new SQLSyntaxErrorException(
       "Unknown column 'zipkin_spans.remote_serviceName' in 'field list'",
       "42S22", 1054);

@@ -334,13 +334,6 @@
       <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- TODO: port everything to jupiter -->
-    <dependency>
-      <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-junit4</artifactId>
-      <version>${armeria.version}</version>
-      <scope>test</scope>
-    </dependency>
 
     <!-- Don't use spring-boot-starter-test as it complicates the dependency tree and causes heavier
          downloads. We only need the spring-provided libraries -->

@@ -25,7 +25,6 @@
   <modules>
     <module>zipkin</module>
     <module>zipkin-tests</module>
-    <module>zipkin-junit</module>
     <module>zipkin-junit5</module>
     <module>zipkin-storage</module>
     <module>zipkin-collector</module>
@@ -81,7 +80,6 @@
     <git-commit-id.version>4.9.10</git-commit-id.version>
 
     <!-- Test only dependencies -->
-    <junit.version>4.13.2</junit.version>
     <junit-jupiter.version>5.10.1</junit-jupiter.version>
     <mockito.version>5.8.0</mockito.version>
     <assertj.version>3.24.2</assertj.version>
@@ -188,36 +186,13 @@
          io.zipkin.zipkin2:zipkin difficult to unravel. -->
 
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
       <version>${junit-jupiter.version}</version>
       <scope>test</scope>
     </dependency>
-
-    <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-      <version>${junit-jupiter.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- Current versions of JUnit5 provide the above junit-jupiter artifact for convenience, but we
-         may still have transitive dependencies on these older artifacts and have to make sure
-         they're all using the same version. -->
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <version>${junit-jupiter.version}</version>
-      <scope>test</scope>
-    </dependency>
-
+    <!-- needed for surefire.
+         https://maven.apache.org/surefire/maven-surefire-plugin/examples/junit-platform.html -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
@@ -234,7 +209,7 @@
 
     <dependency>
       <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
+      <artifactId>mockito-junit-jupiter</artifactId>
       <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
@@ -465,6 +440,15 @@
                https://github.com/mockito/mockito/issues/3119#issuecomment-1732179039 -->
           <argLine>-Dnet.bytebuddy.experimental=true</argLine>
         </configuration>
+        <dependencies>
+          <!-- needed for surefire.
+     https://maven.apache.org/surefire/maven-surefire-plugin/examples/junit-platform.html -->
+          <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit-jupiter.version}</version>
+          </dependency>
+        </dependencies>
       </plugin>
 
       <plugin>

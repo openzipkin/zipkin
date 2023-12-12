@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,7 @@ package zipkin2.storage.mysql.v1;
 
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.CheckResult;
 import zipkin2.Component;
 
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 
 public class MySQLStorageTest {
 
-  @Test public void check_failsInsteadOfThrowing() throws SQLException {
+  @Test void check_failsInsteadOfThrowing() throws SQLException {
     DataSource dataSource = mock(DataSource.class);
     when(dataSource.getConnection()).thenThrow(new SQLException("foo"));
 
@@ -37,7 +37,7 @@ public class MySQLStorageTest {
       .isInstanceOf(SQLException.class);
   }
 
-  @Test public void returns_whitelisted_autocompletekey() throws Exception {
+  @Test void returns_whitelisted_autocompletekey() throws Exception {
     DataSource dataSource = mock(DataSource.class);
     assertThat(storage(dataSource).autocompleteTags().getKeys().execute())
       .containsOnlyOnce("http.method");
@@ -58,7 +58,7 @@ public class MySQLStorageTest {
    * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
    * information.
    */
-  @Test public void toStringContainsOnlySummaryInformation() {
+  @Test void toStringContainsOnlySummaryInformation() {
     DataSource datasource = mock(DataSource.class);
     when(datasource.toString()).thenReturn("Blamo");
 

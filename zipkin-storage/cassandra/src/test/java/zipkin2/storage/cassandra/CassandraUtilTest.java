@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,7 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 import zipkin2.internal.DateUtil;
@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.TODAY;
 
 public class CassandraUtilTest {
-  @Test public void annotationKeys_emptyRequest() {
+  @Test void annotationKeys_emptyRequest() {
     QueryRequest request = QueryRequest.newBuilder()
       .endTs(System.currentTimeMillis())
       .limit(10)
@@ -41,7 +41,7 @@ public class CassandraUtilTest {
       .isEmpty();
   }
 
-  @Test public void annotationKeys() {
+  @Test void annotationKeys() {
     QueryRequest request = QueryRequest.newBuilder()
       .endTs(System.currentTimeMillis())
       .limit(10)
@@ -54,7 +54,7 @@ public class CassandraUtilTest {
       .containsExactly("error", "http.method=GET");
   }
 
-  @Test public void annotationKeys_dedupes() {
+  @Test void annotationKeys_dedupes() {
     QueryRequest request = QueryRequest.newBuilder()
       .endTs(System.currentTimeMillis())
       .limit(10)
@@ -67,7 +67,7 @@ public class CassandraUtilTest {
       .containsExactly("error");
   }
 
-  @Test public void annotationKeys_skipsTagsLongerThan256chars() {
+  @Test void annotationKeys_skipsTagsLongerThan256chars() {
     // example long value
     String arn =
       "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012";
@@ -84,7 +84,7 @@ public class CassandraUtilTest {
       .doesNotContain("http.url=" + url);
   }
 
-  @Test public void annotationKeys_skipsAnnotationsLongerThan256chars() {
+  @Test void annotationKeys_skipsAnnotationsLongerThan256chars() {
     // example long value
     String arn =
       "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012";
@@ -98,7 +98,7 @@ public class CassandraUtilTest {
     assertThat(CassandraUtil.annotationQuery(span)).contains(arn).doesNotContain(url);
   }
 
-  @Test public void annotationKeys_skipsAllocationWhenNoValidInput() {
+  @Test void annotationKeys_skipsAllocationWhenNoValidInput() {
     // example too long value
     String url =
       "http://webservices.amazon.com/onca/xml?AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE&AssociateTag=mytag-20&ItemId=0679722769&Operation=ItemLookup&ResponseGroup=Images%2CItemAttributes%2COffers%2CReviews&Service=AWSECommerceService&Timestamp=2014-08-18T12%3A00%3A00Z&Version=2013-08-01&Signature=j7bZM0LXZ9eXeZruTqWm2DIvDYVUU3wxPPpp%2BiXxzQc%3D";
@@ -112,8 +112,10 @@ public class CassandraUtilTest {
     assertThat(CassandraUtil.annotationQuery(span)).isNull();
   }
 
-  /** Sanity checks our bucketing scheme for numeric overflow */
-  @Test public void durationIndexBucket_notNegative() {
+  /**
+   * Sanity checks our bucketing scheme for numeric overflow
+   */
+  @Test void durationIndexBucket_notNegative() {
     // today isn't negative
     assertThat(CassandraUtil.durationIndexBucket(TODAY * 1000L)).isNotNegative();
     // neither is 10 years from now
@@ -121,7 +123,7 @@ public class CassandraUtilTest {
       .isNotNegative();
   }
 
-  @Test public void traceIdsSortedByDescTimestamp_doesntCollideOnSameTimestamp() {
+  @Test void traceIdsSortedByDescTimestamp_doesntCollideOnSameTimestamp() {
     Map<String, Long> input = new LinkedHashMap<>();
     input.put("a", 1L);
     input.put("b", 1L);
@@ -136,7 +138,7 @@ public class CassandraUtilTest {
     }
   }
 
-  @Test public void getDays_consistentWithDateUtil() {
+  @Test void getDays_consistentWithDateUtil() {
     assertThat(CassandraUtil.getDays(DAYS.toMillis(2), DAYS.toMillis(1)))
       .extracting(d -> d.atStartOfDay().toEpochSecond(ZoneOffset.UTC) * 1000)
       .containsExactlyElementsOf(DateUtil.epochDays(DAYS.toMillis(2), DAYS.toMillis(1)));

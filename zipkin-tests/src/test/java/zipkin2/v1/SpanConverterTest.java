@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  */
 package zipkin2.v1;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.Span.Kind;
@@ -28,8 +28,7 @@ public class SpanConverterTest {
   V2SpanConverter v2SpanConverter = new V2SpanConverter();
   V1SpanConverter v1SpanConverter = new V1SpanConverter();
 
-  @Test
-  public void client() {
+  @Test void client() {
     Span v2 =
         Span.newBuilder()
             .traceId("1")
@@ -68,8 +67,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void client_unfinished() {
+  @Test void client_unfinished() {
     Span v2 =
         Span.newBuilder()
             .traceId("1")
@@ -97,8 +95,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void client_kindInferredFromAnnotation() {
+  @Test void client_kindInferredFromAnnotation() {
     Span v2 =
         Span.newBuilder()
             .traceId("1")
@@ -126,8 +123,7 @@ public class SpanConverterTest {
     assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
   }
 
-  @Test
-  public void lateRemoteEndpoint_cr() {
+  @Test void lateRemoteEndpoint_cr() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -154,8 +150,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void lateRemoteEndpoint_sa() {
+  @Test void lateRemoteEndpoint_sa() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -176,8 +171,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void noAnnotationsExceptAddresses() {
+  @Test void noAnnotationsExceptAddresses() {
     Span v2 =
         Span.newBuilder()
             .traceId("1")
@@ -206,8 +200,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void server() {
+  @Test void server() {
     Span v2 =
         Span.newBuilder()
             .traceId("1")
@@ -241,8 +234,7 @@ public class SpanConverterTest {
   }
 
   /** This shows a historical finagle span, which has client-side socket info. */
-  @Test
-  public void server_clientAddress() {
+  @Test void server_clientAddress() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -281,8 +273,7 @@ public class SpanConverterTest {
   }
 
   /** Buggy instrumentation can send data with missing endpoints. Make sure we can record it. */
-  @Test
-  public void missingEndpoints() {
+  @Test void missingEndpoints() {
     Span v2 =
         Span.newBuilder()
             .traceId("1")
@@ -308,8 +299,7 @@ public class SpanConverterTest {
   }
 
   /** No special treatment for invalid core annotations: missing endpoint */
-  @Test
-  public void missingEndpoints_coreAnnotation() {
+  @Test void missingEndpoints_coreAnnotation() {
     Span v2 =
         Span.newBuilder()
             .traceId("1")
@@ -334,8 +324,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void server_shared_v1_no_timestamp_duration() {
+  @Test void server_shared_v1_no_timestamp_duration() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -363,8 +352,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void server_incomplete_shared() {
+  @Test void server_incomplete_shared() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -391,8 +379,7 @@ public class SpanConverterTest {
   }
 
   /** Late flushed data on a v2 span */
-  @Test
-  public void lateRemoteEndpoint_ss() {
+  @Test void lateRemoteEndpoint_ss() {
     Span v2 =
         Span.newBuilder()
             .traceId("1")
@@ -418,8 +405,7 @@ public class SpanConverterTest {
   }
 
   /** Late flushed data on a v1 v1 */
-  @Test
-  public void lateRemoteEndpoint_ca() {
+  @Test void lateRemoteEndpoint_ca() {
     Span v2 =
         Span.newBuilder()
             .traceId("1")
@@ -439,8 +425,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void localSpan_emptyComponent() {
+  @Test void localSpan_emptyComponent() {
     Span v2 =
         Span.newBuilder()
             .traceId("1")
@@ -465,8 +450,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void producer_remote() {
+  @Test void producer_remote() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -494,8 +478,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void producer_duration() {
+  @Test void producer_duration() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -524,8 +507,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void consumer() {
+  @Test void consumer() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -551,8 +533,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void consumer_remote() {
+  @Test void consumer_remote() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -580,8 +561,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void consumer_duration() {
+  @Test void consumer_duration() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -610,8 +590,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void clientAndServer() {
+  @Test void clientAndServer() {
     V1Span v1 =
         V1Span.newBuilder()
             .traceId(1L)
@@ -672,8 +651,7 @@ public class SpanConverterTest {
    * The old v1 format had no means of saying it is shared or not. This uses lack of timestamp as a
    * signal
    */
-  @Test
-  public void assumesServerWithoutTimestampIsShared() {
+  @Test void assumesServerWithoutTimestampIsShared() {
     V1Span v1 =
         V1Span.newBuilder()
             .traceId(1L)
@@ -700,8 +678,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void clientAndServer_loopback() {
+  @Test void clientAndServer_loopback() {
     V1Span v1 =
         V1Span.newBuilder()
             .traceId(1L)
@@ -740,8 +717,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(clientV2, serverV2);
   }
 
-  @Test
-  public void oneway_loopback() {
+  @Test void oneway_loopback() {
     V1Span v1 =
         V1Span.newBuilder()
             .traceId(1L)
@@ -774,8 +750,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(clientV2, serverV2);
   }
 
-  @Test
-  public void producer() {
+  @Test void producer() {
     V1Span v1 =
         V1Span.newBuilder()
             .traceId(1L)
@@ -800,8 +775,7 @@ public class SpanConverterTest {
   }
 
   /** Fix a v1 reported half in new style and half in old style, ex via a bridge */
-  @Test
-  public void client_missingCs() {
+  @Test void client_missingCs() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -826,8 +800,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void server_missingSr() {
+  @Test void server_missingSr() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -856,7 +829,7 @@ public class SpanConverterTest {
    * Intentionally create service loopback endpoints as dependency linker can correct it later if
    * incorrect, provided the server is instrumented.
    */
-  @Test public void redundantAddressAnnotations_client() {
+  @Test void redundantAddressAnnotations_client() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -895,8 +868,7 @@ public class SpanConverterTest {
    * <p>This prevents an uncorrectable scenario which results in extra (loopback) links on server
    * spans.
    */
-  @Test
-  public void redundantServiceNameOnAddressAnnotations_server() {
+  @Test void redundantServiceNameOnAddressAnnotations_server() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -926,8 +898,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void redundantServiceNameOnAddressAnnotations_serverRetainsClientSocket() {
+  @Test void redundantServiceNameOnAddressAnnotations_serverRetainsClientSocket() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -959,8 +930,7 @@ public class SpanConverterTest {
   }
 
   /** shared v1 IDs for messaging spans isn't supported, but shouldn't break */
-  @Test
-  public void producerAndConsumer() {
+  @Test void producerAndConsumer() {
     V1Span v1 =
         V1Span.newBuilder()
             .traceId(1L)
@@ -1001,8 +971,7 @@ public class SpanConverterTest {
   }
 
   /** shared v1 IDs for messaging spans isn't supported, but shouldn't break */
-  @Test
-  public void producerAndConsumer_loopback_shared() {
+  @Test void producerAndConsumer_loopback_shared() {
     V1Span v1 =
         V1Span.newBuilder()
             .traceId(1)
@@ -1039,8 +1008,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(producer, consumer);
   }
 
-  @Test
-  public void onlyAddressAnnotations() {
+  @Test void onlyAddressAnnotations() {
     V1Span v1 =
       V1Span.newBuilder()
         .traceId(1)
@@ -1059,8 +1027,7 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void dataMissingEndpointGoesOnFirstSpan() {
+  @Test void dataMissingEndpointGoesOnFirstSpan() {
     V1Span v1 =
         V1Span.newBuilder()
             .traceId(1)
@@ -1104,8 +1071,7 @@ public class SpanConverterTest {
   /**
    * This emulates a situation in mysql where the row representing a span has the client's timestamp
    */
-  @Test
-  public void parsesSharedFlagFromRPCSpan() {
+  @Test void parsesSharedFlagFromRPCSpan() {
     V1Span v1 =
       V1Span.newBuilder()
         .traceId(1L)

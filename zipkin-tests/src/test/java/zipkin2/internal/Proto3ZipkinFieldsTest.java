@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  */
 package zipkin2.internal;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Annotation;
 import zipkin2.Endpoint;
 import zipkin2.Span;
@@ -36,7 +36,7 @@ public class Proto3ZipkinFieldsTest {
   WriteBuffer buf = WriteBuffer.wrap(bytes);
 
   /** A map entry is an embedded messages: one for field the key and one for the value */
-  @Test public void tag_sizeInBytes() {
+  @Test void tag_sizeInBytes() {
     TagField field = new TagField(1 << 3 | WIRETYPE_LENGTH_DELIMITED);
     assertThat(field.sizeInBytes(entry("123", "56789")))
       .isEqualTo(0
@@ -46,7 +46,7 @@ public class Proto3ZipkinFieldsTest {
       );
   }
 
-  @Test public void annotation_sizeInBytes() {
+  @Test void annotation_sizeInBytes() {
     AnnotationField field = new AnnotationField(1 << 3 | WIRETYPE_LENGTH_DELIMITED);
     assertThat(field.sizeInBytes(Annotation.create(1L, "12345678")))
       .isEqualTo(0
@@ -56,7 +56,7 @@ public class Proto3ZipkinFieldsTest {
       );
   }
 
-  @Test public void endpoint_sizeInBytes() {
+  @Test void endpoint_sizeInBytes() {
     EndpointField field = new EndpointField(1 << 3 | WIRETYPE_LENGTH_DELIMITED);
 
     assertThat(field.sizeInBytes(Endpoint.newBuilder()
@@ -74,7 +74,7 @@ public class Proto3ZipkinFieldsTest {
       );
   }
 
-  @Test public void span_write_startsWithFieldInListOfSpans() {
+  @Test void span_write_startsWithFieldInListOfSpans() {
     SPAN.write(buf, spanBuilder().build());
 
     assertThat(bytes).startsWith(
@@ -82,7 +82,7 @@ public class Proto3ZipkinFieldsTest {
     );
   }
 
-  @Test public void span_write_writesIds() {
+  @Test void span_write_writesIds() {
     SPAN.write(buf, spanBuilder().build());
     assertThat(bytes).startsWith(
       0b00001010 /* span key */, 20 /* bytes for length of the span */,
@@ -96,51 +96,51 @@ public class Proto3ZipkinFieldsTest {
       .isEqualTo(22); // easier math on the next test
   }
 
-  @Test public void span_read_ids() {
+  @Test void span_read_ids() {
     assertRoundTrip(spanBuilder().parentId("1").build());
   }
 
-  @Test public void span_read_name() {
+  @Test void span_read_name() {
     assertRoundTrip(spanBuilder().name("romeo").build());
   }
 
-  @Test public void span_read_kind() {
+  @Test void span_read_kind() {
     assertRoundTrip(spanBuilder().kind(Span.Kind.CONSUMER).build());
   }
 
-  @Test public void span_read_timestamp_duration() {
+  @Test void span_read_timestamp_duration() {
     assertRoundTrip(spanBuilder().timestamp(TODAY).duration(134).build());
   }
 
-  @Test public void span_read_endpoints() {
+  @Test void span_read_endpoints() {
     assertRoundTrip(spanBuilder().localEndpoint(FRONTEND).remoteEndpoint(BACKEND).build());
   }
 
-  @Test public void span_read_annotation() {
+  @Test void span_read_annotation() {
     assertRoundTrip(spanBuilder().addAnnotation(TODAY, "parked on sidewalk").build());
   }
 
-  @Test public void span_read_tag() {
+  @Test void span_read_tag() {
     assertRoundTrip(spanBuilder().putTag("foo", "bar").build());
   }
 
-  @Test public void span_read_tag_empty() {
+  @Test void span_read_tag_empty() {
     assertRoundTrip(spanBuilder().putTag("empty", "").build());
   }
 
-  @Test public void span_read_shared() {
+  @Test void span_read_shared() {
     assertRoundTrip(spanBuilder().shared(true).build());
   }
 
-  @Test public void span_read_debug() {
+  @Test void span_read_debug() {
     assertRoundTrip(spanBuilder().debug(true).build());
   }
 
-  @Test public void span_read() {
+  @Test void span_read() {
     assertRoundTrip(CLIENT_SPAN);
   }
 
-  @Test public void span_write_omitsEmptyEndpoints() {
+  @Test void span_write_omitsEmptyEndpoints() {
     SPAN.write(buf, spanBuilder()
       .localEndpoint(Endpoint.newBuilder().build())
       .remoteEndpoint(Endpoint.newBuilder().build())
@@ -150,14 +150,14 @@ public class Proto3ZipkinFieldsTest {
       .isEqualTo(22);
   }
 
-  @Test public void span_write_kind() {
+  @Test void span_write_kind() {
     SPAN.write(buf, spanBuilder().kind(Span.Kind.PRODUCER).build());
     assertThat(bytes)
       .contains(0b0100000, atIndex(22)) // (field_number << 3) | wire_type = 4 << 3 | 0
       .contains(0b0000011, atIndex(23)); // producer's index is 3
   }
 
-  @Test public void span_read_kind_tolerant() {
+  @Test void span_read_kind_tolerant() {
     assertRoundTrip(spanBuilder().kind(Span.Kind.CONSUMER).build());
 
     bytes[23] = (byte) (Span.Kind.values().length + 1); // undefined kind
@@ -169,7 +169,7 @@ public class Proto3ZipkinFieldsTest {
       .isEqualTo(spanBuilder().build());
   }
 
-  @Test public void span_write_debug() {
+  @Test void span_write_debug() {
     SPAN.write(buf, CLIENT_SPAN.toBuilder().debug(true).build());
 
     assertThat(bytes)
@@ -177,7 +177,7 @@ public class Proto3ZipkinFieldsTest {
       .contains(1, atIndex(buf.pos() - 1)); // true
   }
 
-  @Test public void span_write_shared() {
+  @Test void span_write_shared() {
     SPAN.write(buf, CLIENT_SPAN.toBuilder().kind(Span.Kind.SERVER).shared(true).build());
 
     assertThat(bytes)

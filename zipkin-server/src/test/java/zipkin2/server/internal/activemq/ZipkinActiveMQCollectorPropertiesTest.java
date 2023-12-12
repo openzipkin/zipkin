@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  */
 package zipkin2.server.internal.activemq;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
@@ -29,14 +29,14 @@ public class ZipkinActiveMQCollectorPropertiesTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
   /** This prevents an empty ACTIVEMQ_URL variable from being mistaken as a real one */
-  @Test public void ignoresEmptyURL() {
+  @Test void ignoresEmptyURL() {
     ZipkinActiveMQCollectorProperties properties = new ZipkinActiveMQCollectorProperties();
     properties.setUrl("");
 
     assertThat(properties.getUrl()).isNull();
   }
 
-  @Test public void providesCollectorComponent_whenUrlSet() {
+  @Test void providesCollectorComponent_whenUrlSet() {
     TestPropertyValues.of("zipkin.collector.activemq.url:tcp://localhost:61611") // wrong port
       .applyTo(context);
     context.register(
@@ -49,7 +49,7 @@ public class ZipkinActiveMQCollectorPropertiesTest {
       .hasMessageContaining("Unable to establish connection to ActiveMQ broker");
   }
 
-  @Test public void doesNotProvidesCollectorComponent_whenUrlSetAndDisabled() {
+  @Test void doesNotProvidesCollectorComponent_whenUrlSetAndDisabled() {
     TestPropertyValues.of("zipkin.collector.activemq.url:tcp://localhost:61616")
       .applyTo(context);
     TestPropertyValues.of("zipkin.collector.activemq.enabled:false").applyTo(context);

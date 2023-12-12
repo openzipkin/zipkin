@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  */
 package zipkin2.internal;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.internal.Proto3Fields.BooleanField;
 import zipkin2.internal.Proto3Fields.BytesField;
 import zipkin2.internal.Proto3Fields.Fixed64Field;
@@ -36,7 +36,7 @@ public class Proto3FieldsTest {
   WriteBuffer buf = WriteBuffer.wrap(bytes);
 
   /** Shows we can reliably look at a byte zero to tell if we are decoding proto3 repeated fields. */
-  @Test public void field_key_fieldOneLengthDelimited() {
+  @Test void field_key_fieldOneLengthDelimited() {
     Field field = new Field(1 << 3 | WIRETYPE_LENGTH_DELIMITED);
     assertThat(field.key)
       .isEqualTo(0b00001010) // (field_number << 3) | wire_type = 1 << 3 | 2
@@ -47,7 +47,7 @@ public class Proto3FieldsTest {
       .isEqualTo(WIRETYPE_LENGTH_DELIMITED);
   }
 
-  @Test public void varint_sizeInBytes() {
+  @Test void varint_sizeInBytes() {
     VarintField field = new VarintField(1 << 3 | WIRETYPE_VARINT);
 
     assertThat(field.sizeInBytes(0))
@@ -65,7 +65,7 @@ public class Proto3FieldsTest {
       );
   }
 
-  @Test public void boolean_sizeInBytes() {
+  @Test void boolean_sizeInBytes() {
     BooleanField field = new BooleanField(1 << 3 | WIRETYPE_VARINT);
 
     assertThat(field.sizeInBytes(false))
@@ -76,7 +76,7 @@ public class Proto3FieldsTest {
       );
   }
 
-  @Test public void utf8_sizeInBytes() {
+  @Test void utf8_sizeInBytes() {
     Utf8Field field = new Utf8Field(1 << 3 | WIRETYPE_LENGTH_DELIMITED);
     assertThat(field.sizeInBytes("12345678"))
       .isEqualTo(0
@@ -84,19 +84,19 @@ public class Proto3FieldsTest {
       );
   }
 
-  @Test public void fixed64_sizeInBytes() {
+  @Test void fixed64_sizeInBytes() {
     Fixed64Field field = new Fixed64Field(1 << 3 | WIRETYPE_FIXED64);
     assertThat(field.sizeInBytes(Long.MIN_VALUE))
       .isEqualTo(9);
   }
 
-  @Test public void fixed32_sizeInBytes() {
+  @Test void fixed32_sizeInBytes() {
     Fixed32Field field = new Fixed32Field(1 << 3 | WIRETYPE_FIXED32);
     assertThat(field.sizeInBytes(Integer.MIN_VALUE))
       .isEqualTo(5);
   }
 
-  @Test public void supportedFields() {
+  @Test void supportedFields() {
     for (Field field : asList(
       new VarintField(128 << 3 | WIRETYPE_VARINT),
       new BooleanField(128 << 3 | WIRETYPE_VARINT),
@@ -113,7 +113,7 @@ public class Proto3FieldsTest {
     }
   }
 
-  @Test public void fieldNumber_malformed() {
+  @Test void fieldNumber_malformed() {
     try {
       Field.fieldNumber(0, 2);
       failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
@@ -123,7 +123,7 @@ public class Proto3FieldsTest {
     }
   }
 
-  @Test public void wireType_unsupported() {
+  @Test void wireType_unsupported() {
     for (int unsupported : asList(3, 4, 6)) {
       try {
         Field.wireType(1 << 3 | unsupported, 2);
@@ -135,7 +135,7 @@ public class Proto3FieldsTest {
     }
   }
 
-  @Test public void field_skipValue_VARINT() {
+  @Test void field_skipValue_VARINT() {
     VarintField field = new VarintField(128 << 3 | WIRETYPE_VARINT);
     field.write(buf, 0xffffffffffffffffL);
 
@@ -143,7 +143,7 @@ public class Proto3FieldsTest {
     skipValue(readBuffer, WIRETYPE_VARINT);
   }
 
-  @Test public void field_skipValue_LENGTH_DELIMITED() {
+  @Test void field_skipValue_LENGTH_DELIMITED() {
     Utf8Field field = new Utf8Field(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
     field.write(buf, "订单维护服务");
 
@@ -151,7 +151,7 @@ public class Proto3FieldsTest {
     skipValue(readBuffer, WIRETYPE_LENGTH_DELIMITED);
   }
 
-  @Test public void field_skipValue_FIXED64() {
+  @Test void field_skipValue_FIXED64() {
     Fixed64Field field = new Fixed64Field(128 << 3 | WIRETYPE_FIXED64);
     field.write(buf, 0xffffffffffffffffL);
 
@@ -159,7 +159,7 @@ public class Proto3FieldsTest {
     skipValue(readBuffer, WIRETYPE_FIXED64);
   }
 
-  @Test public void field_skipValue_FIXED32() {
+  @Test void field_skipValue_FIXED32() {
     Fixed32Field field = new Fixed32Field(128 << 3 | WIRETYPE_FIXED32);
     buf.writeByte(field.key);
     buf.writeByte(0xff);
@@ -171,7 +171,7 @@ public class Proto3FieldsTest {
     skipValue(readBuffer, WIRETYPE_FIXED32);
   }
 
-  @Test public void field_readLengthPrefix_LENGTH_DELIMITED() {
+  @Test void field_readLengthPrefix_LENGTH_DELIMITED() {
     BytesField field = new BytesField(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
     field.write(buf, new byte[10]);
 
@@ -180,7 +180,7 @@ public class Proto3FieldsTest {
       .isEqualTo(10);
   }
 
-  @Test public void field_readLengthPrefixAndValue_LENGTH_DELIMITED_truncated() {
+  @Test void field_readLengthPrefixAndValue_LENGTH_DELIMITED_truncated() {
     BytesField field = new BytesField(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
     bytes = new byte[10];
     WriteBuffer.wrap(bytes).writeVarint(100); // much larger than the buffer size
@@ -193,7 +193,7 @@ public class Proto3FieldsTest {
     }
   }
 
-  @Test public void field_read_FIXED64() {
+  @Test void field_read_FIXED64() {
     Fixed64Field field = new Fixed64Field(128 << 3 | WIRETYPE_FIXED64);
     field.write(buf, 0xffffffffffffffffL);
 

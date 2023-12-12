@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,8 +21,8 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.UnsatisfiedDependencyException;
@@ -34,25 +34,27 @@ import org.springframework.context.annotation.Configuration;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static zipkin2.server.internal.elasticsearch.ITElasticsearchDynamicCredentials.pathOfResource;
 
 public class ZipkinElasticsearchStorageConfigurationTest {
   final AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @After public void close() {
+  @AfterEach public void close() {
     context.close();
   }
 
-  @Test(expected = NoSuchBeanDefinitionException.class)
-  public void doesntProvideStorageComponent_whenStorageTypeNotElasticsearch() {
-    TestPropertyValues.of("zipkin.storage.type:cassandra").applyTo(context);
-    Access.registerElasticsearch(context);
-    context.refresh();
+  @Test void doesntProvideStorageComponent_whenStorageTypeNotElasticsearch() {
+    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+      TestPropertyValues.of("zipkin.storage.type:cassandra").applyTo(context);
+      Access.registerElasticsearch(context);
+      context.refresh();
 
-    es();
+      es();
+    });
   }
 
-  @Test public void providesStorageComponent_whenStorageTypeElasticsearchAndHostsAreUrls() {
+  @Test void providesStorageComponent_whenStorageTypeElasticsearchAndHostsAreUrls() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200")
@@ -63,7 +65,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     assertThat(es()).isNotNull();
   }
 
-  @Test public void canOverridesProperty_hostsWithList() {
+  @Test void canOverridesProperty_hostsWithList() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200,http://host2:9200")
@@ -75,7 +77,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .isEqualTo("http://host1:9200,http://host2:9200");
   }
 
-  @Test public void decentToString_whenUnresolvedOrUnhealthy() {
+  @Test void decentToString_whenUnresolvedOrUnhealthy() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://127.0.0.1:9200,http://127.0.0.1:9201")
@@ -87,7 +89,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "ElasticsearchStorage{initialEndpoints=http://127.0.0.1:9200,http://127.0.0.1:9201, index=zipkin}");
   }
 
-  @Test public void configuresPipeline() {
+  @Test void configuresPipeline() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -99,7 +101,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     assertThat(es().pipeline()).isEqualTo("zipkin");
   }
 
-  @Test public void httpPrefixOptional() {
+  @Test void httpPrefixOptional() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:host1:9200")
@@ -111,7 +113,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .isEqualTo(SessionProtocol.HTTP);
   }
 
-  @Test public void https() {
+  @Test void https() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:https://localhost")
@@ -142,7 +144,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
   }
 
   /** Ensures we can wire up network interceptors, such as for logging or authentication */
-  @Test public void usesInterceptorsQualifiedWith_zipkinElasticsearchHttp() {
+  @Test void usesInterceptorsQualifiedWith_zipkinElasticsearchHttp() {
     TestPropertyValues.of("zipkin.storage.type:elasticsearch").applyTo(context);
     Access.registerElasticsearch(context);
     context.register(CustomizerConfiguration.class);
@@ -153,7 +155,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     assertThat(factory.options.headers().get("test")).isEqualTo("bar");
   }
 
-  @Test public void timeout_defaultsTo10Seconds() {
+  @Test void timeout_defaultsTo10Seconds() {
     TestPropertyValues.of("zipkin.storage.type:elasticsearch").applyTo(context);
     Access.registerElasticsearch(context);
     context.refresh();
@@ -164,7 +166,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     assertThat(factory.options.writeTimeoutMillis()).isEqualTo(10000L);
   }
 
-  @Test public void timeout_override() {
+  @Test void timeout_override() {
     long timeout = 30000L;
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
@@ -180,7 +182,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     assertThat(factory.options.writeTimeoutMillis()).isEqualTo(timeout);
   }
 
-  @Test public void strictTraceId_defaultsToTrue() {
+  @Test void strictTraceId_defaultsToTrue() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200")
@@ -190,7 +192,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     assertThat(es().strictTraceId()).isTrue();
   }
 
-  @Test public void strictTraceId_canSetToFalse() {
+  @Test void strictTraceId_canSetToFalse() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -202,7 +204,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     assertThat(es().strictTraceId()).isFalse();
   }
 
-  @Test public void dailyIndexFormat() {
+  @Test void dailyIndexFormat() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200")
@@ -214,7 +216,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .isEqualTo("zipkin*span-1970-01-01");
   }
 
-  @Test public void dailyIndexFormat_overridingPrefix() {
+  @Test void dailyIndexFormat_overridingPrefix() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -227,7 +229,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .isEqualTo("zipkin_prod*span-1970-01-01");
   }
 
-  @Test public void dailyIndexFormat_overridingDateSeparator() {
+  @Test void dailyIndexFormat_overridingDateSeparator() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -240,7 +242,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .isEqualTo("zipkin*span-1970.01.01");
   }
 
-  @Test public void dailyIndexFormat_overridingDateSeparator_empty() {
+  @Test void dailyIndexFormat_overridingDateSeparator_empty() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -253,19 +255,20 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .isEqualTo("zipkin*span-19700101");
   }
 
-  @Test(expected = BeanCreationException.class)
-  public void dailyIndexFormat_overridingDateSeparator_invalidToBeMultiChar() {
-    TestPropertyValues.of(
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:http://host1:9200",
-      "zipkin.storage.elasticsearch.date-separator:blagho")
-      .applyTo(context);
-    Access.registerElasticsearch(context);
+  @Test void dailyIndexFormat_overridingDateSeparator_invalidToBeMultiChar() {
+    assertThrows(BeanCreationException.class, () -> {
+      TestPropertyValues.of(
+          "zipkin.storage.type:elasticsearch",
+          "zipkin.storage.elasticsearch.hosts:http://host1:9200",
+          "zipkin.storage.elasticsearch.date-separator:blagho")
+        .applyTo(context);
+      Access.registerElasticsearch(context);
 
-    context.refresh();
+      context.refresh();
+    });
   }
 
-  @Test public void namesLookbackAssignedFromQueryLookback() {
+  @Test void namesLookbackAssignedFromQueryLookback() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -277,8 +280,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     assertThat(es().namesLookback()).isEqualTo((int) TimeUnit.DAYS.toMillis(2));
   }
 
-  @Test
-  public void doesntProvideBasicAuthInterceptor_whenBasicAuthUserNameandPasswordNotConfigured() {
+  @Test void doesntProvideBasicAuthInterceptor_whenBasicAuthUserNameandPasswordNotConfigured() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234")
@@ -293,7 +295,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     assertThat(client.as(BasicAuthInterceptor.class)).isNull();
   }
 
-  @Test public void providesBasicAuthInterceptor_whenBasicAuthUserNameAndPasswordConfigured() {
+  @Test void providesBasicAuthInterceptor_whenBasicAuthUserNameAndPasswordConfigured() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
@@ -311,8 +313,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     assertThat(client.as(BasicAuthInterceptor.class)).isNotNull();
   }
 
-  @Test
-  public void providesBasicAuthInterceptor_whenDynamicCredentialsConfigured() {
+  @Test void providesBasicAuthInterceptor_whenDynamicCredentialsConfigured() {
     String credentialsFile = pathOfResource("es-credentials");
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
@@ -335,32 +336,34 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     assertThat(credentials).isEqualTo("Basic Zm9vOmJhcg==");
   }
 
-  @Test(expected = BeanCreationException.class)
-  public void providesBasicAuthInterceptor_whenInvalidDynamicCredentialsConfigured() {
-    String credentialsFile = pathOfResource("es-credentials-invalid");
-    TestPropertyValues.of(
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
-      "zipkin.storage.elasticsearch.credentials-file:" + credentialsFile,
-      "zipkin.storage.elasticsearch.credentials-refresh-interval:2")
-      .applyTo(context);
-    Access.registerElasticsearch(context);
-    context.refresh();
+  @Test void providesBasicAuthInterceptor_whenInvalidDynamicCredentialsConfigured() {
+    assertThrows(BeanCreationException.class, () -> {
+      String credentialsFile = pathOfResource("es-credentials-invalid");
+      TestPropertyValues.of(
+          "zipkin.storage.type:elasticsearch",
+          "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
+          "zipkin.storage.elasticsearch.credentials-file:" + credentialsFile,
+          "zipkin.storage.elasticsearch.credentials-refresh-interval:2")
+        .applyTo(context);
+      Access.registerElasticsearch(context);
+      context.refresh();
+    });
   }
 
-  @Test(expected = BeanCreationException.class)
-  public void providesBasicAuthInterceptor_whenDynamicCredentialsConfiguredButFileAbsent() {
-    TestPropertyValues.of(
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
-      "zipkin.storage.elasticsearch.credentials-file:no-this-file",
-      "zipkin.storage.elasticsearch.credentials-refresh-interval:2")
-      .applyTo(context);
-    Access.registerElasticsearch(context);
-    context.refresh();
+  @Test void providesBasicAuthInterceptor_whenDynamicCredentialsConfiguredButFileAbsent() {
+    assertThrows(BeanCreationException.class, () -> {
+      TestPropertyValues.of(
+          "zipkin.storage.type:elasticsearch",
+          "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
+          "zipkin.storage.elasticsearch.credentials-file:no-this-file",
+          "zipkin.storage.elasticsearch.credentials-refresh-interval:2")
+        .applyTo(context);
+      Access.registerElasticsearch(context);
+      context.refresh();
+    });
   }
 
-  @Test public void searchEnabled_false() {
+  @Test void searchEnabled_false() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.search-enabled:false")
@@ -372,7 +375,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .isEqualTo(false);
   }
 
-  @Test public void autocompleteKeys_list() {
+  @Test void autocompleteKeys_list() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.autocomplete-keys:environment")
@@ -384,7 +387,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .isEqualTo(Arrays.asList("environment"));
   }
 
-  @Test public void autocompleteTtl() {
+  @Test void autocompleteTtl() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.autocomplete-ttl:60000")
@@ -396,7 +399,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .isEqualTo(60000);
   }
 
-  @Test public void autocompleteCardinality() {
+  @Test void autocompleteCardinality() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.autocomplete-cardinality:5000")
@@ -408,7 +411,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .isEqualTo(5000);
   }
 
-  @Test public void templatePriority_valid() {
+  @Test void templatePriority_valid() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.template-priority:0")
@@ -420,7 +423,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .isEqualTo(0);
   }
 
-  @Test public void templatePriority_null() {
+  @Test void templatePriority_null() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.template-priority:")
@@ -432,16 +435,17 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .isNull();
   }
 
-  @Test(expected = UnsatisfiedDependencyException.class)
-  public void templatePriority_Invalid() {
-    TestPropertyValues.of(
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.template-priority:string")
-      .applyTo(context);
-    Access.registerElasticsearch(context);
-    context.refresh();
+  @Test void templatePriority_Invalid() {
+    assertThrows(UnsatisfiedDependencyException.class, () -> {
+      TestPropertyValues.of(
+          "zipkin.storage.type:elasticsearch",
+          "zipkin.storage.elasticsearch.template-priority:string")
+        .applyTo(context);
+      Access.registerElasticsearch(context);
+      context.refresh();
 
-    es();
+      es();
+    });
   }
 
   ElasticsearchStorage es() {

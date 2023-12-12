@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,9 +13,7 @@
  */
 package zipkin2.internal;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
@@ -29,29 +27,27 @@ public class V2SpanWriterTest {
   byte[] bytes = new byte[2048]; // bigger than needed to test sizeInBytes
   WriteBuffer buf = WriteBuffer.wrap(bytes);
 
-  @Rule public ExpectedException thrown = ExpectedException.none();
-
-  @Test public void sizeInBytes() {
+  @Test void sizeInBytes() {
     writer.write(CLIENT_SPAN, buf);
     assertThat(writer.sizeInBytes(CLIENT_SPAN))
       .isEqualTo(buf.pos());
   }
 
-  @Test public void writes128BitTraceId() {
+  @Test void writes128BitTraceId() {
     writer.write(CLIENT_SPAN, buf);
 
     assertThat(new String(bytes, UTF_8))
       .startsWith("{\"traceId\":\"" + CLIENT_SPAN.traceId() + "\"");
   }
 
-  @Test public void writesAnnotationWithoutEndpoint() {
+  @Test void writesAnnotationWithoutEndpoint() {
     writer.write(CLIENT_SPAN, buf);
 
     assertThat(new String(bytes, UTF_8))
       .contains("{\"timestamp\":" + (TODAY + 100) * 1000L + ",\"value\":\"foo\"}");
   }
 
-  @Test public void omitsEmptySpanName() {
+  @Test void omitsEmptySpanName() {
     Span span = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
@@ -64,7 +60,7 @@ public class V2SpanWriterTest {
       .doesNotContain("name");
   }
 
-  @Test public void omitsEmptyServiceName() {
+  @Test void omitsEmptyServiceName() {
     Span span = CLIENT_SPAN.toBuilder()
       .localEndpoint(Endpoint.newBuilder().ip("127.0.0.1").build())
       .build();
@@ -75,7 +71,7 @@ public class V2SpanWriterTest {
       .contains("\"localEndpoint\":{\"ipv4\":\"127.0.0.1\"}");
   }
 
-  @Test public void tagsAreAMap() {
+  @Test void tagsAreAMap() {
     writer.write(CLIENT_SPAN, buf);
 
     assertThat(new String(bytes, UTF_8))

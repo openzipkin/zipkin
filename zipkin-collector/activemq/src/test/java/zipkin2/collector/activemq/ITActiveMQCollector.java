@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,21 +15,20 @@ package zipkin2.collector.activemq;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.junit.EmbeddedActiveMQBroker;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.Component;
@@ -41,6 +40,8 @@ import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
 import static zipkin2.TestObjects.UTF_8;
 import static zipkin2.codec.SpanBytesEncoder.PROTO3;
@@ -49,9 +50,9 @@ import static zipkin2.codec.SpanBytesEncoder.THRIFT;
 public class ITActiveMQCollector {
   List<Span> spans = Arrays.asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
 
-  @ClassRule public static EmbeddedActiveMQBroker activemq = new EmbeddedActiveMQBroker();
-  @Rule public TestName testName = new TestName();
-  @Rule public ExpectedException thrown = ExpectedException.none();
+  /** Managed directly as this is a JUnit 4, not 5 type. */
+  EmbeddedActiveMQBroker activemq;
+  public String testName;
 
   InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
   InMemoryCollectorMetrics activemqMetrics = metrics.forTransport("activemq");
@@ -66,29 +67,38 @@ public class ITActiveMQCollector {
 
   ActiveMQCollector collector;
 
-  @Before public void start() {
+  @BeforeEach public void start(TestInfo testInfo) {
+    Optional<Method> testMethod = testInfo.getTestMethod();
+    if (testMethod.isPresent()) {
+      this.testName = testMethod.get().getName();
+    }
+    activemq = new EmbeddedActiveMQBroker();
+    activemq.start();
+    activemqMetrics.clear();
     collector = builder().build().start();
   }
 
-  @After public void stop() throws IOException {
+  @AfterEach public void stop() throws IOException {
+    activemq.stop();
     collector.close();
   }
 
-  @Test public void checkPasses() {
+  @Test void checkPasses() {
     assertThat(collector.check().ok()).isTrue();
   }
 
-  @Test public void startFailsWithInvalidActiveMqServer() throws Exception {
-    collector.close();
+  @Test void startFailsWithInvalidActiveMqServer() {
+    Throwable exception = assertThrows(UncheckedIOException.class, () -> {
+      collector.close();
 
-    ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
-    // we can be pretty certain ActiveMQ isn't running on localhost port 80
-    connectionFactory.setBrokerURL("tcp://localhost:80");
-    collector = builder().connectionFactory(connectionFactory).build();
-
-    thrown.expect(UncheckedIOException.class);
-    thrown.expectMessage("Unable to establish connection to ActiveMQ broker: Connection refused");
-    collector.start();
+      ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
+      // we can be pretty certain ActiveMQ isn't running on localhost port 80
+      connectionFactory.setBrokerURL("tcp://localhost:80");
+      collector = builder().connectionFactory(connectionFactory).build();
+      collector.start();
+    });
+    assertTrue(exception.getMessage()
+      .contains("Unable to establish connection to ActiveMQ broker: Connection refused"));
   }
 
   /**
@@ -97,24 +107,24 @@ public class ITActiveMQCollector {
    * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
    * information.
    */
-  @Test public void toStringContainsOnlySummaryInformation() {
+  @Test void toStringContainsOnlySummaryInformation() {
     assertThat(collector).hasToString(String.format("ActiveMQCollector{brokerURL=%s, queue=%s}",
-      activemq.getVmURL(), testName.getMethodName())
+      activemq.getVmURL(), testName)
     );
   }
 
   /** Ensures list encoding works: a json encoded list of spans */
-  @Test public void messageWithMultipleSpans_json() throws Exception {
+  @Test void messageWithMultipleSpans_json() throws Exception {
     messageWithMultipleSpans(SpanBytesEncoder.JSON_V1);
   }
 
   /** Ensures list encoding works: a version 2 json list of spans */
-  @Test public void messageWithMultipleSpans_json2() throws Exception {
+  @Test void messageWithMultipleSpans_json2() throws Exception {
     messageWithMultipleSpans(SpanBytesEncoder.JSON_V2);
   }
 
   /** Ensures list encoding works: proto3 ListOfSpans */
-  @Test public void messageWithMultipleSpans_proto3() throws Exception {
+  @Test void messageWithMultipleSpans_proto3() throws Exception {
     messageWithMultipleSpans(SpanBytesEncoder.PROTO3);
   }
 
@@ -132,7 +142,7 @@ public class ITActiveMQCollector {
   }
 
   /** Ensures malformed spans don't hang the collector */
-  @Test public void skipsMalformedData() throws Exception {
+  @Test void skipsMalformedData() throws Exception {
     byte[] malformed1 = "[\"='".getBytes(UTF_8); // screwed up json
     byte[] malformed2 = "malformed".getBytes(UTF_8);
     activemq.pushMessage(collector.queue, THRIFT.encodeList(spans));
@@ -152,7 +162,7 @@ public class ITActiveMQCollector {
   }
 
   /** Guards against errors that leak from storage, such as InvalidQueryException */
-  @Test public void skipsOnSpanStorageException() throws Exception {
+  @Test void skipsOnSpanStorageException() throws Exception {
     collector.close();
 
     AtomicInteger counter = new AtomicInteger();
@@ -192,7 +202,7 @@ public class ITActiveMQCollector {
     assertThat(activemqMetrics.spansDropped()).isEqualTo(spans.size()); // only one dropped
   }
 
-  @Test public void messagesDistributedAcrossMultipleThreadsSuccessfully() throws Exception {
+  @Test void messagesDistributedAcrossMultipleThreadsSuccessfully() throws Exception {
     collector.close();
 
     CountDownLatch latch = new CountDownLatch(2);
@@ -229,7 +239,7 @@ public class ITActiveMQCollector {
       .storage(buildStorage(consumer))
       .metrics(metrics)
       // prevent test flakes by having each run in an individual queue
-      .queue(testName.getMethodName());
+      .queue(testName);
   }
 
   static StorageComponent buildStorage(final SpanConsumer spanConsumer) {

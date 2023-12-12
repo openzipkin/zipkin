@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,7 @@
 package zipkin2.elasticsearch.internal.client;
 
 import com.linecorp.armeria.client.WebClient;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,7 +26,7 @@ public class SearchCallFactoryTest {
   SearchCallFactory client = new SearchCallFactory(new HttpCall.Factory(httpClient));
 
   /** Declaring queries alphabetically helps simplify amazon signature logic */
-  @Test public void lenientSearchOrdersQueryAlphabetically() {
+  @Test void lenientSearchOrdersQueryAlphabetically() {
     assertThat(client.lenientSearch(asList("zipkin:span-2016-10-01"), null))
         .endsWith("/_search?allow_no_indices=true&expand_wildcards=open&ignore_unavailable=true");
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.Span.Kind;
@@ -33,7 +33,7 @@ public class TraceTest {
    *
    * <p>See https://github.com/openzipkin/zipkin/pull/1745
    */
-  @Test public void backfillsMissingParentIdOnSharedSpan() {
+  @Test void backfillsMissingParentIdOnSharedSpan() {
     List<Span> trace = asList(
       span("a", null, "a", Kind.SERVER, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, "frontend", null, false),
@@ -48,7 +48,7 @@ public class TraceTest {
     );
   }
 
-  @Test public void backfillsMissingSharedFlag() {
+  @Test void backfillsMissingSharedFlag() {
     List<Span> trace = asList(
       span("a", null, "a", Kind.SERVER, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, "frontend", "1.2.3.4", false),
@@ -64,7 +64,7 @@ public class TraceTest {
   }
 
   /** Some truncate an incoming trace ID to 64-bits. */
-  @Test public void choosesBestTraceId() {
+  @Test void choosesBestTraceId() {
     List<Span> trace = asList(
       span("7180c278b62e8f6a216a2aea45d08fc9", null, "a", Kind.SERVER, "frontend", null, false),
       span("7180c278b62e8f6a216a2aea45d08fc9", "a", "b", Kind.CLIENT, "frontend", null, false),
@@ -79,7 +79,7 @@ public class TraceTest {
   }
 
   /** Let's pretend people use crappy data, but only on the first hop. */
-  @Test public void mergesWhenMissingEndpoints() {
+  @Test void mergesWhenMissingEndpoints() {
     List<Span> trace = asList(
       Span.newBuilder()
         .traceId("a")
@@ -123,7 +123,7 @@ public class TraceTest {
    * If a client request is proxied by something that does transparent retried. It can be the case
    * that two servers share the same ID (accidentally!)
    */
-  @Test public void doesntMergeSharedSpansOnDifferentIPs() {
+  @Test void doesntMergeSharedSpansOnDifferentIPs() {
     List<Span> trace = asList(
       span("a", null, "a", Kind.SERVER, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, "frontend", null, false).toBuilder()
@@ -144,7 +144,7 @@ public class TraceTest {
   }
 
   // Same as above, but the late reported data has no parent id or endpoint
-  @Test public void putsRandomDataOnFirstSpanWithEndpoint() {
+  @Test void putsRandomDataOnFirstSpanWithEndpoint() {
     List<Span> trace = asList(
       span("a", null, "a", Kind.SERVER, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, null, null, false),
@@ -167,7 +167,7 @@ public class TraceTest {
 
   // not a good idea to send parts of a local endpoint separately, but this helps ensure data isn't
   // accidentally partitioned in a overly fine grain
-  @Test public void mergesIncompleteEndpoints() {
+  @Test void mergesIncompleteEndpoints() {
     List<Span> trace = asList(
       span("a", null, "a", Kind.SERVER, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, "frontend", null, false),
@@ -183,7 +183,7 @@ public class TraceTest {
     );
   }
 
-  @Test public void deletesSelfReferencingParentId() {
+  @Test void deletesSelfReferencingParentId() {
     List<Span> trace = asList(
       span("a", "a", "a", Kind.SERVER, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, "frontend", null, false)
@@ -195,7 +195,7 @@ public class TraceTest {
     );
   }
 
-  @Test public void worksWhenMissingParentSpan() {
+  @Test void worksWhenMissingParentSpan() {
     String missingParentId = "a";
     List<Span> trace = asList(
       span("a", missingParentId, "b", Kind.SERVER, "backend", "1.2.3.4", false),
@@ -206,7 +206,7 @@ public class TraceTest {
   }
 
   // some instrumentation don't add shared flag to servers
-  @Test public void cleanupComparator_ordersClientFirst() {
+  @Test void cleanupComparator_ordersClientFirst() {
     List<Span> trace = asList(
       span("a", "a", "b", Kind.SERVER, "backend", "1.2.3.5", false),
       span("a", "a", "b", Kind.CLIENT, "frontend", null, false)
@@ -217,7 +217,7 @@ public class TraceTest {
   }
 
   /** Comparators are meant to be transitive. This exploits edge cases to fool our comparator. */
-  @Test public void cleanupComparator_transitiveKindComparison() {
+  @Test void cleanupComparator_transitiveKindComparison() {
     List<Span> trace = new ArrayList<>();
     Endpoint aEndpoint = Endpoint.newBuilder().serviceName("a").build();
     Endpoint bEndpoint = Endpoint.newBuilder().serviceName("b").build();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,7 +16,7 @@ package zipkin2.storage.mysql.v1;
 import org.jooq.Record4;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.v1.V1Annotation;
 import zipkin2.v1.V1BinaryAnnotation;
@@ -26,8 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 
 public class SelectSpansAndAnnotationsTest {
-  @Test
-  public void processAnnotationRecord_nulls() {
+  @Test void processAnnotationRecord_nulls() {
     Record4<Integer, Long, String, byte[]> annotationRecord =
         annotationRecord(null, null, null, null);
 
@@ -38,8 +37,7 @@ public class SelectSpansAndAnnotationsTest {
       .usingRecursiveComparison().isEqualTo(V1Span.newBuilder().traceId(1).id(1));
   }
 
-  @Test
-  public void processAnnotationRecord_annotation() {
+  @Test void processAnnotationRecord_annotation() {
     Record4<Integer, Long, String, byte[]> annotationRecord = annotationRecord(-1, 0L, "foo", null);
 
     V1Span.Builder builder = V1Span.newBuilder().traceId(1).id(1);
@@ -49,8 +47,7 @@ public class SelectSpansAndAnnotationsTest {
         .isEqualTo(V1Annotation.create(0L, "foo", null));
   }
 
-  @Test
-  public void processAnnotationRecord_tag() {
+  @Test void processAnnotationRecord_tag() {
     Record4<Integer, Long, String, byte[]> annotationRecord =
         annotationRecord(6, null, "foo", new byte[0]);
 
@@ -61,8 +58,7 @@ public class SelectSpansAndAnnotationsTest {
         .isEqualTo(V1BinaryAnnotation.createString("foo", "", null));
   }
 
-  @Test
-  public void processAnnotationRecord_address() {
+  @Test void processAnnotationRecord_address() {
     Record4<Integer, Long, String, byte[]> annotationRecord =
         annotationRecord(0, null, "ca", new byte[] {1});
     Endpoint ep = Endpoint.newBuilder().serviceName("foo").build();
@@ -74,8 +70,7 @@ public class SelectSpansAndAnnotationsTest {
         .isEqualTo(V1BinaryAnnotation.createAddress("ca", ep));
   }
 
-  @Test
-  public void processAnnotationRecord_address_skipMissingEndpoint() {
+  @Test void processAnnotationRecord_address_skipMissingEndpoint() {
     Record4<Integer, Long, String, byte[]> annotationRecord =
         annotationRecord(0, null, "ca", new byte[] {1});
 
@@ -85,8 +80,7 @@ public class SelectSpansAndAnnotationsTest {
     assertThat(builder.build().binaryAnnotations()).isEmpty();
   }
 
-  @Test
-  public void processAnnotationRecord_address_skipWrongKey() {
+  @Test void processAnnotationRecord_address_skipWrongKey() {
     Record4<Integer, Long, String, byte[]> annotationRecord =
         annotationRecord(0, null, "sr", new byte[] {1});
     Endpoint ep = Endpoint.newBuilder().serviceName("foo").build();
@@ -111,8 +105,7 @@ public class SelectSpansAndAnnotationsTest {
         .value4(value);
   }
 
-  @Test
-  public void endpoint_justIpv4() {
+  @Test void endpoint_justIpv4() {
     Record4<String, Integer, Short, byte[]> endpointRecord =
         endpointRecord("", 127 << 24 | 1, (short) 0, new byte[0]);
 

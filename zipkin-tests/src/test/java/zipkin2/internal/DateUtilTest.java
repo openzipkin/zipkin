@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,7 +18,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,8 +26,7 @@ import static zipkin2.internal.DateUtil.midnightUTC;
 
 public class DateUtilTest {
 
-  @Test
-  public void midnightUTCTest() throws ParseException {
+  @Test void midnightUTCTest() throws ParseException {
 
     DateFormat iso8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
     iso8601.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -39,15 +38,13 @@ public class DateUtilTest {
     assertThat(iso8601.format(new Date(midnight))).isEqualTo("2011-04-15T00:00:00Z");
   }
 
-  @Test
-  public void getDays() {
+  @Test void getDays() {
     assertThat(DateUtil.epochDays(DAYS.toMillis(2), DAYS.toMillis(1)))
         .containsExactly(DAYS.toMillis(1), DAYS.toMillis(2));
   }
 
   /** Looking back earlier than 1970 is likely a bug */
-  @Test
-  public void getDays_doesntLookEarlierThan1970() {
+  @Test void getDays_doesntLookEarlierThan1970() {
     assertThat(DateUtil.epochDays(DAYS.toMillis(2), DAYS.toMillis(3)))
         .containsExactly(0L, DAYS.toMillis(1), DAYS.toMillis(2));
   }

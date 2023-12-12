@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,8 +17,8 @@ import brave.Tracing;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.convert.ApplicationConversionService;
@@ -32,15 +32,16 @@ import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ZipkinHttpConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @After public void close() {
+  @AfterEach public void close() {
     context.close();
   }
 
-  @Test public void httpCollector_enabledByDefault() {
+  @Test void httpCollector_enabledByDefault() {
     registerBaseConfig(context);
     context.register(ZipkinHttpCollector.class);
     context.refresh();
@@ -48,17 +49,18 @@ public class ZipkinHttpConfigurationTest {
     assertThat(context.getBean(ZipkinHttpCollector.class)).isNotNull();
   }
 
-  @Test(expected = NoSuchBeanDefinitionException.class)
-  public void httpCollector_canDisable() {
-    TestPropertyValues.of("zipkin.collector.http.enabled:false").applyTo(context);
-    registerBaseConfig(context);
-    context.register(ZipkinHttpCollector.class);
-    context.refresh();
+  @Test void httpCollector_canDisable() {
+    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+      TestPropertyValues.of("zipkin.collector.http.enabled:false").applyTo(context);
+      registerBaseConfig(context);
+      context.register(ZipkinHttpCollector.class);
+      context.refresh();
 
-    context.getBean(ZipkinHttpCollector.class);
+      context.getBean(ZipkinHttpCollector.class);
+    });
   }
 
-  @Test public void query_enabledByDefault() {
+  @Test void query_enabledByDefault() {
     registerBaseConfig(context);
     context.register(ZipkinQueryApiV2.class);
     context.refresh();
@@ -66,7 +68,7 @@ public class ZipkinHttpConfigurationTest {
     assertThat(context.getBean(ZipkinQueryApiV2.class)).isNotNull();
   }
 
-  @Test public void query_canDisable() {
+  @Test void query_canDisable() {
     TestPropertyValues.of("zipkin.query.enabled:false").applyTo(context);
     registerBaseConfig(context);
     context.register(ZipkinQueryApiV2.class);
@@ -76,7 +78,7 @@ public class ZipkinHttpConfigurationTest {
       .isInstanceOf(NoSuchBeanDefinitionException.class);
   }
 
-  @Test public void selfTracing_canEnable() {
+  @Test void selfTracing_canEnable() {
     TestPropertyValues.of("zipkin.self-tracing.enabled:true").applyTo(context);
     registerBaseConfig(context);
     context.register(ZipkinSelfTracingConfiguration.class);
@@ -85,7 +87,7 @@ public class ZipkinHttpConfigurationTest {
     context.getBean(Tracing.class).close();
   }
 
-  @Test public void search_canDisable() {
+  @Test void search_canDisable() {
     TestPropertyValues.of("zipkin.storage.search-enabled:false").applyTo(context);
     registerBaseConfig(context);
     context.refresh();

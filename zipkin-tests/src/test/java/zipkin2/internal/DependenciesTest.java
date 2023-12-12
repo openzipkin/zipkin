@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,14 +14,14 @@
 package zipkin2.internal;
 
 import java.nio.ByteBuffer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.DependencyLink;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public final class DependenciesTest {
-  @Test public void dependenciesRoundTrip() {
+  @Test void dependenciesRoundTrip() {
     DependencyLink ab = DependencyLink.newBuilder().parent("a").child("b").callCount(2L).build();
     DependencyLink cd = DependencyLink.newBuilder().parent("c").child("d").errorCount(2L).build();
 

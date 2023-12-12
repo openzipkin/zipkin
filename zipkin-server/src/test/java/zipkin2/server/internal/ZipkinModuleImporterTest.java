@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,8 +13,8 @@
  */
 package zipkin2.server.internal;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
@@ -23,17 +23,17 @@ public class ZipkinModuleImporterTest {
   ZipkinModuleImporter zipkinModuleImporter = new ZipkinModuleImporter();
   GenericApplicationContext context = new GenericApplicationContext();
 
-  @After public void close() {
+  @AfterEach public void close() {
     context.close();
   }
 
-  @Test public void doesntCrashWhenNoModules() {
+  @Test void doesntCrashWhenNoModules() {
     zipkinModuleImporter.initialize(context);
 
     context.refresh();
   }
 
-  @Test public void configuresModule() {
+  @Test void configuresModule() {
     TestPropertyValues.of(
       "zipkin.internal.module.module1=" + Module1.class.getName()
     ).applyTo(context);
@@ -44,7 +44,7 @@ public class ZipkinModuleImporterTest {
     context.getBean(Module1.class);
   }
 
-  @Test public void doesntCrashWhenBadModule() {
+  @Test void doesntCrashWhenBadModule() {
     TestPropertyValues.of(
       "zipkin.internal.module.module1=tomatoes"
     ).applyTo(context);
@@ -54,7 +54,7 @@ public class ZipkinModuleImporterTest {
     context.refresh();
   }
 
-  @Test public void configuresModules() {
+  @Test void configuresModules() {
     TestPropertyValues.of(
       "zipkin.internal.module.module1=" + Module1.class.getName(),
       "zipkin.internal.module.module2=" + Module2.class.getName()

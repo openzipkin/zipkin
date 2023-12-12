@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  */
 package zipkin2.v1;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,20 +21,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class V1SpanTest {
   V1Span.Builder builder = V1Span.newBuilder().traceId("1").id("1");
 
-  @Test public void annotationEndpoint_emptyToNull() {
+  @Test void annotationEndpoint_emptyToNull() {
     assertThat(builder.addAnnotation(1, "foo", Endpoint.newBuilder().build()).annotations)
       .extracting(V1Annotation::endpoint)
       .containsOnlyNulls();
   }
 
-  @Test public void binaryAnnotationEndpoint_emptyToNull() {
+  @Test void binaryAnnotationEndpoint_emptyToNull() {
     assertThat(
       builder.addBinaryAnnotation("foo", "bar", Endpoint.newBuilder().build()).binaryAnnotations)
       .extracting(V1BinaryAnnotation::endpoint)
       .containsOnlyNulls();
   }
 
-  @Test public void binaryAnnotationEndpoint_ignoresEmptyAddress() {
+  @Test void binaryAnnotationEndpoint_ignoresEmptyAddress() {
     assertThat(
       builder.addBinaryAnnotation("ca", Endpoint.newBuilder().build()).binaryAnnotations)
       .isNull();

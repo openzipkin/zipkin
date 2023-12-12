@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,8 +18,8 @@ import java.lang.reflect.Method;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.Test;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import zipkin2.CheckResult;
 import zipkin2.Component;
 
@@ -35,7 +35,7 @@ public class ForwardingStorageComponentTest {
    * This test is intentionally brittle. It should break if we add new methods on {@link
    * StorageComponent}!
    */
-  @Test public void declaresAllMethodsToForward() {
+  @Test void declaresAllMethodsToForward() {
     assertThat(ForwardingStorageComponent.class.getDeclaredMethods())
       .extracting(Method::getName)
       .containsAll(Stream.concat(
@@ -55,11 +55,11 @@ public class ForwardingStorageComponentTest {
     verifyNoMoreInteractions(delegate);
   }
 
-  @Test public void delegatesToString() {
+  @Test void delegatesToString() {
     assertThat(forwarder.toString()).isEqualTo(delegate.toString());
   }
 
-  @Test public void delegatesCheck() {
+  @Test void delegatesCheck() {
     CheckResult down = CheckResult.failed(new RuntimeException("failed"));
     when(delegate.check()).thenReturn(down);
 
@@ -68,7 +68,7 @@ public class ForwardingStorageComponentTest {
     verify(delegate).check();
   }
 
-  @Test public void delegatesIsOverCapacity() {
+  @Test void delegatesIsOverCapacity() {
     Exception wayOver = new RejectedExecutionException();
     when(delegate.isOverCapacity(wayOver)).thenReturn(true);
 
@@ -77,7 +77,7 @@ public class ForwardingStorageComponentTest {
     verify(delegate).isOverCapacity(wayOver);
   }
 
-  @Test public void delegatesClose() throws IOException {
+  @Test void delegatesClose() throws IOException {
     doNothing().when(delegate).close();
 
     forwarder.close();
@@ -85,7 +85,7 @@ public class ForwardingStorageComponentTest {
     verify(delegate).close();
   }
 
-  @Test public void delegatesSpanStore() {
+  @Test void delegatesSpanStore() {
     SpanStore spanStore = mock(SpanStore.class);
     when(delegate.spanStore()).thenReturn(spanStore);
 
@@ -94,7 +94,7 @@ public class ForwardingStorageComponentTest {
     verify(delegate).spanStore();
   }
 
-  @Test public void delegatesAutocompleteTags() {
+  @Test void delegatesAutocompleteTags() {
     AutocompleteTags autocompleteTags = mock(AutocompleteTags.class);
     when(delegate.autocompleteTags()).thenReturn(autocompleteTags);
 
@@ -103,7 +103,7 @@ public class ForwardingStorageComponentTest {
     verify(delegate).autocompleteTags();
   }
 
-  @Test public void delegatesServiceAndSpanNames() {
+  @Test void delegatesServiceAndSpanNames() {
     ServiceAndSpanNames serviceAndSpanNames = mock(ServiceAndSpanNames.class);
     when(delegate.serviceAndSpanNames()).thenReturn(serviceAndSpanNames);
 
@@ -112,7 +112,7 @@ public class ForwardingStorageComponentTest {
     verify(delegate).serviceAndSpanNames();
   }
 
-  @Test public void delegatesSpanConsumer() {
+  @Test void delegatesSpanConsumer() {
     SpanConsumer spanConsumer = mock(SpanConsumer.class);
     when(delegate.spanConsumer()).thenReturn(spanConsumer);
 

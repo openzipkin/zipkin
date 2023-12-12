@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,8 +13,8 @@
  */
 package zipkin2.storage.cassandra;
 
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -27,11 +27,11 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @After public void close() {
+  @AfterEach public void close() {
     context.close();
   }
 
-  @Test public void doesntProvidesStorageComponent_whenStorageTypeNotCassandra() {
+  @Test void doesntProvidesStorageComponent_whenStorageTypeNotCassandra() {
     TestPropertyValues.of("zipkin.storage.type:elasticsearch").applyTo(context);
     Access.registerCassandra3(context);
     context.refresh();
@@ -40,7 +40,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
       .isInstanceOf(NoSuchBeanDefinitionException.class);
   }
 
-  @Test public void providesStorageComponent_whenStorageTypeCassandra() {
+  @Test void providesStorageComponent_whenStorageTypeCassandra() {
     TestPropertyValues.of("zipkin.storage.type:cassandra3").applyTo(context);
     Access.registerCassandra3(context);
     context.refresh();
@@ -48,7 +48,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
     assertThat(context.getBean(CassandraStorage.class)).isNotNull();
   }
 
-  @Test public void canOverridesProperty_contactPoints() {
+  @Test void canOverridesProperty_contactPoints() {
     TestPropertyValues.of(
       "zipkin.storage.type:cassandra3",
       "zipkin.storage.cassandra3.contact-points:host1,host2" // note snake-case supported
@@ -59,7 +59,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
     assertThat(context.getBean(CassandraStorage.class).contactPoints).isEqualTo("host1,host2");
   }
 
-  @Test public void strictTraceId_defaultsToTrue() {
+  @Test void strictTraceId_defaultsToTrue() {
     TestPropertyValues.of("zipkin.storage.type:cassandra3").applyTo(context);
     Access.registerCassandra3(context);
     context.refresh();
@@ -67,7 +67,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
     assertThat(context.getBean(CassandraStorage.class).strictTraceId).isTrue();
   }
 
-  @Test public void strictTraceId_canSetToFalse() {
+  @Test void strictTraceId_canSetToFalse() {
     TestPropertyValues.of(
       "zipkin.storage.type:cassandra3",
       "zipkin.storage.strict-trace-id:false")
@@ -78,7 +78,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
     assertThat(context.getBean(CassandraStorage.class).strictTraceId).isFalse();
   }
 
-  @Test public void searchEnabled_canSetToFalse() {
+  @Test void searchEnabled_canSetToFalse() {
     TestPropertyValues.of(
       "zipkin.storage.type:cassandra3",
       "zipkin.storage.search-enabled:false")
@@ -89,7 +89,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
     assertThat(context.getBean(CassandraStorage.class).searchEnabled).isFalse();
   }
 
-  @Test public void autocompleteKeys_list() {
+  @Test void autocompleteKeys_list() {
     TestPropertyValues.of(
       "zipkin.storage.type:cassandra3",
       "zipkin.storage.autocomplete-keys:environment")
@@ -101,7 +101,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
       .containsOnly("environment");
   }
 
-  @Test public void autocompleteTtl() {
+  @Test void autocompleteTtl() {
     TestPropertyValues.of(
       "zipkin.storage.type:cassandra3",
       "zipkin.storage.autocomplete-ttl:60000")
@@ -113,7 +113,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
       .isEqualTo(60000);
   }
 
-  @Test public void autocompleteCardinality() {
+  @Test void autocompleteCardinality() {
     TestPropertyValues.of(
       "zipkin.storage.type:cassandra3",
       "zipkin.storage.autocomplete-cardinality:5000")

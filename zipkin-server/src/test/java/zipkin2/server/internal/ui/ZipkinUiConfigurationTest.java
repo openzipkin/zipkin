@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -25,8 +25,8 @@ import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import java.io.ByteArrayInputStream;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
@@ -36,28 +36,26 @@ import org.springframework.core.io.ClassPathResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ZipkinUiConfigurationTest {
 
   AnnotationConfigApplicationContext context;
 
-  @After
-  public void close() {
+  @AfterEach public void close() {
     if (context != null) {
       context.close();
     }
   }
 
-  @Test
-  public void indexContentType() {
+  @Test void indexContentType() {
     context = createContext();
     assertThat(
       serveIndex().headers().contentType())
       .isEqualTo(MediaType.HTML_UTF_8);
   }
 
-  @Test
-  public void indexHtml() throws Exception {
+  @Test void indexHtml() {
     // Instantiate directly so that spring doesn't cache it
     ZipkinUiConfiguration ui = new ZipkinUiConfiguration();
     ui.ui = new ZipkinUiProperties();
@@ -66,123 +64,109 @@ public class ZipkinUiConfigurationTest {
       .isInstanceOf(BeanCreationException.class);
   }
 
-  @Test
-  public void canOverridesProperty_defaultLookback() {
+  @Test void canOverridesProperty_defaultLookback() {
     context = createContextWithOverridenProperty("zipkin.ui.defaultLookback:100");
 
     assertThat(context.getBean(ZipkinUiProperties.class).getDefaultLookback())
       .isEqualTo(100);
   }
 
-  @Test
-  public void canOverrideProperty_logsUrl() {
+  @Test void canOverrideProperty_logsUrl() {
     final String url = "http://mycompany.com/kibana";
     context = createContextWithOverridenProperty("zipkin.ui.logs-url:" + url);
 
     assertThat(context.getBean(ZipkinUiProperties.class).getLogsUrl()).isEqualTo(url);
   }
 
-  @Test
-  public void canOverrideProperty_archivePostUrl() {
+  @Test void canOverrideProperty_archivePostUrl() {
     final String url = "http://zipkin.archive.com/api/v2/spans";
     context = createContextWithOverridenProperty("zipkin.ui.archive-post-url:" + url);
 
     assertThat(context.getBean(ZipkinUiProperties.class).getArchivePostUrl()).isEqualTo(url);
   }
 
-  @Test
-  public void canOverrideProperty_archiveUrl() {
+  @Test void canOverrideProperty_archiveUrl() {
     final String url = "http://zipkin.archive.com/zipkin/traces/{traceId}";
     context = createContextWithOverridenProperty("zipkin.ui.archive-url:" + url);
 
     assertThat(context.getBean(ZipkinUiProperties.class).getArchiveUrl()).isEqualTo(url);
   }
 
-  @Test
-  public void canOverrideProperty_supportUrl() {
+  @Test void canOverrideProperty_supportUrl() {
     final String url = "http://mycompany.com/file-a-bug";
     context = createContextWithOverridenProperty("zipkin.ui.support-url:" + url);
 
     assertThat(context.getBean(ZipkinUiProperties.class).getSupportUrl()).isEqualTo(url);
   }
 
-  @Test
-  public void logsUrlIsNullIfOverridenByEmpty() {
+  @Test void logsUrlIsNullIfOverridenByEmpty() {
     context = createContextWithOverridenProperty("zipkin.ui.logs-url:");
 
     assertThat(context.getBean(ZipkinUiProperties.class).getLogsUrl()).isNull();
   }
 
-  @Test
-  public void logsUrlIsNullByDefault() {
+  @Test void logsUrlIsNullByDefault() {
     context = createContext();
 
     assertThat(context.getBean(ZipkinUiProperties.class).getLogsUrl()).isNull();
   }
 
-  @Test(expected = NoSuchBeanDefinitionException.class)
-  public void canOverridesProperty_disable() {
-    context = createContextWithOverridenProperty("zipkin.ui.enabled:false");
+  @Test void canOverridesProperty_disable() {
+    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+      context = createContextWithOverridenProperty("zipkin.ui.enabled:false");
 
-    context.getBean(ZipkinUiProperties.class);
+      context.getBean(ZipkinUiProperties.class);
+    });
   }
 
-  @Test
-  public void canOverridesProperty_searchEnabled() {
+  @Test void canOverridesProperty_searchEnabled() {
     context = createContextWithOverridenProperty("zipkin.ui.search-enabled:false");
 
     assertThat(context.getBean(ZipkinUiProperties.class).isSearchEnabled()).isFalse();
   }
 
-  @Test
-  public void canOverridesProperty_dependenciesEnabled() {
+  @Test void canOverridesProperty_dependenciesEnabled() {
     context = createContextWithOverridenProperty("zipkin.ui.dependency.enabled:false");
 
     assertThat(context.getBean(ZipkinUiProperties.class).getDependency().isEnabled()).isFalse();
   }
 
-  @Test
-  public void canOverrideProperty_dependencyLowErrorRate() {
+  @Test void canOverrideProperty_dependencyLowErrorRate() {
     context = createContextWithOverridenProperty("zipkin.ui.dependency.low-error-rate:0.1");
 
     assertThat(context.getBean(ZipkinUiProperties.class).getDependency().getLowErrorRate())
       .isEqualTo(0.1f);
   }
 
-  @Test
-  public void canOverrideProperty_dependencyHighErrorRate() {
+  @Test void canOverrideProperty_dependencyHighErrorRate() {
     context = createContextWithOverridenProperty("zipkin.ui.dependency.high-error-rate:0.1");
 
     assertThat(context.getBean(ZipkinUiProperties.class).getDependency().getHighErrorRate())
       .isEqualTo(0.1f);
   }
 
-  @Test
-  public void defaultBaseUrl_doesNotChangeResource() {
+  @Test void defaultBaseUrl_doesNotChangeResource() {
     context = createContext();
 
     assertThat(new ByteArrayInputStream(serveIndex().content().array()))
       .hasSameContentAs(getClass().getResourceAsStream("/zipkin-lens/index.html"));
   }
 
-  @Test
-  public void canOverrideProperty_basePath() {
+  @Test void canOverrideProperty_basePath() {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
 
     assertThat(serveIndex().contentUtf8())
       .contains("<base href=\"/foo/bar/\">");
   }
 
-  @Test
-  public void lensCookieOverridesIndex() {
+  @Test void lensCookieOverridesIndex() {
     context = createContext();
 
     assertThat(serveIndex(new DefaultCookie("lens", "true")).contentUtf8())
       .contains("zipkin-lens");
   }
 
-  @Test
-  public void canOverrideProperty_specialCaseRoot() {
+  @Test void canOverrideProperty_specialCaseRoot() {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/");
 
     assertThat(serveIndex().contentUtf8())

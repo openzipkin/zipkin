@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,10 +13,8 @@
  */
 package zipkin2.server.internal.kafka;
 
-import org.junit.After;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
@@ -25,41 +23,40 @@ import zipkin2.collector.kafka.KafkaCollector;
 import zipkin2.server.internal.InMemoryConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ZipkinKafkaCollectorConfigurationTest {
 
-  @Rule public ExpectedException thrown = ExpectedException.none();
-
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @After public void close() {
+  @AfterEach public void close() {
     context.close();
   }
 
-  @Test public void doesNotProvideCollectorComponent_whenBootstrapServersUnset() {
-    context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinKafkaCollectorConfiguration.class,
-      InMemoryConfiguration.class);
-    context.refresh();
-
-    thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(KafkaCollector.class);
+  @Test void doesNotProvideCollectorComponent_whenBootstrapServersUnset() {
+    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+      context.register(
+        PropertyPlaceholderAutoConfiguration.class,
+        ZipkinKafkaCollectorConfiguration.class,
+        InMemoryConfiguration.class);
+      context.refresh();
+      context.getBean(KafkaCollector.class);
+    });
   }
 
-  @Test public void providesCollectorComponent_whenBootstrapServersEmptyString() {
-    TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:").applyTo(context);
-    context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinKafkaCollectorConfiguration.class,
-      InMemoryConfiguration.class);
-    context.refresh();
-
-    thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(KafkaCollector.class);
+  @Test void providesCollectorComponent_whenBootstrapServersEmptyString() {
+    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+      TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:").applyTo(context);
+      context.register(
+        PropertyPlaceholderAutoConfiguration.class,
+        ZipkinKafkaCollectorConfiguration.class,
+        InMemoryConfiguration.class);
+      context.refresh();
+      context.getBean(KafkaCollector.class);
+    });
   }
 
-  @Test public void providesCollectorComponent_whenBootstrapServersSet() {
+  @Test void providesCollectorComponent_whenBootstrapServersSet() {
     TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:localhost:9092")
       .applyTo(context);
     context.register(
@@ -71,17 +68,17 @@ public class ZipkinKafkaCollectorConfigurationTest {
     assertThat(context.getBean(KafkaCollector.class)).isNotNull();
   }
 
-  @Test public void doesNotProvidesCollectorComponent_whenBootstrapServersSetAndDisabled() {
-    TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:localhost:9092")
-      .applyTo(context);
-    TestPropertyValues.of("zipkin.collector.kafka.enabled:false").applyTo(context);
-    context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinKafkaCollectorConfiguration.class,
-      InMemoryConfiguration.class);
-    context.refresh();
-
-    thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(KafkaCollector.class);
+  @Test void doesNotProvidesCollectorComponent_whenBootstrapServersSetAndDisabled() {
+    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+      TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:localhost:9092")
+        .applyTo(context);
+      TestPropertyValues.of("zipkin.collector.kafka.enabled:false").applyTo(context);
+      context.register(
+        PropertyPlaceholderAutoConfiguration.class,
+        ZipkinKafkaCollectorConfiguration.class,
+        InMemoryConfiguration.class);
+      context.refresh();
+      context.getBean(KafkaCollector.class);
+    });
   }
 }

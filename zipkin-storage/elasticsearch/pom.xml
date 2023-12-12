@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2021 The OpenZipkin Authors
+    Copyright 2015-2023 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -62,12 +62,6 @@
     <dependency>
       <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-junit5</artifactId>
-      <version>${armeria.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-junit4</artifactId>
       <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>

@@ -20,14 +20,14 @@ import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.healthcheck.HealthCheckService;
 import com.linecorp.armeria.server.healthcheck.SettableHealthChecker;
-import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import com.linecorp.armeria.testing.junit5.server.ServerExtension;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLException;
 import org.awaitility.core.ConditionFactory;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.util.TestPropertyValues;
@@ -50,7 +50,8 @@ public class ITElasticsearchHealthCheck {
 
   static final SettableHealthChecker server1Health = new SettableHealthChecker(true);
 
-  @ClassRule public static ServerRule server1 = new ServerRule() {
+  @RegisterExtension
+  static ServerExtension server1 = new ServerExtension() {
     @Override protected void configure(ServerBuilder sb) {
       sb.service("/", (ctx, req) -> sendResponseAfterAggregate(req, VERSION_RESPONSE));
       sb.service("/_cluster/health", HealthCheckService.of(server1Health));
@@ -74,7 +75,8 @@ public class ITElasticsearchHealthCheck {
 
   static final SettableHealthChecker server2Health = new SettableHealthChecker(true);
 
-  @ClassRule public static ServerRule server2 = new ServerRule() {
+  @RegisterExtension
+  static ServerExtension server2 = new ServerExtension() {
     @Override protected void configure(ServerBuilder sb) {
       sb.service("/", (ctx, req) -> sendResponseAfterAggregate(req, VERSION_RESPONSE));
       sb.service("/_cluster/health", HealthCheckService.of(server2Health));
@@ -85,7 +87,7 @@ public class ITElasticsearchHealthCheck {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @Before public void setUp() {
+  @BeforeEach public void setUp() {
     server1Health.setHealthy(true);
     server2Health.setHealthy(true);
 
@@ -110,7 +112,7 @@ public class ITElasticsearchHealthCheck {
     context.refresh();
   }
 
-  @Test public void allHealthy() {
+  @Test void allHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
 
       // There's an initialization delay, so await instead of expect everything up now.
@@ -118,7 +120,7 @@ public class ITElasticsearchHealthCheck {
     }
   }
 
-  @Test public void oneHealthy() {
+  @Test void oneHealthy() {
     server1Health.setHealthy(false);
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
@@ -126,7 +128,7 @@ public class ITElasticsearchHealthCheck {
     }
   }
 
-  @Test public void wrongScheme() {
+  @Test void wrongScheme() {
     context.close();
     context = new AnnotationConfigApplicationContext();
     initWithHosts("https://localhost:" + server1.httpPort());
@@ -140,7 +142,7 @@ public class ITElasticsearchHealthCheck {
     }
   }
 
-  @Test public void noneHealthy() {
+  @Test void noneHealthy() {
     server1Health.setHealthy(false);
     server2Health.setHealthy(false);
 
@@ -153,7 +155,7 @@ public class ITElasticsearchHealthCheck {
   }
 
   // If this flakes, uncomment in initWithHosts and log4j2.properties
-  @Test public void healthyThenNotHealthyThenHealthy() {
+  @Test void healthyThenNotHealthyThenHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
       assertOk(storage.check());
 
@@ -170,7 +172,7 @@ public class ITElasticsearchHealthCheck {
     }
   }
 
-  @Test public void notHealthyThenHealthyThenNotHealthy() {
+  @Test void notHealthyThenHealthyThenNotHealthy() {
     server1Health.setHealthy(false);
     server2Health.setHealthy(false);
 
@@ -188,7 +190,7 @@ public class ITElasticsearchHealthCheck {
     }
   }
 
-  @Test public void healthCheckDisabled() {
+  @Test void healthCheckDisabled() {
     AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
     TestPropertyValues.of(

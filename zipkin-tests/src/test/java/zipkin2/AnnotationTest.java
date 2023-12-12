@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,23 +13,23 @@
  */
 package zipkin2;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AnnotationTest {
-  @Rule public ExpectedException thrown = ExpectedException.none();
 
-  @Test public void messageWhenMissingValue() {
-    thrown.expect(NullPointerException.class);
-    thrown.expectMessage("value");
+  @Test void messageWhenMissingValue() {
+    Throwable exception = assertThrows(NullPointerException.class, () -> {
 
-    Annotation.create(1L, null);
+      Annotation.create(1L, null);
+    });
+    assertTrue(exception.getMessage().contains("value"));
   }
 
-  @Test public void toString_isNice() {
+  @Test void toString_isNice() {
     assertThat(Annotation.create(1L, "foo"))
       .hasToString("Annotation{timestamp=1, value=foo}");
   }

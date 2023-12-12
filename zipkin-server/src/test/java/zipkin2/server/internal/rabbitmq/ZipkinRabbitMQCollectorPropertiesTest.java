@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,14 +16,14 @@ package zipkin2.server.internal.rabbitmq;
 import com.rabbitmq.client.ConnectionFactory;
 import java.net.URI;
 import java.util.Collections;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ZipkinRabbitMQCollectorPropertiesTest {
   ZipkinRabbitMQCollectorProperties properties = new ZipkinRabbitMQCollectorProperties();
 
-  @Test public void uriProperlyParsedAndIgnoresOtherProperties_whenUriSet() throws Exception {
+  @Test void uriProperlyParsedAndIgnoresOtherProperties_whenUriSet() throws Exception {
     properties.setUri(URI.create("amqp://admin:admin@localhost:5678/myv"));
     properties.setAddresses(Collections.singletonList("will_not^work!"));
     properties.setUsername("bob");
@@ -43,7 +43,7 @@ public class ZipkinRabbitMQCollectorPropertiesTest {
   }
 
   /** This prevents an empty RABBIT_URI variable from being mistaken as a real one */
-  @Test public void ignoresEmptyURI() {
+  @Test void ignoresEmptyURI() {
     properties.setUri(URI.create(""));
 
     assertThat(properties.getUri()).isNull();

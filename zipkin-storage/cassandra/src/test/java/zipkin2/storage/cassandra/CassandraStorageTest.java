@@ -18,7 +18,7 @@ import com.datastax.oss.driver.api.core.auth.Authenticator;
 import com.datastax.oss.driver.api.core.auth.ProgrammaticPlainTextAuthProvider;
 import com.datastax.oss.driver.api.core.metadata.EndPoint;
 import java.nio.ByteBuffer;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.CheckResult;
 import zipkin2.Component;
 
@@ -27,12 +27,12 @@ import static org.mockito.Mockito.mock;
 
 public class CassandraStorageTest {
 
-  @Test public void authProvider_defaultsToNull() {
+  @Test void authProvider_defaultsToNull() {
     assertThat(CassandraStorage.newBuilder().build().authProvider)
       .isNull();
   }
 
-  @Test public void usernamePassword_impliesNullDelimitedUtf8Bytes() throws Exception {
+  @Test void usernamePassword_impliesNullDelimitedUtf8Bytes() throws Exception {
     ProgrammaticPlainTextAuthProvider authProvider =
       (ProgrammaticPlainTextAuthProvider) CassandraStorage.newBuilder()
         .username("bob")
@@ -48,7 +48,7 @@ public class CassandraStorageTest {
       .isEqualTo(SASLhandshake);
   }
 
-  @Test public void check_failsInsteadOfThrowing() {
+  @Test void check_failsInsteadOfThrowing() {
     CheckResult result = CassandraStorage.newBuilder().contactPoints("1.1.1.1").build().check();
 
     assertThat(result.ok()).isFalse();
@@ -61,7 +61,7 @@ public class CassandraStorageTest {
    * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
    * information.
    */
-  @Test public void toStringContainsOnlySummaryInformation() {
+  @Test void toStringContainsOnlySummaryInformation() {
     try (CassandraStorage cassandra =
            CassandraStorage.newBuilder().contactPoints("1.1.1.1").build()) {
 

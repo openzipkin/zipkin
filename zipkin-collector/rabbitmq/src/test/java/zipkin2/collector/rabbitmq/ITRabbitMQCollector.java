@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -186,7 +186,8 @@ class ITRabbitMQCollector {
     }
 
     assertThat(rabbitmqMetrics.messages()).isEqualTo(3);
-    assertThat(rabbitmqMetrics.messagesDropped()).isZero(); // storage failure isn't a message failure
+    // storage failure isn't a message failure
+    assertThat(rabbitmqMetrics.messagesDropped()).isZero();
     assertThat(rabbitmqMetrics.bytes()).isEqualTo(THRIFT.encodeList(spans).length * 3);
     assertThat(rabbitmqMetrics.spans()).isEqualTo(spans.size() * 3);
     assertThat(rabbitmqMetrics.spansDropped()).isEqualTo(spans.size()); // only one dropped

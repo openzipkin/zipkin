@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,7 @@ package zipkin2.storage.cassandra.internal;
 
 import java.util.List;
 import java.util.function.Function;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.storage.StorageComponent;
 
 import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE;
@@ -30,12 +30,12 @@ public class CassandraStorageBuilderTest {
     }
   };
 
-  @Test public void maxConnections_setsMaxConnectionsPerDatacenterLocalHost() {
+  @Test void maxConnections_setsMaxConnectionsPerDatacenterLocalHost() {
     assertThat(builder.maxConnections(16).poolingOptions().get(CONNECTION_POOL_LOCAL_SIZE))
       .isEqualTo(16);
   }
 
-  @Test public void badArguments() {
+  @Test void badArguments() {
     List<Function<CassandraStorageBuilder<?>, CassandraStorageBuilder<?>>> badArguments = asList(
       b -> b.autocompleteTtl(0),
       b -> b.autocompleteCardinality(0),
@@ -49,7 +49,7 @@ public class CassandraStorageBuilderTest {
   }
 
   /** Ensure NPE happens early. */
-  @Test public void nullPointers() {
+  @Test void nullPointers() {
     List<Function<CassandraStorageBuilder<?>, CassandraStorageBuilder<?>>> nullPointers = asList(
       b -> b.autocompleteKeys(null),
       b -> b.contactPoints(null),

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,7 +16,7 @@ package zipkin2.internal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 import zipkin2.storage.QueryRequest;
@@ -28,13 +28,13 @@ import static zipkin2.TestObjects.TODAY;
 public class FilterTracesTest {
   QueryRequest request = QueryRequest.newBuilder().endTs(TODAY).lookback(1).limit(1).build();
 
-  @Test public void returnsWhenValidlyMatches() {
+  @Test void returnsWhenValidlyMatches() {
     List<List<Span>> input = new ArrayList<>(asList(TestObjects.TRACE));
 
     assertThat(FilterTraces.create(request).map(input)).isEqualTo(input);
   }
 
-  @Test public void doesntMutateInputWhenUnmatched() {
+  @Test void doesntMutateInputWhenUnmatched() {
     List<List<Span>> input = Collections.unmodifiableList(asList(TestObjects.TRACE));
 
     assertThat(FilterTraces.create(request.toBuilder().endTs(1).build()).map(input))

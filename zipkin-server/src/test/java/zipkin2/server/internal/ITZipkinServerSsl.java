@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,12 +20,10 @@ import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.server.Server;
 import com.linecorp.armeria.spring.ArmeriaSettings;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,22 +54,21 @@ import static zipkin2.server.internal.elasticsearch.Access.configureSsl;
     "armeria.ports[0].port=${server.port}",
     "armeria.ports[0].protocols[0]=http",
   })
-@RunWith(SpringRunner.class)
 public class ITZipkinServerSsl {
   @Autowired Server server;
   @Autowired ArmeriaSettings armeriaSettings;
 
   ClientFactory clientFactory;
 
-  @Before public void configureClientFactory() {
+  @BeforeEach public void configureClientFactory() {
     clientFactory = configureSsl(ClientFactory.builder(), armeriaSettings.getSsl()).build();
   }
 
-  @Test public void callHealthEndpoint_HTTP() {
+  @Test void callHealthEndpoint_HTTP() {
     callHealthEndpoint(SessionProtocol.HTTP);
   }
 
-  @Test public void callHealthEndpoint_HTTPS() {
+  @Test void callHealthEndpoint_HTTPS() {
     callHealthEndpoint(SessionProtocol.HTTPS);
   }
 

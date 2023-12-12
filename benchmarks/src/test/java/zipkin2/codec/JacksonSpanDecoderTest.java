@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,7 @@ package zipkin2.codec;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
@@ -25,12 +25,12 @@ public class JacksonSpanDecoderTest {
   byte[] encoded = SpanBytesEncoder.JSON_V2.encodeList(TRACE);
   byte[] encodedSpan = SpanBytesEncoder.JSON_V2.encode(CLIENT_SPAN);
 
-  @Test public void decodeList_bytes() {
+  @Test void decodeList_bytes() {
     assertThat(JacksonSpanDecoder.decodeList(encoded))
       .isEqualTo(TRACE);
   }
 
-  @Test public void decodeList_byteBuffer() {
+  @Test void decodeList_byteBuffer() {
     ByteBuf encodedBuf = PooledByteBufAllocator.DEFAULT.buffer(encoded.length);
     encodedBuf.writeBytes(encoded);
     try {
@@ -41,12 +41,12 @@ public class JacksonSpanDecoderTest {
     }
   }
 
-  @Test public void decodeOne() {
+  @Test void decodeOne() {
     assertThat(JacksonSpanDecoder.decodeOne(encodedSpan))
       .isEqualTo(CLIENT_SPAN);
   }
 
-  @Test public void decodeOne_byteBuffer() {
+  @Test void decodeOne_byteBuffer() {
     ByteBuf encodedBuf = PooledByteBufAllocator.DEFAULT.buffer(encodedSpan.length);
     encodedBuf.writeBytes(encodedSpan);
     try {

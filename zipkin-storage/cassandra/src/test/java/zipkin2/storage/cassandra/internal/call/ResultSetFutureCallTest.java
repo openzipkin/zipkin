@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,7 +19,7 @@ import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.servererrors.QueryConsistencyException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
 
@@ -57,13 +57,13 @@ public class ResultSetFutureCallTest {
 
   CompletableCallback<AsyncResultSet> callback = new CompletableCallback<>();
 
-  @Test public void enqueue_cancel_beforeCreateFuture() {
+  @Test void enqueue_cancel_beforeCreateFuture() {
     call.cancel();
 
     assertThat(call.isCanceled()).isTrue();
   }
 
-  @Test public void enqueue_callsFutureGet() throws Exception {
+  @Test void enqueue_callsFutureGet() throws Exception {
     call.enqueue(callback);
 
     future.complete(resultSet);
@@ -71,7 +71,7 @@ public class ResultSetFutureCallTest {
     assertThat(callback.get()).isEqualTo(resultSet);
   }
 
-  @Test public void enqueue_cancel_afterEnqueue() {
+  @Test void enqueue_cancel_afterEnqueue() {
     call.enqueue(callback);
     call.cancel();
 
@@ -80,7 +80,7 @@ public class ResultSetFutureCallTest {
     assertThat(call.future.isCancelled()).isTrue();
   }
 
-  @Test public void enqueue_callbackError_onErrorCreatingFuture() {
+  @Test void enqueue_callbackError_onErrorCreatingFuture() {
     IllegalArgumentException error = new IllegalArgumentException();
     call = new ResultSetFutureCall<AsyncResultSet>() {
       @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
@@ -104,7 +104,7 @@ public class ResultSetFutureCallTest {
   }
 
   // below are load related exceptions which should result in a backoff of storage requests
-  @Test public void isOverCapacity() {
+  @Test void isOverCapacity() {
     assertThat(ResultSetFutureCall.isOverCapacity(
       new RequestThrottlingException("The session is shutting down"))).isTrue();
     assertThat(ResultSetFutureCall.isOverCapacity(new BusyConnectionException(100))).isTrue();
