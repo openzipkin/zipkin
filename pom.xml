@@ -84,7 +84,6 @@
     <mockito.version>5.8.0</mockito.version>
     <assertj.version>3.24.2</assertj.version>
     <awaitility.version>4.2.0</awaitility.version>
-    <hamcrest.version>2.2</hamcrest.version>
     <testcontainers.version>1.19.3</testcontainers.version>
     <okhttp.version>4.12.0</okhttp.version>
     <okhttp5.version>5.0.0-alpha.11</okhttp5.version>
@@ -211,12 +210,6 @@
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
       <version>${mockito.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-core</artifactId>
-      <version>${hamcrest.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
