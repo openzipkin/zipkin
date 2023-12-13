@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.internal.Proto3ZipkinFields.SPAN;
 
-class Proto3SpanWriterTest {
+public class Proto3SpanWriterTest {
   Proto3SpanWriter writer = new Proto3SpanWriter();
 
   /** proto messages always need a key, so the non-list form is just a single-field */

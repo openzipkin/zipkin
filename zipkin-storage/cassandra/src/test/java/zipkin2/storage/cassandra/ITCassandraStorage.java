@@ -54,7 +54,7 @@ class ITCassandraStorage {
     @Override
     @Test
     @Disabled("No consumer-side span deduplication")
-    void getTrace_deduplicates(TestInfo testInfo) {
+    public void getTrace_deduplicates(TestInfo testInfo) {
     }
 
     @Override protected void blockWhileInFlight() {
@@ -119,7 +119,7 @@ class ITCassandraStorage {
 
     /** Ensures we can still lookup fully 128-bit traces when strict trace ID id disabled */
     @Test
-    void getTraces_128BitTraceId(TestInfo testInfo) throws Exception {
+    public void getTraces_128BitTraceId(TestInfo testInfo) throws Exception {
       getTraces_128BitTraceId(accept128BitTrace(strictTraceId, testInfo), testInfo);
     }
 
