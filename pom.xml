@@ -93,12 +93,7 @@
     <gson.version>2.10.1</gson.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
-    <!--
-      Temporary license check disabled until we can get the license checker to not to report
-      untouched files.
-      <license.skip>${skipTests}</license.skip>
-    -->
-    <license.skip>true</license.skip>
+    <license.skip>${skipTests}</license.skip>
 
     <animal-sniffer-maven-plugin.version>1.23</animal-sniffer-maven-plugin.version>
     <go-offline-maven-plugin.version>1.2.8</go-offline-maven-plugin.version>
