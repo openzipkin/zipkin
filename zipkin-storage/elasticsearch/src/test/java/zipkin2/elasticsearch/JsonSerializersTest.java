@@ -30,7 +30,7 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.UTF_8;
 import static zipkin2.elasticsearch.internal.JsonSerializers.SPAN_PARSER;
 
-public class JsonSerializersTest {
+class JsonSerializersTest {
   @Test void span_ignoreNull_parentId() {
     String json =
       "{\n"

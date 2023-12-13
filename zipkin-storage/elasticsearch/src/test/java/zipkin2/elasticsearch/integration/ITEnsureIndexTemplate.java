@@ -50,8 +50,7 @@ abstract class ITEnsureIndexTemplate extends ITStorage<ElasticsearchStorage> {
     storage.clear();
   }
 
-  @Test
-  void createZipkinIndexTemplate_getTraces_returnsSuccess(TestInfo testInfo) throws Exception {
+  @Test void createZipkinIndexTemplate_getTraces_returnsSuccess(TestInfo testInfo) throws Exception {
     String testSuffix = testSuffix(testInfo);
     storage = newStorageBuilder(testInfo).templatePriority(10).build();
     try {

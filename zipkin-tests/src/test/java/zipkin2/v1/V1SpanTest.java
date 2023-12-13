@@ -18,7 +18,7 @@ import zipkin2.Endpoint;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class V1SpanTest {
+class V1SpanTest {
   V1Span.Builder builder = V1Span.newBuilder().traceId("1").id("1");
 
   @Test void annotationEndpoint_emptyToNull() {

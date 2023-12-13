@@ -23,7 +23,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class CassandraStorageBuilderTest {
+class CassandraStorageBuilderTest {
   CassandraStorageBuilder<?> builder = new CassandraStorageBuilder("zipkin3") {
     @Override public StorageComponent build() {
       return null;

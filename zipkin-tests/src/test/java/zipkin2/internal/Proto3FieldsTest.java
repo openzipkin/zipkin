@@ -31,7 +31,7 @@ import static zipkin2.internal.Proto3Fields.WIRETYPE_FIXED64;
 import static zipkin2.internal.Proto3Fields.WIRETYPE_LENGTH_DELIMITED;
 import static zipkin2.internal.Proto3Fields.WIRETYPE_VARINT;
 
-public class Proto3FieldsTest {
+class Proto3FieldsTest {
   byte[] bytes = new byte[2048]; // bigger than needed to test sizeInBytes
   WriteBuffer buf = WriteBuffer.wrap(bytes);
 

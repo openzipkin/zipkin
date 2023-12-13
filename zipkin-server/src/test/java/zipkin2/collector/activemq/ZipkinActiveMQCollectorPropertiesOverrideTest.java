@@ -28,7 +28,7 @@ public class ZipkinActiveMQCollectorPropertiesOverrideTest {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach public void close() {
+  @AfterEach void close() {
     context.close();
   }
 

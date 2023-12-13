@@ -43,7 +43,7 @@ import static zipkin2.server.internal.elasticsearch.TestResponses.VERSION_RESPON
 /**
  * These tests focus on http client health checks not currently in zipkin-storage-elasticsearch.
  */
-public class ITElasticsearchHealthCheck {
+class ITElasticsearchHealthCheck {
   static final Logger logger = LoggerFactory.getLogger(ITElasticsearchHealthCheck.class.getName());
   // Health check interval is 100ms, but in-flight requests in CI might take a few hundred ms
   static final ConditionFactory awaitTimeout = await().timeout(1, TimeUnit.SECONDS);
@@ -87,7 +87,7 @@ public class ITElasticsearchHealthCheck {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @BeforeEach public void setUp() {
+  @BeforeEach void setUp() {
     server1Health.setHealthy(true);
     server2Health.setHealthy(true);
 

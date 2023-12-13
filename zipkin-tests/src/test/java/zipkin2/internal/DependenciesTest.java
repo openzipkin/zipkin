@@ -20,7 +20,7 @@ import zipkin2.DependencyLink;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public final class DependenciesTest {
+final class DependenciesTest {
   @Test void dependenciesRoundTrip() {
     DependencyLink ab = DependencyLink.newBuilder().parent("a").child("b").callCount(2L).build();
     DependencyLink cd = DependencyLink.newBuilder().parent("c").child("d").errorCount(2L).build();

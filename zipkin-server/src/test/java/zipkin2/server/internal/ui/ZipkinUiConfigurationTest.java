@@ -41,7 +41,7 @@ class ZipkinUiConfigurationTest {
 
   AnnotationConfigApplicationContext context;
 
-  @AfterEach public void close() {
+  @AfterEach void close() {
     if (context != null) {
       context.close();
     }

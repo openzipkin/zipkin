@@ -36,7 +36,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "zipkin.storage.elasticsearch.hosts=127.0.0.1:9999"
   }
 )
-public class ITZipkinHealthDown {
+class ITZipkinHealthDown {
   @Autowired Server server;
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();

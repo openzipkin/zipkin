@@ -33,7 +33,7 @@ import static zipkin2.codec.SpanBytesEncoderTest.UTF8_SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.UTF_8;
 
 /** V1 tests for {@link SpanBytesDecoderTest} */
-public class V1SpanBytesDecoderTest {
+class V1SpanBytesDecoderTest {
   Span span = SPAN;
 
   @Test void niceErrorOnTruncatedSpans_THRIFT() {

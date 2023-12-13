@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static zipkin2.internal.JsonCodec.exceptionReading;
 
-public class JsonCodecTest {
+class JsonCodecTest {
 
   @Test void doesntStackOverflowOnToBufferWriterBug_lessThanBytes() {
     Throwable exception = assertThrows(AssertionError.class, () -> {

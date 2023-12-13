@@ -40,7 +40,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "zipkin.storage.type=", // cheat and test empty storage type
     "zipkin.collector.http.enabled=false"
   })
-public class ITZipkinServerHttpCollectorDisabled {
+class ITZipkinServerHttpCollectorDisabled {
 
   @Autowired Server server;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();

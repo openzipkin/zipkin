@@ -37,10 +37,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static zipkin2.server.internal.elasticsearch.ITElasticsearchDynamicCredentials.pathOfResource;
 
-public class ZipkinElasticsearchStorageConfigurationTest {
+class ZipkinElasticsearchStorageConfigurationTest {
   final AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach public void close() {
+  @AfterEach void close() {
     context.close();
   }
 

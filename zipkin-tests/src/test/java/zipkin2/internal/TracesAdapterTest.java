@@ -20,7 +20,7 @@ import zipkin2.storage.InMemoryStorage;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TracesAdapterTest {
+class TracesAdapterTest {
   InMemoryStorage storage = InMemoryStorage.newBuilder().build();
   TracesAdapter adapter = new TracesAdapter(storage);
 

@@ -27,7 +27,7 @@ import static zipkin2.Span.normalizeTraceId;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.FRONTEND;
 
-public class SpanTest {
+class SpanTest {
   Span base = Span.newBuilder().traceId("1").id("1").localEndpoint(FRONTEND).build();
   Span oneOfEach = Span.newBuilder()
     .traceId("7180c278b62e8f6a216a2aea45d08fc9")

@@ -40,7 +40,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "zipkin.ui.enabled=false"
   }
 )
-public class ITZipkinServerQueryDisabled {
+class ITZipkinServerQueryDisabled {
   @Autowired Server server;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 

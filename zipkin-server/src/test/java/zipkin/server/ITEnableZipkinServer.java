@@ -34,7 +34,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "spring.config.name=zipkin-server"
   }
 )
-public class ITEnableZipkinServer {
+class ITEnableZipkinServer {
 
   @Autowired Server server;
 

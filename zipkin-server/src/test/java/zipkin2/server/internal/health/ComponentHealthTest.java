@@ -21,7 +21,7 @@ import zipkin2.Component;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ComponentHealthTest {
+class ComponentHealthTest {
   @Test void addsMessageToDetails() {
     ComponentHealth health = ComponentHealth.ofComponent(new Component() {
       @Override public CheckResult check() {

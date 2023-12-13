@@ -20,7 +20,7 @@ import zipkin2.Span;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class GroupByTraceIdTest {
+class GroupByTraceIdTest {
   Span oneOne = Span.newBuilder().traceId(1, 1).id(1).build();
   Span twoOne = Span.newBuilder().traceId(2, 1).id(1).build();
   Span zeroOne = Span.newBuilder().traceId(0, 1).id(1).build();

@@ -26,7 +26,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
-public class TraceTest {
+class TraceTest {
 
   /**
    * Some don't propagate the server's parent ID which creates a race condition. Try to unwind it.

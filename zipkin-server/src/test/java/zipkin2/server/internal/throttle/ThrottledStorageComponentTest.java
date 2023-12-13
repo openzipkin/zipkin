@@ -28,7 +28,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-public class ThrottledStorageComponentTest {
+class ThrottledStorageComponentTest {
   InMemoryStorage delegate = InMemoryStorage.newBuilder().build();
   @Nullable Tracing tracing;
   NoopMeterRegistry registry = NoopMeterRegistry.get();

@@ -25,11 +25,11 @@ import zipkin2.server.internal.InMemoryConfiguration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
-public class ZipkinKafkaCollectorConfigurationTest {
+class ZipkinKafkaCollectorConfigurationTest {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach public void close() {
+  @AfterEach void close() {
     context.close();
   }
 

@@ -23,7 +23,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOf
 import static zipkin2.elasticsearch.internal.JsonReaders.collectValuesNamed;
 import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
-public class JsonReadersTest {
+class JsonReadersTest {
   @Test void enterPath_nested() throws IOException {
     String content = "{\n"
       + "  \"name\" : \"Kamal\",\n"

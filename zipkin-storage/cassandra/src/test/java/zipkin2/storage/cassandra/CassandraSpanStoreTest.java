@@ -29,7 +29,7 @@ import static zipkin2.storage.cassandra.InternalForTests.mockSession;
 // TODO: tests use toString because the call composition chain is complex (includes flat mapping)
 // This could be made a little less complex if we scrub out map=>map to a list of transformations,
 // or possibly special-casing common transformations.
-public class CassandraSpanStoreTest {
+class CassandraSpanStoreTest {
   CassandraSpanStore spanStore = spanStore(CassandraStorage.newBuilder());
   QueryRequest.Builder queryBuilder = QueryRequest.newBuilder().endTs(TODAY).lookback(DAY).limit(5);
 

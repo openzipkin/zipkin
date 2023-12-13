@@ -51,7 +51,9 @@ class ITCassandraStorage {
       return cassandra.newStorageBuilder();
     }
 
-    @Override @Test @Disabled("No consumer-side span deduplication")
+    @Override
+    @Test
+    @Disabled("No consumer-side span deduplication")
     public void getTrace_deduplicates(TestInfo testInfo) {
     }
 
@@ -116,13 +118,13 @@ class ITCassandraStorage {
     }
 
     /** Ensures we can still lookup fully 128-bit traces when strict trace ID id disabled */
-    @Test public void getTraces_128BitTraceId(TestInfo testInfo) throws Exception {
+    @Test
+    public void getTraces_128BitTraceId(TestInfo testInfo) throws Exception {
       getTraces_128BitTraceId(accept128BitTrace(strictTraceId, testInfo), testInfo);
     }
 
     /** Ensures data written before strict trace ID was enabled can be read */
-    @Test
-    public void getTrace_retrievesBy128BitTraceId_afterSwitch(TestInfo testInfo) throws Exception {
+    @Test void getTrace_retrievesBy128BitTraceId_afterSwitch(TestInfo testInfo) throws Exception {
       List<Span> trace = accept128BitTrace(strictTraceId, testInfo);
 
       assertGetTraceReturns(trace.get(0).traceId(), trace);

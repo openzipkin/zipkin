@@ -26,7 +26,7 @@ import static zipkin2.TestObjects.TODAY;
 import static zipkin2.TestObjects.TRACE;
 import static zipkin2.storage.ITSpanStore.requestBuilder;
 
-public class StrictTraceIdTest {
+class StrictTraceIdTest {
 
   @Test void filterTraces_skipsOnNoClash() {
     Span oneOne = Span.newBuilder().traceId(1, 1).id(1).build();

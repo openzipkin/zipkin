@@ -29,7 +29,7 @@ import static zipkin2.storage.mysql.v1.Schema.maybeGet;
 import static zipkin2.v1.V1BinaryAnnotation.TYPE_BOOLEAN;
 import static zipkin2.v1.V1BinaryAnnotation.TYPE_STRING;
 
-public class DependencyLinkV2SpanIteratorTest {
+class DependencyLinkV2SpanIteratorTest {
   Long traceIdHigh = null;
   long traceId = 1L;
   Long parentId = null;

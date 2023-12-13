@@ -20,7 +20,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-public class SearchCallFactoryTest {
+class SearchCallFactoryTest {
   WebClient httpClient = mock(WebClient.class);
 
   SearchCallFactory client = new SearchCallFactory(new HttpCall.Factory(httpClient));

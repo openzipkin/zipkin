@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 // Reuses inputs from com.google.common.net.HostAndPortTest
-public class HostAndPortTest {
+class HostAndPortTest {
 
   @Test void parsesHost() {
     Stream.of(

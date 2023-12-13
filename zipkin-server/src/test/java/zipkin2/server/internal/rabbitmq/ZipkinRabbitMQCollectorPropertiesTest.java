@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ZipkinRabbitMQCollectorPropertiesTest {
+class ZipkinRabbitMQCollectorPropertiesTest {
   ZipkinRabbitMQCollectorProperties properties = new ZipkinRabbitMQCollectorProperties();
 
   @Test void uriProperlyParsedAndIgnoresOtherProperties_whenUriSet() throws Exception {

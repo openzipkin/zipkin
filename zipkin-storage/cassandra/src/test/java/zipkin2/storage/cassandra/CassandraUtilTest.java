@@ -28,7 +28,7 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.TODAY;
 
-public class CassandraUtilTest {
+class CassandraUtilTest {
   @Test void annotationKeys_emptyRequest() {
     QueryRequest request = QueryRequest.newBuilder()
       .endTs(System.currentTimeMillis())

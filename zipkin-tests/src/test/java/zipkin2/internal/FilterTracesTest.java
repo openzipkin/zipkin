@@ -25,7 +25,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.TODAY;
 
-public class FilterTracesTest {
+class FilterTracesTest {
   QueryRequest request = QueryRequest.newBuilder().endTs(TODAY).lookback(1).limit(1).build();
 
   @Test void returnsWhenValidlyMatches() {

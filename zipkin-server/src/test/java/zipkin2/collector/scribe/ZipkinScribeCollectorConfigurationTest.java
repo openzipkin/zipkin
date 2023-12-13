@@ -28,7 +28,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOf
 public class ZipkinScribeCollectorConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach public void close() {
+  @AfterEach void close() {
     context.close();
   }
 

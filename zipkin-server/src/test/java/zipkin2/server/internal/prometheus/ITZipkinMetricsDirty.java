@@ -59,7 +59,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
 // Clearing the prometheus registry also clears the metrics themselves, not just the values, so we
 // have to use dirties context so that each test runs in a separate instance of Spring Boot.
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
-public class ITZipkinMetricsDirty {
+class ITZipkinMetricsDirty {
 
   @Autowired InMemoryStorage storage;
   @Autowired PrometheusMeterRegistry registry;

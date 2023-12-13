@@ -207,8 +207,7 @@ class ElasticsearchSpanConsumerTest {
   }
 
   /** Less overhead as a span json isn't rewritten to include a millis timestamp */
-  @Test
-  void searchDisabled_doesntAddTimestampMillis() throws Exception {
+  @Test void searchDisabled_doesntAddTimestampMillis() throws Exception {
     storage.close();
     storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri()))
       .searchEnabled(false)

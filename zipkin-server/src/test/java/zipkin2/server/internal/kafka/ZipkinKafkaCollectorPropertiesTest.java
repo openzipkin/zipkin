@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ZipkinKafkaCollectorPropertiesTest {
+class ZipkinKafkaCollectorPropertiesTest {
   @Test void stringPropertiesConvertEmptyStringsToNull() {
     final ZipkinKafkaCollectorProperties properties = new ZipkinKafkaCollectorProperties();
     properties.setBootstrapServers("");

@@ -47,14 +47,14 @@ public class CollectorTest {
   Collector collector;
   private TestLogger testLogger = TestLoggerFactory.getTestLogger("");
 
-  @BeforeEach public void setup() {
+  @BeforeEach void setup() {
     testLogger.clearAll();
     collector = spy(
       new Collector.Builder(testLogger).metrics(metrics).storage(storage).build());
     when(collector.idString(CLIENT_SPAN)).thenReturn("1"); // to make expectations easier to read
   }
 
-  @AfterEach public void after() {
+  @AfterEach void after() {
     verifyNoMoreInteractions(metrics, callback);
   }
 

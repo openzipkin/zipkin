@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.internal.JsonCodec.UTF_8;
 
-public class V1JsonSpanWriterTest {
+class V1JsonSpanWriterTest {
   V1JsonSpanWriter writer = new V1JsonSpanWriter();
   byte[] bytes = new byte[2048]; // bigger than needed to test sizeInBytes
   WriteBuffer buf = WriteBuffer.wrap(bytes);

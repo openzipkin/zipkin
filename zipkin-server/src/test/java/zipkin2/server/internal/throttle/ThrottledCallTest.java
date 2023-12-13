@@ -48,7 +48,7 @@ import static zipkin2.server.internal.throttle.ThrottledCall.NOOP_CALLBACK;
 import static zipkin2.server.internal.throttle.ThrottledCall.STORAGE_THROTTLE_MAX_CONCURRENCY;
 import static zipkin2.server.internal.throttle.ThrottledStorageComponent.STORAGE_THROTTLE_MAX_QUEUE_SIZE;
 
-public class ThrottledCallTest {
+class ThrottledCallTest {
   SettableLimit limit = SettableLimit.startingAt(0);
   SimpleLimiter limiter = SimpleLimiter.newBuilder().limit(limit).build();
   LimiterMetrics limiterMetrics = new LimiterMetrics(NoopMeterRegistry.get());
@@ -57,7 +57,7 @@ public class ThrottledCallTest {
   int numThreads = 1;
   ExecutorService executor = Executors.newSingleThreadExecutor();
 
-  @AfterEach public void shutdownExecutor() {
+  @AfterEach void shutdownExecutor() {
     executor.shutdown();
   }
 

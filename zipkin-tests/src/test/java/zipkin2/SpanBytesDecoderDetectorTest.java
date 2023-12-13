@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static zipkin2.TestObjects.FRONTEND;
 
-public class SpanBytesDecoderDetectorTest {
+class SpanBytesDecoderDetectorTest {
   Span span1 =
       Span.newBuilder()
           .traceId("a")
