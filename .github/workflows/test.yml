@@ -60,6 +60,7 @@ jobs:
     strategy:
       matrix:
         include:
+          - name: zipkin-collector-activemq
           - name: zipkin-collector-kafka
           - name: zipkin-collector-rabbitmq
           - name: zipkin-storage-cassandra

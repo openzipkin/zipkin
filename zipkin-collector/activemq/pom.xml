@@ -44,21 +44,5 @@
       <artifactId>activemq-client</artifactId>
       <version>${activemq.version}</version>
     </dependency>
-
-    <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-broker</artifactId>
-      <version>${activemq.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- Note: this is junit 4 -->
-    <dependency>
-      <groupId>org.apache.activemq.tooling</groupId>
-      <artifactId>activemq-junit</artifactId>
-      <version>${activemq.version}</version>
-      <scope>test</scope>
-    </dependency>
-
   </dependencies>
 </project>
