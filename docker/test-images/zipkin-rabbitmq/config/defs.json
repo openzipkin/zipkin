@@ -1,0 +1,48 @@
+{
+  "permissions": [
+    {
+      "configure": ".*",
+      "read": ".*",
+      "user": "guest",
+      "vhost": "/",
+      "write": ".*"
+    }
+  ],
+  "bindings": [],
+  "queues": [
+    {
+      "arguments": {},
+      "auto_delete": false,
+      "durable": false,
+      "name": "zipkin",
+      "type": "classic",
+      "vhost": "/"
+    }
+  ],
+  "parameters": [],
+  "policies": [],
+  "vhosts": [
+    {
+      "limits": [],
+      "metadata": {
+        "description": "Default virtual host",
+        "tags": []
+      },
+      "name": "/"
+    }
+  ],
+  "exchanges": [],
+  "global_parameters": [],
+  "topic_permissions": [],
+  "users": [
+    {
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "limits": {},
+      "name": "guest",
+      "password_hash": "s4XuI8xVMHg3To1FSsFSnsQ2vfgMTP0/XJtmh3plzM/u86Es",
+      "tags": [
+        "administrator"
+      ]
+    }
+  ]
+}

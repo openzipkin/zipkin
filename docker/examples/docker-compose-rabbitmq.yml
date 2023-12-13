@@ -24,17 +24,17 @@ services:
   rabbitmq:
     image: ghcr.io/openzipkin/zipkin-rabbitmq:${TAG:-latest}
     container_name: rabbitmq
-    # Uncomment to expose the AMQP port for testing
-    # ports:
-    #   - 5672:5672
+    ports:  # expose the rabbitmq port so apps can publish spans.
+      - "5672:5672"
 
   zipkin:
     extends:
       file: docker-compose.yml
       service: zipkin
-    # slim doesn't include Kafka support, so switch to the larger image
+    # slim doesn't include RabbitMQ support, so switch to the larger image
     image: ghcr.io/openzipkin/zipkin:${TAG:-latest}
     environment:
       - RABBIT_ADDRESSES=rabbitmq:5672
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy

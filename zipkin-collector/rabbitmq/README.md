@@ -58,7 +58,14 @@ $ RABBIT_ADDRESSES=localhost java -jar zipkin.jar
 ```json
 [{"traceId":"9032b04972e475c5","id":"9032b04972e475c5","kind":"SERVER","name":"get","timestamp":1505990621526000,"duration":612898,"localEndpoint":{"serviceName":"brave-webmvc-example","ipv4":"192.168.1.113"},"remoteEndpoint":{"serviceName":"","ipv4":"127.0.0.1","port":60149},"tags":{"error":"500 Internal Server Error","http.path":"/a"}}]
 ```
-4. Publish them using the CLI 
+4. Publish them using the CLI
+
+If you have an AMQP package like `rabbitmq-c-utils` or `simple-amqp-client`:
+```bash
+$ amqp-publish -r zipkin < sample-spans.json
+```
+
+Or, if your rabbitmq host is running management extensions:
 ```bash
 $ rabbitmqadmin publish exchange=amq.default routing_key=zipkin < sample-spans.json
 ```
