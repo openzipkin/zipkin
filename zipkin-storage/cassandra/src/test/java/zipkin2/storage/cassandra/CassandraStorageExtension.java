@@ -54,7 +54,7 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
     }
 
     container.start();
-    LOGGER.info("Using contactPoint " + contactPoint());
+    LOGGER.info("Using contactPoint {}", contactPoint());
     globalSession = tryToInitializeSession(contactPoint());
   }
 

@@ -71,11 +71,11 @@ public final class ZipkinActuatorImporter
     String[] includes =
       Binder.get(env).bind(PROPERTY_NAME_ACTUATOR_INCLUDE, String[].class).orElse(null);
     if (includes == null || includes.length == 0) {
-      LOG.debug("no actuator configuration found under path " + PROPERTY_NAME_ACTUATOR_INCLUDE);
+      LOG.debug("no actuator configuration found under path {}", PROPERTY_NAME_ACTUATOR_INCLUDE);
       return;
     }
 
-    LOG.debug("attempting to load actuator configuration: " + Arrays.toString(includes));
+    LOG.debug("attempting to load actuator configuration: {}", Arrays.toString(includes));
     try {
       context.registerBean(Class.forName(actuatorImplClass));
     } catch (Exception e) {
@@ -88,7 +88,7 @@ public final class ZipkinActuatorImporter
         context.registerBean(Class.forName(include));
       } catch (Exception e) {
         // Skip any classes that didn't match due to drift
-        LOG.debug("skipping unloadable actuator config " + include, e);
+        LOG.debug("skipping unloadable actuator config {}", include, e);
       }
     }
   }

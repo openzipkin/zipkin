@@ -137,7 +137,7 @@ final class CassandraUtil {
     try {
       return bytes == null ? null : InetAddress.getByAddress(bytes);
     } catch (UnknownHostException e) {
-      LOG.debug("InetAddress.getByAddress failed with input {}: {}", string, e.getMessage());
+      LOG.debug("InetAddress.getByAddress failed with input {}: {}", string, e.getMessage(), e);
       return null;
     }
   }

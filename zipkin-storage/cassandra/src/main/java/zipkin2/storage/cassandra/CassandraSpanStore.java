@@ -106,7 +106,7 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
     try {
       return new SelectTraceIdsFromSpan.Factory(session);
     } catch (DriverException ex) {
-      LOG.warn("failed to prepare annotation_query index statements: " + ex.getMessage());
+      LOG.warn("failed to prepare annotation_query index statements: {}", ex.getMessage(), ex);
       return null;
     }
   }

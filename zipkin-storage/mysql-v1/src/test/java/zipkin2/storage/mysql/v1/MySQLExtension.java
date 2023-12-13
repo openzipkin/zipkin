@@ -45,7 +45,7 @@ class MySQLExtension implements BeforeAllCallback, AfterAllCallback {
     }
 
     container.start();
-    LOGGER.info("Using hostPort " + host() + ":" + port());
+    LOGGER.info("Using hostPort {}:{}", host(), port());
 
     try (MySQLStorage result = computeStorageBuilder().build()) {
       CheckResult check = result.check();

@@ -47,7 +47,7 @@ class KafkaExtension implements BeforeAllCallback, AfterAllCallback {
     }
 
     container.start();
-    LOGGER.info("Using bootstrapServer " + bootstrapServer());
+    LOGGER.info("Using bootstrapServer {}", bootstrapServer());
   }
 
   void prepareTopics(String topics, int partitions) {
