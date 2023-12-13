@@ -29,7 +29,7 @@ import static zipkin2.Call.propagateIfFatal;
  * exception occurred.
  */
 final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
-  static final Logger LOG = LoggerFactory.getLogger(Schema.class);
+  static final Logger LOG = LoggerFactory.getLogger(DefaultSessionFactory.class);
 
   /**
    * Creates a session and ensures schema if configured. Closes the cluster and session if any

@@ -79,7 +79,7 @@ public final class SessionBuilder {
     if (useSsl) config = config.withClass(SSL_ENGINE_FACTORY_CLASS, DefaultSslEngineFactory.class);
 
     // Log categories can enable query logging
-    Logger requestLogger = LoggerFactory.getLogger(RequestLogger.class);
+    Logger requestLogger = LoggerFactory.getLogger(SessionBuilder.class);
     if (requestLogger.isDebugEnabled()) {
       config = config.withClass(REQUEST_TRACKER_CLASS, RequestLogger.class);
       config = config.withBoolean(REQUEST_LOGGER_SUCCESS_ENABLED, true);

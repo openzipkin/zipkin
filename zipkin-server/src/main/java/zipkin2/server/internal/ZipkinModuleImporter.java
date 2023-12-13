@@ -60,17 +60,17 @@ public final class ZipkinModuleImporter implements ApplicationContextInitializer
     Map<String, String> modules =
       Binder.get(env).bind(PROPERTY_NAME_MODULE, Map.class).orElse(null);
     if (modules == null || modules.isEmpty()) {
-      LOG.debug("no modules found under path " + PROPERTY_NAME_MODULE);
+      LOG.debug("no modules found under path {}", PROPERTY_NAME_MODULE);
       return;
     }
 
-    LOG.debug("attempting to load modules: " + modules.keySet());
+    LOG.debug("attempting to load modules: {}", modules.keySet());
     for (Map.Entry<String, String> module : modules.entrySet()) {
       try {
         context.registerBean(Class.forName(module.getValue()));
       } catch (Exception e) {
         // Skip any classes that didn't match due to drift
-        LOG.debug("skipping unloadable module " + module.getKey(), e);
+        LOG.debug("skipping unloadable module {}", module.getKey(), e);
       }
     }
   }

@@ -41,7 +41,7 @@ class RabbitMQExtension implements BeforeAllCallback, AfterAllCallback {
     }
 
     container.start();
-    LOGGER.info("Using hostPort " + host() + ":" + port());
+    LOGGER.info("Using hostPort {}:{}", host(), port());
   }
 
   @Override public void afterAll(ExtensionContext context) {

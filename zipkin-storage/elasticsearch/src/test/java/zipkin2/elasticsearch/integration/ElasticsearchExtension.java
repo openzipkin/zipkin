@@ -55,7 +55,7 @@ class ElasticsearchExtension implements BeforeAllCallback, AfterAllCallback {
     }
 
     container.start();
-    LOGGER.info("Using baseUrl " + baseUrl());
+    LOGGER.info("Using baseUrl {}", baseUrl());
   }
 
   @Override public void afterAll(ExtensionContext context) {
