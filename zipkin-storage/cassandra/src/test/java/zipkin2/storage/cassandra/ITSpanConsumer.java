@@ -41,8 +41,7 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
    * {@link Span#timestamp()} == 0 is likely to be a mistake, and coerces to null. It is not helpful
    * to index rows who have no timestamp.
    */
-  @Test
-  void doesntIndexSpansMissingTimestamp(TestInfo testInfo) throws Exception {
+  @Test void doesntIndexSpansMissingTimestamp(TestInfo testInfo) throws Exception {
     String testSuffix = testSuffix(testInfo);
     accept(spanBuilder(testSuffix).timestamp(0L).duration(0L).build());
 
@@ -54,8 +53,7 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
    * one. The consumer code optimizes index inserts to only represent the interval represented by
    * the trace as opposed to each individual timestamp.
    */
-  @Test
-  void skipsRedundantIndexingInATrace(TestInfo testInfo) throws Exception {
+  @Test void skipsRedundantIndexingInATrace(TestInfo testInfo) throws Exception {
     String testSuffix = testSuffix(testInfo);
     Span[] trace = new Span[101];
     trace[0] = newClientSpan(testSuffix).toBuilder().kind(SERVER).build();
@@ -93,8 +91,7 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
       .isGreaterThanOrEqualTo(120L);
   }
 
-  @Test
-  void insertTags_SelectTags_CalculateCount(TestInfo testInfo) throws Exception {
+  @Test void insertTags_SelectTags_CalculateCount(TestInfo testInfo) throws Exception {
     String testSuffix = testSuffix(testInfo);
     Span[] trace = new Span[101];
     trace[0] = newClientSpan(testSuffix).toBuilder().kind(SERVER).build();
@@ -121,8 +118,7 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
   }
 
   /** It is easier to use a real Cassandra connection than mock a prepared statement. */
-  @Test
-  void insertEntry_niceToString() {
+  @Test void insertEntry_niceToString() {
     // This test can use fake data as it is never written to cassandra
     Span clientSpan = CLIENT_SPAN;
 

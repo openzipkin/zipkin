@@ -124,8 +124,7 @@ class ITCassandraStorage {
     }
 
     /** Ensures data written before strict trace ID was enabled can be read */
-    @Test
-    void getTrace_retrievesBy128BitTraceId_afterSwitch(TestInfo testInfo) throws Exception {
+    @Test void getTrace_retrievesBy128BitTraceId_afterSwitch(TestInfo testInfo) throws Exception {
       List<Span> trace = accept128BitTrace(strictTraceId, testInfo);
 
       assertGetTraceReturns(trace.get(0).traceId(), trace);
