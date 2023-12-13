@@ -18,17 +18,27 @@ import java.io.UncheckedIOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.jms.BytesMessage;
+import javax.jms.Connection;
+import javax.jms.Queue;
+import javax.jms.QueueReceiver;
+import javax.jms.QueueSender;
+import javax.jms.QueueSession;
 import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.activemq.junit.EmbeddedActiveMQBroker;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.Component;
@@ -46,11 +56,12 @@ import static zipkin2.TestObjects.UTF_8;
 import static zipkin2.codec.SpanBytesEncoder.PROTO3;
 import static zipkin2.codec.SpanBytesEncoder.THRIFT;
 
-public class ITActiveMQCollector {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Timeout(60)
+class ITActiveMQCollector {
+  @RegisterExtension ActiveMQExtension activemq = new ActiveMQExtension();
   List<Span> spans = Arrays.asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
 
-  /** Managed directly as this is a JUnit 4, not 5 type. */
-  EmbeddedActiveMQBroker activemq;
   public String testName;
 
   InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
@@ -58,12 +69,7 @@ public class ITActiveMQCollector {
 
   CopyOnWriteArraySet<Thread> threadsProvidingSpans = new CopyOnWriteArraySet<>();
   LinkedBlockingQueue<List<Span>> receivedSpans = new LinkedBlockingQueue<>();
-  SpanConsumer consumer = (spans) -> {
-    threadsProvidingSpans.add(Thread.currentThread());
-    receivedSpans.add(spans);
-    return Call.create(null);
-  };
-
+  SpanConsumer consumer;
   ActiveMQCollector collector;
 
   @BeforeEach void start(TestInfo testInfo) {
@@ -71,14 +77,18 @@ public class ITActiveMQCollector {
     if (testMethod.isPresent()) {
       this.testName = testMethod.get().getName();
     }
-    activemq = new EmbeddedActiveMQBroker();
-    activemq.start();
+    threadsProvidingSpans.clear();
+    receivedSpans.clear();
+    consumer = (spans) -> {
+      threadsProvidingSpans.add(Thread.currentThread());
+      receivedSpans.add(spans);
+      return Call.create(null);
+    };
     activemqMetrics.clear();
     collector = builder().build().start();
   }
 
   @AfterEach void stop() throws IOException {
-    activemq.stop();
     collector.close();
   }
 
@@ -106,9 +116,8 @@ public class ITActiveMQCollector {
    * information.
    */
   @Test void toStringContainsOnlySummaryInformation() {
-    assertThat(collector).hasToString(String.format("ActiveMQCollector{brokerURL=%s, queue=%s}",
-      activemq.getVmURL(), testName)
-    );
+    assertThat(collector).hasToString(
+      String.format("ActiveMQCollector{brokerURL=%s, queue=%s}", activemq.brokerURL(), testName));
   }
 
   /** Ensures list encoding works: a json encoded list of spans */
@@ -128,7 +137,7 @@ public class ITActiveMQCollector {
 
   void messageWithMultipleSpans(SpanBytesEncoder encoder) throws Exception {
     byte[] message = encoder.encodeList(spans);
-    activemq.pushMessage(collector.queue, message);
+    pushMessage(collector.queue, message);
 
     assertThat(receivedSpans.take()).isEqualTo(spans);
 
@@ -143,18 +152,18 @@ public class ITActiveMQCollector {
   @Test void skipsMalformedData() throws Exception {
     byte[] malformed1 = "[\"='".getBytes(UTF_8); // screwed up json
     byte[] malformed2 = "malformed".getBytes(UTF_8);
-    activemq.pushMessage(collector.queue, THRIFT.encodeList(spans));
-    activemq.pushMessage(collector.queue, new byte[0]);
-    activemq.pushMessage(collector.queue, malformed1);
-    activemq.pushMessage(collector.queue, malformed2);
-    activemq.pushMessage(collector.queue, THRIFT.encodeList(spans));
+    pushMessage(collector.queue, THRIFT.encodeList(spans));
+    pushMessage(collector.queue, new byte[0]);
+    pushMessage(collector.queue, malformed1);
+    pushMessage(collector.queue, malformed2);
+    pushMessage(collector.queue, THRIFT.encodeList(spans));
 
     Thread.sleep(1000);
 
     assertThat(activemqMetrics.messages()).isEqualTo(5);
     assertThat(activemqMetrics.messagesDropped()).isEqualTo(2); // only malformed, not empty
-    assertThat(activemqMetrics.bytes())
-      .isEqualTo(THRIFT.encodeList(spans).length * 2 + malformed1.length + malformed2.length);
+    assertThat(activemqMetrics.bytes()).isEqualTo(
+      THRIFT.encodeList(spans).length * 2 + malformed1.length + malformed2.length);
     assertThat(activemqMetrics.spans()).isEqualTo(spans.size() * 2);
     assertThat(activemqMetrics.spansDropped()).isZero();
   }
@@ -183,11 +192,11 @@ public class ITActiveMQCollector {
       }
     };
 
-    activemq.pushMessage(collector.queue, PROTO3.encodeList(spans));
-    activemq.pushMessage(collector.queue, PROTO3.encodeList(spans)); // tossed on error
-    activemq.pushMessage(collector.queue, PROTO3.encodeList(spans));
-
     collector = builder().storage(buildStorage(consumer)).build().start();
+
+    pushMessage(collector.queue, PROTO3.encodeList(spans));
+    pushMessage(collector.queue, PROTO3.encodeList(spans)); // tossed on error
+    pushMessage(collector.queue, PROTO3.encodeList(spans));
 
     assertThat(receivedSpans.take()).containsExactlyElementsOf(spans);
     // the only way we could read this, is if the malformed span was skipped.
@@ -214,9 +223,9 @@ public class ITActiveMQCollector {
       return consumer.accept(spans);
     })).build().start();
 
-    activemq.pushMessage(collector.queue, ""); // empty bodies don't go to storage
-    activemq.pushMessage(collector.queue, PROTO3.encodeList(spans));
-    activemq.pushMessage(collector.queue, PROTO3.encodeList(spans));
+    pushMessage(collector.queue, new byte[] {}); // empty bodies don't go to storage
+    pushMessage(collector.queue, PROTO3.encodeList(spans));
+    pushMessage(collector.queue, PROTO3.encodeList(spans));
 
     assertThat(receivedSpans.take()).containsExactlyElementsOf(spans);
     latch.countDown();
@@ -232,11 +241,10 @@ public class ITActiveMQCollector {
   }
 
   ActiveMQCollector.Builder builder() {
-    return ActiveMQCollector.builder()
-      .connectionFactory(activemq.createConnectionFactory())
+    // prevent test flakes by having each run in an individual queue
+    return activemq.newCollectorBuilder(testName)
       .storage(buildStorage(consumer))
       .metrics(metrics)
-      // prevent test flakes by having each run in an individual queue
       .queue(testName);
   }
 
@@ -250,5 +258,31 @@ public class ITActiveMQCollector {
         return spanConsumer;
       }
     };
+  }
+
+  void pushMessage(String queueName, byte[] message) throws Exception {
+    ActiveMQSpanConsumer consumer = collector.lazyInit.result;
+
+    // Look up the existing session for this queue, so that there is no chance of flakes.
+    QueueSession session = null;
+    Queue queue = null;
+    for (Map.Entry<QueueSession, QueueReceiver> entry : consumer.sessionToReceiver.entrySet()) {
+      if (entry.getValue().getQueue().getQueueName().equals(queueName)) {
+        session = entry.getKey();
+        queue = entry.getValue().getQueue();
+        break;
+      }
+    }
+    if (session == null) {
+      throw new NoSuchElementException("couldn't find session for queue " + queueName);
+    }
+
+    Connection conn = collector.lazyInit.result.connection;
+
+    try (QueueSender sender = session.createSender(queue)) {
+      BytesMessage bytesMessage = session.createBytesMessage();
+      bytesMessage.writeBytes(message);
+      sender.send(bytesMessage);
+    }
   }
 }
