@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.internal.JsonEscaper.jsonEscape;
 import static zipkin2.internal.JsonEscaper.jsonEscapedSizeInBytes;
 
-public class JsonEscaperTest {
+class JsonEscaperTest {
 
   @Test void testJsonEscapedSizeInBytes() {
     assertThat(jsonEscapedSizeInBytes(new String(new char[] {0, 'a', 1})))

@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static zipkin2.internal.JsonCodec.exceptionReading;
 
-public class JsonCodecTest {
+class JsonCodecTest {
 
   @Test void doesntStackOverflowOnToBufferWriterBug_lessThanBytes() {
     Throwable exception = assertThrows(AssertionError.class, () -> {

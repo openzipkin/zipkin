@@ -24,11 +24,12 @@ import zipkin2.server.internal.mysql.Access;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class ZipkinMySQLStorageConfigurationTest {
+class ZipkinMySQLStorageConfigurationTest {
 
   AnnotationConfigApplicationContext context;
 
-  @AfterEach public void close() {
+  @AfterEach
+  void close() {
     if (context != null) {
       context.close();
     }

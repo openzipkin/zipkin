@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class AnnotationTest {
+class AnnotationTest {
 
   @Test void messageWhenMissingValue() {
     Throwable exception = assertThrows(NullPointerException.class, () -> {

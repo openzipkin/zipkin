@@ -29,7 +29,7 @@ import static zipkin2.TestObjects.TODAY;
 import static zipkin2.elasticsearch.TestResponses.SPANS;
 import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
-public class SearchResultConverterTest {
+class SearchResultConverterTest {
   SearchResultConverter<Span> converter = SearchResultConverter.create(JsonSerializers.SPAN_PARSER);
 
   @Test void convert() throws IOException {

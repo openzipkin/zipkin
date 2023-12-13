@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
-public class ResultSetFutureCallTest {
+class ResultSetFutureCallTest {
   CompletableFuture<AsyncResultSet> future = new CompletableFuture<>();
   AsyncResultSet resultSet = mock(AsyncResultSet.class);
 

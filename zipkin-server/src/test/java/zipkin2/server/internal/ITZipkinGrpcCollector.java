@@ -50,11 +50,12 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "zipkin.collector.grpc.enabled=true"
   }
 )
-public class ITZipkinGrpcCollector {
+class ITZipkinGrpcCollector {
   @Autowired InMemoryStorage storage;
   @Autowired Server server;
 
-  @BeforeEach public void init() {
+  @BeforeEach
+  void init() {
     storage.clear();
   }
 
@@ -62,7 +63,8 @@ public class ITZipkinGrpcCollector {
 
   ListOfSpans request;
 
-  @BeforeEach public void sanityCheckCodecCompatible() throws IOException {
+  @BeforeEach
+  void sanityCheckCodecCompatible() throws IOException {
     request = ListOfSpans.ADAPTER.decode(SpanBytesEncoder.PROTO3.encodeList(TestObjects.TRACE));
 
     assertThat(SpanBytesDecoder.PROTO3.decodeList(request.encode()))

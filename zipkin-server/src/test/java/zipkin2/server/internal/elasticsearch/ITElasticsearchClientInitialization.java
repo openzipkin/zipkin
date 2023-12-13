@@ -23,7 +23,7 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ITElasticsearchClientInitialization {
+class ITElasticsearchClientInitialization {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 

@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.storage.cassandra.internal.SessionBuilder.parseContactPoints;
 
-public class SessionBuilderTest {
+class SessionBuilderTest {
   @Test void contactPoints_defaultsToLocalhost() {
     assertThat(parseContactPoints("localhost"))
       .containsExactly(new InetSocketAddress("127.0.0.1", 9042));

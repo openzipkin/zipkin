@@ -34,10 +34,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class ZipkinHttpConfigurationTest {
+class ZipkinHttpConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach public void close() {
+  @AfterEach
+  void close() {
     context.close();
   }
 

@@ -25,7 +25,7 @@ import zipkin2.v1.V1Span;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 
-public class SelectSpansAndAnnotationsTest {
+class SelectSpansAndAnnotationsTest {
   @Test void processAnnotationRecord_nulls() {
     Record4<Integer, Long, String, byte[]> annotationRecord =
         annotationRecord(null, null, null, null);

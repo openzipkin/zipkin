@@ -23,11 +23,12 @@ import zipkin2.server.internal.cassandra3.Access;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class ZipkinCassandraStorageAutoConfigurationTest {
+class ZipkinCassandraStorageAutoConfigurationTest {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach public void close() {
+  @AfterEach
+  void close() {
     context.close();
   }
 

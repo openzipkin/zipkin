@@ -19,11 +19,12 @@ import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.GenericApplicationContext;
 
-public class ZipkinModuleImporterTest {
+class ZipkinModuleImporterTest {
   ZipkinModuleImporter zipkinModuleImporter = new ZipkinModuleImporter();
   GenericApplicationContext context = new GenericApplicationContext();
 
-  @AfterEach public void close() {
+  @AfterEach
+  void close() {
     context.close();
   }
 

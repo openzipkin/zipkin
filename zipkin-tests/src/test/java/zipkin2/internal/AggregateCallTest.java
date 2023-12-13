@@ -44,7 +44,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class AggregateCallTest {
+class AggregateCallTest {
 
   @Mock Call<Void> call1, call2;
   @Mock Callback<Void> callback;

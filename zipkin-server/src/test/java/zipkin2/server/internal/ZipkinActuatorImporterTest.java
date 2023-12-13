@@ -24,12 +24,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static zipkin2.server.internal.ZipkinActuatorImporter.PROPERTY_NAME_ACTUATOR_ENABLED;
 
 // This tests actuator integration without actually requiring a compile dep on actuator
-public class ZipkinActuatorImporterTest {
+class ZipkinActuatorImporterTest {
   ZipkinActuatorImporter zipkinActuatorImporter =
     new ZipkinActuatorImporter(ActuatorImpl.class.getName());
   GenericApplicationContext context = new GenericApplicationContext();
 
-  @AfterEach public void close() {
+  @AfterEach
+  void close() {
     context.close();
   }
 

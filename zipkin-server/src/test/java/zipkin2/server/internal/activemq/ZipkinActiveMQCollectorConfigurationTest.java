@@ -27,11 +27,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class ZipkinActiveMQCollectorConfigurationTest {
+class ZipkinActiveMQCollectorConfigurationTest {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach public void close() {
+  @AfterEach
+  void close() {
     context.close();
   }
 

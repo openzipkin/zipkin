@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static zipkin2.TestObjects.FRONTEND;
 
-public class SpanBytesDecoderDetectorTest {
+class SpanBytesDecoderDetectorTest {
   Span span1 =
       Span.newBuilder()
           .traceId("a")

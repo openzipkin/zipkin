@@ -25,7 +25,7 @@ import zipkin2.server.internal.InMemoryConfiguration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class ZipkinActiveMQCollectorPropertiesTest {
+class ZipkinActiveMQCollectorPropertiesTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
   /** This prevents an empty ACTIVEMQ_URL variable from being mistaken as a real one */

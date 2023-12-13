@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SchemaTest {
+class SchemaTest {
   @Test void ensureKeyspaceMetadata_failsWhenVersionLessThan3_11_3() {
     CqlSession session = mock(CqlSession.class);
     Metadata metadata = mock(Metadata.class);

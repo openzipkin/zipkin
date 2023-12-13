@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class EncodingTest {
+class EncodingTest {
 
   @Test void emptyList_json() {
     List<byte[]> encoded = Arrays.asList();

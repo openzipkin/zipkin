@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.entry;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class QueryRequestTest {
+class QueryRequestTest {
   QueryRequest.Builder queryBuilder =
     QueryRequest.newBuilder().endTs(TestObjects.TODAY).lookback(60).limit(10);
   Span span = Span.newBuilder().traceId("10").id("10").name("receive")

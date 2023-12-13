@@ -37,7 +37,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "spring.config.name=zipkin-server"
   }
 )
-public class ITActuatorMappings {
+class ITActuatorMappings {
   @Autowired PrometheusMeterRegistry registry;
   @Autowired Server server;
 

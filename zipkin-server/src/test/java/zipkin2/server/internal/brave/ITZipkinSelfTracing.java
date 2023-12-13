@@ -55,14 +55,15 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "zipkin.self-tracing.message-timeout=100ms",
     "zipkin.self-tracing.traces-per-second=100"
   })
-public class ITZipkinSelfTracing {
+class ITZipkinSelfTracing {
   @Autowired TracingStorageComponent storage;
   @Autowired AsyncZipkinSpanHandler zipkinSpanHandler;
   @Autowired Server server;
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
-  @BeforeEach public void clear() {
+  @BeforeEach
+  void clear() {
     inMemoryStorage().clear();
   }
 

@@ -57,8 +57,10 @@ class ITMySQLStorage {
       return false;
     }
 
-    @Override @Test @Disabled("No consumer-side span deduplication")
-    public void getTrace_deduplicates(TestInfo testInfo) {
+    @Override
+    @Test
+    @Disabled("No consumer-side span deduplication")
+    void getTrace_deduplicates(TestInfo testInfo) {
     }
 
     @Override public void clear() {

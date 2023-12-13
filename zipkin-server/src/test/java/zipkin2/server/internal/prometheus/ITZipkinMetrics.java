@@ -52,7 +52,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "spring.config.name=zipkin-server"
   }
 )
-public class ITZipkinMetrics {
+class ITZipkinMetrics {
   @Autowired InMemoryStorage storage;
   @Autowired PrometheusMeterRegistry registry;
   @Autowired Server server;

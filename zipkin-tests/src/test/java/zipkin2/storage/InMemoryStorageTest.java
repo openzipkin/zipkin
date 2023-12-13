@@ -32,7 +32,7 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.storage.ITSpanStore.requestBuilder;
 
-public class InMemoryStorageTest {
+class InMemoryStorageTest {
   InMemoryStorage storage =
     InMemoryStorage.newBuilder().autocompleteKeys(asList("http.path")).build();
 

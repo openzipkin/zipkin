@@ -54,13 +54,14 @@ import static zipkin2.server.internal.elasticsearch.Access.configureSsl;
     "armeria.ports[0].port=${server.port}",
     "armeria.ports[0].protocols[0]=http",
   })
-public class ITZipkinServerSsl {
+class ITZipkinServerSsl {
   @Autowired Server server;
   @Autowired ArmeriaSettings armeriaSettings;
 
   ClientFactory clientFactory;
 
-  @BeforeEach public void configureClientFactory() {
+  @BeforeEach
+  void configureClientFactory() {
     clientFactory = configureSsl(ClientFactory.builder(), armeriaSettings.getSsl()).build();
   }
 

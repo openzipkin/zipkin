@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.Mockito.mock;
 
-public class DeduplicatingInsertTest {
+class DeduplicatingInsertTest {
   @Test void dedupesSameCalls() throws Exception {
     TestFactory testFactory = new TestFactory();
 

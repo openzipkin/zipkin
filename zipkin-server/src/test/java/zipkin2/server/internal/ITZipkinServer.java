@@ -58,7 +58,8 @@ public class ITZipkinServer {
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
-  @BeforeEach public void init() {
+  @BeforeEach
+  void init() {
     storage.clear();
   }
 

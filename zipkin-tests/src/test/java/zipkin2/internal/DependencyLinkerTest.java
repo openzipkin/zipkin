@@ -28,7 +28,7 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class DependencyLinkerTest {
+class DependencyLinkerTest {
   // in reverse order as reporting is more likely to occur this way
   static final List<Span> TRACE = asList(
     span("a", "b", "c", Kind.CLIENT, "app", "db", true),

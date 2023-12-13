@@ -42,7 +42,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "zipkin.query.allowed-origins=" + ITZipkinServerCORS.ALLOWED_ORIGIN
   }
 )
-public class ITZipkinServerCORS {
+class ITZipkinServerCORS {
   static final String ALLOWED_ORIGIN = "http://foo.example.com";
   static final String DISALLOWED_ORIGIN = "http://bar.example.com";
 

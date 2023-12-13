@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.FRONTEND;
 
-public class V1SpanConverterTest {
+class V1SpanConverterTest {
   Endpoint kafka = Endpoint.newBuilder().serviceName("kafka").build();
   V1SpanConverter v1SpanConverter = new V1SpanConverter();
 

@@ -22,8 +22,9 @@ import org.springframework.boot.ansi.AnsiOutput;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ZipkinBannerTest {
-  @AfterEach public void tearDown() {
+class ZipkinBannerTest {
+  @AfterEach
+  void tearDown() {
     AnsiOutput.setEnabled(AnsiOutput.Enabled.DETECT);
   }
 

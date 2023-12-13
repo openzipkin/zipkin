@@ -37,7 +37,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-public class CallTest {
+class CallTest {
 
   @Mock Callback callback;
 

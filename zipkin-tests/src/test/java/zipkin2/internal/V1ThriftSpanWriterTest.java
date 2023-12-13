@@ -31,7 +31,7 @@ import static zipkin2.internal.ThriftField.TYPE_LIST;
 import static zipkin2.internal.ThriftField.TYPE_STRING;
 import static zipkin2.internal.ThriftField.TYPE_STRUCT;
 
-public class V1ThriftSpanWriterTest {
+class V1ThriftSpanWriterTest {
   Span span = Span.newBuilder().traceId("1").id("2").build();
   Endpoint endpoint = Endpoint.newBuilder().serviceName("frontend").ip("1.2.3.4").build();
   byte[] bytes = new byte[2048]; // bigger than needed to test sizeOf
@@ -40,7 +40,8 @@ public class V1ThriftSpanWriterTest {
   V1ThriftSpanWriter writer = new V1ThriftSpanWriter();
   byte[] endpointBytes = new byte[ThriftEndpointCodec.sizeInBytes(endpoint)];
 
-  @BeforeEach public void init() {
+  @BeforeEach
+  void init() {
     ThriftEndpointCodec.write(endpoint, WriteBuffer.wrap(endpointBytes, 0));
   }
 

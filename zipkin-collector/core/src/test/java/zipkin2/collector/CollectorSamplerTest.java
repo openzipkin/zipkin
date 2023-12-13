@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
 
-public class CollectorSamplerTest {
+class CollectorSamplerTest {
 
   /**
    * Math.abs("8000000000000000") returns a negative, we coerse to "7fffffffffffffff" to avoid

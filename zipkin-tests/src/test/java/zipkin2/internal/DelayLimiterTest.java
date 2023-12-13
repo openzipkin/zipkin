@@ -25,7 +25,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class DelayLimiterTest {
+class DelayLimiterTest {
   static final long NANOS_PER_SECOND = SECONDS.toNanos(1L);
   long nanoTime;
   SuppressionFactory suppressionFactory = new SuppressionFactory(NANOS_PER_SECOND) {

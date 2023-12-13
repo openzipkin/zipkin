@@ -23,7 +23,7 @@ import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.FRONTEND;
 import static zipkin2.TestObjects.TODAY;
 
-public class SpanConverterTest {
+class SpanConverterTest {
   Endpoint kafka = Endpoint.newBuilder().serviceName("kafka").build();
   V2SpanConverter v2SpanConverter = new V2SpanConverter();
   V1SpanConverter v1SpanConverter = new V1SpanConverter();

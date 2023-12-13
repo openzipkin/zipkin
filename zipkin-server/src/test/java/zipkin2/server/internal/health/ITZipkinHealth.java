@@ -38,14 +38,15 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "spring.config.name=zipkin-server"
   }
 )
-public class ITZipkinHealth {
+class ITZipkinHealth {
   @Autowired InMemoryStorage storage;
   @Autowired PrometheusMeterRegistry registry;
   @Autowired Server server;
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
-  @BeforeEach public void init() {
+  @BeforeEach
+  void init() {
     storage.clear();
   }
 

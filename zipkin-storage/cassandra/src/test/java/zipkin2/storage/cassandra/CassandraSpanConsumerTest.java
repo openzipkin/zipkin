@@ -30,7 +30,7 @@ import static zipkin2.TestObjects.FRONTEND;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.storage.cassandra.InternalForTests.mockSession;
 
-public class CassandraSpanConsumerTest {
+class CassandraSpanConsumerTest {
   CassandraSpanConsumer consumer = spanConsumer(CassandraStorage.newBuilder());
 
   Span spanWithoutAnnotationsOrTags =

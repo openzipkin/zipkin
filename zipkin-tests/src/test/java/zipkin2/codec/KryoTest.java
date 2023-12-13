@@ -27,7 +27,7 @@ import zipkin2.TestObjects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class KryoTest {
+class KryoTest {
 
   @Test void kryoJavaSerialization_annotation() {
     Kryo kryo = new Kryo();

@@ -24,11 +24,12 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class RabbitMQCollectorTest {
+class RabbitMQCollectorTest {
 
   RabbitMQCollector collector;
 
-  @BeforeEach public void before() {
+  @BeforeEach
+  void before() {
     ConnectionFactory connectionFactory = new ConnectionFactory();
     connectionFactory.setConnectionTimeout(100);
     // We can be pretty certain RabbitMQ isn't running on localhost port 80

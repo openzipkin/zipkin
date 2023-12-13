@@ -33,7 +33,8 @@ public class ZipkinPrometheusMetricsConfigurationTest {
     context.refresh();
   }
 
-  @AfterEach public void close() {
+  @AfterEach
+  void close() {
     context.close();
   }
 

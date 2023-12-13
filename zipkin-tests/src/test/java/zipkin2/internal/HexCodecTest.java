@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin2.internal.HexCodec.lowerHexToUnsignedLong;
 
-public class HexCodecTest {
+class HexCodecTest {
 
   @Test void lowerHexToUnsignedLong_downgrades128bitIdsByDroppingHighBits() {
     assertThat(lowerHexToUnsignedLong("463ac35c9f6413ad48485a3953bb6124"))

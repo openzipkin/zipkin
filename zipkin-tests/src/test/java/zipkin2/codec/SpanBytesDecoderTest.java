@@ -34,7 +34,7 @@ import static zipkin2.codec.SpanBytesEncoderTest.SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.UTF8_SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.UTF_8;
 
-public class SpanBytesDecoderTest {
+class SpanBytesDecoderTest {
   Span span = SPAN;
 
   @Test void niceErrorOnTruncatedSpans_PROTO3() {

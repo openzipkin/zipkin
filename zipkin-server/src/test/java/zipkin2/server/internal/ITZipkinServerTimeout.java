@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
     "spring.config.name=zipkin-server"
   }
 )
-public class ITZipkinServerTimeout {
+class ITZipkinServerTimeout {
   static final List<Span> TRACE = asList(TestObjects.CLIENT_SPAN);
 
   SlowSpanStore spanStore;
@@ -58,7 +58,8 @@ public class ITZipkinServerTimeout {
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
-  @BeforeEach public void init() {
+  @BeforeEach
+  void init() {
     spanStore = new SlowSpanStore();
     when(storage.spanStore()).thenReturn(spanStore);
     when(storage.traces()).thenReturn(new TracesAdapter(spanStore));

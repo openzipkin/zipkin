@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-public class ForwardingStorageComponentTest {
+class ForwardingStorageComponentTest {
   /**
    * This test is intentionally brittle. It should break if we add new methods on {@link
    * StorageComponent}!
@@ -51,7 +51,8 @@ public class ForwardingStorageComponentTest {
     }
   };
 
-  @AfterEach public void verifyNoExtraCalls() {
+  @AfterEach
+  void verifyNoExtraCalls() {
     verifyNoMoreInteractions(delegate);
   }
 

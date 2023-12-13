@@ -45,7 +45,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "zipkin.storage.autocomplete-keys=environment,clnt/finagle.version"
   }
 )
-public class ITZipkinServerAutocomplete {
+class ITZipkinServerAutocomplete {
 
   @Autowired Server server;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();

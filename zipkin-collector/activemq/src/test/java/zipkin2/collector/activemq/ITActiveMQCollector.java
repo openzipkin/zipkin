@@ -67,7 +67,8 @@ public class ITActiveMQCollector {
 
   ActiveMQCollector collector;
 
-  @BeforeEach public void start(TestInfo testInfo) {
+  @BeforeEach
+  void start(TestInfo testInfo) {
     Optional<Method> testMethod = testInfo.getTestMethod();
     if (testMethod.isPresent()) {
       this.testName = testMethod.get().getName();
@@ -78,7 +79,8 @@ public class ITActiveMQCollector {
     collector = builder().build().start();
   }
 
-  @AfterEach public void stop() throws IOException {
+  @AfterEach
+  void stop() throws IOException {
     activemq.stop();
     collector.close();
   }

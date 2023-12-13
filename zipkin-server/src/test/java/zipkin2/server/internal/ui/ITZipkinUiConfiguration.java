@@ -44,7 +44,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "server.compression.enabled=true",
     "server.compression.min-response-size=128"
   })
-public class ITZipkinUiConfiguration {
+class ITZipkinUiConfiguration {
   @Autowired Server server;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 

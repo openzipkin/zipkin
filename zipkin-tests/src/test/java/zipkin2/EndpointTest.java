@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class EndpointTest {
+class EndpointTest {
 
   @Test void missingIpv4IsNull() {
     assertThat(Endpoint.newBuilder().build().ipv4())

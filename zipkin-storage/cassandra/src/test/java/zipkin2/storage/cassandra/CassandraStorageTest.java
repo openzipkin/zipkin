@@ -25,7 +25,7 @@ import zipkin2.Component;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-public class CassandraStorageTest {
+class CassandraStorageTest {
 
   @Test void authProvider_defaultsToNull() {
     assertThat(CassandraStorage.newBuilder().build().authProvider)

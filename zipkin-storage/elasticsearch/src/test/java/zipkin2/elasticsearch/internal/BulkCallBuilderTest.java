@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static zipkin2.elasticsearch.internal.BulkCallBuilder.CHECK_FOR_ERRORS;
 import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
-public class BulkCallBuilderTest {
+class BulkCallBuilderTest {
   @Test void throwsRejectedExecutionExceptionWhenOverCapacity() {
     String response =
       "{\"took\":0,\"errors\":true,\"items\":[{\"index\":{\"_index\":\"dev-zipkin:span-2019.04.18\",\"_type\":\"span\",\"_id\":\"2511\",\"status\":429,\"error\":{\"type\":\"es_rejected_execution_exception\",\"reason\":\"rejected execution of org.elasticsearch.transport.TransportService$7@7ec1ea93 on EsThreadPoolExecutor[bulk, queue capacity = 200, org.elasticsearch.common.util.concurrent.EsThreadPoolExecutor@621571ba[Running, pool size = 4, active threads = 4, queued tasks = 200, completed tasks = 3838534]]\"}}}]}";

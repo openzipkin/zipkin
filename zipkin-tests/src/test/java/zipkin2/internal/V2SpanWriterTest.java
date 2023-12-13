@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.TODAY;
 
-public class V2SpanWriterTest {
+class V2SpanWriterTest {
   V2SpanWriter writer = new V2SpanWriter();
   byte[] bytes = new byte[2048]; // bigger than needed to test sizeInBytes
   WriteBuffer buf = WriteBuffer.wrap(bytes);

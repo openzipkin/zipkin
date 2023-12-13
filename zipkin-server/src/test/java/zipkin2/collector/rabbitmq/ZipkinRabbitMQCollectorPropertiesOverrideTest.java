@@ -29,7 +29,8 @@ public class ZipkinRabbitMQCollectorPropertiesOverrideTest {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach public void close() {
+  @AfterEach
+  void close() {
     if (context != null) context.close();
   }
 

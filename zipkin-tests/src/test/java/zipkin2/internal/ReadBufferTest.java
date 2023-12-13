@@ -21,7 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
-public class ReadBufferTest {
+class ReadBufferTest {
   @Test void byteBuffer_limited() {
     ByteBuffer buf = ByteBuffer.wrap("glove".getBytes(UTF_8));
     buf.get();

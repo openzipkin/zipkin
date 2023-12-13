@@ -24,7 +24,7 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.internal.DateUtil.midnightUTC;
 
-public class DateUtilTest {
+class DateUtilTest {
 
   @Test void midnightUTCTest() throws ParseException {
 

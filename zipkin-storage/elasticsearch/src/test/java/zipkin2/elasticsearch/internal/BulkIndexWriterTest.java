@@ -28,7 +28,7 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.FRONTEND;
 import static zipkin2.TestObjects.TODAY;
 
-public class BulkIndexWriterTest {
+class BulkIndexWriterTest {
 
   // Our usual test span depends on currentTime for testing span stores with TTL, but we'd prefer
   // to have a fixed span here to avoid depending on business logic in test assertions.
@@ -39,7 +39,8 @@ public class BulkIndexWriterTest {
 
   ByteBufOutputStream buffer;
 
-  @BeforeEach public void setUp() {
+  @BeforeEach
+  void setUp() {
     buffer = new ByteBufOutputStream(Unpooled.buffer());
   }
 

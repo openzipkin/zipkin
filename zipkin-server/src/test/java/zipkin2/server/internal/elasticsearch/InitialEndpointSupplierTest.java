@@ -44,7 +44,8 @@ class InitialEndpointSupplierTest {
   }
 
   /** This helps ensure old setups don't break (provided they have http port 9200 open) */
-  @Test public void coersesPort9300To9200() {
+  @Test
+  void coersesPort9300To9200() {
     assertThat(new InitialEndpointSupplier(HTTP, "localhost:9300").get())
       .isEqualTo(Endpoint.of("localhost", 9200));
   }

@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.server.internal.health.ComponentHealth.STATUS_DOWN;
 import static zipkin2.server.internal.health.ComponentHealth.STATUS_UP;
 
-public class ZipkinHealthControllerTest {
+class ZipkinHealthControllerTest {
   @Test void writeJsonError_writesNestedError() throws Exception {
     assertThat(ZipkinHealthController.writeJsonError("robots")).isEqualTo(""
       + "{\n"
