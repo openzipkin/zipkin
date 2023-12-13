@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import zipkin2.elasticsearch.internal.JsonReaders;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static zipkin2.elasticsearch.internal.JsonReaders.collectValuesNamed;
 import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
@@ -74,7 +74,7 @@ public class JsonReadersTest {
 
   // All elasticsearch results start with an object, not an array.
   @Test void collectValuesNamed_exceptionOnWrongData() throws IOException {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       assertThat(collectValuesNamed(JSON_FACTORY.createParser("[]"), "key")).isEmpty();
     });
   }

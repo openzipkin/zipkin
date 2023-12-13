@@ -31,7 +31,7 @@ import zipkin2.internal.Nullable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
@@ -249,7 +249,7 @@ public class CallTest {
   }
 
   @Test void onErrorReturn_execute_onError() throws Exception {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       IllegalArgumentException exception = new IllegalArgumentException();
       Call<String> errorCall = errorCall(exception);
 

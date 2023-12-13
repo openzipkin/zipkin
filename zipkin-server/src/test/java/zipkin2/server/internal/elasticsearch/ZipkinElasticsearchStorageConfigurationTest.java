@@ -34,7 +34,7 @@ import org.springframework.context.annotation.Configuration;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static zipkin2.server.internal.elasticsearch.ITElasticsearchDynamicCredentials.pathOfResource;
 
 public class ZipkinElasticsearchStorageConfigurationTest {
@@ -45,7 +45,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
   }
 
   @Test void doesntProvideStorageComponent_whenStorageTypeNotElasticsearch() {
-    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       TestPropertyValues.of("zipkin.storage.type:cassandra").applyTo(context);
       Access.registerElasticsearch(context);
       context.refresh();
@@ -256,11 +256,11 @@ public class ZipkinElasticsearchStorageConfigurationTest {
   }
 
   @Test void dailyIndexFormat_overridingDateSeparator_invalidToBeMultiChar() {
-    assertThrows(BeanCreationException.class, () -> {
+    assertThatExceptionOfType(BeanCreationException.class).isThrownBy(() -> {
       TestPropertyValues.of(
-          "zipkin.storage.type:elasticsearch",
-          "zipkin.storage.elasticsearch.hosts:http://host1:9200",
-          "zipkin.storage.elasticsearch.date-separator:blagho")
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:http://host1:9200",
+        "zipkin.storage.elasticsearch.date-separator:blagho")
         .applyTo(context);
       Access.registerElasticsearch(context);
 
@@ -337,13 +337,13 @@ public class ZipkinElasticsearchStorageConfigurationTest {
   }
 
   @Test void providesBasicAuthInterceptor_whenInvalidDynamicCredentialsConfigured() {
-    assertThrows(BeanCreationException.class, () -> {
+    assertThatExceptionOfType(BeanCreationException.class).isThrownBy(() -> {
       String credentialsFile = pathOfResource("es-credentials-invalid");
       TestPropertyValues.of(
-          "zipkin.storage.type:elasticsearch",
-          "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
-          "zipkin.storage.elasticsearch.credentials-file:" + credentialsFile,
-          "zipkin.storage.elasticsearch.credentials-refresh-interval:2")
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
+        "zipkin.storage.elasticsearch.credentials-file:" + credentialsFile,
+        "zipkin.storage.elasticsearch.credentials-refresh-interval:2")
         .applyTo(context);
       Access.registerElasticsearch(context);
       context.refresh();
@@ -351,12 +351,12 @@ public class ZipkinElasticsearchStorageConfigurationTest {
   }
 
   @Test void providesBasicAuthInterceptor_whenDynamicCredentialsConfiguredButFileAbsent() {
-    assertThrows(BeanCreationException.class, () -> {
+    assertThatExceptionOfType(BeanCreationException.class).isThrownBy(() -> {
       TestPropertyValues.of(
-          "zipkin.storage.type:elasticsearch",
-          "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
-          "zipkin.storage.elasticsearch.credentials-file:no-this-file",
-          "zipkin.storage.elasticsearch.credentials-refresh-interval:2")
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
+        "zipkin.storage.elasticsearch.credentials-file:no-this-file",
+        "zipkin.storage.elasticsearch.credentials-refresh-interval:2")
         .applyTo(context);
       Access.registerElasticsearch(context);
       context.refresh();
@@ -436,10 +436,10 @@ public class ZipkinElasticsearchStorageConfigurationTest {
   }
 
   @Test void templatePriority_Invalid() {
-    assertThrows(UnsatisfiedDependencyException.class, () -> {
+    assertThatExceptionOfType(UnsatisfiedDependencyException.class).isThrownBy(() -> {
       TestPropertyValues.of(
-          "zipkin.storage.type:elasticsearch",
-          "zipkin.storage.elasticsearch.template-priority:string")
+        "zipkin.storage.type:elasticsearch",
+        "zipkin.storage.elasticsearch.template-priority:string")
         .applyTo(context);
       Access.registerElasticsearch(context);
       context.refresh();

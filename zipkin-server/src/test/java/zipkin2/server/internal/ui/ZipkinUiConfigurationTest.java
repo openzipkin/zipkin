@@ -35,10 +35,9 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.core.io.ClassPathResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
-public class ZipkinUiConfigurationTest {
+class ZipkinUiConfigurationTest {
 
   AnnotationConfigApplicationContext context;
 
@@ -60,8 +59,7 @@ public class ZipkinUiConfigurationTest {
     ZipkinUiConfiguration ui = new ZipkinUiConfiguration();
     ui.ui = new ZipkinUiProperties();
     ui.lensIndexHtml = new ClassPathResource("does-not-exist.html");
-    assertThatThrownBy(ui::indexService)
-      .isInstanceOf(BeanCreationException.class);
+    assertThatExceptionOfType(BeanCreationException.class).isThrownBy(ui::indexService);
   }
 
   @Test void canOverridesProperty_defaultLookback() {
@@ -112,7 +110,7 @@ public class ZipkinUiConfigurationTest {
   }
 
   @Test void canOverridesProperty_disable() {
-    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       context = createContextWithOverridenProperty("zipkin.ui.enabled:false");
 
       context.getBean(ZipkinUiProperties.class);

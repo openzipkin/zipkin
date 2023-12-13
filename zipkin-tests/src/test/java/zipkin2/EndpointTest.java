@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EndpointTest {
 
@@ -200,7 +199,7 @@ public class EndpointTest {
     Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
       assertThat(Endpoint.newBuilder().port(65536).build().port()).isNull();
     });
-    assertTrue(exception.getMessage().contains("invalid port 65536"));
+    assertThat(exception.getMessage()).contains("invalid port 65536");
   }
 
   /**
@@ -210,7 +209,7 @@ public class EndpointTest {
     Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
       Endpoint.newBuilder().port(65536).build();
     });
-    assertTrue(exception.getMessage().contains("invalid port 65536"));
+    assertThat(exception.getMessage()).contains("invalid port 65536");
   }
 
   /** Catches common error when zero is passed instead of null for a port */

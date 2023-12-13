@@ -22,7 +22,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import zipkin2.server.internal.mysql.Access;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 public class ZipkinMySQLStorageConfigurationTest {
 
@@ -35,7 +35,7 @@ public class ZipkinMySQLStorageConfigurationTest {
   }
 
   @Test void doesntProvidesStorageComponent_whenStorageTypeNotMySQL() {
-    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       context = new AnnotationConfigApplicationContext();
       TestPropertyValues.of("zipkin.storage.type:cassandra").applyTo(context);
       Access.registerMySQL(context);
