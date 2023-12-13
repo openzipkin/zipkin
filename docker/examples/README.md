@@ -15,17 +15,19 @@ View the web UI at $(docker ip):9411. Traces are stored in memory.
 To see specific traces in the UI, select "zipkin-server" in the dropdown and
 then click the "Find Traces" button.
 
-## Elasticsearch
+## ActiveMQ
 
-You can store traces in [Elasticsearch](../test-images/zipkin-elasticsearch7/README.md) instead of memory,
-using the `docker-compose-elasticsearch.yml` file. This configuration starts `zipkin`,
-`zipkin-elasticsearch` and `zipkin-dependencies` (cron job) in their own containers.
+You can collect traces from [ActiveMQ](../test-images/zipkin-activemq/README.md) in addition to HTTP, using the
+`docker-compose-activemq.yml` file. This configuration starts `zipkin` and `zipkin-activemq` in their
+own containers.
 
-To start the Elasticsearch-backed configuration, run:
-
+To add ActiveMQ configuration, run:
 ```bash
-$ docker-compose -f docker-compose-elasticsearch.yml up
+$ docker-compose -f docker-compose-activemq.yml up
 ```
+
+Then configure the [ActiveMQ sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/activemq-client/src/main/java/zipkin2/reporter/activemq/ActiveMQSender.java)
+using a `brokerUrl` value of `failover:tcp://localhost:61616` or a non-local hostname if in docker.
 
 ## Cassandra
 
@@ -37,6 +39,18 @@ To start the Cassandra-backed configuration, run:
 
 ```bash
 $ docker-compose -f docker-compose-cassandra.yml up
+```
+
+## Elasticsearch
+
+You can store traces in [Elasticsearch](../test-images/zipkin-elasticsearch7/README.md) instead of memory,
+using the `docker-compose-elasticsearch.yml` file. This configuration starts `zipkin`,
+`zipkin-elasticsearch` and `zipkin-dependencies` (cron job) in their own containers.
+
+To start the Elasticsearch-backed configuration, run:
+
+```bash
+$ docker-compose -f docker-compose-elasticsearch.yml up
 ```
 
 ## Kafka
@@ -83,9 +97,7 @@ $ docker-compose -f docker-compose-rabbitmq.yml up
 ```
 
 Then configure the [RabbitMQ sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/amqp-client/src/main/java/zipkin2/reporter/amqp/RabbitMQSender.java)
-using a `host` value of `host.docker.internal` if your application is inside the docker network.
-Otherwise, an application can use the default `host` value of `localhost` to send spans to RabbitMQ
-via the AMQP protocol.
+using a `host` value of `localhost` or a non-local hostname if in docker.
 
 # Example
 

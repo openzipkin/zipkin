@@ -1,0 +1,40 @@
+#
+# Copyright 2015-2023 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+# This file uses the version 2 docker-compose file format, described here:
+# https://docs.docker.com/compose/compose-file/#version-2
+#
+# It extends the default configuration from docker-compose.yml to add a test
+# activemq server, which is used as a span transport.
+
+version: '2.4'
+
+services:
+  activemq:
+    image: ghcr.io/openzipkin/zipkin-activemq:${TAG:-latest}
+    container_name: activemq
+    ports:  # expose the ActiveMQ port so apps can publish spans.
+      - "61616:61616"
+
+  zipkin:
+    extends:
+      file: docker-compose.yml
+      service: zipkin
+    # slim doesn't include Activemq support, so switch to the larger image
+    image: ghcr.io/openzipkin/zipkin:${TAG:-latest}
+    environment:
+      - ACTIVEMQ_URL=failover:tcp://activemq:61616
+    depends_on:
+      activemq:
+        condition: service_healthy
