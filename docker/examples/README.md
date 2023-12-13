@@ -27,9 +27,7 @@ $ docker-compose -f docker-compose-activemq.yml up
 ```
 
 Then configure the [ActiveMQ sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/activemq-client/src/main/java/zipkin2/reporter/activemq/ActiveMQSender.java)
-using a `host` value of `host.docker.internal` if your application is inside the docker network.
-Otherwise, an application can use the default `host` value of `localhost` to send spans to ActiveMQ
-via any protocol it accepts, such as OpenWire or AMQP.
+using a `brokerUrl` value of `failover:tcp://localhost:61616` or a non-local hostname if in docker.
 
 ## Cassandra
 
@@ -99,9 +97,7 @@ $ docker-compose -f docker-compose-rabbitmq.yml up
 ```
 
 Then configure the [RabbitMQ sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/amqp-client/src/main/java/zipkin2/reporter/amqp/RabbitMQSender.java)
-using a `host` value of `host.docker.internal` if your application is inside the docker network.
-Otherwise, an application can use the default `host` value of `localhost` to send spans to RabbitMQ
-via the AMQP protocol.
+using a `host` value of `localhost` or a non-local hostname if in docker.
 
 # Example
 
