@@ -55,8 +55,7 @@ public class CollectorTest {
     when(collector.idString(CLIENT_SPAN)).thenReturn("1"); // to make expectations easier to read
   }
 
-  @AfterEach
-  void after() {
+  @AfterEach void after() {
     verifyNoMoreInteractions(metrics, callback);
   }
 

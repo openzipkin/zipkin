@@ -28,8 +28,7 @@ public class ZipkinKafkaCollectorPropertiesOverrideTest {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach
-  void close() {
+  @AfterEach void close() {
     if (context != null) context.close();
   }
 

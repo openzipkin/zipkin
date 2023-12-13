@@ -28,8 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class ZipkinScribeCollectorConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach
-  void close() {
+  @AfterEach void close() {
     context.close();
   }
 

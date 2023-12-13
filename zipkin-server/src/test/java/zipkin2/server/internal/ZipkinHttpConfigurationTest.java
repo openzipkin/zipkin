@@ -37,8 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ZipkinHttpConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach
-  void close() {
+  @AfterEach void close() {
     context.close();
   }
 

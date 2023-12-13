@@ -57,8 +57,7 @@ class ThrottledCallTest {
   int numThreads = 1;
   ExecutorService executor = Executors.newSingleThreadExecutor();
 
-  @AfterEach
-  void shutdownExecutor() {
+  @AfterEach void shutdownExecutor() {
     executor.shutdown();
   }
 

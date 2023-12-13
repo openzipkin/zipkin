@@ -29,8 +29,7 @@ class ZipkinActuatorImporterTest {
     new ZipkinActuatorImporter(ActuatorImpl.class.getName());
   GenericApplicationContext context = new GenericApplicationContext();
 
-  @AfterEach
-  void close() {
+  @AfterEach void close() {
     context.close();
   }
 

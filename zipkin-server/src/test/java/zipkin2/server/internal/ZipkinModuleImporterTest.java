@@ -23,8 +23,7 @@ class ZipkinModuleImporterTest {
   ZipkinModuleImporter zipkinModuleImporter = new ZipkinModuleImporter();
   GenericApplicationContext context = new GenericApplicationContext();
 
-  @AfterEach
-  void close() {
+  @AfterEach void close() {
     context.close();
   }
 

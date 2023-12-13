@@ -40,8 +40,7 @@ import static zipkin2.server.internal.elasticsearch.ITElasticsearchDynamicCreden
 class ZipkinElasticsearchStorageConfigurationTest {
   final AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach
-  void close() {
+  @AfterEach void close() {
     context.close();
   }
 

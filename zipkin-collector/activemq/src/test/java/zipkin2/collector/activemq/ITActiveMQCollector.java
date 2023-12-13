@@ -79,8 +79,7 @@ public class ITActiveMQCollector {
     collector = builder().build().start();
   }
 
-  @AfterEach
-  void stop() throws IOException {
+  @AfterEach void stop() throws IOException {
     activemq.stop();
     collector.close();
   }

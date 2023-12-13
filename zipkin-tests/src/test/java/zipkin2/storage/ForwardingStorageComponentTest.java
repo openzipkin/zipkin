@@ -51,8 +51,7 @@ class ForwardingStorageComponentTest {
     }
   };
 
-  @AfterEach
-  void verifyNoExtraCalls() {
+  @AfterEach void verifyNoExtraCalls() {
     verifyNoMoreInteractions(delegate);
   }
 

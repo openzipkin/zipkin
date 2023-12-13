@@ -29,8 +29,7 @@ class ZipkinKafkaCollectorConfigurationTest {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @AfterEach
-  void close() {
+  @AfterEach void close() {
     context.close();
   }
 

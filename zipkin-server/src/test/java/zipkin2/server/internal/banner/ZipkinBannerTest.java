@@ -23,8 +23,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ZipkinBannerTest {
-  @AfterEach
-  void tearDown() {
+  @AfterEach void tearDown() {
     AnsiOutput.setEnabled(AnsiOutput.Enabled.DETECT);
   }
 
