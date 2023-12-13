@@ -23,7 +23,7 @@ import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -48,7 +48,7 @@ public class ThrottledStorageComponentTest {
   }
 
   @Test void createComponent_withNegativeQueue() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       int queueSize = -1;
       new ThrottledStorageComponent(delegate, registry, tracing, 1, 2, queueSize);
     });

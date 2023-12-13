@@ -26,7 +26,7 @@ import zipkin2.Span;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 public class SpanNodeTest {
   List<String> messages = new ArrayList<>();
@@ -43,7 +43,7 @@ public class SpanNodeTest {
   };
 
   @Test void addChild_nullNotAllowed() {
-    assertThrows(NullPointerException.class, () -> {
+    assertThatExceptionOfType(NullPointerException.class).isThrownBy(() -> {
       Span.Builder builder = Span.newBuilder().traceId("a");
       SpanNode a = new SpanNode(builder.id("a").build());
       a.addChild(null);
@@ -51,7 +51,7 @@ public class SpanNodeTest {
   }
 
   @Test void addChild_selfNotAllowed() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       Span.Builder builder = Span.newBuilder().traceId("a");
       SpanNode a = new SpanNode(builder.id("a").build());
       a.addChild(a);

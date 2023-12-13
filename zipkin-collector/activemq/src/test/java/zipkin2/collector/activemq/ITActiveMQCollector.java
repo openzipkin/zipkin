@@ -41,7 +41,6 @@ import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
 import static zipkin2.TestObjects.UTF_8;
 import static zipkin2.codec.SpanBytesEncoder.PROTO3;
@@ -97,8 +96,7 @@ public class ITActiveMQCollector {
       collector = builder().connectionFactory(connectionFactory).build();
       collector.start();
     });
-    assertTrue(exception.getMessage()
-      .contains("Unable to establish connection to ActiveMQ broker: Connection refused"));
+    assertThat(exception.getMessage()).contains("Unable to establish connection to ActiveMQ broker: Connection refused");
   }
 
   /**

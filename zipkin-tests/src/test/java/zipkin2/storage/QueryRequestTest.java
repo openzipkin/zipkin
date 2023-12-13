@@ -24,7 +24,6 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class QueryRequestTest {
   QueryRequest.Builder queryBuilder =
@@ -105,7 +104,7 @@ public class QueryRequestTest {
 
       queryBuilder.endTs(0L).build();
     });
-    assertTrue(exception.getMessage().contains("endTs <= 0"));
+    assertThat(exception.getMessage()).contains("endTs <= 0");
   }
 
   @Test void lookbackMustBePositive() {
@@ -113,7 +112,7 @@ public class QueryRequestTest {
 
       queryBuilder.lookback(0).build();
     });
-    assertTrue(exception.getMessage().contains("lookback <= 0"));
+    assertThat(exception.getMessage()).contains("lookback <= 0");
   }
 
   @Test void limitMustBePositive() {
@@ -121,7 +120,7 @@ public class QueryRequestTest {
 
       queryBuilder.limit(0).build();
     });
-    assertTrue(exception.getMessage().contains("limit <= 0"));
+    assertThat(exception.getMessage()).contains("limit <= 0");
   }
 
   @Test void annotationQuery_roundTrip() {
@@ -162,7 +161,7 @@ public class QueryRequestTest {
 
       queryBuilder.minDuration(0L).build();
     });
-    assertTrue(exception.getMessage().contains("minDuration <= 0"));
+    assertThat(exception.getMessage()).contains("minDuration <= 0");
   }
 
   @Test void maxDuration_onlyWithMinDuration() {
@@ -170,7 +169,7 @@ public class QueryRequestTest {
 
       queryBuilder.maxDuration(0L).build();
     });
-    assertTrue(exception.getMessage().contains("maxDuration is only valid with minDuration"));
+    assertThat(exception.getMessage()).contains("maxDuration is only valid with minDuration");
   }
 
   @Test void maxDuration_greaterThanOrEqualToMinDuration() {
@@ -178,7 +177,7 @@ public class QueryRequestTest {
 
       queryBuilder.minDuration(1L).maxDuration(0L).build();
     });
-    assertTrue(exception.getMessage().contains("maxDuration < minDuration"));
+    assertThat(exception.getMessage()).contains("maxDuration < minDuration");
   }
 
   @Test void test_matchesTimestamp() {

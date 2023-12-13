@@ -35,8 +35,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.core.io.ClassPathResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 public class ZipkinUiConfigurationTest {
 
@@ -112,7 +111,7 @@ public class ZipkinUiConfigurationTest {
   }
 
   @Test void canOverridesProperty_disable() {
-    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       context = createContextWithOverridenProperty("zipkin.ui.enabled:false");
 
       context.getBean(ZipkinUiProperties.class);

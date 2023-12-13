@@ -20,7 +20,6 @@ import zipkin2.Span;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Percentage.withPercentage;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
 
 public class CollectorSamplerTest {
@@ -77,12 +76,12 @@ public class CollectorSamplerTest {
 
   @Test void rateCantBeNegative() {
     Throwable exception = assertThrows(IllegalArgumentException.class, () -> CollectorSampler.create(-1.0f));
-    assertTrue(exception.getMessage().contains("rate should be between 0 and 1: was -1.0"));
+    assertThat(exception.getMessage()).contains("rate should be between 0 and 1: was -1.0");
   }
 
   @Test void rateCantBeOverOne() {
     Throwable exception = assertThrows(IllegalArgumentException.class, () -> CollectorSampler.create(1.1f));
-    assertTrue(exception.getMessage().contains("rate should be between 0 and 1: was 1.1"));
+    assertThat(exception.getMessage()).contains("rate should be between 0 and 1: was 1.1");
   }
 
   static Stream<Span> lotsOfSpans() {

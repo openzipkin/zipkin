@@ -25,7 +25,7 @@ import zipkin2.server.internal.InMemoryConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 public class ZipkinRabbitMQCollectorConfigurationTest {
 
@@ -36,7 +36,7 @@ public class ZipkinRabbitMQCollectorConfigurationTest {
   }
 
   @Test void doesNotProvideCollectorComponent_whenAddressAndUriNotSet() {
-    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       context.register(
         PropertyPlaceholderAutoConfiguration.class,
         ZipkinRabbitMQCollectorConfiguration.class,
@@ -47,11 +47,11 @@ public class ZipkinRabbitMQCollectorConfigurationTest {
   }
 
   @Test void doesNotProvideCollectorComponent_whenAddressesAndUriIsEmptyString() {
-    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       context = new AnnotationConfigApplicationContext();
       TestPropertyValues.of(
-          "zipkin.collector.rabbitmq.addresses:",
-          "zipkin.collector.rabbitmq.uri:")
+        "zipkin.collector.rabbitmq.addresses:",
+        "zipkin.collector.rabbitmq.uri:")
         .applyTo(context);
       context.register(
         PropertyPlaceholderAutoConfiguration.class,
@@ -80,7 +80,7 @@ public class ZipkinRabbitMQCollectorConfigurationTest {
   }
 
   @Test void doesNotProvidesCollectorComponent_whenAddressesSetAndDisabled() {
-    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       context = new AnnotationConfigApplicationContext();
       TestPropertyValues.of("zipkin.collector.rabbitmq.addresses:localhost:1234").applyTo(context);
       TestPropertyValues.of("zipkin.collector.rabbitmq.enabled:false").applyTo(context);

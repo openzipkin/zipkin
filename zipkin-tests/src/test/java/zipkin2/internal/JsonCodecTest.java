@@ -20,7 +20,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static zipkin2.internal.JsonCodec.exceptionReading;
 
 public class JsonCodecTest {
@@ -47,9 +46,7 @@ public class JsonCodecTest {
 
       new Foo().toString(); // cause the exception
     });
-    assertTrue(exception.getMessage()
-      .contains(
-        "Bug found using FooWriter to write Foo as json. Wrote 1/2 bytes: a")); // cause the exception
+    assertThat(exception.getMessage()).contains("Bug found using FooWriter to write Foo as json. Wrote 1/2 bytes: a"); // cause the exception
   }
 
   @Test void doesntStackOverflowOnToBufferWriterBug_Overflow() {
@@ -76,9 +73,7 @@ public class JsonCodecTest {
 
       new Foo().toString(); // cause the exception
     });
-    assertTrue(exception.getMessage()
-      .contains(
-        "Bug found using FooWriter to write Foo as json. Wrote 2/2 bytes: ab")); // cause the exception
+    assertThat(exception.getMessage()).contains("Bug found using FooWriter to write Foo as json. Wrote 2/2 bytes: ab"); // cause the exception
   }
 
   @Test void exceptionReading_malformedJsonWraps() {

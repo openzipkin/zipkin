@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AnnotationTest {
 
@@ -26,7 +25,7 @@ public class AnnotationTest {
 
       Annotation.create(1L, null);
     });
-    assertTrue(exception.getMessage().contains("value"));
+    assertThat(exception.getMessage()).contains("value");
   }
 
   @Test void toString_isNice() {

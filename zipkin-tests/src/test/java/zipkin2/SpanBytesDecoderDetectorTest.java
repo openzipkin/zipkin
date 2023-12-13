@@ -19,7 +19,7 @@ import zipkin2.codec.SpanBytesEncoder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static zipkin2.TestObjects.FRONTEND;
 
 public class SpanBytesDecoderDetectorTest {
@@ -53,7 +53,7 @@ public class SpanBytesDecoderDetectorTest {
   }
 
   @Test void decoderForMessage_json_v1_list() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       byte[] message = SpanBytesEncoder.JSON_V1.encodeList(asList(span1, span2));
       SpanBytesDecoderDetector.decoderForMessage(message);
     });
@@ -66,7 +66,7 @@ public class SpanBytesDecoderDetectorTest {
   }
 
   @Test void decoderForListMessage_json_v1_singleItem() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       byte[] message = SpanBytesEncoder.JSON_V1.encode(span1);
       SpanBytesDecoderDetector.decoderForListMessage(message);
     });
@@ -74,7 +74,7 @@ public class SpanBytesDecoderDetectorTest {
 
   /** Single-element reads were for legacy non-list encoding. Don't add new code that does this */
   @Test void decoderForMessage_json_v2() {
-    assertThrows(UnsupportedOperationException.class, () -> {
+    assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> {
       byte[] message = SpanBytesEncoder.JSON_V2.encode(span1);
       assertThat(SpanBytesDecoderDetector.decoderForMessage(message))
         .isEqualTo(SpanBytesDecoder.JSON_V2);
@@ -82,7 +82,7 @@ public class SpanBytesDecoderDetectorTest {
   }
 
   @Test void decoderForMessage_json_v2_list() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       byte[] message = SpanBytesEncoder.JSON_V2.encodeList(asList(span1, span2));
       SpanBytesDecoderDetector.decoderForMessage(message);
     });
@@ -130,7 +130,7 @@ public class SpanBytesDecoderDetectorTest {
   }
 
   @Test void decoderForListMessage_json_v2_singleItem() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       byte[] message = SpanBytesEncoder.JSON_V2.encode(span1);
       SpanBytesDecoderDetector.decoderForListMessage(message);
     });
@@ -143,7 +143,7 @@ public class SpanBytesDecoderDetectorTest {
   }
 
   @Test void decoderForMessage_thrift_list() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       byte[] message = SpanBytesEncoder.THRIFT.encodeList(asList(span1, span2));
       SpanBytesDecoderDetector.decoderForMessage(message);
     });
@@ -168,7 +168,7 @@ public class SpanBytesDecoderDetectorTest {
   }
 
   @Test void decoderForListMessage_thrift_singleItem() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       byte[] message = SpanBytesEncoder.THRIFT.encode(span1);
       SpanBytesDecoderDetector.decoderForListMessage(message);
     });
@@ -178,7 +178,7 @@ public class SpanBytesDecoderDetectorTest {
    * Single-element reads were for legacy non-list encoding. Don't add new code that does this
    */
   @Test void decoderForMessage_proto3() {
-    assertThrows(UnsupportedOperationException.class, () -> {
+    assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> {
       byte[] message = SpanBytesEncoder.PROTO3.encode(span1);
       assertThat(SpanBytesDecoderDetector.decoderForMessage(message))
         .isEqualTo(SpanBytesDecoder.PROTO3);
@@ -186,7 +186,7 @@ public class SpanBytesDecoderDetectorTest {
   }
 
   @Test void decoderForMessage_proto3_list() {
-    assertThrows(UnsupportedOperationException.class, () -> {
+    assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> {
       byte[] message = SpanBytesEncoder.PROTO3.encodeList(asList(span1, span2));
       SpanBytesDecoderDetector.decoderForMessage(message);
     });
@@ -206,14 +206,14 @@ public class SpanBytesDecoderDetectorTest {
   }
 
   @Test void decoderForMessage_unknown() {
-    assertThrows(IllegalArgumentException.class, () -> {
-      SpanBytesDecoderDetector.decoderForMessage(new byte[] {'h'});
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
+      SpanBytesDecoderDetector.decoderForMessage(new byte[]{'h'});
     });
   }
 
   @Test void decoderForListMessage_unknown() {
-    assertThrows(IllegalArgumentException.class, () -> {
-      SpanBytesDecoderDetector.decoderForListMessage(new byte[] {'h'});
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
+      SpanBytesDecoderDetector.decoderForListMessage(new byte[]{'h'});
     });
   }
 }

@@ -25,7 +25,7 @@ import zipkin2.server.internal.InMemoryConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 public class ZipkinActiveMQCollectorConfigurationTest {
 
@@ -36,7 +36,7 @@ public class ZipkinActiveMQCollectorConfigurationTest {
   }
 
   @Test void doesNotProvideCollectorComponent_whenAddressAndUriNotSet() {
-    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       context.register(
         PropertyPlaceholderAutoConfiguration.class,
         ZipkinActiveMQCollectorConfiguration.class,

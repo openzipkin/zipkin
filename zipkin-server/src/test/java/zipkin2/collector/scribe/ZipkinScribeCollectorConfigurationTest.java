@@ -23,7 +23,7 @@ import zipkin2.server.internal.InMemoryConfiguration;
 import zipkin2.server.internal.scribe.ZipkinScribeCollectorConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 public class ZipkinScribeCollectorConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
@@ -33,7 +33,7 @@ public class ZipkinScribeCollectorConfigurationTest {
   }
 
   @Test void doesntProvidesCollectorComponent_byDefault() {
-    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       refreshContext();
 
       context.getBean(ScribeCollector.class);

@@ -23,7 +23,7 @@ import zipkin2.collector.kafka.KafkaCollector;
 import zipkin2.server.internal.InMemoryConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 public class ZipkinKafkaCollectorConfigurationTest {
 
@@ -34,7 +34,7 @@ public class ZipkinKafkaCollectorConfigurationTest {
   }
 
   @Test void doesNotProvideCollectorComponent_whenBootstrapServersUnset() {
-    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       context.register(
         PropertyPlaceholderAutoConfiguration.class,
         ZipkinKafkaCollectorConfiguration.class,
@@ -45,7 +45,7 @@ public class ZipkinKafkaCollectorConfigurationTest {
   }
 
   @Test void providesCollectorComponent_whenBootstrapServersEmptyString() {
-    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:").applyTo(context);
       context.register(
         PropertyPlaceholderAutoConfiguration.class,
@@ -69,7 +69,7 @@ public class ZipkinKafkaCollectorConfigurationTest {
   }
 
   @Test void doesNotProvidesCollectorComponent_whenBootstrapServersSetAndDisabled() {
-    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:localhost:9092")
         .applyTo(context);
       TestPropertyValues.of("zipkin.collector.kafka.enabled:false").applyTo(context);

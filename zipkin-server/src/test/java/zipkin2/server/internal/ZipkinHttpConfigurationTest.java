@@ -32,7 +32,7 @@ import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 public class ZipkinHttpConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
@@ -50,7 +50,7 @@ public class ZipkinHttpConfigurationTest {
   }
 
   @Test void httpCollector_canDisable() {
-    assertThrows(NoSuchBeanDefinitionException.class, () -> {
+    assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       TestPropertyValues.of("zipkin.collector.http.enabled:false").applyTo(context);
       registerBaseConfig(context);
       context.register(ZipkinHttpCollector.class);

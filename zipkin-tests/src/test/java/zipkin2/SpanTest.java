@@ -21,8 +21,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static org.assertj.core.data.MapEntry.entry;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static zipkin2.Span.normalizeTraceId;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.FRONTEND;
@@ -416,13 +416,13 @@ public class SpanTest {
   }
 
   @Test void normalizeTraceId_badCharacters() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       normalizeTraceId("000-0000000004d20000000ss000162e");
     });
   }
 
   @Test void traceIdFromLong_invalid() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       base.toBuilder().traceId(0, 0);
     });
   }
@@ -461,43 +461,43 @@ public class SpanTest {
   }
 
   @Test void idFromLong_invalid() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       base.toBuilder().id(0);
     });
   }
 
   @Test void id_emptyInvalid() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       base.toBuilder().id("");
     });
   }
 
   @Test void id_zerosInvalid() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       base.toBuilder().id("0000000000000000");
     });
   }
 
   @Test void parentId_emptyInvalid() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       base.toBuilder().parentId("");
     });
   }
 
   @Test void traceId_emptyInvalid() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       base.toBuilder().traceId("");
     });
   }
 
   @Test void traceId_zerosInvalid() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       base.toBuilder().traceId("0000000000000000");
     });
   }
 
   @Test void traceId_uuidInvalid() {
-    assertThrows(IllegalArgumentException.class, () -> {
+    assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
       base.toBuilder().traceId(UUID.randomUUID().toString());
     });
   }

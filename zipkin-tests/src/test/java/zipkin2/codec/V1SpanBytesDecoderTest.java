@@ -24,7 +24,6 @@ import zipkin2.Span;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.TRACE;
 import static zipkin2.codec.SpanBytesEncoderTest.LOCAL_SPAN;
@@ -43,8 +42,7 @@ public class V1SpanBytesDecoderTest {
       byte[] encoded = SpanBytesEncoder.THRIFT.encodeList(TRACE);
       SpanBytesDecoder.THRIFT.decodeList(Arrays.copyOfRange(encoded, 0, 10));
     });
-    assertTrue(exception.getMessage()
-      .contains("Truncated: length 8 > bytes available 2 reading List<Span> from TBinary"));
+    assertThat(exception.getMessage()).contains("Truncated: length 8 > bytes available 2 reading List<Span> from TBinary");
   }
 
   @Test void niceErrorOnTruncatedSpan_THRIFT() {
@@ -53,8 +51,7 @@ public class V1SpanBytesDecoderTest {
       byte[] encoded = SpanBytesEncoder.THRIFT.encode(SPAN);
       SpanBytesDecoder.THRIFT.decodeOne(Arrays.copyOfRange(encoded, 0, 10));
     });
-    assertTrue(exception.getMessage()
-      .contains("Truncated: length 8 > bytes available 7 reading Span from TBinary"));
+    assertThat(exception.getMessage()).contains("Truncated: length 8 > bytes available 7 reading Span from TBinary");
   }
 
   @Test void emptyListOk_THRIFT() {
@@ -144,7 +141,7 @@ public class V1SpanBytesDecoderTest {
 
       SpanBytesDecoder.JSON_V1.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
     });
-    assertTrue(exception.getMessage().contains("Malformed reading List<Span> from "));
+    assertThat(exception.getMessage()).contains("Malformed reading List<Span> from ");
   }
 
   @Test void niceErrorOnMalformed_inputSpans_THRIFT() {
@@ -152,8 +149,7 @@ public class V1SpanBytesDecoderTest {
 
       SpanBytesDecoder.THRIFT.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
     });
-    assertTrue(exception.getMessage()
-      .contains("Truncated: length 1 > bytes available 0 reading List<Span> from TBinary"));
+    assertThat(exception.getMessage()).contains("Truncated: length 1 > bytes available 0 reading List<Span> from TBinary");
   }
 
   @Test void traceRoundTrip_JSON_V1() {
@@ -254,8 +250,7 @@ public class V1SpanBytesDecoderTest {
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
     });
-    assertTrue(exception.getMessage()
-      .contains("48485A3953BB6124 should be lower-hex encoded with no prefix"));
+    assertThat(exception.getMessage()).contains("48485A3953BB6124 should be lower-hex encoded with no prefix");
   }
 
   @Test void readsTraceIdHighFromTraceIdField() {
@@ -396,8 +391,7 @@ public class V1SpanBytesDecoderTest {
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
     });
-    assertTrue(
-      exception.getMessage().contains("Incomplete annotation at $.annotations[0].timestamp"));
+    assertThat(exception.getMessage()).contains("Incomplete annotation at $.annotations[0].timestamp");
   }
 
   @Test void niceErrorOnNull_traceId() {
@@ -412,7 +406,7 @@ public class V1SpanBytesDecoderTest {
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
     });
-    assertTrue(exception.getMessage().contains("Expected a string but was NULL"));
+    assertThat(exception.getMessage()).contains("Expected a string but was NULL");
   }
 
   @Test void niceErrorOnNull_id() {
@@ -427,7 +421,7 @@ public class V1SpanBytesDecoderTest {
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
     });
-    assertTrue(exception.getMessage().contains("Expected a string but was NULL"));
+    assertThat(exception.getMessage()).contains("Expected a string but was NULL");
   }
 
   @Test void niceErrorOnNull_annotationValue() {
@@ -445,7 +439,7 @@ public class V1SpanBytesDecoderTest {
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
     });
-    assertTrue(exception.getMessage().contains("$.annotations[0].value"));
+    assertThat(exception.getMessage()).contains("$.annotations[0].value");
   }
 
   @Test void niceErrorOnNull_annotationTimestamp() {
@@ -463,7 +457,7 @@ public class V1SpanBytesDecoderTest {
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
     });
-    assertTrue(exception.getMessage().contains("$.annotations[0].timestamp"));
+    assertThat(exception.getMessage()).contains("$.annotations[0].timestamp");
   }
 
   @Test void readSpan_localEndpoint_noServiceName() {
