@@ -14,6 +14,7 @@ We also provide a number images that are not for production, rather to simplify 
 integration tests. We designed these to be small and start easily. We did this by re-using the same
 base layer `openzipkin/zipkin`, and setting up schema where relevant.
 
+* [ghcr.io/openzipkin/zipkin-activemq](test-images/zipkin-activemq/README.md) - runs ActiveMQ Classic
 * [ghcr.io/openzipkin/zipkin-cassandra](test-images/zipkin-cassandra/README.md) - runs Cassandra initialized with Zipkin's schema
 * [ghcr.io/openzipkin/zipkin-elasticsearch6](test-images/zipkin-elasticsearch6/README.md) - runs Elasticsearch 6.x
 * [ghcr.io/openzipkin/zipkin-elasticsearch7](test-images/zipkin-elasticsearch7/README.md) - runs Elasticsearch 7.x
