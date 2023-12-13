@@ -58,8 +58,7 @@ class ITZipkinServerTimeout {
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
-  @BeforeEach
-  void init() {
+  @BeforeEach void init() {
     spanStore = new SlowSpanStore();
     when(storage.spanStore()).thenReturn(spanStore);
     when(storage.traces()).thenReturn(new TracesAdapter(spanStore));

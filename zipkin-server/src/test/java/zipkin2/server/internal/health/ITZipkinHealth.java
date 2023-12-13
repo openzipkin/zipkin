@@ -45,8 +45,7 @@ class ITZipkinHealth {
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
-  @BeforeEach
-  void init() {
+  @BeforeEach void init() {
     storage.clear();
   }
 

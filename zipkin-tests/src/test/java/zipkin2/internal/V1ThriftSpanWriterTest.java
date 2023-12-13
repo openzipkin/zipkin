@@ -40,8 +40,7 @@ class V1ThriftSpanWriterTest {
   V1ThriftSpanWriter writer = new V1ThriftSpanWriter();
   byte[] endpointBytes = new byte[ThriftEndpointCodec.sizeInBytes(endpoint)];
 
-  @BeforeEach
-  void init() {
+  @BeforeEach void init() {
     ThriftEndpointCodec.write(endpoint, WriteBuffer.wrap(endpointBytes, 0));
   }
 

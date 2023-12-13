@@ -60,8 +60,7 @@ class ITZipkinServerSsl {
 
   ClientFactory clientFactory;
 
-  @BeforeEach
-  void configureClientFactory() {
+  @BeforeEach void configureClientFactory() {
     clientFactory = configureSsl(ClientFactory.builder(), armeriaSettings.getSsl()).build();
   }
 

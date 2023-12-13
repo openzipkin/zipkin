@@ -87,8 +87,7 @@ class ITElasticsearchHealthCheck {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @BeforeEach
-  void setUp() {
+  @BeforeEach void setUp() {
     server1Health.setHealthy(true);
     server2Health.setHealthy(true);
 

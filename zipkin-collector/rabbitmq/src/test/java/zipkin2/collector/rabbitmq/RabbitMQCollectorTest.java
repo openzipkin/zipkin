@@ -28,8 +28,7 @@ class RabbitMQCollectorTest {
 
   RabbitMQCollector collector;
 
-  @BeforeEach
-  void before() {
+  @BeforeEach void before() {
     ConnectionFactory connectionFactory = new ConnectionFactory();
     connectionFactory.setConnectionTimeout(100);
     // We can be pretty certain RabbitMQ isn't running on localhost port 80

@@ -62,8 +62,7 @@ class ITZipkinSelfTracing {
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
-  @BeforeEach
-  void clear() {
+  @BeforeEach void clear() {
     inMemoryStorage().clear();
   }
 

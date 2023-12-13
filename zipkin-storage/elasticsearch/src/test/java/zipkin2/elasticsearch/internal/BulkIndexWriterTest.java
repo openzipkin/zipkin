@@ -39,8 +39,7 @@ class BulkIndexWriterTest {
 
   ByteBufOutputStream buffer;
 
-  @BeforeEach
-  void setUp() {
+  @BeforeEach void setUp() {
     buffer = new ByteBufOutputStream(Unpooled.buffer());
   }
 

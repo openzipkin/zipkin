@@ -54,8 +54,7 @@ class ITZipkinGrpcCollector {
   @Autowired InMemoryStorage storage;
   @Autowired Server server;
 
-  @BeforeEach
-  void init() {
+  @BeforeEach void init() {
     storage.clear();
   }
 
@@ -63,8 +62,7 @@ class ITZipkinGrpcCollector {
 
   ListOfSpans request;
 
-  @BeforeEach
-  void sanityCheckCodecCompatible() throws IOException {
+  @BeforeEach void sanityCheckCodecCompatible() throws IOException {
     request = ListOfSpans.ADAPTER.decode(SpanBytesEncoder.PROTO3.encodeList(TestObjects.TRACE));
 
     assertThat(SpanBytesDecoder.PROTO3.decodeList(request.encode()))

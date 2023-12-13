@@ -47,8 +47,7 @@ public class CollectorTest {
   Collector collector;
   private TestLogger testLogger = TestLoggerFactory.getTestLogger("");
 
-  @BeforeEach
-  void setup() {
+  @BeforeEach void setup() {
     testLogger.clearAll();
     collector = spy(
       new Collector.Builder(testLogger).metrics(metrics).storage(storage).build());
