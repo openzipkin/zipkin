@@ -35,6 +35,7 @@
     <unpack-proto.directory>${project.build.directory}/main/proto</unpack-proto.directory>
   </properties>
 
+  <!-- DataStax java-driver is typically behind on jackson and netty -->
   <dependencyManagement>
     <dependencies>
       <dependency>

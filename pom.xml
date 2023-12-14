@@ -89,7 +89,7 @@
     <okhttp5.version>5.0.0-alpha.11</okhttp5.version>
     <kryo.version>5.5.0</kryo.version>
     <!-- Only used for proto interop testing; wire-maven-plugin is usually behind latest. -->
-    <wire.version>3.0.2</wire.version>
+    <wire.version>4.9.3</wire.version>
     <gson.version>2.10.1</gson.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
