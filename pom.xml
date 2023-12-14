@@ -115,6 +115,7 @@
     <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.2.2</maven-surefire-plugin.version>
     <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
+    <wire-maven-plugin.version>1.3</wire-maven-plugin.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
@@ -363,9 +364,10 @@
           </executions>
         </plugin>
         <plugin>
-          <groupId>com.squareup.wire</groupId>
+          <!-- com.squareup.wire version was abandoned -->
+          <groupId>de.m3y.maven</groupId>
           <artifactId>wire-maven-plugin</artifactId>
-          <version>${wire.version}</version>
+          <version>${wire-maven-plugin.version}</version>
           <executions>
             <execution>
               <phase>generate-sources</phase>
