@@ -309,7 +309,7 @@
 
     <dependency>
       <groupId>com.squareup.wire</groupId>
-      <artifactId>wire-runtime</artifactId>
+      <artifactId>wire-runtime-jvm</artifactId>
       <version>${wire.version}</version>
       <scope>test</scope>
     </dependency>
@@ -439,7 +439,7 @@
         <artifactId>maven-dependency-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>com.squareup.wire</groupId>
+        <groupId>de.m3y.maven</groupId>
         <artifactId>wire-maven-plugin</artifactId>
         <executions>
           <execution>
