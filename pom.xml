@@ -51,7 +51,7 @@
 
     <!-- This allows you to test feature branches with jitpack -->
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>1.26.3</armeria.version>
+    <armeria.version>1.26.4</armeria.version>
     <!-- Match Armeria version to avoid conflicts including running tests in the IDE -->
     <netty.version>4.1.100.Final</netty.version>
 
@@ -73,7 +73,7 @@
 
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
-    <mariadb-java-client.version>2.7.11</mariadb-java-client.version>
+    <mariadb-java-client.version>3.3.1</mariadb-java-client.version>
     <HikariCP.version>5.1.0</HikariCP.version>
     <slf4j.version>1.7.36</slf4j.version>
     <auto-value.version>1.10.4</auto-value.version>
