@@ -127,6 +127,9 @@ public class ZipkinExtensionTest {
     // Zipkin didn't store the spans, as they shouldn't have been readable, due to disconnect
     assertThat(zipkin.getTraces()).isEmpty();
 
+    // create a new connection pool to avoid flakey tests
+    client = new OkHttpClient();
+
     // The failure shouldn't affect later requests
     assertPostSpansV1Success(spans);
   }
