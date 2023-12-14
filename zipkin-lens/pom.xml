@@ -331,7 +331,7 @@
                 </goals>
                 <configuration>
                   <classifier>javadoc</classifier>
-                  <classesDirectory>${basedir}/javadoc</classesDirectory>
+                  <classesDirectory>${project.basedir}/javadoc</classesDirectory>
                 </configuration>
               </execution>
             </executions>
