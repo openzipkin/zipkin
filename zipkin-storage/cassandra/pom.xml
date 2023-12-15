@@ -35,7 +35,7 @@
     <errorprone.args>-Xep:CheckReturnValue:OFF -Xep:AutoValueImmutableFields:OFF</errorprone.args>
   </properties>
 
-  <!-- DataStax java-driver is typically behind on jackson and netty -->
+  <!-- Apache Cassandra java-driver is typically behind on jackson and netty -->
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -70,7 +70,7 @@
     </dependency>
 
     <dependency>
-      <groupId>com.datastax.oss</groupId>
+      <groupId>org.apache.cassandra</groupId>
       <artifactId>java-driver-core</artifactId>
       <version>${java-driver.version}</version>
       <!-- Exclude unused graph and geo dependencies -->
@@ -79,6 +79,11 @@
           <groupId>com.esri.geometry</groupId>
           <artifactId>*</artifactId>
         </exclusion>
+        <!-- temporary until https://github.com/apache/cassandra-java-driver/pull/1904 -->
+        <exclusion>
+          <groupId>com.github.jnr</groupId>
+          <artifactId>jnr-posix</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>org.apache.tinkerpop</groupId>
           <artifactId>*</artifactId>
@@ -86,6 +91,12 @@
         <!-- We retain reactivestreams even though we don't use it because
              Mockito dies trying to mock CqlSession without it. -->
       </exclusions>
+    </dependency>
+    <!-- temporary until https://github.com/apache/cassandra-java-driver/pull/1904 -->
+    <dependency>
+      <groupId>com.github.jnr</groupId>
+      <artifactId>jnr-posix</artifactId>
+      <version>3.1.18</version>
     </dependency>
   </dependencies>
 </project>

@@ -58,7 +58,7 @@
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
     <jackson.version>2.16.0</jackson.version>
 
-    <java-driver.version>4.17.0</java-driver.version>
+    <java-driver.version>4.18.0</java-driver.version>
     <micrometer.version>1.12.0</micrometer.version>
 
     <!-- Used for Generated annotations -->
