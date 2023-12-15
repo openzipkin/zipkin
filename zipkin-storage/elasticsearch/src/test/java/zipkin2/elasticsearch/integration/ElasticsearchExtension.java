@@ -84,7 +84,7 @@ class ElasticsearchExtension implements BeforeAllCallback, AfterAllCallback {
         if (warningHeader != null) {
           if (IGNORE_THESE_WARNINGS.stream().noneMatch(p -> p.matcher(warningHeader).find())) {
             throw new IllegalArgumentException("Detected usage of deprecated API for request "
-              + req.toString() + ":\n" + warningHeader);
+              + req + ":\n" + warningHeader);
           }
         }
         // Convert AggregatedHttpResponse back to HttpResponse.
