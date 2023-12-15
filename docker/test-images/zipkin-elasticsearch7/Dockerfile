@@ -54,8 +54,7 @@ LABEL org.opencontainers.image.description="Elasticsearch distribution on OpenJD
 ARG elasticsearch7_version=7.17.16
 LABEL elasticsearch-version=$elasticsearch7_version
 
-# This image is only for testing Zipkin, but alert users anyway about the
-# Elastic license. The license ends up on disk as /elasticsearch/LICENSE.txt
+# The full license is also included in the image at /elasticsearch/LICENSE.txt.
 LABEL org.opencontainers.image.licenses="Elastic-License-2.0"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
