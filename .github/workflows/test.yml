@@ -28,7 +28,7 @@ jobs:
       matrix:  # use latest available versions and be consistent on all workflows!
         include:
           - java_version: 11  # Last that can compile zipkin core to 1.6 for zipkin-reporter
-            maven_args: -Prelease -Dgpg.skip
+            maven_args: -Prelease -Dgpg.skip -Dmaven.javadoc.skip=true
           - java_version: 21  # Most recent LTS
     steps:
       - name: Checkout Repository
