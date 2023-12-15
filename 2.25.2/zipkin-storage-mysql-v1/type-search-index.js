@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"zipkin2.storage.mysql.v1","l":"MySQLStorage.Builder"},{"p":"zipkin2.storage.mysql.v1","l":"MySQLStorage"}]
