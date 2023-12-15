@@ -19,6 +19,29 @@ on:
       - "charts/**"
 
 jobs:
+  test-javadoc:
+    name: Test JavaDoc Builds
+    runs-on: ubuntu-22.04 # newest available distribution, aka jellyfish
+    if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full git history for license check
+      - name: Setup java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'  # zulu as it supports a wide version range
+          java-version: '11'  # earliest LTS and last that can compile the 1.6 release profile.
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-jdk-11-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-jdk-11-maven-
+      - name: Build JavaDoc
+        run: ./mvnw clean javadoc:aggregate -Prelease
+
   test:
     name: test (JDK ${{ matrix.java_version }})
     runs-on: ubuntu-22.04 # newest available distribution, aka jellyfish
