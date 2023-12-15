@@ -47,6 +47,8 @@ https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${elasticsear
     --wildcards --strip=1 --exclude=*/bin && mkdir classes
 COPY --from=scratch /config/ ./config/
 
+# Use a full Java distribution rather than adding test modules to the
+# production -jre base layer used by zipkin and zipkin-slim.
 FROM ghcr.io/openzipkin/java:${java_version} as zipkin-elasticsearch7
 LABEL org.opencontainers.image.description="Elasticsearch distribution on OpenJDK and Alpine Linux"
 ARG elasticsearch7_version=7.17.16
