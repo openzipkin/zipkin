@@ -30,6 +30,9 @@ abstract class IgnoredDeprecationWarnings {
   // These will be matched using header.contains(ignored[i]), so find a unique substring of the
   // warning header for it to be ignored
   static List<Pattern> IGNORE_THESE_WARNINGS = asList(
+    // Basic license doesn't include x-pack.
+    // https://www.elastic.co/guide/en/elasticsearch/reference/7.17/security-minimal-setup.html#_enable_elasticsearch_security_features
+    compile("Elasticsearch built-in security features are not enabled."),
     compile("Elasticsearch 7\\.x will read, but not allow creation of new indices containing ':'"),
     compile("has index patterns \\[.*] matching patterns from existing older templates"),
     compile("has index patterns \\[.*] matching patterns from existing composable templates")

@@ -84,7 +84,7 @@ class ElasticsearchExtension implements BeforeAllCallback, AfterAllCallback {
         if (warningHeader != null) {
           if (IGNORE_THESE_WARNINGS.stream().noneMatch(p -> p.matcher(warningHeader).find())) {
             throw new IllegalArgumentException("Detected usage of deprecated API for request "
-              + req.toString() + ":\n" + warningHeader);
+              + req + ":\n" + warningHeader);
           }
         }
         // Convert AggregatedHttpResponse back to HttpResponse.
@@ -127,7 +127,7 @@ class ElasticsearchExtension implements BeforeAllCallback, AfterAllCallback {
   // mostly waiting for https://github.com/testcontainers/testcontainers-java/issues/3537
   static final class ElasticsearchContainer extends GenericContainer<ElasticsearchContainer> {
     ElasticsearchContainer(int majorVersion) {
-      super(parse("ghcr.io/openzipkin/zipkin-elasticsearch" + majorVersion + ":2.25.0"));
+      super(parse("openzipkin/zipkin-elasticsearch7:test"));
       if ("true".equals(System.getProperty("docker.skip"))) {
         throw new TestAbortedException("${docker.skip} == true");
       }
