@@ -27,7 +27,6 @@ FROM scratch as scratch
 COPY build-bin/docker/docker-healthcheck /docker-bin/
 COPY docker/test-images/zipkin-elasticsearch7/start-elasticsearch /docker-bin/
 COPY docker/test-images/zipkin-elasticsearch7/config/ /config/
-COPY docker/test-images/zipkin-elasticsearch7/NOTICE.txt /
 
 FROM ghcr.io/openzipkin/java:${java_version} as install
 
