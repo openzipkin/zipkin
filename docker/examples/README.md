@@ -41,6 +41,14 @@ To start the Cassandra-backed configuration, run:
 $ docker-compose -f docker-compose-cassandra.yml up
 ```
 
+The `zipkin-dependencies` container is a scheduled task that runs every hour.
+If you want to see the dependency graph before then, you can run it manually
+in another terminal like so:
+
+```bash
+$ docker-compose -f docker-compose-cassandra.yml run --rm --no-deps --entrypoint start-zipkin-dependencies dependencies
+```
+
 ## Elasticsearch
 
 You can store traces in [Elasticsearch](../test-images/zipkin-elasticsearch7/README.md) instead of memory,
@@ -51,6 +59,14 @@ To start the Elasticsearch-backed configuration, run:
 
 ```bash
 $ docker-compose -f docker-compose-elasticsearch.yml up
+```
+
+The `zipkin-dependencies` container is a scheduled task that runs every hour.
+If you want to see the dependency graph before then, you can run it manually
+in another terminal like so:
+
+```bash
+$ docker-compose -f docker-compose-elasticsearch.yml run --rm --no-deps --entrypoint start-zipkin-dependencies dependencies
 ```
 
 ## Kafka

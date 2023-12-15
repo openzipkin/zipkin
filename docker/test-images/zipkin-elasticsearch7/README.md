@@ -21,6 +21,9 @@ $ sudo sysctl -w vm.max_map_count=262144
 
 # If using docker-machine/Docker Toolbox/Boot2Docker, remotely adjust the same
 $ docker-machine ssh default "sudo sysctl -w vm.max_map_count=262144"
+
+# If using colima, it is similar as well
+$ colima ssh "sudo sysctl -w vm.max_map_count=262144"
 ```
 
 #### License
