@@ -82,7 +82,7 @@
     "vizceral-react": "^4.6.5"
   },
   "scripts": {
-    "compile": "lingui compile --namespace es",
+    "compile": "lingui compile --namespace ts",
     "extract": "lingui extract",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
     "start": "react-scripts start",
