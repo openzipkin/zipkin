@@ -397,10 +397,13 @@ const useTraceSummaryOpenState = (traceSummaries: TraceSummary[]) => {
 
   const expandAll = useCallback(() => {
     setTraceSummaryOpenMap(
-      traceSummaries.reduce((acc, cur) => {
-        acc[cur.traceId] = true;
-        return acc;
-      }, {} as { [key: string]: boolean }),
+      traceSummaries.reduce(
+        (acc, cur) => {
+          acc[cur.traceId] = true;
+          return acc;
+        },
+        {} as { [key: string]: boolean },
+      ),
     );
   }, [traceSummaries]);
 
@@ -450,9 +453,8 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
 }) => {
   const classes = useStyles();
   // Retrieve search criteria from the URL query string and use them to search for traces.
-  const { setQueryParams, criteria, lookback, limit } = useQueryParams(
-    autocompleteKeys,
-  );
+  const { setQueryParams, criteria, lookback, limit } =
+    useQueryParams(autocompleteKeys);
   useFetchTraces(autocompleteKeys, criteria, lookback, limit);
 
   // Temporary search criteria.
@@ -517,12 +519,8 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     setIsOpeningSettings((prev) => !prev);
   }, []);
 
-  const {
-    filters,
-    handleFiltersChange,
-    filterOptions,
-    toggleFilter,
-  } = useFilters(traceSummaries);
+  const { filters, handleFiltersChange, filterOptions, toggleFilter } =
+    useFilters(traceSummaries);
 
   const {
     traceSummaryOpenMap,
