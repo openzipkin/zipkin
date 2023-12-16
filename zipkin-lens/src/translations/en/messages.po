@@ -1,0 +1,125 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2023-12-16 09:17+0900\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:656
+msgid "{0} Results"
+msgstr "{0} Results"
+
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:654
+msgid "1 Result"
+msgstr "1 Result"
+
+#: src/components/TracePage/AnnotationTable/AnnotationTable.tsx:77
+msgid "Address"
+msgstr "Address"
+
+#: src/components/TracePage/Header/HeaderMenu.tsx:177
+msgid "Archive Trace"
+msgstr "Archive Trace"
+
+#: src/components/App/Layout.tsx:79
+msgid "Dependencies"
+msgstr "Dependencies"
+
+#: src/components/TracePage/Header/HeaderMenu.tsx:161
+msgid "Download JSON"
+msgstr "Download JSON"
+
+#: src/components/DiscoverPage/TraceSummaryTable.tsx:81
+#: src/components/TracePage/Header/Header.tsx:102
+msgid "Duration"
+msgstr "Duration"
+
+#: src/components/DependenciesPage/DependenciesPage.tsx:219
+msgid "End Time"
+msgstr "End Time"
+
+#: src/components/App/Layout.tsx:73
+msgid "Find a trace"
+msgstr "Find a trace"
+
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:623
+msgid "Limit"
+msgstr "Limit"
+
+#: src/components/TracePage/SpanDetailDrawer/SpanDetailDrawer.tsx:61
+msgid "Parent ID"
+msgstr "Parent ID"
+
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:573
+msgid "Please select criteria in the search bar. Then, click the search button."
+msgstr "Please select criteria in the search bar. Then, click the search button."
+
+#: src/components/DependenciesPage/DependenciesPage.tsx:190
+msgid "Please select the start and end time. Then, click the search button."
+msgstr "Please select the start and end time. Then, click the search button."
+
+#: src/components/DiscoverPage/TraceSummaryTable.tsx:76
+msgid "Root"
+msgstr "Root"
+
+#: src/components/DependenciesPage/DependenciesPage.tsx:235
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:609
+msgid "Run Query"
+msgstr "Run Query"
+
+#: src/components/DependenciesPage/DependenciesPage.tsx:188
+msgid "Search Dependencies"
+msgstr "Search Dependencies"
+
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:571
+msgid "Search Traces"
+msgstr "Search Traces"
+
+#: src/components/DiscoverPage/DiscoverPage.tsx:55
+msgid "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right."
+msgstr "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right."
+
+#: src/components/TracePage/Header/Header.tsx:104
+msgid "Services"
+msgstr "Services"
+
+#: src/components/TracePage/SpanDetailDrawer/SpanDetailDrawer.tsx:60
+msgid "Span ID"
+msgstr "Span ID"
+
+#: src/components/DiscoverPage/TraceSummaryTable.tsx:80
+msgid "Spans"
+msgstr "Spans"
+
+#: src/components/DependenciesPage/DependenciesPage.tsx:209
+#: src/components/DiscoverPage/TraceSummaryTable.tsx:79
+#: src/components/TracePage/AnnotationTable/AnnotationTable.tsx:73
+msgid "Start Time"
+msgstr "Start Time"
+
+#: src/components/App/Layout.tsx:95
+msgid "Support"
+msgstr "Support"
+
+#: src/components/TracePage/Header/Header.tsx:107
+msgid "Total Spans"
+msgstr "Total Spans"
+
+#: src/components/App/TraceIdSearch.tsx:53
+#: src/components/TracePage/Header/Header.tsx:109
+msgid "Trace ID"
+msgstr "Trace ID"
+
+#: src/components/App/TraceJsonUploader.tsx:64
+msgid "Upload JSON"
+msgstr "Upload JSON"
+
+#: src/components/TracePage/Header/HeaderMenu.tsx:172
+msgid "View Logs"
+msgstr "View Logs"
+
+#: src/components/App/Layout.tsx:66
+msgid "Zipkin"
+msgstr "Zipkin"
