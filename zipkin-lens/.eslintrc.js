@@ -12,54 +12,43 @@
  * the License.
  */
 module.exports = {
-  extends: [
-    'airbnb-typescript',
-    'plugin:prettier/recommended',
-    'prettier/@typescript-eslint',
-    'prettier/react',
-  ],
+  extends: ['plugin:prettier/recommended', 'react-app', 'react-app/jest'],
   rules: {
     'import/prefer-default-export': 'off',
-    'react/jsx-filename-extension': [1, { extensions: ['.js', '.jsx', '.tsx'] }],
-    'react/jsx-props-no-spreading': 'off',
-    'react/no-array-index-key': 'off',
-    'react-hooks/rules-of-hooks': 'error',
-    'react-hooks/exhaustive-deps': 'warn',
-    'react/no-unescaped-entities': 'off',
     'max-classes-per-file': 'off',
     'no-console': 0,
     'no-underscore-dangle': ['off'],
     'no-continue': ['off'],
-    'prefer-destructuring': ['error', {
-      'AssignmentExpression': {array: false, object: false},
-      'VariableDeclarator': {array: true, object: true}
-    }]
+    'prefer-destructuring': [
+      'error',
+      {
+        AssignmentExpression: { array: false, object: false },
+        VariableDeclarator: { array: true, object: true },
+      },
+    ],
+    'react/jsx-filename-extension': [
+      1,
+      { extensions: ['.js', '.jsx', '.tsx'] },
+    ],
+    'react/jsx-props-no-spreading': 'off',
+    'react/no-array-index-key': 'off',
+    'react/no-unescaped-entities': 'off',
+    'react-hooks/exhaustive-deps': 'warn',
   },
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    tsconfigRootDir: __dirname,
-    project: ['./tsconfig.json']
-  },
-  plugins: [
-    '@typescript-eslint',
-    'jest',
-    'react-hooks'
-  ],
   globals: {
     fetch: false,
-    document: false
+    document: false,
   },
   env: {
     browser: true,
     jquery: true,
-    'jest/globals': true
   },
   overrides: [
     {
       files: ['**/*.tsx'],
       rules: {
-        'react/prop-types': 'off'
-      }
-    }
-  ]
+        'react/prop-types': 'off',
+      },
+    },
+  ],
 };
