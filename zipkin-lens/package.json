@@ -69,7 +69,7 @@
     "react-dom": "^16.13.0",
     "react-redux": "^7.1.0",
     "react-router-dom": "^5.0.1",
-    "react-scripts": "^3.4.3",
+    "react-scripts": "5.0.1",
     "react-use": "^14.2.0",
     "react-virtualized-auto-sizer": "1.0.7",
     "react-window": "^1.8.8",
