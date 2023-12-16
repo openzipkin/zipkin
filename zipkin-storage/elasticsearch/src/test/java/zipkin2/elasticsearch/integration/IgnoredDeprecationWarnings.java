@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -30,6 +30,9 @@ abstract class IgnoredDeprecationWarnings {
   // These will be matched using header.contains(ignored[i]), so find a unique substring of the
   // warning header for it to be ignored
   static List<Pattern> IGNORE_THESE_WARNINGS = asList(
+    // Basic license doesn't include x-pack.
+    // https://www.elastic.co/guide/en/elasticsearch/reference/7.17/security-minimal-setup.html#_enable_elasticsearch_security_features
+    compile("Elasticsearch built-in security features are not enabled."),
     compile("Elasticsearch 7\\.x will read, but not allow creation of new indices containing ':'"),
     compile("has index patterns \\[.*] matching patterns from existing older templates"),
     compile("has index patterns \\[.*] matching patterns from existing composable templates")

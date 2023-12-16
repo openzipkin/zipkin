@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -45,8 +45,10 @@ public class MetricsBenchmarks {
   static final int MEDIUM_SPAN = 1000;
   static final int SHORT_SPAN = 500;
   private MeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-  private InMemoryCollectorMetrics inMemoryCollectorMetrics = new InMemoryCollectorMetrics();
-  private MicrometerCollectorMetrics micrometerCollectorMetrics = new MicrometerCollectorMetrics(registry);
+  private InMemoryCollectorMetrics inMemoryCollectorMetrics = new InMemoryCollectorMetrics()
+    .forTransport("jmh");
+  private MicrometerCollectorMetrics micrometerCollectorMetrics = new MicrometerCollectorMetrics(registry)
+    .forTransport("jmh");
 
   @Benchmark
   public int incrementBytes_longSpans_inMemory() {
