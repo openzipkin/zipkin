@@ -13,9 +13,9 @@
  */
 package zipkin2.junit5;
 
-import mockwebserver3.MockResponse;
+import okhttp3.mockwebserver.MockResponse;
 
-import static mockwebserver3.SocketPolicy.DISCONNECT_DURING_REQUEST_BODY;
+import static okhttp3.mockwebserver.SocketPolicy.DISCONNECT_DURING_REQUEST_BODY;
 
 /**
  * Instrumentation that use {@code POST} endpoints need to survive failures. Besides simply not

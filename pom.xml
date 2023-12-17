@@ -86,7 +86,6 @@
     <awaitility.version>4.2.0</awaitility.version>
     <testcontainers.version>1.19.3</testcontainers.version>
     <okhttp.version>4.12.0</okhttp.version>
-    <okhttp5.version>5.0.0-alpha.11</okhttp5.version>
     <kryo.version>5.5.0</kryo.version>
     <!-- Only used for proto interop testing; wire-maven-plugin is usually behind latest. -->
     <wire.version>4.9.3</wire.version>
@@ -199,6 +198,14 @@
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <version>${assertj.version}</version>
+      <exclusions>
+        <!-- Use newer bytebuddy from mockito.
+             TODO: remove when assertj releases a new version -->
+        <exclusion>
+          <groupId>net.bytebuddy</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
       <scope>test</scope>
     </dependency>
 

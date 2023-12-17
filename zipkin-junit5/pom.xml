@@ -61,16 +61,25 @@
 
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>mockwebserver3-junit5</artifactId>
-      <version>${okhttp5.version}</version>
+      <!-- Intentionally not the alpha mockwebserver3 until it can coexist with
+           okhttp 3, avoiding:
+           java.lang.NoSuchMethodError: 'void okhttp3.internal.concurrent.TaskRunner.<init>(okhttp3.internal.concurrent.TaskRunner$Backend, java.util.logging.Logger, int, kotlin.jvm.internal.DefaultConstructorMarker)' -->
+      <artifactId>mockwebserver</artifactId>
+      <version>${okhttp.version}</version>
       <exclusions>
-        <!-- manage our own jupiter version -->
         <exclusion>
-          <groupId>org.junit.jupiter</groupId>
-          <artifactId>*</artifactId>
+          <groupId>junit</groupId>
+          <artifactId>junit</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
+    <!-- Override mockwebserver's junit only to squash CVE version -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+    </dependency>
+
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
