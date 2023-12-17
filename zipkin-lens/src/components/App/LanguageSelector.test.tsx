@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { fireEvent } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import React from 'react';
 
 import render from '../../test/util/render-with-default-settings';
@@ -21,24 +21,24 @@ import LanguageSelector from './LanguageSelector';
 
 describe('<LanguageSelector />', () => {
   it('displays button', async () => {
-    const { getByTestId } = render(<LanguageSelector />);
-    const changeLanguageButton = getByTestId('change-language-button');
+    render(<LanguageSelector />);
+    const changeLanguageButton = screen.getByTestId('change-language-button');
     expect(changeLanguageButton).toBeInTheDocument();
     expect(getLocale()).toEqual('en');
   });
 
   it('displays all languages', async () => {
-    const { getByTestId } = render(<LanguageSelector />);
-    expect(getByTestId('language-list-item-en')).toBeInTheDocument();
-    expect(getByTestId('language-list-item-es')).toBeInTheDocument();
-    expect(getByTestId('language-list-item-fr')).toBeInTheDocument();
-    expect(getByTestId('language-list-item-zh-cn')).toBeInTheDocument();
+    render(<LanguageSelector />);
+    expect(screen.getByTestId('language-list-item-en')).toBeInTheDocument();
+    expect(screen.getByTestId('language-list-item-es')).toBeInTheDocument();
+    expect(screen.getByTestId('language-list-item-fr')).toBeInTheDocument();
+    expect(screen.getByTestId('language-list-item-zh-cn')).toBeInTheDocument();
     expect(getLocale()).toEqual('en');
   });
 
   it('language select changes locale and refreshes', async () => {
-    const { getByTestId } = render(<LanguageSelector />);
-    fireEvent.click(getByTestId('language-list-item-zh-cn'));
+    render(<LanguageSelector />);
+    fireEvent.click(screen.getByTestId('language-list-item-zh-cn'));
     await expect(window.location.reload).toHaveBeenCalled();
     expect(getLocale()).toEqual('zh-cn');
   });

@@ -214,9 +214,8 @@ describe('tracesSlice', () => {
       const mockStore = configureStore([thunk]);
 
       const skewCorrectedTrace = treeCorrectedForClockSkew(httpTrace);
-      const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(
-        skewCorrectedTrace,
-      );
+      const adjustedTrace: AdjustedTrace =
+        buildDetailedTraceSummary(skewCorrectedTrace);
 
       const initialState: { traces: TracesState } = {
         traces: {
@@ -255,9 +254,8 @@ describe('tracesSlice', () => {
       const mockStore = configureStore([thunk]);
 
       const skewCorrectedTrace = treeCorrectedForClockSkew(httpTrace);
-      const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(
-        skewCorrectedTrace,
-      );
+      const adjustedTrace: AdjustedTrace =
+        buildDetailedTraceSummary(skewCorrectedTrace);
 
       const initialState: { traces: TracesState } = {
         traces: {
@@ -296,9 +294,8 @@ describe('tracesSlice', () => {
       const mockStore = configureStore([thunk]);
 
       const skewCorrectedTrace = treeCorrectedForClockSkew(httpTrace);
-      const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(
-        skewCorrectedTrace,
-      );
+      const adjustedTrace: AdjustedTrace =
+        buildDetailedTraceSummary(skewCorrectedTrace);
 
       const initialState: { traces: TracesState } = {
         traces: {

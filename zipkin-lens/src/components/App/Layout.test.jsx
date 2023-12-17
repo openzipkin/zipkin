@@ -12,26 +12,25 @@
  * the License.
  */
 import React from 'react';
-
+import { screen } from '@testing-library/react';
 import render from '../../test/util/render-with-default-settings';
-
 import Layout from './Layout';
 
 describe('<Layout />', () => {
   it('does not render help link with default config', () => {
     // children is required so avoid warning by passing dummy children
-    const { queryByTitle } = render(
+    render(
       <Layout>
         <span>Test</span>
         <span>Test</span>
       </Layout>,
     );
-    expect(queryByTitle('Support')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Support')).not.toBeInTheDocument();
   });
 
   it('does render help link when defined', () => {
     // children is required so avoid warning by passing dummy children
-    const { queryByTitle } = render(
+    render(
       <Layout>
         <span>Test</span>
         <span>Test</span>
@@ -42,25 +41,25 @@ describe('<Layout />', () => {
         },
       },
     );
-    const helpLink = queryByTitle('Support');
+    const helpLink = screen.queryByTitle('Support');
     expect(helpLink).toBeInTheDocument();
     expect(helpLink.href).toEqual('https://gitter.im/openzipkin/zipkin');
   });
 
   it('does render Dependencies Page with default config', () => {
     // children is required so avoid warning by passing dummy children
-    const { queryByText } = render(
+    render(
       <Layout>
         <span>Test</span>
         <span>Test</span>
       </Layout>,
     );
-    expect(queryByText('Dependencies')).toBeInTheDocument();
+    expect(screen.getByText('Dependencies')).toBeInTheDocument();
   });
 
   it('does not render Dependencies Page when disabled', () => {
     // children is required so avoid warning by passing dummy children
-    const { queryByTitle } = render(
+    render(
       <Layout>
         <span>Test</span>
         <span>Test</span>
@@ -73,6 +72,6 @@ describe('<Layout />', () => {
         },
       },
     );
-    expect(queryByTitle('Dependencies')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Dependencies')).not.toBeInTheDocument();
   });
 });

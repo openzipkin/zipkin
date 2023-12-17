@@ -12,7 +12,7 @@
  * the License.
  */
 
-import { fireEvent } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import React from 'react';
 import shortid from 'shortid';
 
@@ -59,8 +59,8 @@ describe('<SearchBar />', () => {
   };
 
   it('should add an empty criterion when add button is clicked', () => {
-    const { getByTestId } = render(<SearchBarImpl {...commonProps} />);
-    fireEvent.click(getByTestId('add-button'));
+    render(<SearchBarImpl {...commonProps} />);
+    fireEvent.click(screen.getByTestId('add-button'));
     expect(commonProps.onChange.mock.calls.length).toBe(1);
     expect(commonProps.onChange.mock.calls[0][0][0].key).toEqual('');
     expect(commonProps.onChange.mock.calls[0][0][0].value).toEqual('');
@@ -75,7 +75,7 @@ describe('<SearchBar />', () => {
     };
 
     let props = { ...commonProps, criteria, onChange };
-    const { getByTestId, rerender } = render(<SearchBarImpl {...props} />);
+    const { rerender } = render(<SearchBarImpl {...props} />);
 
     expect(commonProps.loadSpans.mock.calls.length).toBe(1);
     expect(commonProps.loadRemoteServices.mock.calls.length).toBe(1);
@@ -83,7 +83,7 @@ describe('<SearchBar />', () => {
     expect(commonProps.loadRemoteServices.mock.calls[0][0]).toBe('serviceA');
 
     // serviceA -> serviceB
-    fireEvent.change(getByTestId('criterion-box'), {
+    fireEvent.change(screen.getByTestId('criterion-box'), {
       target: { value: 'serviceName=serviceB' },
     });
 
@@ -97,7 +97,7 @@ describe('<SearchBar />', () => {
 
     // serviceB -> serviceB
     // If there is no change, nothing will be done.
-    fireEvent.change(getByTestId('criterion-box'), {
+    fireEvent.change(screen.getByTestId('criterion-box'), {
       target: { value: 'serviceName=serviceB' },
     });
     expect(commonProps.loadSpans.mock.calls.length).toBe(2);

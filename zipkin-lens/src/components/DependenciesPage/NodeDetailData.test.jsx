@@ -12,7 +12,7 @@
  * the License.
  */
 
-import { fireEvent } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { createMemoryHistory } from 'history';
 import React from 'react';
 
@@ -23,7 +23,7 @@ describe('<NodeDetailData />', () => {
   it('should go to the search traces page when the search traces button is clicked.', () => {
     const history = createMemoryHistory();
 
-    const { getByTestId } = render(
+    render(
       <NodeDetailData
         serviceName="serviceA"
         targetEdges={[]}
@@ -32,7 +32,7 @@ describe('<NodeDetailData />', () => {
       { history },
     );
 
-    fireEvent.click(getByTestId('search-traces-button'));
+    fireEvent.click(screen.getByTestId('search-traces-button'));
 
     expect(history.location.pathname).toBe('/');
     expect(history.location.search).toBe('?serviceName=serviceA');

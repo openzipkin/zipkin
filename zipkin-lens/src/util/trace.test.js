@@ -29,11 +29,9 @@ describe('ensureV2', () => {
 
     expect(error.message).toEqual('input is not a list');
 
-    try {
+    expect(() => {
       ensureV2TraceData({ traceId: 'a', id: 'b' });
-    } catch (err) {
-      expect(err.message).toEqual(error.message);
-    }
+    }).toThrow(error.message);
   });
 
   it('should raise error if missing trace ID or span ID', () => {
@@ -48,11 +46,9 @@ describe('ensureV2', () => {
       'List<Span> implies at least traceId and id fields',
     );
 
-    try {
+    expect(() => {
       ensureV2TraceData([{ id: 'b' }]);
-    } catch (err) {
-      expect(err.message).toEqual(error.message);
-    }
+    }).toThrow(error.message);
   });
 
   it('should raise error if in v1 format', () => {

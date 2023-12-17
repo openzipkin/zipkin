@@ -121,9 +121,8 @@ export const loadTrace = createAsyncThunk(
     }
     const rawTrace: Span[] = await resp.json();
     const skewCorrectedTrace = treeCorrectedForClockSkew(rawTrace);
-    const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(
-      skewCorrectedTrace,
-    );
+    const adjustedTrace: AdjustedTrace =
+      buildDetailedTraceSummary(skewCorrectedTrace);
     return {
       rawTrace,
       skewCorrectedTrace,
@@ -153,9 +152,8 @@ export const loadJsonTrace = createAsyncThunk(
     ensureV2TraceData(rawTrace);
     const [{ traceId }] = rawTrace;
     const skewCorrectedTrace = treeCorrectedForClockSkew(rawTrace);
-    const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(
-      skewCorrectedTrace,
-    );
+    const adjustedTrace: AdjustedTrace =
+      buildDetailedTraceSummary(skewCorrectedTrace);
     return {
       traceId,
       trace: {

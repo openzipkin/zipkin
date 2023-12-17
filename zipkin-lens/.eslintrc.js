@@ -14,6 +14,7 @@
 module.exports = {
   extends: ['plugin:prettier/recommended', 'react-app', 'react-app/jest'],
   rules: {
+    'import/no-anonymous-default-export': 'off',
     'import/prefer-default-export': 'off',
     'max-classes-per-file': 'off',
     'no-console': 0,

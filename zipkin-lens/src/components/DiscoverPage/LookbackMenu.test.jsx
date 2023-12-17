@@ -12,7 +12,7 @@
  * the License.
  */
 
-import { fireEvent } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import moment from 'moment';
 import React from 'react';
 
@@ -46,11 +46,11 @@ describe('<LookbackMenu />', () => {
     const close = jest.fn();
     const onChange = jest.fn();
 
-    const { getByTestId } = render(
+    render(
       <LookbackMenu close={close} onChange={onChange} lookback={lookback} />,
     );
 
-    fireEvent.click(getByTestId('lookback-2h'));
+    fireEvent.click(screen.getByTestId('lookback-2h'));
 
     expect(onChange.mock.calls.length).toBe(1);
     expect(onChange.mock.calls[0][0].type).toBe('fixed');
@@ -68,11 +68,11 @@ describe('<LookbackMenu />', () => {
     const close = jest.fn();
     const onChange = jest.fn();
 
-    const { getAllByTestId, getByTestId } = render(
+    render(
       <LookbackMenu close={close} onChange={onChange} lookback={lookback} />,
     );
 
-    const dateTimePickers = getAllByTestId('date-time-picker');
+    const dateTimePickers = screen.getAllByTestId('date-time-picker');
     const [startDateTimePicker, endDateTimePicker] = dateTimePickers;
 
     const startTimeStr = '2013-02-08 09:30:26';
@@ -88,7 +88,7 @@ describe('<LookbackMenu />', () => {
       target: { value: endTimeStr },
     });
 
-    fireEvent.click(getByTestId('apply-button'));
+    fireEvent.click(screen.getByTestId('apply-button'));
     expect(onChange.mock.calls.length).toBe(1);
     expect(onChange.mock.calls[0][0].type).toBe('range');
     expect(onChange.mock.calls[0][0].endTime.valueOf()).toBe(endTime.valueOf());
@@ -108,16 +108,16 @@ describe('<LookbackMenu />', () => {
     const close = jest.fn();
     const onChange = jest.fn();
 
-    const { getByTestId } = render(
+    render(
       <LookbackMenu close={close} onChange={onChange} lookback={lookback} />,
     );
-    const millisInput = getByTestId('millis-input');
+    const millisInput = screen.getByTestId('millis-input');
 
     fireEvent.change(millisInput, {
       target: { value: '12345' },
     });
 
-    fireEvent.click(getByTestId('millis-apply-button'));
+    fireEvent.click(screen.getByTestId('millis-apply-button'));
     expect(onChange.mock.calls.length).toBe(1);
     expect(onChange.mock.calls[0][0].type).toBe('millis');
     expect(onChange.mock.calls[0][0].value).toBe(12345);

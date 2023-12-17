@@ -51,7 +51,7 @@ describe('SpanNode', () => {
     expect(node.span).toEqual(span);
   });
 
-  it('should construct without a span', () => {
+  it('should have an undefined span field when there is no span', () => {
     const node = new SpanNode();
 
     expect(node.span).toBeUndefined();
@@ -236,7 +236,7 @@ describe('SpanNodeBuilder', () => {
     ]); // null first
   });
 
-  it('should order children by timestamp when IPs change ', () => {
+  it('should order children by timestamp when IPs change', () => {
     const trace = [
       {
         traceId: '1',

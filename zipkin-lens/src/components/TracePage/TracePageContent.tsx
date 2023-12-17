@@ -40,15 +40,15 @@ export const TracePageContent = ({
   const [closedSpanIdMap, setClosedSpanIdMap] = useState<{
     [spanId: string]: boolean;
   }>({});
-  const [isSpanDetailDrawerOpen, toggleIsSpanDetailDrawerOpen] = useToggle(
-    true,
-  );
+  const [isSpanDetailDrawerOpen, toggleIsSpanDetailDrawerOpen] =
+    useToggle(true);
   const [isMiniTimelineOpen, toggleIsMiniTimelineOpen] = useToggle(true);
   const [isSpanTableOpen, toggleIsSpanTableOpen] = useToggle(false);
 
-  const roots = useMemo(() => convertSpansToSpanTree(trace.spans), [
-    trace.spans,
-  ]);
+  const roots = useMemo(
+    () => convertSpansToSpanTree(trace.spans),
+    [trace.spans],
+  );
 
   const { spanRows, minTimestamp, maxTimestamp } = useMemo(
     () =>
@@ -69,12 +69,10 @@ export const TracePageContent = ({
 
   const [selectedSpan, setSelectedSpan] = useState<AdjustedSpan>(spanRows[0]);
 
-  const [selectedMinTimestamp, setSelectedMinTimestamp] = useState(
-    minTimestamp,
-  );
-  const [selectedMaxTimestamp, setSelectedMaxTimestamp] = useState(
-    maxTimestamp,
-  );
+  const [selectedMinTimestamp, setSelectedMinTimestamp] =
+    useState(minTimestamp);
+  const [selectedMaxTimestamp, setSelectedMaxTimestamp] =
+    useState(maxTimestamp);
   useEffect(() => {
     setSelectedMinTimestamp(minTimestamp);
     setSelectedMaxTimestamp(maxTimestamp);

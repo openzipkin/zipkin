@@ -63,10 +63,10 @@ const defaultProps = {
 const ServiceBadgeImpl = ({ serviceName, count, onClick, onDelete }) => {
   const classes = useStyles();
 
-  const label = useMemo(() => `${serviceName}${count ? ` (${count})` : ''}`, [
-    count,
-    serviceName,
-  ]);
+  const label = useMemo(
+    () => `${serviceName}${count ? ` (${count})` : ''}`,
+    [count, serviceName],
+  );
 
   const handleClick = useCallback(() => {
     onClick(serviceName);
@@ -79,7 +79,7 @@ const ServiceBadgeImpl = ({ serviceName, count, onClick, onDelete }) => {
           onClick ? classes.clickableButton : ''
         }`}
         onClick={handleClick}
-        data-test="badge"
+        data-testid="badge"
       >
         {label}
       </Box>
@@ -87,7 +87,7 @@ const ServiceBadgeImpl = ({ serviceName, count, onClick, onDelete }) => {
         <Box
           className={`${classes.buttonBase} ${classes.clickableButton}`}
           onClick={onDelete}
-          data-test="delete-button"
+          data-testid="delete-button"
         >
           <FontAwesomeIcon icon={faTimes} />
         </Box>

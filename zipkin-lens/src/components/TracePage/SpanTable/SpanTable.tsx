@@ -53,7 +53,7 @@ export const SpanTable = ({
             <Link
               component="button"
               onClick={() => {
-                setSelectedSpan((params.row as unknown) as AdjustedSpan);
+                setSelectedSpan(params.row as unknown as AdjustedSpan);
                 toggleIsSpanTableOpen();
               }}
             >
