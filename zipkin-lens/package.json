@@ -47,7 +47,6 @@
     "fetch-mock": "^9.4.0",
     "history": "^4.10.1",
     "http-proxy-middleware": "2.0.6",
-    "jest-environment-jsdom-sixteen": "^1.0.3",
     "lodash": "4.17.21",
     "moment": "2.29.0",
     "node-fetch": "2.6.7",
@@ -75,7 +74,7 @@
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\"",
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test --env=jest-environment-jsdom-sixteen",
+    "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
   "browserslist": {
