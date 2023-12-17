@@ -12,7 +12,7 @@
  * the License.
  */
 
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import fetchMock from 'fetch-mock';
 import { UI_CONFIG } from './constants/api';
 

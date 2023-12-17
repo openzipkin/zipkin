@@ -39,7 +39,6 @@ describe('<ServiceBadge />', () => {
         onDelete={() => {}}
       />,
     );
-    const items = screen.getByTestId('delete-button');
-    expect(items.hostNodes().length).toBe(1);
+    expect(screen.getByTestId('delete-button')).toBeInTheDocument();
   });
 });
