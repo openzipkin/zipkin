@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -168,20 +168,22 @@ const LookbackMenu: React.FC<LookbackMenuProps> = ({
         <Grid container className={classes.containerGrid}>
           <Grid item xs={5} className={classes.fixedLookbackItemGrid}>
             <List className={classes.list}>
-              {([
-                '1m',
-                '5m',
-                '15m',
-                '30m',
-                '1h',
-                '2h',
-                '3h',
-                '6h',
-                '12h',
-                '1d',
-                '2d',
-                '7d',
-              ] as FixedLookbackValue[]).map((value) => (
+              {(
+                [
+                  '1m',
+                  '5m',
+                  '15m',
+                  '30m',
+                  '1h',
+                  '2h',
+                  '3h',
+                  '6h',
+                  '12h',
+                  '1d',
+                  '2d',
+                  '7d',
+                ] as FixedLookbackValue[]
+              ).map((value) => (
                 <ListItem
                   button
                   onClick={handleListItemClick(value)}

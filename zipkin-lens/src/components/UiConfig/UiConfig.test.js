@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import fetchMock from 'fetch-mock';
 import React, { Suspense } from 'react';
 
@@ -50,8 +50,8 @@ describe('<UiConfig />', () => {
     const configPromise = new Promise(() => undefined);
     fetchMock.once(UI_CONFIG, configPromise, { overwriteRoutes: true });
 
-    const { getByText } = render(<UiConfig />);
-    expect(getByText('Suspended')).toBeInTheDocument();
+    render(<UiConfig />);
+    expect(screen.getByText('Suspended')).toBeInTheDocument();
 
     fetchMock.called(UI_CONFIG);
   });
@@ -64,15 +64,15 @@ describe('<UiConfig />', () => {
 
     fetchMock.once(UI_CONFIG, config, { overwriteRoutes: true });
 
-    const { getByText, rerender } = render(<UiConfig />);
-    expect(getByText('Suspended')).toBeInTheDocument();
+    const { rerender } = render(<UiConfig />);
+    expect(screen.getByText('Suspended')).toBeInTheDocument();
 
     // We need to get off the processing loop to allow the promise to complete and resolve the
     // config.
     await new Promise((resolve) => setTimeout(resolve, 1));
 
     rerender(<UiConfig />);
-    expect(getByText(JSON.stringify(config))).toBeInTheDocument();
+    expect(screen.getByText(JSON.stringify(config))).toBeInTheDocument();
 
     fetchMock.called(UI_CONFIG);
   });

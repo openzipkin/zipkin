@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -51,7 +51,7 @@ describe('SpanNode', () => {
     expect(node.span).toEqual(span);
   });
 
-  it('should construct without a span', () => {
+  it('should have an undefined span field when there is no span', () => {
     const node = new SpanNode();
 
     expect(node.span).toBeUndefined();
@@ -236,7 +236,7 @@ describe('SpanNodeBuilder', () => {
     ]); // null first
   });
 
-  it('should order children by timestamp when IPs change ', () => {
+  it('should order children by timestamp when IPs change', () => {
     const trace = [
       {
         traceId: '1',

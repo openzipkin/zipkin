@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,10 +15,11 @@ import React from 'react';
 
 import TraceSummaryRow from './TraceSummaryRow';
 import render from '../../test/util/render-with-default-settings';
+import { screen } from '@testing-library/react';
 
 describe('<TraceSummaryRow />', () => {
   it('should render timestamp and duration in correct unit', () => {
-    const { queryByTestId } = render(
+    render(
       <table>
         <tbody>
           <TraceSummaryRow
@@ -39,13 +40,15 @@ describe('<TraceSummaryRow />', () => {
       </table>,
     );
 
-    const startTimeFormat = queryByTestId('TraceSummaryRow-startTimeFormat');
+    const startTimeFormat = screen.queryByTestId(
+      'TraceSummaryRow-startTimeFormat',
+    );
     expect(startTimeFormat).toBeInTheDocument();
     // Don't assert on hour as the timezone will be different in CI
     expect(startTimeFormat).toHaveTextContent(/10\/2[34] [0-9][0-9]:52:55:237/);
     // Intentionally not asserting the relative time from now as it would drift tests
 
-    const duration = queryByTestId('TraceSummaryRow-duration');
+    const duration = screen.queryByTestId('TraceSummaryRow-duration');
     expect(duration).toBeInTheDocument();
     expect(duration).toHaveTextContent('131.848ms');
   });

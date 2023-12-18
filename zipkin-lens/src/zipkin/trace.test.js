@@ -381,13 +381,8 @@ const cleanedYelpTrace = treeCorrectedForClockSkew(yelpTrace);
 
 describe('detailedTraceSummary', () => {
   it('should derive summary info', () => {
-    const {
-      traceId,
-      durationStr,
-      depth,
-      serviceNameAndSpanCounts,
-      rootSpan,
-    } = detailedTraceSummary(cleanedHttpTrace);
+    const { traceId, durationStr, depth, serviceNameAndSpanCounts, rootSpan } =
+      detailedTraceSummary(cleanedHttpTrace);
 
     expect(traceId).toBe('bb1f0e21882325b8');
     expect(durationStr).toBe('168.731ms');
@@ -417,13 +412,8 @@ describe('detailedTraceSummary', () => {
       headless.addChild(child),
     );
 
-    const {
-      traceId,
-      durationStr,
-      depth,
-      serviceNameAndSpanCounts,
-      rootSpan,
-    } = detailedTraceSummary(headless);
+    const { traceId, durationStr, depth, serviceNameAndSpanCounts, rootSpan } =
+      detailedTraceSummary(headless);
 
     expect(traceId).toBe('bb1f0e21882325b8');
     expect(durationStr).toBe('111.121ms'); // client duration
