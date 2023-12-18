@@ -72,9 +72,9 @@ const LanguageSelector = () => {
         return;
       }
       setLocale(locale);
-      window.location.reload();
+      i18n.activate(locale);
     },
-    [currentLocale],
+    [currentLocale, i18n],
   );
 
   return (

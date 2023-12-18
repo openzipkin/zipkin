@@ -17,5 +17,6 @@
       ]
     }
   ],
-  "format": "po"
+  "format": "po",
+  "compileNamespace": "ts"
 }

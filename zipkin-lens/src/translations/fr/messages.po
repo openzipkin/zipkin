@@ -15,60 +15,60 @@ msgstr ""
 
 #: src/components/DiscoverPage/DiscoverPageContent.tsx:654
 msgid "{0} Results"
-msgstr ""
+msgstr "{0} Résultats"
 
 #: src/components/DiscoverPage/DiscoverPageContent.tsx:652
 msgid "1 Result"
-msgstr ""
+msgstr "1 Résultat"
 
 #: src/components/TracePage/AnnotationTable/AnnotationTable.tsx:77
 msgid "Address"
-msgstr ""
+msgstr "Adresse"
 
 #: src/components/TracePage/Header/HeaderMenu.tsx:177
 msgid "Archive Trace"
-msgstr ""
+msgstr "Trace Archivée"
 
 #: src/components/App/Layout.tsx:79
 msgid "Dependencies"
-msgstr ""
+msgstr "Dépendances"
 
 #: src/components/TracePage/Header/HeaderMenu.tsx:161
 msgid "Download JSON"
-msgstr ""
+msgstr "Télécharger JSON"
 
 #: src/components/DiscoverPage/TraceSummaryTable.tsx:81
 #: src/components/TracePage/Header/Header.tsx:103
 msgid "Duration"
-msgstr ""
+msgstr "Durée"
 
 #: src/components/DependenciesPage/DependenciesPage.tsx:219
 msgid "End Time"
-msgstr ""
+msgstr "Fin"
 
 #: src/components/App/Layout.tsx:73
 msgid "Find a trace"
-msgstr ""
+msgstr "Trouver une trace"
 
 #: src/components/DiscoverPage/DiscoverPageContent.tsx:621
 msgid "Limit"
-msgstr ""
+msgstr "Limite"
 
 #: src/components/TracePage/SpanDetailDrawer/SpanDetailDrawer.tsx:61
 msgid "Parent ID"
-msgstr ""
+msgstr "ID Parent"
 
 #: src/components/DiscoverPage/DiscoverPageContent.tsx:571
 msgid "Please select criteria in the search bar. Then, click the search button."
-msgstr ""
+msgstr "S'il vous plaît sélectionnez un critère dans la barre de recherche. Puis cliquez sur le bouton de recherche"
 
 #: src/components/DependenciesPage/DependenciesPage.tsx:190
 msgid "Please select the start and end time. Then, click the search button."
-msgstr ""
+msgstr "S'il vous plaît sélectionnez la date de début et de fin. Puis cliquez sur le bouton de recherche"
 
 #: src/components/DiscoverPage/TraceSummaryTable.tsx:76
 msgid "Root"
-msgstr ""
+msgstr "Racine"
 
 #: src/components/DependenciesPage/DependenciesPage.tsx:235
 #: src/components/DiscoverPage/DiscoverPageContent.tsx:607
@@ -77,55 +77,55 @@ msgstr ""
 
 #: src/components/DependenciesPage/DependenciesPage.tsx:188
 msgid "Search Dependencies"
-msgstr ""
+msgstr "Rechercher les dépendances"
 
 #: src/components/DiscoverPage/DiscoverPageContent.tsx:569
 msgid "Search Traces"
-msgstr ""
+msgstr "Rechercher les traces"
 
 #: src/components/DiscoverPage/DiscoverPage.tsx:55
 msgid "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right."
-msgstr ""
+msgstr "La recherche a été désactivée via la propriété searchEnabled. Vous pouvez toujours afficher des traces spécifiques dont vous connaissez l'identifiant de trace en le saisissant dans la zone de texte \"ID Trace ... \" en haut à droite."
 
 #: src/components/TracePage/Header/Header.tsx:105
 msgid "Services"
-msgstr ""
+msgstr "Services"
 
 #: src/components/TracePage/SpanDetailDrawer/SpanDetailDrawer.tsx:60
 msgid "Span ID"
-msgstr ""
+msgstr "ID Section"
 
 #: src/components/DiscoverPage/TraceSummaryTable.tsx:80
 msgid "Spans"
-msgstr ""
+msgstr "Sections"
 
 #: src/components/DependenciesPage/DependenciesPage.tsx:209
 #: src/components/DiscoverPage/TraceSummaryTable.tsx:79
 #: src/components/TracePage/AnnotationTable/AnnotationTable.tsx:73
 msgid "Start Time"
-msgstr ""
+msgstr "Début"
 
 #: src/components/App/Layout.tsx:95
 msgid "Support"
-msgstr ""
+msgstr "Support"
 
 #: src/components/TracePage/Header/Header.tsx:108
 msgid "Total Spans"
-msgstr ""
+msgstr "Sections Total"
 
 #: src/components/App/TraceIdSearch.tsx:53
 #: src/components/TracePage/Header/Header.tsx:110
 msgid "Trace ID"
-msgstr ""
+msgstr "ID Trace"
 
 #: src/components/App/TraceJsonUploader.tsx:64
 msgid "Upload JSON"
-msgstr ""
+msgstr "Charger un JSON"
 
 #: src/components/TracePage/Header/HeaderMenu.tsx:172
 msgid "View Logs"
-msgstr ""
+msgstr "Voir les journaux"
 
 #: src/components/App/Layout.tsx:66
 msgid "Zipkin"
-msgstr ""
+msgstr "Zipkin"

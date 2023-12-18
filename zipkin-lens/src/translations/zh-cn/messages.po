@@ -15,60 +15,60 @@ msgstr ""
 
 #: src/components/DiscoverPage/DiscoverPageContent.tsx:654
 msgid "{0} Results"
-msgstr ""
+msgstr "{0} 条结果"
 
 #: src/components/DiscoverPage/DiscoverPageContent.tsx:652
 msgid "1 Result"
-msgstr ""
+msgstr "1 条结果"
 
 #: src/components/TracePage/AnnotationTable/AnnotationTable.tsx:77
 msgid "Address"
-msgstr ""
+msgstr "地址"
 
 #: src/components/TracePage/Header/HeaderMenu.tsx:177
 msgid "Archive Trace"
-msgstr ""
+msgstr "存档Trace"
 
 #: src/components/App/Layout.tsx:79
 msgid "Dependencies"
-msgstr ""
+msgstr "依赖"
 
 #: src/components/TracePage/Header/HeaderMenu.tsx:161
 msgid "Download JSON"
-msgstr ""
+msgstr "下载JSON数据"
 
 #: src/components/DiscoverPage/TraceSummaryTable.tsx:81
 #: src/components/TracePage/Header/Header.tsx:103
 msgid "Duration"
-msgstr ""
+msgstr "持续时间"
 
 #: src/components/DependenciesPage/DependenciesPage.tsx:219
 msgid "End Time"
-msgstr ""
+msgstr "终止时间"
 
 #: src/components/App/Layout.tsx:73
 msgid "Find a trace"
-msgstr ""
+msgstr "找到一个痕迹"
 
 #: src/components/DiscoverPage/DiscoverPageContent.tsx:621
 msgid "Limit"
-msgstr ""
+msgstr "数量"
 
 #: src/components/TracePage/SpanDetailDrawer/SpanDetailDrawer.tsx:61
 msgid "Parent ID"
-msgstr ""
+msgstr "Parent ID"
 
 #: src/components/DiscoverPage/DiscoverPageContent.tsx:571
 msgid "Please select criteria in the search bar. Then, click the search button."
-msgstr ""
+msgstr "请在搜索栏中选择条件， 然后点击按钮进行查找"
 
 #: src/components/DependenciesPage/DependenciesPage.tsx:190
 msgid "Please select the start and end time. Then, click the search button."
-msgstr ""
+msgstr "请选择起始时间和终止时间， 然后点击按钮进行查找"
 
 #: src/components/DiscoverPage/TraceSummaryTable.tsx:76
 msgid "Root"
-msgstr ""
+msgstr "Root"
 
 #: src/components/DependenciesPage/DependenciesPage.tsx:235
 #: src/components/DiscoverPage/DiscoverPageContent.tsx:607
@@ -77,54 +77,54 @@ msgstr ""
 
 #: src/components/DependenciesPage/DependenciesPage.tsx:188
 msgid "Search Dependencies"
-msgstr ""
+msgstr "查询依赖"
 
 #: src/components/DiscoverPage/DiscoverPageContent.tsx:569
 msgid "Search Traces"
-msgstr ""
+msgstr "查询trace链路"
 
 #: src/components/DiscoverPage/DiscoverPage.tsx:55
 msgid "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right."
-msgstr ""
+msgstr "已通过searchEnabled属性禁用搜索，通过在右上角的 \"Trace ID...\"文本框中输入trace id，您仍然可以查看已知trace id的跟踪信息"
 
 #: src/components/TracePage/Header/Header.tsx:105
 msgid "Services"
-msgstr ""
+msgstr "服务"
 
 #: src/components/TracePage/SpanDetailDrawer/SpanDetailDrawer.tsx:60
 msgid "Span ID"
-msgstr ""
+msgstr "Span ID"
 
 #: src/components/DiscoverPage/TraceSummaryTable.tsx:80
 msgid "Spans"
-msgstr ""
+msgstr "Spans"
 
 #: src/components/DependenciesPage/DependenciesPage.tsx:209
 #: src/components/DiscoverPage/TraceSummaryTable.tsx:79
 #: src/components/TracePage/AnnotationTable/AnnotationTable.tsx:73
 msgid "Start Time"
-msgstr ""
+msgstr "开始时间"
 
 #: src/components/App/Layout.tsx:95
 msgid "Support"
-msgstr ""
+msgstr "支持"
 
 #: src/components/TracePage/Header/Header.tsx:108
 msgid "Total Spans"
-msgstr ""
+msgstr "Span总数"
 
 #: src/components/App/TraceIdSearch.tsx:53
 #: src/components/TracePage/Header/Header.tsx:110
 msgid "Trace ID"
-msgstr ""
+msgstr "Trace ID"
 
 #: src/components/App/TraceJsonUploader.tsx:64
 msgid "Upload JSON"
-msgstr ""
+msgstr "上传JSON数据"
 
 #: src/components/TracePage/Header/HeaderMenu.tsx:172
 msgid "View Logs"
-msgstr ""
+msgstr "查看日志"
 
 #: src/components/App/Layout.tsx:66
 msgid "Zipkin"
