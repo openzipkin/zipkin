@@ -6,12 +6,18 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: @lingui/cli\n"
 "Language: en\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
 
-#: src/components/DiscoverPage/DiscoverPageContent.tsx:656
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:654
 msgid "{0} Results"
 msgstr "{0} Results"
 
-#: src/components/DiscoverPage/DiscoverPageContent.tsx:654
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:652
 msgid "1 Result"
 msgstr "1 Result"
 
@@ -32,7 +38,7 @@ msgid "Download JSON"
 msgstr "Download JSON"
 
 #: src/components/DiscoverPage/TraceSummaryTable.tsx:81
-#: src/components/TracePage/Header/Header.tsx:102
+#: src/components/TracePage/Header/Header.tsx:103
 msgid "Duration"
 msgstr "Duration"
 
@@ -44,7 +50,7 @@ msgstr "End Time"
 msgid "Find a trace"
 msgstr "Find a trace"
 
-#: src/components/DiscoverPage/DiscoverPageContent.tsx:623
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:621
 msgid "Limit"
 msgstr "Limit"
 
@@ -52,7 +58,7 @@ msgstr "Limit"
 msgid "Parent ID"
 msgstr "Parent ID"
 
-#: src/components/DiscoverPage/DiscoverPageContent.tsx:573
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:571
 msgid "Please select criteria in the search bar. Then, click the search button."
 msgstr "Please select criteria in the search bar. Then, click the search button."
 
@@ -65,7 +71,7 @@ msgid "Root"
 msgstr "Root"
 
 #: src/components/DependenciesPage/DependenciesPage.tsx:235
-#: src/components/DiscoverPage/DiscoverPageContent.tsx:609
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:607
 msgid "Run Query"
 msgstr "Run Query"
 
@@ -73,7 +79,7 @@ msgstr "Run Query"
 msgid "Search Dependencies"
 msgstr "Search Dependencies"
 
-#: src/components/DiscoverPage/DiscoverPageContent.tsx:571
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:569
 msgid "Search Traces"
 msgstr "Search Traces"
 
@@ -81,7 +87,7 @@ msgstr "Search Traces"
 msgid "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right."
 msgstr "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right."
 
-#: src/components/TracePage/Header/Header.tsx:104
+#: src/components/TracePage/Header/Header.tsx:105
 msgid "Services"
 msgstr "Services"
 
@@ -103,12 +109,12 @@ msgstr "Start Time"
 msgid "Support"
 msgstr "Support"
 
-#: src/components/TracePage/Header/Header.tsx:107
+#: src/components/TracePage/Header/Header.tsx:108
 msgid "Total Spans"
 msgstr "Total Spans"
 
 #: src/components/App/TraceIdSearch.tsx:53
-#: src/components/TracePage/Header/Header.tsx:109
+#: src/components/TracePage/Header/Header.tsx:110
 msgid "Trace ID"
 msgstr "Trace ID"
 

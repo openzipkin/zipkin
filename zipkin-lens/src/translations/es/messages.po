@@ -6,12 +6,18 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: @lingui/cli\n"
 "Language: es\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
 
-#: src/components/DiscoverPage/DiscoverPageContent.tsx:656
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:654
 msgid "{0} Results"
 msgstr ""
 
-#: src/components/DiscoverPage/DiscoverPageContent.tsx:654
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:652
 msgid "1 Result"
 msgstr ""
 
@@ -32,7 +38,7 @@ msgid "Download JSON"
 msgstr ""
 
 #: src/components/DiscoverPage/TraceSummaryTable.tsx:81
-#: src/components/TracePage/Header/Header.tsx:102
+#: src/components/TracePage/Header/Header.tsx:103
 msgid "Duration"
 msgstr ""
 
@@ -44,7 +50,7 @@ msgstr ""
 msgid "Find a trace"
 msgstr ""
 
-#: src/components/DiscoverPage/DiscoverPageContent.tsx:623
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:621
 msgid "Limit"
 msgstr ""
 
@@ -52,7 +58,7 @@ msgstr ""
 msgid "Parent ID"
 msgstr ""
 
-#: src/components/DiscoverPage/DiscoverPageContent.tsx:573
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:571
 msgid "Please select criteria in the search bar. Then, click the search button."
 msgstr ""
 
@@ -65,7 +71,7 @@ msgid "Root"
 msgstr ""
 
 #: src/components/DependenciesPage/DependenciesPage.tsx:235
-#: src/components/DiscoverPage/DiscoverPageContent.tsx:609
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:607
 msgid "Run Query"
 msgstr ""
 
@@ -73,7 +79,7 @@ msgstr ""
 msgid "Search Dependencies"
 msgstr ""
 
-#: src/components/DiscoverPage/DiscoverPageContent.tsx:571
+#: src/components/DiscoverPage/DiscoverPageContent.tsx:569
 msgid "Search Traces"
 msgstr ""
 
@@ -81,7 +87,7 @@ msgstr ""
 msgid "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right."
 msgstr ""
 
-#: src/components/TracePage/Header/Header.tsx:104
+#: src/components/TracePage/Header/Header.tsx:105
 msgid "Services"
 msgstr ""
 
@@ -103,12 +109,12 @@ msgstr ""
 msgid "Support"
 msgstr ""
 
-#: src/components/TracePage/Header/Header.tsx:107
+#: src/components/TracePage/Header/Header.tsx:108
 msgid "Total Spans"
 msgstr ""
 
 #: src/components/App/TraceIdSearch.tsx:53
-#: src/components/TracePage/Header/Header.tsx:109
+#: src/components/TracePage/Header/Header.tsx:110
 msgid "Trace ID"
 msgstr ""
 
