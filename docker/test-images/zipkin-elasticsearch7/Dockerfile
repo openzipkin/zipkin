@@ -32,28 +32,29 @@ FROM ghcr.io/openzipkin/java:${java_version} as install
 
 WORKDIR /install
 
-# Use latest 7.x version from https://www.elastic.co/downloads/past-releases#elasticsearch
+# Use latest 7.x version from https://www.elastic.co/downloads/past-releases#elasticsearch-no-jdk
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-#
-# TODO: 7.10.2 is the last OSS no-jdk version. To update requires a switch to non OSS.
-# See https://www.elastic.co/downloads/past-releases#elasticsearch-oss-no-jdk
-ARG elasticsearch7_version=7.10.2
+ARG elasticsearch7_version=7.17.16
 
 # Download only the OSS distribution (lacks X-Pack)
 RUN \
 # Connection resets are frequent in GitHub Actions workflows \
 wget --random-wait --tries=5 -qO- \
 # We don't download bin scripts as we customize for reasons including BusyBox problems
-https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-oss-${elasticsearch7_version}-no-jdk-linux-x86_64.tar.gz| tar xz \
+https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${elasticsearch7_version}-no-jdk-linux-x86_64.tar.gz| tar xz \
     --wildcards --strip=1 --exclude=*/bin && mkdir classes
-
 COPY --from=scratch /config/ ./config/
 
-FROM ghcr.io/openzipkin/java:${java_version}-jre as zipkin-elasticsearch7
-LABEL org.opencontainers.image.description="Elasticsearch OSS distribution on OpenJDK and Alpine Linux"
-ARG elasticsearch7_version=7.10.2
+# Use a full Java distribution rather than adding test modules to the
+# production -jre base layer used by zipkin and zipkin-slim.
+FROM ghcr.io/openzipkin/java:${java_version} as zipkin-elasticsearch7
+LABEL org.opencontainers.image.description="Elasticsearch distribution on OpenJDK and Alpine Linux"
+ARG elasticsearch7_version=7.17.16
 LABEL elasticsearch-version=$elasticsearch7_version
+
+# The full license is also included in the image at /elasticsearch/LICENSE.txt.
+LABEL org.opencontainers.image.licenses="Elastic-License-2.0"
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
 COPY --from=scratch /docker-bin/* /usr/local/bin/
@@ -74,4 +75,5 @@ COPY --from=install --chown=${USER} /install .
 
 # Use to set heap, trust store or other system properties.
 ENV JAVA_OPTS="-Xms256m -Xmx256m -XX:+ExitOnOutOfMemoryError"
+ENV LIBFFI_TMPDIR=/tmp
 EXPOSE 9200

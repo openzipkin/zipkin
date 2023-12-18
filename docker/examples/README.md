@@ -7,7 +7,10 @@ configuration requires docker-compose 1.6.0+ and docker-engine 1.10.0+.
 To start the default docker-compose configuration, run:
 
 ```bash
+# To use the last released version of zipkin
 $ docker-compose up
+# To use the last built version of zipkin
+$ TAG=master docker-compose up
 ```
 
 View the web UI at $(docker ip):9411. Traces are stored in memory.
@@ -41,6 +44,14 @@ To start the Cassandra-backed configuration, run:
 $ docker-compose -f docker-compose-cassandra.yml up
 ```
 
+The `zipkin-dependencies` container is a scheduled task that runs every hour.
+If you want to see the dependency graph before then, you can run it manually
+in another terminal like so:
+
+```bash
+$ docker-compose -f docker-compose-cassandra.yml run --rm --no-deps --entrypoint start-zipkin-dependencies dependencies
+```
+
 ## Elasticsearch
 
 You can store traces in [Elasticsearch](../test-images/zipkin-elasticsearch7/README.md) instead of memory,
@@ -51,6 +62,14 @@ To start the Elasticsearch-backed configuration, run:
 
 ```bash
 $ docker-compose -f docker-compose-elasticsearch.yml up
+```
+
+The `zipkin-dependencies` container is a scheduled task that runs every hour.
+If you want to see the dependency graph before then, you can run it manually
+in another terminal like so:
+
+```bash
+$ docker-compose -f docker-compose-elasticsearch.yml run --rm --no-deps --entrypoint start-zipkin-dependencies dependencies
 ```
 
 ## Kafka
@@ -99,7 +118,7 @@ $ docker-compose -f docker-compose-rabbitmq.yml up
 Then configure the [RabbitMQ sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/amqp-client/src/main/java/zipkin2/reporter/amqp/RabbitMQSender.java)
 using a `host` value of `localhost` or a non-local hostname if in docker.
 
-# Example
+## Example
 
 The docker-compose configuration can be extended to host an [example application](https://github.com/openzipkin/brave-example)
 using the `docker-compose-example.yml` file. That file employs [docker-compose overrides](https://docs.docker.com/compose/extends/#multiple-compose-files)

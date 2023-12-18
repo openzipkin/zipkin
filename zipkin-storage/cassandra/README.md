@@ -5,7 +5,7 @@ This uses Cassandra 3.11.3+ features, but is tested against the latest patch of 
 
 `CassandraSpanStore.getDependencies()` returns pre-aggregated dependency links (ex via [zipkin-dependencies](https://github.com/openzipkin/zipkin-dependencies)).
 
-The implementation uses the [Datastax Java Driver 4.x](https://github.com/datastax/java-driver).
+The implementation uses the [Apache Cassandra Java Driver 4.x](https://github.com/apache/cassandra-java-driver).
 
 `zipkin2.storage.cassandra.CassandraStorage.Builder` includes defaults that will operate against a local Cassandra installation.
 

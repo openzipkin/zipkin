@@ -115,13 +115,13 @@ class ZipkinMySQLStorageConfigurationTest {
     TestPropertyValues.of(
         "zipkin.storage.type:mysql",
         "zipkin.storage.mysql"
-      + ".jdbc-url:jdbc:mysql://host1,host2,host3/zipkin")
+      + ".jdbc-url:jdbc:mariadb://host1,host2,host3/zipkin")
     .applyTo(context);
     Access.registerMySQL(context);
     context.refresh();
 
     assertThat(context.getBean(HikariDataSource.class).getJdbcUrl())
-      .isEqualTo("jdbc:mysql://host1,host2,host3/zipkin");
+      .isEqualTo("jdbc:mariadb://host1,host2,host3/zipkin");
   }
 
   @Test void usesRegularConfig_whenBlank() {
@@ -139,6 +139,6 @@ class ZipkinMySQLStorageConfigurationTest {
     context.refresh();
 
     assertThat(context.getBean(HikariDataSource.class).getJdbcUrl())
-      .isEqualTo("jdbc:mysql://host:3306/zipkin?autoReconnect=true&useSSL=false&useUnicode=yes&characterEncoding=UTF-8");
+      .isEqualTo("jdbc:mariadb://host:3306/zipkin?autoReconnect=true&useSSL=false&useUnicode=yes&characterEncoding=UTF-8");
   }
 }

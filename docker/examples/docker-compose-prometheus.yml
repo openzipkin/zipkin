@@ -30,7 +30,8 @@ services:
     ports:
       - 9090:9090
     depends_on:
-      - zipkin
+      zipkin:
+        condition: service_healthy
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 

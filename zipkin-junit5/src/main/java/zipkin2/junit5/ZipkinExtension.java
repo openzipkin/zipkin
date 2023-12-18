@@ -13,10 +13,16 @@
  */
 package zipkin2.junit5;
 
-import mockwebserver3.MockWebServer;
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockResponse;
-import mockwebserver3.RecordedRequest;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -26,14 +32,7 @@ import zipkin2.collector.InMemoryCollectorMetrics;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.InMemoryStorage;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static mockwebserver3.SocketPolicy.KEEP_OPEN;
+import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
 
 /**
  * Starts up a local Zipkin server, listening for http requests on {@link #httpUrl}.
@@ -156,13 +155,9 @@ public final class ZipkinExtension implements BeforeEachCallback, AfterEachCallb
     server.shutdown();
   }
 
-  @Override
-  public void beforeEach(ExtensionContext extensionContext) throws Exception {
-
+  @Override public void beforeEach(ExtensionContext extensionContext) {
   }
 
-  @Override
-  public void afterEach(ExtensionContext extensionContext) throws Exception {
-
+  @Override public void afterEach(ExtensionContext extensionContext) {
   }
 }

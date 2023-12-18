@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -112,7 +112,7 @@ class ZipkinMySQLStorageProperties implements Serializable { // for Spark jobs
     }
 
     StringBuilder url = new StringBuilder();
-    url.append("jdbc:mysql://");
+    url.append("jdbc:mariadb://");
     url.append(getHost()).append(":").append(getPort());
     url.append("/").append(getDb());
     url.append("?autoReconnect=true");

@@ -41,4 +41,5 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     depends_on:
-      - kafka-zookeeper
+      kafka:
+        condition: service_healthy
