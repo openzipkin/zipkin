@@ -420,6 +420,8 @@
         </configuration>
         <executions>
           <execution>
+            <id>animal-sniffer</id>
+            <phase>verify</phase>
             <goals>
               <goal>check</goal>
             </goals>
