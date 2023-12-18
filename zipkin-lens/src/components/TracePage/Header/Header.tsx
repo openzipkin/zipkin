@@ -47,7 +47,8 @@ const useStyles = makeStyles((theme) => ({
   },
   infoCell: {
     display: 'flex',
-    fontWeight: theme.typography.fontWeightRegular,
+    // TODO(@tacigar): Should use theme.typography.fontWeighRegular after updating material-ui packages.
+    fontWeight: 400,
     '&:not(:first-child)': {
       marginLeft: theme.spacing(1),
     },
