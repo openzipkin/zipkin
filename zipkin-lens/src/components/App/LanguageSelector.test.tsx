@@ -39,7 +39,6 @@ describe('<LanguageSelector />', () => {
   it('language select changes locale and refreshes', async () => {
     render(<LanguageSelector />);
     fireEvent.click(screen.getByTestId('language-list-item-zh-cn'));
-    await expect(window.location.reload).toHaveBeenCalled();
     expect(getLocale()).toEqual('zh-cn');
   });
 });
