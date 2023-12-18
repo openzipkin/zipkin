@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,7 @@
 
 import { faProjectDiagram, faSync } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { t, Trans } from '@lingui/macro';
+import { Trans, msg } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import {
   Box,
@@ -117,7 +117,7 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
   location,
 }) => {
   const classes = useStyles();
-  const { i18n } = useLingui();
+  const { _ } = useLingui();
   const dispatch = useDispatch();
 
   // tempTimeRange manages a time range which is inputted in the form.
@@ -206,7 +206,7 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
         <Box display="flex" justifyContent="center" alignItems="center">
           <Box display="flex" mr={0.5} alignItems="center">
             <KeyboardDateTimePicker
-              label={i18n._(t`Start Time`)}
+              label={_(msg`Start Time`)}
               inputVariant="outlined"
               value={tempTimeRange.startTime}
               onChange={handleStartTimeChange}
@@ -216,7 +216,7 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
             />
             -
             <KeyboardDateTimePicker
-              label={i18n._(t`End Time`)}
+              label={_(msg`End Time`)}
               inputVariant="outlined"
               value={tempTimeRange.endTime}
               onChange={handleEndTimeChange}

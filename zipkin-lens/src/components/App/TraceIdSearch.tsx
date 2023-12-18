@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,14 +12,14 @@
  * the License.
  */
 
+import { msg } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import { TextField } from '@material-ui/core';
-import { t } from '@lingui/macro';
 import React, { useCallback, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 
 const TraceIdSearch: React.FC = () => {
-  const { i18n } = useLingui();
+  const { _ } = useLingui();
   const history = useHistory();
 
   const [traceId, setTraceId] = useState('');
@@ -50,7 +50,7 @@ const TraceIdSearch: React.FC = () => {
       onKeyDown={handleKeyDown}
       variant="outlined"
       size="small"
-      placeholder={`${i18n._(t`Trace ID`)}...`}
+      placeholder={`${_(msg`Trace ID`)}...`}
     />
   );
 };

@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { t } from '@lingui/macro';
+import { msg } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import { Box, Button, makeStyles, Typography } from '@material-ui/core';
 import { List as ListIcon } from '@material-ui/icons';
@@ -47,7 +47,8 @@ const useStyles = makeStyles((theme) => ({
   },
   infoCell: {
     display: 'flex',
-    fontWeight: theme.typography.fontWeightRegular,
+    // TODO: Should use theme.typography.fontWeighRegular after updating material-ui packages.
+    fontWeight: 400,
     '&:not(:first-child)': {
       marginLeft: theme.spacing(1),
     },
@@ -77,7 +78,7 @@ export const Header = ({
   toggleIsSpanTableOpen,
 }: HeaderProps) => {
   const classes = useStyles();
-  const { i18n } = useLingui();
+  const { _ } = useLingui();
 
   return (
     <Box className={classes.root}>
@@ -99,14 +100,14 @@ export const Header = ({
       </Box>
       <Box className={classes.infoRow}>
         {[
-          { key: i18n._(t`Duration`), value: trace.durationStr },
+          { key: _(msg`Duration`), value: trace.durationStr },
           {
-            key: i18n._(t`Services`),
+            key: _(msg`Services`),
             value: trace.serviceNameAndSpanCounts.length,
           },
-          { key: i18n._(t`Total Spans`), value: trace.spans.length },
+          { key: _(msg`Total Spans`), value: trace.spans.length },
           {
-            key: i18n._(t`Trace ID`),
+            key: _(msg`Trace ID`),
             value: `${trace.traceId}`,
           },
         ].map(({ key, value }) => (

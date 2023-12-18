@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,7 +17,7 @@ import {
   faQuestionCircle,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { t } from '@lingui/macro';
+import { msg } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import {
   AppBar as MuiAppBar,
@@ -41,7 +41,7 @@ import { darkTheme } from '../../constants/color';
 import logoSrc from '../../img/zipkin-logo.png';
 
 const Layout: React.FC = ({ children }) => {
-  const { i18n } = useLingui();
+  const { _ } = useLingui();
   const config = useUiConfig();
 
   return (
@@ -63,20 +63,20 @@ const Layout: React.FC = ({ children }) => {
                 justifyContent="center"
                 alignItems="center"
               >
-                <Logo alt={i18n._(t`Zipkin`)} />
+                <Logo alt={_(msg`Zipkin`)} />
               </Box>
               <Title>
                 <strong>Zipkin</strong>
               </Title>
               <Box display="flex" ml={3}>
                 <HeaderMenuItem
-                  title={i18n._(t`Find a trace`)}
+                  title={_(msg`Find a trace`)}
                   path="/"
                   icon={faSearch}
                 />
                 {config.dependency.enabled && (
                   <HeaderMenuItem
-                    title={i18n._(t`Dependencies`)}
+                    title={_(msg`Dependencies`)}
                     path="/dependency"
                     icon={faProjectDiagram}
                   />
@@ -92,7 +92,7 @@ const Layout: React.FC = ({ children }) => {
                 <TraceIdSearch />
                 {config.supportUrl && (
                   <Box ml={1}>
-                    <Tooltip title={i18n._(t`Support`)}>
+                    <Tooltip title={_(msg`Support`)}>
                       <MuiIconButton href={config.supportUrl}>
                         <FontAwesomeIcon icon={faQuestionCircle} />
                       </MuiIconButton>

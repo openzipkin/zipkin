@@ -6,7 +6,6 @@
     "zh-cn"
   ],
   "sourceLocale": "en",
-  "fallbackLocale": "en",
   "catalogs": [
     {
       "path": "src/translations/{locale}/messages",
@@ -18,5 +17,6 @@
       ]
     }
   ],
-  "format": "minimal"
+  "format": "po",
+  "compileNamespace": "ts"
 }

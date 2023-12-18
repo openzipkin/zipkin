@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,7 +12,7 @@
  * the License.
  */
 
-import { t } from '@lingui/macro';
+import { msg } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import { Box, Divider, Grid, makeStyles, Typography } from '@material-ui/core';
 import React from 'react';
@@ -49,7 +49,7 @@ export const SpanDetailDrawer = ({
   minTimestamp,
 }: SpanDetailDrawerProps) => {
   const classes = useStyles();
-  const { i18n } = useLingui();
+  const { _ } = useLingui();
 
   return (
     <Box className={classes.root}>
@@ -57,8 +57,8 @@ export const SpanDetailDrawer = ({
         {[
           { label: 'Service name', value: span.serviceName },
           { label: 'Span name', value: span.spanName },
-          { label: i18n._(t`Span ID`), value: span.spanId },
-          { label: i18n._(t`Parent ID`), value: span.parentId || 'none' },
+          { label: _(msg`Span ID`), value: span.spanId },
+          { label: _(msg`Parent ID`), value: span.parentId || 'none' },
         ].map(({ label, value }) => (
           <Grid key={label} item xs={6}>
             <Typography

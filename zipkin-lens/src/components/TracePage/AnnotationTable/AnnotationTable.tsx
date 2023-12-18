@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,7 +12,7 @@
  * the License.
  */
 
-import { t } from '@lingui/macro';
+import { msg } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import {
   makeStyles,
@@ -52,7 +52,7 @@ type AnnotationTableProps = {
 
 export const AnnotationTable = ({ annotations }: AnnotationTableProps) => {
   const classes = useStyles();
-  const { i18n } = useLingui();
+  const { _ } = useLingui();
 
   return (
     <Table size="small" className={classes.table}>
@@ -70,11 +70,11 @@ export const AnnotationTable = ({ annotations }: AnnotationTableProps) => {
                 <TableBody>
                   {[
                     {
-                      label: i18n._(t`Start Time`),
+                      label: _(msg`Start Time`),
                       value: formatTimestamp(annotation.timestamp),
                     },
                     { label: 'Value', value: annotation.value },
-                    { label: i18n._(t`Address`), value: annotation.endpoint },
+                    { label: _(msg`Address`), value: annotation.endpoint },
                   ].map(({ label, value }) => (
                     <TableRow key={label} className={classes.tableRow}>
                       <TableCell className={classes.labelCell}>
