@@ -11,12 +11,12 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { createMuiTheme } from '@material-ui/core/styles';
+import { createTheme } from '@material-ui/core/styles';
 import * as colors from '@material-ui/core/colors';
 
 export const primaryColor = '#6a9fb5';
 
-export const theme = createMuiTheme({
+export const theme = createTheme({
   palette: {
     primary: {
       main: primaryColor,
@@ -25,7 +25,7 @@ export const theme = createMuiTheme({
   },
 });
 
-export const darkTheme = createMuiTheme({
+export const darkTheme = createTheme({
   palette: {
     type: 'dark',
     primary: {
@@ -58,7 +58,7 @@ export const allColors = [
 ];
 
 export const allColorThemes = allColors.map((color) =>
-  createMuiTheme({
+  createTheme({
     palette: {
       primary: {
         main: color[500],
