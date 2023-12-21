@@ -58,7 +58,7 @@
     "react-scripts": "5.0.1",
     "react-use": "^14.2.0",
     "react-virtualized-auto-sizer": "1.0.20",
-    "react-window": "^1.8.8",
+    "react-window": "1.8.10",
     "recharts": "^1.8.5",
     "redux": "^4.0.0",
     "redux-mock-store": "^1.5.4",
