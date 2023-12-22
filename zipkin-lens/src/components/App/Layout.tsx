@@ -39,8 +39,9 @@ import TraceJsonUploader from './TraceJsonUploader';
 import { useUiConfig } from '../UiConfig';
 import { darkTheme } from '../../constants/color';
 import logoSrc from '../../img/zipkin-logo.png';
+import { Outlet } from 'react-router-dom';
 
-const Layout: React.FC = ({ children }) => {
+const Layout: React.FC = () => {
   const { _ } = useLingui();
   const config = useUiConfig();
 
@@ -106,7 +107,7 @@ const Layout: React.FC = ({ children }) => {
       </AppBar>
       <Box component="main" width="100%">
         <ToolbarSpace />
-        {children}
+        <Outlet />
       </Box>
     </Box>
   );

@@ -19,7 +19,7 @@ import { IconButton, Tooltip } from '@material-ui/core';
 import { unwrapResult } from '@reduxjs/toolkit';
 import React, { useCallback, useRef } from 'react';
 import { useDispatch } from 'react-redux';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 import { setAlert } from './slice';
@@ -27,7 +27,7 @@ import { loadJsonTrace } from '../../slices/tracesSlice';
 
 const TraceJsonUploader: React.FC = () => {
   const dispatch = useDispatch();
-  const history = useHistory();
+  const navigate = useNavigate();
   const inputEl = useRef<HTMLInputElement>(null);
 
   const handleClick = useCallback(() => {
@@ -42,7 +42,7 @@ const TraceJsonUploader: React.FC = () => {
       dispatch(loadJsonTrace(file))
         .then(unwrapResult)
         .then(({ traceId }) => {
-          history.push({
+          navigate({
             pathname: `/traces/${traceId}`,
           });
         })
@@ -55,7 +55,7 @@ const TraceJsonUploader: React.FC = () => {
           );
         });
     },
-    [dispatch, history],
+    [dispatch, navigate],
   );
 
   return (

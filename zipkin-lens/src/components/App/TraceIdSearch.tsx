@@ -16,11 +16,11 @@ import { msg } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import { TextField } from '@material-ui/core';
 import React, { useCallback, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const TraceIdSearch: React.FC = () => {
   const { _ } = useLingui();
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const [traceId, setTraceId] = useState('');
 
@@ -34,12 +34,12 @@ const TraceIdSearch: React.FC = () => {
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'Enter') {
-        history.push({
+        navigate({
           pathname: `/traces/${traceId}`,
         });
       }
     },
-    [history, traceId],
+    [navigate, traceId],
   );
 
   return (

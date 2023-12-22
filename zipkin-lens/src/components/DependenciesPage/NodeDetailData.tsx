@@ -27,10 +27,10 @@ import {
   makeStyles,
 } from '@material-ui/core';
 import React, { useCallback } from 'react';
-import { withRouter, RouteComponentProps } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Edge } from './types';
 import { selectServiceColor } from '../../constants/color';
+import { useNavigate } from 'react-router-dom';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -62,7 +62,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-interface NodeDetailDataProps extends RouteComponentProps {
+interface NodeDetailDataProps {
   serviceName: string;
   targetEdges: Edge[];
   sourceEdges: Edge[];
@@ -72,18 +72,18 @@ const NodeDetailDataImpl: React.FC<NodeDetailDataProps> = ({
   serviceName,
   targetEdges,
   sourceEdges,
-  history,
 }) => {
   const classes = useStyles();
+  const navigate = useNavigate();
 
   const handleSearchTracesButtonClick = useCallback(() => {
     const params = new URLSearchParams();
     params.set('serviceName', serviceName);
-    history.push({
+    navigate({
       pathname: '/',
       search: params.toString(),
     });
-  }, [serviceName, history]);
+  }, [serviceName, navigate]);
 
   const shownDataList = [] as {
     title: string;
@@ -200,4 +200,4 @@ const NodeDetailDataImpl: React.FC<NodeDetailDataProps> = ({
   );
 };
 
-export default withRouter(NodeDetailDataImpl);
+export default NodeDetailDataImpl;

@@ -35,7 +35,7 @@ import { Autocomplete } from '@material-ui/lab';
 import moment from 'moment';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import Criterion, { newCriterion } from './Criterion';
 import LookbackMenu from './LookbackMenu';
@@ -56,7 +56,7 @@ interface DiscoverPageContentProps {
 
 // Export for testing
 export const useQueryParams = (autocompleteKeys: string[]) => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const location = useLocation();
 
   const setQueryParams = useCallback(
@@ -99,12 +99,12 @@ export const useQueryParams = (autocompleteKeys: string[]) => {
         default:
       }
       params.set('limit', limit.toString());
-      history.push({
+      navigate({
         pathname: location.pathname,
         search: params.toString(),
       });
     },
-    [autocompleteKeys, history, location.pathname],
+    [autocompleteKeys, location.pathname, navigate],
   );
 
   const criteria = useMemo(() => {
