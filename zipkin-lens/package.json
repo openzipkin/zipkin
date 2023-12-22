@@ -65,7 +65,7 @@
     "redux-thunk": "^2.3.0",
     "shortid": "2.2.16",
     "styled-components": "6.1.2",
-    "vizceral-react": "^4.6.5"
+    "vizceral-react": "4.8.0"
   },
   "scripts": {
     "compile": "lingui compile",
