@@ -18,10 +18,9 @@ import { I18nProvider } from '@lingui/react';
 import { ThemeProvider as MuiThemeProvider } from '@material-ui/styles';
 import MuiPickersUtilsProvider from '@material-ui/pickers/MuiPickersUtilsProvider';
 import { render } from '@testing-library/react';
-import { createMemoryHistory, History } from 'history';
 import React from 'react';
 import { Provider } from 'react-redux';
-import { Router } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 
 import { UiConfigContext } from '../../components/UiConfig';
@@ -36,17 +35,12 @@ i18n.activate('en');
 
 interface RenderProps {
   route?: string;
-  history?: History;
   uiConfig?: object;
 }
 
 export default (
   ui: React.ReactElement,
-  {
-    route = '/',
-    history = createMemoryHistory({ initialEntries: [route] }),
-    uiConfig = {},
-  }: RenderProps = {},
+  { route = '/', uiConfig = {} }: RenderProps = {},
 ) => {
   const store = configureStore({});
 
@@ -67,7 +61,7 @@ export default (
   const wrapper: React.FunctionComponent = ({ children }) => (
     <Provider store={store}>
       <I18nProvider i18n={i18n}>
-        <Router history={history}>
+        <MemoryRouter initialEntries={[route]}>
           <MuiPickersUtilsProvider utils={MomentUtils}>
             <ThemeProvider theme={theme}>
               <MuiThemeProvider theme={theme}>
@@ -77,13 +71,12 @@ export default (
               </MuiThemeProvider>
             </ThemeProvider>
           </MuiPickersUtilsProvider>
-        </Router>
+        </MemoryRouter>
       </I18nProvider>
     </Provider>
   );
   return {
     ...render(ui, { wrapper }),
-    history,
     store,
   };
 };

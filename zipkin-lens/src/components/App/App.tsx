@@ -21,7 +21,7 @@ import {
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import React, { Suspense } from 'react';
 import { Provider } from 'react-redux';
-import { BrowserRouter, Route } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { useTitle } from 'react-use';
 import { ThemeProvider } from 'styled-components';
 
@@ -51,21 +51,25 @@ const App: React.FC = () => {
                     <AlertSnackbar />
                     <I18nProvider i18n={i18n}>
                       <BrowserRouter basename={BASE_PATH}>
-                        <Layout>
-                          <Route exact path="/" component={DiscoverPage} />
-                          {config.dependency.enabled && (
+                        <Routes>
+                          <Route element={<Layout />}>
+                            <Route path="/" element={<DiscoverPage />} />
+                            {config.dependency.enabled && (
+                              <Route
+                                path="/dependency"
+                                element={<DependenciesPage />}
+                              />
+                            )}
                             <Route
-                              exact
-                              path="/dependency"
-                              component={DependenciesPage}
+                              path="/traces/:traceId"
+                              element={<TracePage />}
                             />
-                          )}
-                          <Route
-                            exact
-                            path={['/traces/:traceId', '/traceViewer']}
-                            component={TracePage}
-                          />
-                        </Layout>
+                            <Route
+                              path="/traceViewer"
+                              element={<TracePage />}
+                            />
+                          </Route>
+                        </Routes>
                       </BrowserRouter>
                     </I18nProvider>
                   </Provider>

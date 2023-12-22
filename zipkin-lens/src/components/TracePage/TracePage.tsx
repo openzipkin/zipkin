@@ -11,38 +11,33 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import PropTypes from 'prop-types';
+
 import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { withRouter } from 'react-router-dom';
 
 import { setAlert } from '../App/slice';
 import { LoadingIndicator } from '../common/LoadingIndicator';
 import { loadTrace } from '../../slices/tracesSlice';
 import { TracePageContent } from './TracePageContent';
+import { useParams } from 'react-router-dom';
+import { RootState } from '../../store';
 
-const propTypes = {
-  match: PropTypes.shape({
-    params: PropTypes.shape({
-      traceId: PropTypes.string.isRequired,
+export const TracePageImpl = React.memo(() => {
+  const { traceId } = useParams<{ traceId: string }>();
+
+  const { isLoading, traceSummary, error, rawTrace } = useSelector(
+    (state: RootState) => ({
+      isLoading: state.traces.traces[traceId!]?.isLoading || false,
+      traceSummary: state.traces.traces[traceId!]?.adjustedTrace || undefined,
+      rawTrace: state.traces.traces[traceId!]?.rawTrace || undefined,
+      error: state.traces.traces[traceId!]?.error || undefined,
     }),
-  }).isRequired,
-};
-
-export const TracePageImpl = React.memo(({ match }) => {
-  const { traceId } = match.params;
-
-  const { isLoading, traceSummary, error, rawTrace } = useSelector((state) => ({
-    isLoading: state.traces.traces[traceId]?.isLoading || false,
-    traceSummary: state.traces.traces[traceId]?.adjustedTrace || undefined,
-    rawTrace: state.traces.traces[traceId]?.rawTrace || undefined,
-    error: state.traces.traces[traceId]?.error || undefined,
-  }));
+  );
 
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(loadTrace(traceId));
+    dispatch(loadTrace(traceId!));
   }, [traceId, dispatch]);
 
   const firstUpdate = useRef(true);
@@ -77,6 +72,4 @@ export const TracePageImpl = React.memo(({ match }) => {
   return <TracePageContent trace={traceSummary} rawTrace={rawTrace} />;
 });
 
-TracePageImpl.propTypes = propTypes;
-
-export default withRouter(TracePageImpl);
+export default TracePageImpl;
