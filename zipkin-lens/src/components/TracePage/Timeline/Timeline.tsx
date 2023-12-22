@@ -14,7 +14,7 @@
 
 import { Box, makeStyles } from '@material-ui/core';
 import React, { useCallback, useEffect, useRef } from 'react';
-import AutoSizer from 'react-virtualized-auto-sizer';
+import AutoSizer, { Size } from 'react-virtualized-auto-sizer';
 import { FixedSizeList as List, ListChildComponentProps } from 'react-window';
 import { useMeasure } from 'react-use';
 import { AdjustedSpan } from '../../../models/AdjustedTrace';
@@ -161,11 +161,11 @@ export const Timeline = ({
       </Box>
       <Box flex="1 1">
         <AutoSizer>
-          {({ width, height }) => (
+          {(args: Size) => (
             <List
               ref={listRef}
-              width={width}
-              height={height}
+              width={args.width}
+              height={args.height}
               itemSize={rowHeight}
               itemCount={spanRows.length}
               innerRef={listInnerRef}
