@@ -56,7 +56,7 @@
     "react-redux": "^7.1.0",
     "react-router-dom": "^5.0.1",
     "react-scripts": "5.0.1",
-    "react-use": "^14.2.0",
+    "react-use": "17.4.2",
     "react-virtualized-auto-sizer": "1.0.20",
     "react-window": "1.8.10",
     "recharts": "^1.8.5",
