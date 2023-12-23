@@ -19,7 +19,11 @@ import { act, renderHook } from '@testing-library/react-hooks';
 import { createMemoryHistory } from 'history';
 import moment from 'moment';
 import React from 'react';
-import { Router } from 'react-router-dom';
+import {
+  createMemoryRouter,
+  MemoryRouter,
+  RouterProvider,
+} from 'react-router-dom';
 
 import DiscoverPageContent, {
   buildApiQuery,
@@ -30,26 +34,12 @@ import render from '../../test/util/render-with-default-settings';
 
 describe('useQueryParams', () => {
   it('should extract criteria from query string', () => {
-    const history = createMemoryHistory();
-    const wrapper = ({ children }) => {
-      return <Router history={history}>{children}</Router>;
-    };
-
-    history.push({
-      pathname: '/zipkin/',
-      // serviceName: serviceA
-      // spanName: spanB
-      // remoteServiceName: remoteServiceNameC
-      // minDuration: 10us
-      // maxDuration: 100ms
-      // annotationQuery:
-      //   key1: value1
-      //   key2
-      //   key3: value3
-      search:
-        '?serviceName=serviceA&spanName=spanB&remoteServiceName=remoteServiceNameC&minDuration=10us&maxDuration=100ms&annotationQuery=key1%3Dvalue1+and+key2+and+key3%3Dvalue3&limit=10',
-    });
-
+    const initialEntries = [
+      '/zipkin/?serviceName=serviceA&spanName=spanB&remoteServiceName=remoteServiceNameC&minDuration=10us&maxDuration=100ms&annotationQuery=key1%3Dvalue1+and+key2+and+key3%3Dvalue3&limit=10',
+    ];
+    const wrapper = ({ children }) => (
+      <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+    );
     const { result } = renderHook(() => useQueryParams(['key3']), { wrapper });
 
     const expected = [
@@ -58,7 +48,7 @@ describe('useQueryParams', () => {
       { key: 'remoteServiceName', value: 'remoteServiceNameC' },
       { key: 'minDuration', value: '10us' },
       { key: 'maxDuration', value: '100ms' },
-      // AnnotationQuery
+      // Annotation queries
       { key: 'key3', value: 'value3' },
       { key: 'tagQuery', value: 'key1=value1 and key2' },
     ];
@@ -70,16 +60,14 @@ describe('useQueryParams', () => {
   });
 
   it('should extract range lookback from query string', () => {
-    const history = createMemoryHistory();
-    const wrapper = ({ children }) => {
-      return <Router history={history}>{children}</Router>;
-    };
-    history.push({
-      pathname: '/zipkin/',
-      search: '?lookback=range&startTs=1588558961791&endTs=1588558961791',
-    });
-
+    const initialEntries = [
+      '/zipkin/?lookback=range&startTs=1588558961791&endTs=1588558961791',
+    ];
+    const wrapper = ({ children }) => (
+      <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+    );
     const { result } = renderHook(() => useQueryParams([]), { wrapper });
+
     expect(result.current.lookback.type).toBe('range');
     expect(result.current.lookback.startTime.valueOf()).toBe(1588558961791);
     expect(result.current.lookback.endTime.valueOf()).toBe(1588558961791);
@@ -102,14 +90,12 @@ describe('useQueryParams', () => {
   });
 
   it('should extract millis lookback from query string', () => {
-    const history = createMemoryHistory();
-    const wrapper = ({ children }) => {
-      return <Router history={history}>{children}</Router>;
-    };
-    history.push({
-      pathname: '/zipkin/',
-      search: '?lookback=millis&endTs=1588558961791&millis=1234',
-    });
+    const initialEntries = [
+      '/zipkin/?lookback=millis&endTs=1588558961791&millis=1234',
+    ];
+    const wrapper = ({ children }) => (
+      <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+    );
 
     const { result } = renderHook(() => useQueryParams([]), { wrapper });
     expect(result.current.lookback.type).toBe('millis');
@@ -118,29 +104,16 @@ describe('useQueryParams', () => {
   });
 
   it('should extract limit from query string', () => {
-    const history = createMemoryHistory();
-    const wrapper = ({ children }) => {
-      return <Router history={history}>{children}</Router>;
-    };
-    history.push({
-      pathname: '/zipkin/',
-      search: '?limit=300',
-    });
+    const initialEntries = ['/zipkin/?limit=300'];
+    const wrapper = ({ children }) => (
+      <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+    );
 
     const { result } = renderHook(() => useQueryParams([]), { wrapper });
     expect(result.current.limit).toBe(300);
   });
 
   it('should set query string using setQueryParams', () => {
-    const history = createMemoryHistory();
-    const wrapper = ({ children }) => {
-      return <Router history={history}>{children}</Router>;
-    };
-    history.push({
-      pathname: '/zipkin/',
-      search: '?limit=300',
-    });
-
     const { result } = renderHook(() => useQueryParams(['key3']), { wrapper });
 
     act(() => {
