@@ -247,7 +247,7 @@ $ STORAGE_TYPE=cassandra3 java -jar zipkin.jar \
 
 ### Elasticsearch Storage
 Zipkin's [Elasticsearch storage component](../zipkin-storage/elasticsearch)
-supports versions 5-7.x and applies when `STORAGE_TYPE` is set to `elasticsearch`
+supports versions 7-8.x and applies when `STORAGE_TYPE` is set to `elasticsearch`
 
 The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
 
