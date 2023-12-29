@@ -21,6 +21,8 @@
 !docker/test-images/zipkin-elasticsearch6/config/
 !docker/test-images/zipkin-elasticsearch7/config/
 !docker/test-images/zipkin-elasticsearch7/start-elasticsearch
+!docker/test-images/zipkin-elasticsearch8/config/
+!docker/test-images/zipkin-elasticsearch8/start-elasticsearch
 
 !docker/test-images/zipkin-kafka/install.sh
 !docker/test-images/zipkin-kafka/start-kafka-zookeeper
