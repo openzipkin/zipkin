@@ -54,7 +54,7 @@ $ docker-compose -f docker-compose-cassandra.yml run --rm --no-deps --entrypoint
 
 ## Elasticsearch
 
-You can store traces in [Elasticsearch](../test-images/zipkin-elasticsearch7/README.md) instead of memory,
+You can store traces in [Elasticsearch](../test-images/zipkin-elasticsearch8/README.md) instead of memory,
 using the `docker-compose-elasticsearch.yml` file. This configuration starts `zipkin`,
 `zipkin-elasticsearch` and `zipkin-dependencies` (cron job) in their own containers.
 

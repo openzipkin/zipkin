@@ -3,13 +3,13 @@
 This is a plugin to the Elasticsearch storage component, which uses
 HTTP by way of [Armeria](https://github.com/line/armeria) and
 [Jackson](https://github.com/FasterXML/jackson). This uses Elasticsearch 5+
-features, but is tested against Elasticsearch 6-7.x.
+features, but is tested against Elasticsearch 7-8.x.
 
 ## Multiple hosts
 Most users will supply a DNS name that's mapped to multiple A or AAAA
 records. For example, `http://elasticsearch:9200` will use normal host
 lookups to get the list of IP addresses, though you can alternatively supply
-a list of http base urls. In either case, all of the resolved IP addresses
+a list of http base urls. In either case, all the resolved IP addresses
 from all provided hosts will be iterated over round-robin, with requests made
 only to healthy addresses.
 
