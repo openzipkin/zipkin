@@ -19,3 +19,6 @@ xpack.security.enabled: false
 xpack.ml.enabled: false
 cluster.initial_master_nodes:
   - zipkin-elasticsearch
+# This is a test image, so we are not afraid to delete all indices. Avoids:
+#   Wildcard expressions or all indices are not allowed
+action.destructive_requires_name: false

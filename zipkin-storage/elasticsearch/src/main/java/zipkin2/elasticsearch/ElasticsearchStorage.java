@@ -268,6 +268,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     Set<String> toClear = new LinkedHashSet<>();
     toClear.add(indexNameFormatter().formatType(TYPE_SPAN));
     toClear.add(indexNameFormatter().formatType(TYPE_DEPENDENCY));
+    // Note: Elasticsearch 8.x requires this config to clear with wildcards:
+    // action.destructive_requires_name: false
     for (String index : toClear) clear(index);
   }
 
