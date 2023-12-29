@@ -76,7 +76,7 @@ abstract class ITEnsureIndexTemplate extends ITStorage<ElasticsearchStorage> {
           .build(),
         asList(span));
     } finally {
-      // Delete "catch-all" index template so it does not interfere with any other test
+      // Delete "catch-all" index template, so it does not interfere with any other test
       http(DELETE, catchAllIndexPath());
     }
   }
@@ -102,7 +102,7 @@ abstract class ITEnsureIndexTemplate extends ITStorage<ElasticsearchStorage> {
   String catchAllTemplate() {
     return "{\n"
       + "  \"index_patterns\" : [\"*\"],\n"
-      + "  \"priority\" : 0,\n"
+      + "  \"priority\" : 5,\n" // Priority 0 conflicts with ES 8.x monitoring templates
       + "  \"template\": {\n"
       + "    \"settings\" : {\n"
       + "      \"number_of_shards\" : 1\n"

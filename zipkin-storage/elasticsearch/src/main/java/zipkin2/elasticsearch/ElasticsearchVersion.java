@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -33,6 +33,7 @@ public final class ElasticsearchVersion implements Comparable<ElasticsearchVersi
   public static final ElasticsearchVersion V7_0 = new ElasticsearchVersion(7, 0);
   public static final ElasticsearchVersion V7_8 = new ElasticsearchVersion(7, 8);
   public static final ElasticsearchVersion V8_0 = new ElasticsearchVersion(8, 0);
+  public static final ElasticsearchVersion V9_0 = new ElasticsearchVersion(9, 0);
 
   static ElasticsearchVersion get(HttpCall.Factory http) throws IOException {
     return Parser.INSTANCE.get(http);

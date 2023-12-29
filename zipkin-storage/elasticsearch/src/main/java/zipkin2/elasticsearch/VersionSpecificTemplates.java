@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import static zipkin2.elasticsearch.ElasticsearchVersion.V6_0;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V7_8;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V8_0;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V9_0;
 
 /** Returns version-specific index templates */
 // TODO: make a main class that spits out the index template using ENV variables for the server,
@@ -223,7 +224,7 @@ final class VersionSpecificTemplates {
   }
 
   IndexTemplates get(ElasticsearchVersion version) {
-    if (version.compareTo(V5_0) < 0 || version.compareTo(V8_0) >= 0) {
+    if (version.compareTo(V5_0) < 0 || version.compareTo(V9_0) >= 0) {
       throw new IllegalArgumentException(
         "Elasticsearch versions 5-7.x are supported, was: " + version);
     }
