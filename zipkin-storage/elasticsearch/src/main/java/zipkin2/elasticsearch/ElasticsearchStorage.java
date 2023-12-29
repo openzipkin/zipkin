@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -268,6 +268,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     Set<String> toClear = new LinkedHashSet<>();
     toClear.add(indexNameFormatter().formatType(TYPE_SPAN));
     toClear.add(indexNameFormatter().formatType(TYPE_DEPENDENCY));
+    // Note: Elasticsearch 8.x requires this config to clear with wildcards:
+    // action.destructive_requires_name: false
     for (String index : toClear) clear(index);
   }
 
