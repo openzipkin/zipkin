@@ -12,7 +12,7 @@ import zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans;
 /**
  * Convenience access to all tables in zipkin.
  */
-@SuppressWarnings({ "all", "unchecked", "rawtypes" })
+@SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Tables {
 
     /**

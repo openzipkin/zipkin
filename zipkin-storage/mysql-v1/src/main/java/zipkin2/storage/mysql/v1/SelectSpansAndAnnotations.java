@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -233,22 +233,22 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
       .where(ZIPKIN_SPANS.START_TS.between(endTs - request.lookback() * 1000, endTs));
 
     if (request.serviceName() != null) {
-      dsl.and(localServiceNameCondition()
+      dsl = dsl.and(localServiceNameCondition()
         .and(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(request.serviceName())));
     }
 
     if (request.remoteServiceName() != null) {
-      dsl.and(ZIPKIN_SPANS.REMOTE_SERVICE_NAME.eq(request.remoteServiceName()));
+      dsl = dsl.and(ZIPKIN_SPANS.REMOTE_SERVICE_NAME.eq(request.remoteServiceName()));
     }
 
     if (request.spanName() != null) {
-      dsl.and(ZIPKIN_SPANS.NAME.eq(request.spanName()));
+      dsl = dsl.and(ZIPKIN_SPANS.NAME.eq(request.spanName()));
     }
 
     if (request.minDuration() != null && request.maxDuration() != null) {
-      dsl.and(ZIPKIN_SPANS.DURATION.between(request.minDuration(), request.maxDuration()));
+      dsl = dsl.and(ZIPKIN_SPANS.DURATION.between(request.minDuration(), request.maxDuration()));
     } else if (request.minDuration() != null) {
-      dsl.and(ZIPKIN_SPANS.DURATION.greaterOrEqual(request.minDuration()));
+      dsl = dsl.and(ZIPKIN_SPANS.DURATION.greaterOrEqual(request.minDuration()));
     }
     return dsl.groupBy(schema.spanIdFields)
       .orderBy(max(ZIPKIN_SPANS.START_TS).desc())

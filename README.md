@@ -92,7 +92,7 @@ Note: The above is just an example, most likely you'll want to use an existing t
 ## Storage Component
 Zipkin includes a [StorageComponent](zipkin/src/main/java/zipkin2/storage/StorageComponent.java), used to store and query spans and
 dependency links. This is used by the server and those making collectors, or span reporters. For this reason, storage
-components have minimal dependencies, but most require Java 8+
+components have minimal dependencies, but most require Java 11+
 
 Ex.
 ```java
