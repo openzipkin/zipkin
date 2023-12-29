@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"zipkin2.collector.kafka","l":"KafkaCollector.Builder"},{"p":"zipkin2.collector.kafka","l":"KafkaCollector"}]
