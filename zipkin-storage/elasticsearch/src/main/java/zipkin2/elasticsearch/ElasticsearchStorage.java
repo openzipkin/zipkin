@@ -167,8 +167,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
     /**
      * Only valid when the destination is Elasticsearch >= 7.8. Indicates the index template
-     * priority in case of multiple matching templates. The template with highest priority is used.
-     * Default to 0.
+     * priority in case of multiple matching templates. The template with the highest priority is
+     * used. Defaults to 0.
      *
      * <p>See https://www.elastic.co/guide/en/elasticsearch/reference/7.8/_index_template_and_settings_priority.html
      */
@@ -282,7 +282,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   /**
    * Internal code and api responses coerce to {@link RejectedExecutionException} when work is
    * rejected. We also classify {@link ResponseTimeoutException} as a capacity related exception
-   * eventhough capacity is not the only reason (timeout could also result from a misconfiguration
+   * even though capacity is not the only reason (timeout could also result from a misconfiguration
    * or a network problem).
    */
   @Override public boolean isOverCapacity(Throwable e) {
