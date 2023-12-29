@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -86,30 +86,30 @@ final class MySQLSpanConsumer implements SpanConsumer {
         Map<TableField<Record, ?>, Object> updateFields = new LinkedHashMap<>();
         if (timestamp != 0L) {
           // tentatively we can use even a shared timestamp
-          insertSpan.set(ZIPKIN_SPANS.START_TS, timestamp);
+          insertSpan = insertSpan.set(ZIPKIN_SPANS.START_TS, timestamp);
           // replace any tentative timestamp with the authoritative one.
           if (!Boolean.TRUE.equals(v2.shared())) updateFields.put(ZIPKIN_SPANS.START_TS, timestamp);
         }
 
-        updateName(v1Span.name(), ZIPKIN_SPANS.NAME, insertSpan, updateFields);
+        insertSpan = updateName(v1Span.name(), ZIPKIN_SPANS.NAME, insertSpan, updateFields);
         if (schema.hasRemoteServiceName) {
-          updateName(v2.remoteServiceName(), ZIPKIN_SPANS.REMOTE_SERVICE_NAME, insertSpan, updateFields);
+          insertSpan = updateName(v2.remoteServiceName(), ZIPKIN_SPANS.REMOTE_SERVICE_NAME, insertSpan, updateFields);
         }
 
         long duration = v1Span.duration();
         if (duration != 0L) {
-          insertSpan.set(ZIPKIN_SPANS.DURATION, duration);
+          insertSpan = insertSpan.set(ZIPKIN_SPANS.DURATION, duration);
           updateFields.put(ZIPKIN_SPANS.DURATION, duration);
         }
 
         if (v1Span.parentId() != 0) {
-          insertSpan.set(ZIPKIN_SPANS.PARENT_ID, v1Span.parentId());
+          insertSpan = insertSpan.set(ZIPKIN_SPANS.PARENT_ID, v1Span.parentId());
           updateFields.put(ZIPKIN_SPANS.PARENT_ID, v1Span.parentId());
         }
 
         long traceIdHigh = schema.hasTraceIdHigh ? v1Span.traceIdHigh() : 0L;
         if (traceIdHigh != 0L) {
-          insertSpan.set(ZIPKIN_SPANS.TRACE_ID_HIGH, traceIdHigh);
+          insertSpan = insertSpan.set(ZIPKIN_SPANS.TRACE_ID_HIGH, traceIdHigh);
         }
 
         inserts.add(
@@ -129,9 +129,9 @@ final class MySQLSpanConsumer implements SpanConsumer {
                   .set(ZIPKIN_ANNOTATIONS.A_TYPE, -1)
                   .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, a.timestamp());
           if (traceIdHigh != 0L) {
-            insert.set(ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, traceIdHigh);
+            insert = insert.set(ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, traceIdHigh);
           }
-          addEndpoint(insert, ep, ipv4);
+          insert = addEndpoint(insert, ep, ipv4);
           inserts.add(insert.onDuplicateKeyIgnore());
         }
 
@@ -145,15 +145,15 @@ final class MySQLSpanConsumer implements SpanConsumer {
                   .set(ZIPKIN_ANNOTATIONS.A_TYPE, ba.type())
                   .set(ZIPKIN_ANNOTATIONS.A_TIMESTAMP, timestamp);
           if (traceIdHigh != 0) {
-            insert.set(ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, traceIdHigh);
+            insert = insert.set(ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, traceIdHigh);
           }
           if (ba.stringValue() != null) {
-            insert.set(ZIPKIN_ANNOTATIONS.A_VALUE, ba.stringValue().getBytes(UTF_8));
-            addEndpoint(insert, ep, ipv4);
+            insert = insert.set(ZIPKIN_ANNOTATIONS.A_VALUE, ba.stringValue().getBytes(UTF_8));
+            insert = addEndpoint(insert, ep, ipv4);
           } else { // add the address annotation
-            insert.set(ZIPKIN_ANNOTATIONS.A_VALUE, ONE);
+            insert = insert.set(ZIPKIN_ANNOTATIONS.A_VALUE, ONE);
             Endpoint nextEp = ba.endpoint();
-            addEndpoint(
+            insert = addEndpoint(
                 insert,
                 nextEp,
                 nextEp.ipv4Bytes() != null ? ByteBuffer.wrap(nextEp.ipv4Bytes()).getInt() : 0);
@@ -167,20 +167,21 @@ final class MySQLSpanConsumer implements SpanConsumer {
       return null;
     }
 
-    void addEndpoint(InsertSetMoreStep<Record> insert, Endpoint ep, int ipv4) {
-      if (ep == null) return;
+    InsertSetMoreStep<Record> addEndpoint(InsertSetMoreStep<Record> insert, Endpoint ep, int ipv4) {
+      if (ep == null) return insert;
       // old code wrote empty service names
       String serviceName = ep.serviceName() != null ? ep.serviceName() : "";
-      insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, serviceName);
+      insert = insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME, serviceName);
       if (ipv4 != 0) {
-        insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, ipv4);
+        insert = insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, ipv4);
       }
       if (ep.ipv6Bytes() != null && schema.hasIpv6) {
-        insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6, ep.ipv6Bytes());
+        insert = insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6, ep.ipv6Bytes());
       }
       if (ep.portAsInt() != 0) {
-        insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT, (short) ep.portAsInt());
+        insert = insert.set(ZIPKIN_ANNOTATIONS.ENDPOINT_PORT, (short) ep.portAsInt());
       }
+      return insert;
     }
 
     @Override
@@ -189,14 +190,14 @@ final class MySQLSpanConsumer implements SpanConsumer {
     }
   }
 
-  static void updateName(@Nullable String name, TableField<Record, String> column,
+  static InsertSetMoreStep<Record> updateName(@Nullable String name, TableField<Record, String> column,
     InsertSetMoreStep<Record> insertSpan, Map<TableField<Record, ?>, Object> updateFields) {
     if (name != null && !name.equals("unknown")) {
-      insertSpan.set(column, name);
       updateFields.put(column, name);
+      return insertSpan.set(column, name);
     } else {
       // old code wrote empty span name
-      insertSpan.set(column, "");
+      return insertSpan.set(column, "");
     }
   }
 }

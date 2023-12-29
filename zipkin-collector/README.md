@@ -3,7 +3,7 @@
 Modules here implement popular transport options available by default in
 the [server build](../zipkin-server).
 
-Please note all modules here require JRE 8+
+Please note all modules here require JRE 11+
 
 These libraries are also usable outside the server, for example in
 custom collectors or storage pipelines. While compatibility guarantees

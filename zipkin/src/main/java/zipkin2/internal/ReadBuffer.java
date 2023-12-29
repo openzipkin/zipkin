@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package zipkin2.internal;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import org.jvnet.animal_sniffer.IgnoreJRERequirement;
 
 import static zipkin2.internal.HexCodec.HEX_DIGITS;
 import static zipkin2.internal.JsonCodec.UTF_8;
@@ -110,12 +111,14 @@ public abstract class ReadBuffer extends InputStream {
       return copy;
     }
 
+    // Encoding zipkin data is supported in JRE 6, but decoding isn't.
+    @IgnoreJRERequirement
     @Override boolean tryReadAscii(char[] destination, int length) {
-      buf.mark();
+      buf.mark(); // This is not Java 6
       for (int i = 0; i < length; i++) {
         byte b = buf.get();
         if ((b & 0x80) != 0) {
-          buf.reset();
+          buf.reset(); // This is not Java 6
           return false;  // Not 7-bit ASCII character
         }
         destination[i] = (char) b;
@@ -139,9 +142,11 @@ public abstract class ReadBuffer extends InputStream {
       return toRead;
     }
 
+    // Encoding zipkin data is supported in JRE 6, but decoding isn't.
+    @IgnoreJRERequirement
     @Override public long skip(long maxCount) {
       int skipped = Math.max(available(), (int) maxCount);
-      buf.position(buf.position() + skipped);
+      buf.position(buf.position() + skipped); // This is not Java 6
       return skipped;
     }
 

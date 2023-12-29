@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2023 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -177,7 +177,7 @@ public class ZipkinElasticsearchStorageConfiguration {
 
   @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing
   Consumer<ClientOptionsBuilder> esTracing(Optional<HttpTracing> maybeHttpTracing) {
-    if (!maybeHttpTracing.isPresent()) {
+    if (maybeHttpTracing.isEmpty()) {
       // TODO: is there a special cased empty consumer we can use here? I suspect debug is cluttered
       // Alternatively, check why we would ever get here if ConditionalOnSelfTracing matches
       return client -> {

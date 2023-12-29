@@ -3,7 +3,7 @@
 Modules here implement popular storage options available by default in
 the [server build](../zipkin-server).
 
-Please note all modules here require JRE 8+ eventhough `InMemoryStorage`
+Please note all modules here require JRE 11+ even if `InMemoryStorage`
 will run on JRE 6+.
 
 These libraries are also usable outside the server, for example in

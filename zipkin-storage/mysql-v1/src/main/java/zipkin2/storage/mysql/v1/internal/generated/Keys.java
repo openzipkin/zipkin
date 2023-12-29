@@ -16,10 +16,10 @@ import zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans;
 
 
 /**
- * A class modelling foreign key relationships and constraints of tables in 
+ * A class modelling foreign key relationships and constraints of tables in
  * zipkin.
  */
-@SuppressWarnings({ "all", "unchecked", "rawtypes" })
+@SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Keys {
 
     // -------------------------------------------------------------------------
@@ -27,6 +27,7 @@ public class Keys {
     // -------------------------------------------------------------------------
 
     public static final UniqueKey<Record> KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH = Internal.createUniqueKey(ZipkinAnnotations.ZIPKIN_ANNOTATIONS, DSL.name("KEY_zipkin_annotations_trace_id_high"), new TableField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.SPAN_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_KEY, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_TIMESTAMP }, true);
+    public static final UniqueKey<Record> KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_4 = Internal.createUniqueKey(ZipkinAnnotations.ZIPKIN_ANNOTATIONS, DSL.name("KEY_zipkin_annotations_trace_id_high_4"), new TableField[] { ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.SPAN_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_KEY, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_TIMESTAMP }, true);
     public static final UniqueKey<Record> KEY_ZIPKIN_DEPENDENCIES_PRIMARY = Internal.createUniqueKey(ZipkinDependencies.ZIPKIN_DEPENDENCIES, DSL.name("KEY_zipkin_dependencies_PRIMARY"), new TableField[] { ZipkinDependencies.ZIPKIN_DEPENDENCIES.DAY, ZipkinDependencies.ZIPKIN_DEPENDENCIES.PARENT, ZipkinDependencies.ZIPKIN_DEPENDENCIES.CHILD }, true);
     public static final UniqueKey<Record> KEY_ZIPKIN_SPANS_PRIMARY = Internal.createUniqueKey(ZipkinSpans.ZIPKIN_SPANS, DSL.name("KEY_zipkin_spans_PRIMARY"), new TableField[] { ZipkinSpans.ZIPKIN_SPANS.TRACE_ID_HIGH, ZipkinSpans.ZIPKIN_SPANS.TRACE_ID, ZipkinSpans.ZIPKIN_SPANS.ID }, true);
 }
