@@ -112,12 +112,6 @@ jobs:
           build-bin/docker/docker_test_image openzipkin/zipkin-cassandra:test
         env:
           DOCKER_FILE: docker/test-images/zipkin-cassandra/Dockerfile
-      - name: docker/test-images/zipkin-elasticsearch6/README.md
-        run: |
-          build-bin/docker/docker_build openzipkin/zipkin-elasticsearch6:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-elasticsearch6:test
-        env:
-          DOCKER_FILE: docker/test-images/zipkin-elasticsearch6/Dockerfile
       - name: docker/test-images/zipkin-elasticsearch7/README.md
         run: |
           build-bin/docker/docker_build openzipkin/zipkin-elasticsearch7:test &&
