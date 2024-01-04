@@ -58,6 +58,11 @@ import static org.testcontainers.utility.DockerImageName.parse;
 @Testcontainers
 @TestMethodOrder(OrderAnnotation.class) // so that deregistration tests don't flake the others.
 class ITZipkinEureka {
+  /**
+   * Path under the Eureka v2 endpoint for the app named "zipkin".
+   * Note that Eureka always coerces app names to uppercase.
+   */
+  static final String APPS_ZIPKIN = "/apps/ZIPKIN";
 
   @Container static EurekaContainer eureka = new EurekaContainer();
 
@@ -70,8 +75,7 @@ class ITZipkinEureka {
   }
 
   @Test @Order(1) void registersInEureka() throws Exception {
-    // Notice the app name always coerces to uppercase
-    String json = getEurekaAsString("/apps/ZIPKIN");
+    String json = getEurekaAsString(APPS_ZIPKIN);
 
     // Make sure the health status is OK
     assertThat(readString(json, "$.application.instance[0].status"))
@@ -93,9 +97,11 @@ class ITZipkinEureka {
   @Test @Order(2) void deregistersOnClose() {
     zipkin.close();
     await().untilAsserted( // wait for deregistration
-      () -> assertThat(getEurekaAsString("/apps"))
-        .isEqualTo(
-          "{\"applications\":{\"versions__delta\":\"1\",\"apps__hashcode\":\"\",\"application\":[]}}"));
+      () -> {
+        try (Response response = getEureka(APPS_ZIPKIN)) {
+          assertThat(response.code()).isEqualTo(404);
+        }
+      });
   }
 
   private String getEurekaAsString(String path) throws IOException {
