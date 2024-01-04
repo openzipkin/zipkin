@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -91,7 +91,7 @@ class ServerIntegratedBenchmark {
 
   @Test void elasticsearch() throws Exception {
     GenericContainer<?> elasticsearch =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch7:2.25.2"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch7:2.26.0"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("elasticsearch")
         .withLabel("name", "elasticsearch")
@@ -105,7 +105,7 @@ class ServerIntegratedBenchmark {
 
   @Test void cassandra3() throws Exception {
     GenericContainer<?> cassandra =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-cassandra:2.25.2"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-cassandra:2.26.0"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("cassandra")
         .withLabel("name", "cassandra")
@@ -119,7 +119,7 @@ class ServerIntegratedBenchmark {
 
   @Test void mysql() throws Exception {
     GenericContainer<?> mysql =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:2.25.2"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:2.26.0"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("mysql")
         .withLabel("name", "mysql")

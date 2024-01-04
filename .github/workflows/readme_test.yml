@@ -124,6 +124,12 @@ jobs:
           build-bin/docker/docker_test_image openzipkin/zipkin-elasticsearch8:test
         env:
           DOCKER_FILE: docker/test-images/zipkin-elasticsearch8/Dockerfile
+      - name: docker/test-images/zipkin-eureka/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-eureka:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-eureka:test
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-eureka/Dockerfile
       - name: docker/test-images/zipkin-kafka/README.md
         run: |
           build-bin/docker/docker_build openzipkin/zipkin-kafka:test &&

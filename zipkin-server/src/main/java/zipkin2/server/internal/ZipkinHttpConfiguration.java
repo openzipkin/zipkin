@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,7 +24,6 @@ import com.linecorp.armeria.server.cors.CorsServiceBuilder;
 import com.linecorp.armeria.server.file.HttpFile;
 import com.linecorp.armeria.server.metric.PrometheusExpositionService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.prometheus.client.CollectorRegistry;
 import java.time.Duration;
 import java.util.Optional;
@@ -46,7 +45,6 @@ public class ZipkinHttpConfiguration {
     Optional<ZipkinHttpCollector> httpCollector,
     Optional<ZipkinHealthController> healthController,
     Optional<ZipkinMetricsController> metricsController,
-    Optional<MeterRegistry> meterRegistry,
     Optional<CollectorRegistry> collectorRegistry,
     @Value("${zipkin.query.timeout:11s}") Duration queryTimeout) {
     return sb -> {
