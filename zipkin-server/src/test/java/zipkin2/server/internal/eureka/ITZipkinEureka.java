@@ -23,6 +23,7 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.opentest4j.TestAbortedException;
@@ -55,7 +56,8 @@ import static org.testcontainers.utility.DockerImageName.parse;
     "zipkin.query.enabled=false",
     "zipkin.ui.enabled=false"
   })
-@Testcontainers
+@Tag("docker")
+@Testcontainers(disabledWithoutDocker = true)
 @TestMethodOrder(OrderAnnotation.class) // so that deregistration tests don't flake the others.
 class ITZipkinEureka {
   /**
@@ -123,11 +125,6 @@ class ITZipkinEureka {
 
     EurekaContainer() {
       super(parse("ghcr.io/openzipkin/zipkin-eureka:2.26.0"));
-      // Allow skipping even when docker is available (to reduce runtime or run separately).
-      // mostly waiting for https://github.com/testcontainers/testcontainers-java/issues/3537
-      if ("true".equals(System.getProperty("docker.skip"))) {
-        throw new TestAbortedException("${docker.skip} == true");
-      }
       withExposedPorts(EUREKA_PORT);
       waitStrategy = Wait.forHealthcheck();
       withStartupTimeout(Duration.ofSeconds(60));

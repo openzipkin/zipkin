@@ -114,9 +114,6 @@ class MySQLExtension implements BeforeAllCallback, AfterAllCallback {
   static final class MySQLContainer extends GenericContainer<MySQLContainer> {
     MySQLContainer() {
       super(parse("ghcr.io/openzipkin/zipkin-mysql:2.26.0"));
-      if ("true".equals(System.getProperty("docker.skip"))) {
-        throw new TestAbortedException("${docker.skip} == true");
-      }
       addExposedPort(3306);
       waitStrategy = Wait.forHealthcheck();
       withLogConsumer(new Slf4jLogConsumer(LOGGER));

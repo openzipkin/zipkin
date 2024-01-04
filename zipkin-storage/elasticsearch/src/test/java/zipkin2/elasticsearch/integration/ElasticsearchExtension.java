@@ -128,9 +128,6 @@ class ElasticsearchExtension implements BeforeAllCallback, AfterAllCallback {
   static final class ElasticsearchContainer extends GenericContainer<ElasticsearchContainer> {
     ElasticsearchContainer(int majorVersion) {
       super(parse("ghcr.io/openzipkin/zipkin-elasticsearch" + majorVersion + ":2.26.0"));
-      if ("true".equals(System.getProperty("docker.skip"))) {
-        throw new TestAbortedException("${docker.skip} == true");
-      }
       addExposedPort(9200);
       waitStrategy = Wait.forHealthcheck();
       withLogConsumer(new Slf4jLogConsumer(LOGGER));

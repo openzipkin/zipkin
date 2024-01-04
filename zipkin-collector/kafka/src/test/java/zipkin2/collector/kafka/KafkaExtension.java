@@ -93,9 +93,6 @@ class KafkaExtension implements BeforeAllCallback, AfterAllCallback {
   static final class KafkaContainer extends GenericContainer<KafkaContainer> {
     KafkaContainer() {
       super(parse("ghcr.io/openzipkin/zipkin-kafka:2.26.0"));
-      if ("true".equals(System.getProperty("docker.skip"))) {
-        throw new TestAbortedException("${docker.skip} == true");
-      }
       waitStrategy = Wait.forHealthcheck();
       // 19092 is for connections from the Docker host and needs to be used as a fixed port.
       // TODO: someone who knows Kafka well, make ^^ comment better!

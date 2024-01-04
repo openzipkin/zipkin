@@ -84,9 +84,6 @@ class RabbitMQExtension implements BeforeAllCallback, AfterAllCallback {
   static final class RabbitMQContainer extends GenericContainer<RabbitMQContainer> {
     RabbitMQContainer() {
       super(parse("ghcr.io/openzipkin/zipkin-rabbitmq:2.26.0"));
-      if ("true".equals(System.getProperty("docker.skip"))) {
-        throw new TestAbortedException("${docker.skip} == true");
-      }
       withExposedPorts(RABBIT_PORT);
       waitStrategy = Wait.forLogMessage(".*Server startup complete.*", 1);
       withStartupTimeout(Duration.ofSeconds(60));

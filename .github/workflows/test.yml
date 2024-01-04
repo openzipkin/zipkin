@@ -75,7 +75,7 @@ jobs:
           path: ~/.npm
           key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
       - name: Test without Docker
-        run: build-bin/maven_go_offline && build-bin/test -Ddocker.skip=true ${{ matrix.maven_args }}
+        run: build-bin/maven_go_offline && build-bin/test -DexcludedGroups=docker ${{ matrix.maven_args }}
 
   test_docker:
     runs-on: ubuntu-22.04 # newest available distribution, aka jellyfish
@@ -114,4 +114,4 @@ jobs:
           | # configure_test seeds NPM cache, which isn't needed for these tests
           build-bin/maven/maven_go_offline &&
           build-bin/docker/configure_docker &&
-          build-bin/test -pl :${{ matrix.name }} --am -Dlicense.skip=true
+          build-bin/test -Dgroups=docker -pl :${{ matrix.name }} --am -Dlicense.skip=true

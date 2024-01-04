@@ -65,9 +65,6 @@ class ActiveMQExtension implements BeforeAllCallback, AfterAllCallback {
   static final class ActiveMQContainer extends GenericContainer<ActiveMQContainer> {
     ActiveMQContainer() {
       super(parse("ghcr.io/openzipkin/zipkin-activemq:2.26.0"));
-      if ("true".equals(System.getProperty("docker.skip"))) {
-        throw new TestAbortedException("${docker.skip} == true");
-      }
       withExposedPorts(ACTIVEMQ_PORT);
       waitStrategy = Wait.forListeningPorts(ACTIVEMQ_PORT);
       withStartupTimeout(Duration.ofSeconds(60));

@@ -157,9 +157,6 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
   static final class CassandraContainer extends GenericContainer<CassandraContainer> {
     CassandraContainer() {
       super(parse("ghcr.io/openzipkin/zipkin-cassandra:2.26.0"));
-      if ("true".equals(System.getProperty("docker.skip"))) {
-        throw new TestAbortedException("${docker.skip} == true");
-      }
       addExposedPort(9042);
       waitStrategy = Wait.forHealthcheck();
       withLogConsumer(new Slf4jLogConsumer(LOGGER));
