@@ -12,10 +12,16 @@
 # the License.
 #
 
+# Add configuration to disable as much server caching as possible. Note that
+# not all configuration here are defined by netflix/eureka, rather some are
+# specific to spring-cloud/spring-cloud-netflix.
 eureka:
   client:
     registerWithEureka: false
-    fetchRegistry: false
+    fetchRegistry: false  # in netflix/eureka this is shouldFetchRegistry
+    registryFetchIntervalSeconds: 1
+  server:
+    useReadOnlyResponseCache: false
 server:
   port: 8761
 spring:

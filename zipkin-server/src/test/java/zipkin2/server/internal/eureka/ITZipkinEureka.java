@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.opentest4j.TestAbortedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -100,11 +99,8 @@ class ITZipkinEureka {
     zipkin.close();
     await().untilAsserted( // wait for deregistration
       () -> {
-        try (Response response = getEureka(APPS_ZIPKIN); ResponseBody body = response.body()) {
-          String failMessage = body != null ? body.toString() : response.toString();
-          assertThat(response.code())
-            .withFailMessage(failMessage)
-            .isEqualTo(404);
+        try (Response response = getEureka(APPS_ZIPKIN)) {
+          assertThat(response.code()).isEqualTo(404);
         }
       });
   }
