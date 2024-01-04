@@ -101,8 +101,9 @@ class ITZipkinEureka {
     await().untilAsserted( // wait for deregistration
       () -> {
         try (Response response = getEureka(APPS_ZIPKIN); ResponseBody body = response.body()) {
+          String failMessage = body != null ? body.toString() : response.toString();
           assertThat(response.code())
-            .withFailMessage(response.toString())
+            .withFailMessage(failMessage)
             .isEqualTo(404);
         }
       });
