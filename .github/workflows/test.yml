@@ -112,12 +112,11 @@ jobs:
       - name: Test with Docker
         # configure_test seeds NPM cache, which isn't needed for these tests.
         #
-        # What we are doing here is configuring docker, then building the
-        # module prior to testing it with docker. We do that in two passes
-        # because we want to build the module's dependencies, but not run their
-        # tests.
+        # What we are doing here is configuring docker, then installing the
+        # module's dependencies prior to testing it with docker. This allows
+        # us to avoid running tests except the leaf module.
         run: |
           build-bin/docker/configure_docker &&
           build-bin/maven/maven_go_offline &&
-          build-bin/maven/maven_build install -pl :${{ matrix.name }} --am &&
+          MAVEN_GOAL=install build-bin/maven/maven_build -pl :${{ matrix.name }} --am &&
           build-bin/test -Dgroups=docker -pl :${{ matrix.name }} -Dlicense.skip=true
