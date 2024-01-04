@@ -62,12 +62,12 @@ class ITZipkinEureka {
    * Path under the Eureka v2 endpoint for the app named "zipkin".
    * Note that Eureka always coerces app names to uppercase.
    */
-  static final String APPS_ZIPKIN = "/apps/ZIPKIN";
+  private static final String APPS_ZIPKIN = "/apps/ZIPKIN";
+  private final OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
   @Container static EurekaContainer eureka = new EurekaContainer();
 
   @Autowired Server zipkin;
-  OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
   /** Get the serviceUrl of the Eureka container prior to booting Zipkin. */
   @DynamicPropertySource static void propertyOverride(DynamicPropertyRegistry registry) {
@@ -118,7 +118,7 @@ class ITZipkinEureka {
       .build()).execute();
   }
 
-  static final class EurekaContainer extends GenericContainer<EurekaContainer> {
+  private static final class EurekaContainer extends GenericContainer<EurekaContainer> {
     static final int EUREKA_PORT = 8761;
 
     EurekaContainer() {
