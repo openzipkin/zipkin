@@ -110,8 +110,14 @@ jobs:
       # via forks, and login session ends up in ~/.docker. This is ok because
       # we publish DOCKER_PARENT_IMAGE to ghcr.io, hence local to the runner.
       - name: Test with Docker
-        run:
-          | # configure_test seeds NPM cache, which isn't needed for these tests
-          build-bin/maven/maven_go_offline &&
+        # configure_test seeds NPM cache, which isn't needed for these tests.
+        #
+        # What we are doing here is configuring docker, then building the
+        # module prior to testing it with docker. We do that in two passes
+        # because we want to build the module's dependencies, but not run their
+        # tests.
+        run: |
           build-bin/docker/configure_docker &&
-          build-bin/test -Dgroups=docker -pl :${{ matrix.name }} --am -Dlicense.skip=true
+          build-bin/maven/maven_go_offline &&
+          build-bin/maven/maven_build -pl :${{ matrix.name }} --am &&
+          build-bin/test -Dgroups=docker -pl :${{ matrix.name }} -Dlicense.skip=true
