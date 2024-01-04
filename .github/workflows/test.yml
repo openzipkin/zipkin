@@ -119,5 +119,5 @@ jobs:
         run: |
           build-bin/docker/configure_docker &&
           build-bin/maven/maven_go_offline &&
-          build-bin/maven/maven_build -pl :${{ matrix.name }} --am &&
+          build-bin/maven/maven_build install -pl :${{ matrix.name }} --am &&
           build-bin/test -Dgroups=docker -pl :${{ matrix.name }} -Dlicense.skip=true
