@@ -30,22 +30,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-
-    <!-- temporarily control okio version until okhttp5 is releasing again -->
-    <okio.version>3.7.0</okio.version>
   </properties>
-
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.squareup.okio</groupId>
-        <artifactId>okio-bom</artifactId>
-        <version>${okio.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
 
   <dependencies>
     <dependency>
