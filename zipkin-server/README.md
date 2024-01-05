@@ -526,6 +526,9 @@ Example usage:
 $ EUREKA_SERVICE_URL=http://localhost:8761/eureka/v2 java -jar zipkin.jar
 ```
 
+Note: Eureka server registration only includes host and port details. Tracers need to resolve this
+to the POST endpoint "/api/v2/spans".
+
 ## Self-Tracing
 Self tracing exists to help troubleshoot performance of the zipkin-server. Production deployments
 who enable self-tracing should lower the sample rate from 1.0 (100%) to a much smaller rate, like
