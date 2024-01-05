@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -165,17 +165,18 @@ public final class JsonCodec {
   /** Inability to encode is a programming bug. */
   public static <T> byte[] write(WriteBuffer.Writer<T> writer, T value) {
     byte[] result = new byte[writer.sizeInBytes(value)];
-    WriteBuffer b = WriteBuffer.wrap(result);
+    write(writer, value, result, 0);
+    return result;
+  }
+
+  public static <T> int write(WriteBuffer.Writer<T> writer, T value, byte[] out,
+    int pos) {
+    WriteBuffer b = WriteBuffer.wrap(out, pos);
     try {
       writer.write(value, b);
     } catch (RuntimeException e) {
-      int lengthWritten = result.length;
-      for (int i = 0; i < result.length; i++) {
-        if (result[i] == 0) {
-          lengthWritten = i;
-          break;
-        }
-      }
+      int length = writer.sizeInBytes(value);
+      int lengthWritten = b.pos() - pos;
 
       // Don't use value directly in the message, as its toString might be implemented using this
       // method. If that's the case, we'd stack overflow. Instead, emit what we've written so far.
@@ -185,13 +186,13 @@ public final class JsonCodec {
           writer.getClass().getSimpleName(),
           value.getClass().getSimpleName(),
           lengthWritten,
-          result.length,
-          new String(result, 0, lengthWritten, UTF_8));
+          length,
+          new String(out, pos, lengthWritten, UTF_8));
       AssertionError error = new AssertionError(message);
       error.initCause(e);
       throw error;
     }
-    return result;
+    return b.pos() - pos;
   }
 
   public static <T> byte[] writeList(WriteBuffer.Writer<T> writer, List<T> value) {

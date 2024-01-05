@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 package zipkin2.codec;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
@@ -110,14 +111,38 @@ public class SpanBytesEncoderTest {
             "{\"traceId\":\"7180c278b62e8f6a216a2aea45d08fc9\",\"parentId\":\"6b221d5bc9e6496c\",\"id\":\"5b4185666d50f68b\",\"name\":\"get\",\"timestamp\":1472470996199000,\"duration\":207000,\"annotations\":[{\"timestamp\":1472470996199000,\"value\":\"cs\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996238000,\"value\":\"foo\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996403000,\"value\":\"bar\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996406000,\"value\":\"cr\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}}],\"binaryAnnotations\":[{\"key\":\"clnt/finagle.version\",\"value\":\"6.45.0\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"key\":\"http.path\",\"value\":\"/api\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"key\":\"sa\",\"value\":true,\"endpoint\":{\"serviceName\":\"backend\",\"ipv4\":\"192.168.99.101\",\"port\":9000}}]}");
   }
 
+  byte[] out = new byte[512];
+
+  @Test void span_JSON_offset() {
+    assertThat(SpanBytesEncoder.JSON_V1.encode(span, out, 10))
+      .isEqualTo(900);
+    assertThat(SpanBytesDecoder.JSON_V1.decodeOne(ByteBuffer.wrap(out, 10, 900)))
+      .isEqualTo(span);
+  }
+
   @Test void span_JSON_V2() {
     assertThat(new String(SpanBytesEncoder.JSON_V2.encode(span), UTF_8))
         .isEqualTo(
             "{\"traceId\":\"7180c278b62e8f6a216a2aea45d08fc9\",\"parentId\":\"6b221d5bc9e6496c\",\"id\":\"5b4185666d50f68b\",\"kind\":\"CLIENT\",\"name\":\"get\",\"timestamp\":1472470996199000,\"duration\":207000,\"localEndpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"},\"remoteEndpoint\":{\"serviceName\":\"backend\",\"ipv4\":\"192.168.99.101\",\"port\":9000},\"annotations\":[{\"timestamp\":1472470996238000,\"value\":\"foo\"},{\"timestamp\":1472470996403000,\"value\":\"bar\"}],\"tags\":{\"clnt/finagle.version\":\"6.45.0\",\"http.path\":\"/api\"}}");
   }
 
+
+  @Test void span_JSON_V2_offset() {
+    assertThat(SpanBytesEncoder.JSON_V2.encode(span, out, 10))
+      .isEqualTo(483);
+    assertThat(SpanBytesDecoder.JSON_V2.decodeOne(ByteBuffer.wrap(out, 10, 483)))
+      .isEqualTo(span);
+  }
+
   @Test void span_PROTO3() {
     assertThat(SpanBytesEncoder.PROTO3.encode(span)).hasSize(182);
+  }
+
+  @Test void span_PROTO3_offset() {
+    assertThat(SpanBytesEncoder.PROTO3.encode(span, out, 10))
+      .isEqualTo(182);
+    assertThat(SpanBytesDecoder.PROTO3.decodeOne(ByteBuffer.wrap(out, 10, 182)))
+      .isEqualTo(span);
   }
 
   @Test void localSpan_JSON_V1() {
@@ -358,6 +383,13 @@ public class SpanBytesEncoderTest {
 
   @Test void span_THRIFT() {
     assertThat(SpanBytesEncoder.THRIFT.encode(span)).hasSize(503);
+  }
+
+  @Test void span_THRIFT_offset() {
+    assertThat(SpanBytesEncoder.THRIFT.encode(span, out, 10))
+      .isEqualTo(503);
+    assertThat(SpanBytesDecoder.THRIFT.decodeOne(ByteBuffer.wrap(out, 10, 503)))
+      .isEqualTo(span);
   }
 
   @Test void localSpan_THRIFT() {

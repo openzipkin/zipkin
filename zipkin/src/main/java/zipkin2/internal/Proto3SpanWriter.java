@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -59,8 +59,18 @@ final class Proto3SpanWriter implements WriteBuffer.Writer<Span> {
   byte[] write(Span onlySpan) {
     int sizeOfValue = SPAN.sizeOfValue(onlySpan);
     byte[] result = new byte[sizeOfLengthDelimitedField(sizeOfValue)];
-    writeSpan(onlySpan, sizeOfValue, WriteBuffer.wrap(result));
+    write(onlySpan, result, 0, sizeOfValue);
     return result;
+  }
+
+  int write(Span onlySpan, byte[] out, int pos) {
+    return write(onlySpan, out, pos, SPAN.sizeOfValue(onlySpan));
+  }
+
+  int write(Span onlySpan, byte[] out, int pos, int sizeOfValue) {
+    WriteBuffer result = WriteBuffer.wrap(out, pos);
+    writeSpan(onlySpan, sizeOfValue, result);
+    return result.pos() - pos;
   }
 
   // prevents resizing twice
