@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2023 The OpenZipkin Authors
+# Copyright 2015-2024 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -34,7 +34,7 @@ FROM ghcr.io/openzipkin/java:${java_version} as install
 #
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG kafka_version=2.8.2
+ARG kafka_version=3.6.1
 ENV KAFKA_VERSION=$kafka_version
 # Note: Scala 2.13+ supports JRE 14
 ARG scala_version=2.13
@@ -47,7 +47,7 @@ RUN /tmp/install.sh && rm /tmp/install.sh
 # Share the same base image to reduce layers used in testing
 FROM ghcr.io/openzipkin/java:${java_version}-jre as zipkin-kafka
 LABEL org.opencontainers.image.description="Kafka and ZooKeeper on OpenJDK and Alpine Linux"
-ARG kafka_version=2.8.2
+ARG kafka_version=3.6.1
 LABEL kafka-version=$kafka_version
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path

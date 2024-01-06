@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2023 The OpenZipkin Authors
+# Copyright 2015-2024 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
 #
 
 # Use latest from https://hub.docker.com/_/rabbitmq/tags?page=1&name=alpine
-ARG rabbitmq_version=3.12.10
+ARG rabbitmq_version=3.12.11
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
