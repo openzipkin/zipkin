@@ -220,6 +220,7 @@
               <compilerId>javac</compilerId>
               <source>1.8</source>
               <target>1.8</target>
+              <release>8</release>
               <!-- scrub errorprone compiler args -->
               <compilerArgs />
             </configuration>

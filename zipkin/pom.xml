@@ -41,14 +41,6 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>org.jvnet</groupId>
-      <artifactId>animal-sniffer-annotation</artifactId>
-      <version>1.0</version>
-      <!-- annotations are not runtime retention, so don't need a runtime dep -->
-      <scope>provided</scope>
-    </dependency>
-
     <!-- Internal classes used in SpanBytesDecoder.JSON_V[12] -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -61,32 +53,6 @@
 
   <build>
     <plugins>
-      <!-- Note: CI should run the "release" profile during tests to ensure no
-     Java 11 features are in use. -->
-      <!-- The core jar needs to be Java 1.6 bytecode -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>animal-sniffer-maven-plugin</artifactId>
-        <version>${animal-sniffer-maven-plugin.version}</version>
-        <configuration>
-          <signature>
-            <groupId>org.codehaus.mojo.signature</groupId>
-            <artifactId>java16</artifactId>
-            <version>1.0</version>
-          </signature>
-          <checkTestClasses>false</checkTestClasses>
-        </configuration>
-        <executions>
-          <execution>
-            <id>animal-sniffer</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
       <plugin>
         <groupId>de.qaware.maven</groupId>
         <artifactId>go-offline-maven-plugin</artifactId>
