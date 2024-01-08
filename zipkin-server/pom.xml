@@ -30,7 +30,7 @@
     <main.basedir>${project.basedir}/..</main.basedir>
 
     <!-- Sometimes we need to override Armeria's Brave version -->
-    <brave.version>5.17.0</brave.version>
+    <brave.version>5.18.1</brave.version>
     <!-- Version overrides to avoid CVEs due to out-of-date Spring deps -->
     <log4j2.version>2.22.1</log4j2.version>
     <snakeyaml.version>2.2</snakeyaml.version>

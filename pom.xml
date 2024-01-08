@@ -200,14 +200,6 @@
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <version>${assertj.version}</version>
-      <exclusions>
-        <!-- Use newer bytebuddy from mockito.
-             TODO: remove when assertj releases a new version -->
-        <exclusion>
-          <groupId>net.bytebuddy</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
       <scope>test</scope>
     </dependency>
 
@@ -402,13 +394,10 @@
         <configuration>
           <!-- Ensures root cause ends up in the console -->
           <trimStackTrace>false</trimStackTrace>
-          <!-- TODO: remove when assertj releases a new version, and includes updated bytebuddy.
-               https://github.com/mockito/mockito/issues/3119#issuecomment-1732179039 -->
-          <argLine>-Dnet.bytebuddy.experimental=true</argLine>
         </configuration>
         <dependencies>
           <!-- needed for surefire.
-     https://maven.apache.org/surefire/maven-surefire-plugin/examples/junit-platform.html -->
+            https://maven.apache.org/surefire/maven-surefire-plugin/examples/junit-platform.html -->
           <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
@@ -446,9 +435,6 @@
           <useModulePath>false</useModulePath>
           <!-- Ensures root cause ends up in the console -->
           <trimStackTrace>false</trimStackTrace>
-          <!-- TODO: remove when assertj releases a new version, and includes updated bytebuddy.
-                https://github.com/mockito/mockito/issues/3119#issuecomment-1732179039 -->
-          <argLine>-Dnet.bytebuddy.experimental=true</argLine>
         </configuration>
       </plugin>
 
