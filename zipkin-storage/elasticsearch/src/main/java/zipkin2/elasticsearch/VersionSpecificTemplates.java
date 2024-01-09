@@ -226,7 +226,7 @@ final class VersionSpecificTemplates {
   IndexTemplates get(ElasticsearchVersion version) {
     if (version.compareTo(V5_0) < 0 || version.compareTo(V9_0) >= 0) {
       throw new IllegalArgumentException(
-        "Elasticsearch versions 5-7.x are supported, was: " + version);
+        "Elasticsearch versions 5-8.x are supported, was: " + version);
     }
     return IndexTemplates.newBuilder()
       .version(version)
