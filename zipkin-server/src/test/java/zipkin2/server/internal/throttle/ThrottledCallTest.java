@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.reporter.AwaitableCallback;
+import zipkin2.server.internal.brave.CallbackAdapter;
 
 import static com.linecorp.armeria.common.util.Exceptions.clearTrace;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -190,7 +191,7 @@ class ThrottledCallTest {
       new ThrottledCall(call, executor, mockLimiter(listener), limiterMetrics, isOverCapacity);
 
     AwaitableCallback callback = new AwaitableCallback();
-    throttle.enqueue(callback);
+    throttle.enqueue(new CallbackAdapter<>(callback));
 
     assertThatThrownBy(callback::await).isEqualTo(OVER_CAPACITY);
 
