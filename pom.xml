@@ -742,6 +742,8 @@
               <failOnError>false</failOnError>
               <!-- hush pedantic warnings: we don't put param and return on everything! -->
               <doclint>none</doclint>
+              <!-- While we publish modules, our source is pre-Java9 so tell javadoc that. -->
+              <source>${maven.compiler.release}</source>
             </configuration>
             <executions>
               <execution>
