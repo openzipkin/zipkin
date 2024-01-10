@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -43,18 +43,11 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
       super(calls);
     }
 
-    volatile boolean empty = true;
-
     @Override protected Void newOutput() {
       return null;
     }
 
     @Override protected void append(Void input, Void output) {
-      empty = false;
-    }
-
-    @Override protected boolean isEmpty(Void output) {
-      return empty;
     }
 
     @Override public AggregateVoidCall clone() {
@@ -74,8 +67,6 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
   protected abstract O newOutput();
 
   protected abstract void append(I input, O output);
-
-  protected abstract boolean isEmpty(O output);
 
   /** Customizes the aggregated result. For example, summarizing or making immutable. */
   protected O finish(O output) {
@@ -107,7 +98,7 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
   @Override protected void doEnqueue(Callback<O> callback) {
     int length = delegate.size();
     AtomicInteger remaining = new AtomicInteger(length);
-    AtomicReference firstError = new AtomicReference();
+    AtomicReference<Throwable> firstError = new AtomicReference<>();
     O result = newOutput();
     for (int i = 0; i < length; i++) {
       Call<I> call = delegate.get(i);
@@ -116,8 +107,8 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
   }
 
   @Override protected void doCancel() {
-    for (int i = 0, length = delegate.size(); i < length; i++) {
-      delegate.get(i).cancel();
+    for (Call<I> iCall : delegate) {
+      iCall.cancel();
     }
   }
 
@@ -165,9 +156,9 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
 
   protected final List<Call<I>> cloneCalls() {
     int length = delegate.size();
-    List<Call<I>> result = new ArrayList<Call<I>>(length);
-    for (int i = 0; i < length; i++) {
-      result.add(delegate.get(i).clone());
+    List<Call<I>> result = new ArrayList<>(length);
+    for (Call<I> iCall : delegate) {
+      result.add(iCall.clone());
     }
     return result;
   }

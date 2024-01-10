@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -255,9 +255,8 @@ final class Proto3ZipkinFields {
       sizeOfSpan += REMOTE_ENDPOINT.sizeInBytes(span.remoteEndpoint());
 
       List<Annotation> annotations = span.annotations();
-      int annotationCount = annotations.size();
-      for (int i = 0; i < annotationCount; i++) {
-        sizeOfSpan += ANNOTATION.sizeInBytes(annotations.get(i));
+      for (Annotation annotation : annotations) {
+        sizeOfSpan += ANNOTATION.sizeInBytes(annotation);
       }
 
       Map<String, String> tags = span.tags();
@@ -285,9 +284,8 @@ final class Proto3ZipkinFields {
       REMOTE_ENDPOINT.write(b, value.remoteEndpoint());
 
       List<Annotation> annotations = value.annotations();
-      int annotationLength = annotations.size();
-      for (int i = 0; i < annotationLength; i++) {
-        ANNOTATION.write(b, annotations.get(i));
+      for (Annotation annotation : annotations) {
+        ANNOTATION.write(b, annotation);
       }
 
       Map<String, String> tags = value.tags();

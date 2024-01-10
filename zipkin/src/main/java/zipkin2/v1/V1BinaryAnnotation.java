@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 package zipkin2.v1;
 
+import java.util.Objects;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.internal.Nullable;
@@ -96,8 +97,8 @@ public final class V1BinaryAnnotation implements Comparable<V1BinaryAnnotation> 
     if (!(o instanceof V1BinaryAnnotation)) return false;
     V1BinaryAnnotation that = (V1BinaryAnnotation) o;
     return key.equals(that.key)
-        && (stringValue == null ? that.stringValue == null : stringValue.equals(that.stringValue))
-        && (endpoint == null ? that.endpoint == null : endpoint.equals(that.endpoint));
+        && Objects.equals(stringValue, that.stringValue)
+        && Objects.equals(endpoint, that.endpoint);
   }
 
   @Override

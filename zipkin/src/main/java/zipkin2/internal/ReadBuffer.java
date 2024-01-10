@@ -17,8 +17,8 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static zipkin2.internal.HexCodec.HEX_DIGITS;
-import static zipkin2.internal.JsonCodec.UTF_8;
 
 /** Read operations do bounds checks, as typically more errors occur reading than writing. */
 public abstract class ReadBuffer extends InputStream {
@@ -154,7 +154,8 @@ public abstract class ReadBuffer extends InputStream {
 
   static final class Array extends ReadBuffer {
     final byte[] buf;
-    int arrayOffset, offset, length;
+    final int arrayOffset, length;
+    int offset;
 
     Array(byte[] buf, int offset, int length) {
       this.buf = buf;
@@ -162,11 +163,11 @@ public abstract class ReadBuffer extends InputStream {
       this.length = length;
     }
 
-    @Override final byte readByteUnsafe() {
+    @Override byte readByteUnsafe() {
       return buf[offset++];
     }
 
-    @Override final byte[] readBytes(int length) {
+    @Override byte[] readBytes(int length) {
       require(length);
       byte[] result = new byte[length];
       System.arraycopy(buf, offset, result, 0, length);
@@ -193,7 +194,7 @@ public abstract class ReadBuffer extends InputStream {
       return true;
     }
 
-    @Override final String doReadUtf8(int length) {
+    @Override String doReadUtf8(int length) {
       String result = new String(buf, offset, length, UTF_8);
       offset += length;
       return result;

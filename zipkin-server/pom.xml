@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>2.27.2-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-server</artifactId>
@@ -32,9 +32,6 @@
     <!-- Sometimes we need to override Armeria's Brave version -->
     <brave.version>6.0.0</brave.version>
     <zipkin-reporter.version>3.1.1</zipkin-reporter.version>
-    <!-- Version overrides to avoid CVEs due to out-of-date Spring deps -->
-    <log4j2.version>2.22.1</log4j2.version>
-    <snakeyaml.version>2.2</snakeyaml.version>
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
 
@@ -63,14 +60,6 @@
       </dependency>
 
       <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-bom</artifactId>
-        <version>${log4j2.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-
-      <dependency>
         <groupId>com.fasterxml.jackson</groupId>
         <artifactId>jackson-bom</artifactId>
         <version>${jackson.version}</version>
@@ -91,20 +80,8 @@
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-starter-logging</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.yaml</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
-
-    <!-- Override spring-boot-starter to avoid CVEs. -->
-    <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
-      <version>${snakeyaml.version}</version>
-    </dependency>
-
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
@@ -127,7 +104,7 @@
     <!-- More efficient, gRPC ready server with brave tracing built-in -->
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-spring-boot2-autoconfigure</artifactId>
+      <artifactId>armeria-spring-boot3-autoconfigure</artifactId>
       <version>${armeria.version}</version>
       <exclusions>
         <exclusion>
@@ -461,7 +438,7 @@
         <!-- /actuator endpoints -->
         <dependency>
           <groupId>${armeria.groupId}</groupId>
-          <artifactId>armeria-spring-boot2-actuator-autoconfigure</artifactId>
+          <artifactId>armeria-spring-boot3-actuator-autoconfigure</artifactId>
           <version>${armeria.version}</version>
           <optional>true</optional>
         </dependency>
@@ -591,7 +568,7 @@
                 <!-- Actuator -->
                 <dependency>
                   <groupId>${armeria.groupId}</groupId>
-                  <artifactId>armeria-spring-boot2-actuator-autoconfigure</artifactId>
+                  <artifactId>armeria-spring-boot3-actuator-autoconfigure</artifactId>
                 </dependency>
                 <dependency>
                   <groupId>org.springframework.boot</groupId>
@@ -676,7 +653,7 @@
                 </dependency>
                 <exclude>
                   <groupId>${armeria.groupId}</groupId>
-                  <artifactId>armeria-thrift0.15</artifactId>
+                  <artifactId>armeria-thrift0.18</artifactId>
                 </exclude>
               </excludes>
             </configuration>

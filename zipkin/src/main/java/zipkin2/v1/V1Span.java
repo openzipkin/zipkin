@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,10 +15,9 @@ package zipkin2.v1;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
+import java.util.Objects;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.internal.Nullable;
@@ -27,7 +26,7 @@ import static java.util.Collections.unmodifiableList;
 import static zipkin2.internal.HexCodec.lowerHexToUnsignedLong;
 
 /**
- * V1 spans are different than v2 especially as annotations repeat. Support is available to help
+ * V1 spans are different from v2 especially as annotations repeat. Support is available to help
  * migrate old code or allow for parsing older data formats.
  *
  * @deprecated new code should use {@link Span}.
@@ -90,22 +89,6 @@ public final class V1Span {
   /** Same as {@link Span#debug()} */
   public Boolean debug() {
     return debug;
-  }
-
-  /** Returns the distinct {@link Endpoint#serviceName() service names} that logged to this span. */
-  public Set<String> serviceNames() {
-    Set<String> result = new LinkedHashSet<String>();
-    for (V1Annotation a : annotations) {
-      if (a.endpoint == null) continue;
-      if (a.endpoint.serviceName() == null) continue;
-      result.add(a.endpoint.serviceName());
-    }
-    for (V1BinaryAnnotation a : binaryAnnotations) {
-      if (a.endpoint == null) continue;
-      if (a.endpoint.serviceName() == null) continue;
-      result.add(a.endpoint.serviceName());
-    }
-    return result;
   }
 
   final long traceIdHigh, traceId, id;
@@ -239,7 +222,7 @@ public final class V1Span {
 
     /** Sets {@link V1Span#annotations()} */
     public Builder addAnnotation(long timestamp, String value, @Nullable Endpoint endpoint) {
-      if (annotations == null) annotations = new ArrayList<V1Annotation>(4);
+      if (annotations == null) annotations = new ArrayList<>(4);
       if (EMPTY_ENDPOINT.equals(endpoint)) endpoint = null;
       annotations.add(new V1Annotation(timestamp, value, endpoint));
       return this;
@@ -250,7 +233,7 @@ public final class V1Span {
       // Ignore empty endpoints rather than crashing v1 parsers on bad address data
       if (endpoint == null || EMPTY_ENDPOINT.equals(endpoint)) return this;
 
-      if (binaryAnnotations == null) binaryAnnotations = new ArrayList<V1BinaryAnnotation>(4);
+      if (binaryAnnotations == null) binaryAnnotations = new ArrayList<>(4);
       binaryAnnotations.add(new V1BinaryAnnotation(address, null, endpoint));
       return this;
     }
@@ -264,7 +247,7 @@ public final class V1Span {
     public Builder addBinaryAnnotation(String key, String value, Endpoint endpoint) {
       if (value == null) throw new NullPointerException("value == null");
       if (EMPTY_ENDPOINT.equals(endpoint)) endpoint = null;
-      if (binaryAnnotations == null) binaryAnnotations = new ArrayList<V1BinaryAnnotation>(4);
+      if (binaryAnnotations == null) binaryAnnotations = new ArrayList<>(4);
       binaryAnnotations.add(new V1BinaryAnnotation(key, value, endpoint));
       return this;
     }
@@ -287,14 +270,14 @@ public final class V1Span {
     V1Span that = (V1Span) o;
     return traceIdHigh == that.traceIdHigh
         && traceId == that.traceId
-        && ((name == null) ? (that.name == null) : name.equals(that.name))
+        && Objects.equals(name, that.name)
         && id == that.id
         && parentId == that.parentId
         && timestamp == that.timestamp
         && duration == that.duration
         && annotations.equals(that.annotations)
         && binaryAnnotations.equals(that.binaryAnnotations)
-        && ((debug == null) ? (that.debug == null) : debug.equals(that.debug));
+        && Objects.equals(debug, that.debug);
   }
 
   @Override
@@ -326,6 +309,6 @@ public final class V1Span {
   static <T extends Comparable<T>> List<T> sortedList(List<T> input) {
     if (input == null) return Collections.emptyList();
     Collections.sort(input);
-    return unmodifiableList(new ArrayList<T>(input));
+    return unmodifiableList(new ArrayList<>(input));
   }
 }

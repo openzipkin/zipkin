@@ -156,7 +156,7 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
   // mostly waiting for https://github.com/testcontainers/testcontainers-java/issues/3537
   static final class CassandraContainer extends GenericContainer<CassandraContainer> {
     CassandraContainer() {
-      super(parse("ghcr.io/openzipkin/zipkin-cassandra:2.26.0"));
+      super(parse("ghcr.io/openzipkin/zipkin-cassandra:2.27.1"));
       addExposedPort(9042);
       waitStrategy = Wait.forHealthcheck();
       withLogConsumer(new Slf4jLogConsumer(LOGGER));

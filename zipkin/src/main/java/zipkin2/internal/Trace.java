@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,7 +28,7 @@ public class Trace {
   public static List<Span> merge(List<Span> spans) {
     int length = spans.size();
     if (length <= 1) return spans;
-    List<Span> result = new ArrayList<Span>(spans);
+    List<Span> result = new ArrayList<>(spans);
     Collections.sort(result, CLEANUP_COMPARATOR);
 
     // Let's cleanup any spans and pick the longest ID
@@ -104,15 +104,13 @@ public class Trace {
     return result;
   }
 
-  static final Comparator<Span> CLEANUP_COMPARATOR = new Comparator<Span>() {
-    @Override public int compare(Span left, Span right) {
-      if (left.equals(right)) return 0;
-      int bySpanId = left.id().compareTo(right.id());
-      if (bySpanId != 0) return bySpanId;
-      int byShared = compareShared(left, right);
-      if (byShared != 0) return byShared;
-      return compareEndpoint(left.localEndpoint(), right.localEndpoint());
-    }
+  static final Comparator<Span> CLEANUP_COMPARATOR = (left, right) -> {
+    if (left.equals(right)) return 0;
+    int bySpanId = left.id().compareTo(right.id());
+    if (bySpanId != 0) return bySpanId;
+    int byShared = compareShared(left, right);
+    if (byShared != 0) return byShared;
+    return compareEndpoint(left.localEndpoint(), right.localEndpoint());
   };
 
   // false or null first (client first)
@@ -144,18 +142,18 @@ public class Trace {
     } else if (right == null) {
       return 1;
     }
-    int byService = nullSafeCompareTo(left.serviceName(), right.serviceName(), false);
+    int byService = nullSafeCompareTo(left.serviceName(), right.serviceName());
     if (byService != 0) return byService;
-    int byIpV4 = nullSafeCompareTo(left.ipv4(), right.ipv4(), false);
+    int byIpV4 = nullSafeCompareTo(left.ipv4(), right.ipv4());
     if (byIpV4 != 0) return byIpV4;
-    return nullSafeCompareTo(left.ipv6(), right.ipv6(), false);
+    return nullSafeCompareTo(left.ipv6(), right.ipv6());
   }
 
-  static <T extends Comparable<T>> int nullSafeCompareTo(T left, T right, boolean nullFirst) {
+  static <T extends Comparable<T>> int nullSafeCompareTo(T left, T right) {
     if (left == null) {
-      return (right == null) ? 0 : (nullFirst ? -1 : 1);
+      return (right == null) ? 0 : 1;
     } else if (right == null) {
-      return nullFirst ? 1 : -1;
+      return -1;
     } else {
       return left.compareTo(right);
     }

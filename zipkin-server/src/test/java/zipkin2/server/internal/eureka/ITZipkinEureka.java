@@ -123,7 +123,7 @@ class ITZipkinEureka {
     static final int EUREKA_PORT = 8761;
 
     EurekaContainer() {
-      super(parse("ghcr.io/openzipkin/zipkin-eureka:2.26.0"));
+      super(parse("ghcr.io/openzipkin/zipkin-eureka:2.27.1"));
       withExposedPorts(EUREKA_PORT);
       waitStrategy = Wait.forHealthcheck();
       withStartupTimeout(Duration.ofSeconds(60));
