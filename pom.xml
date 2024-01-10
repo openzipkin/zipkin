@@ -40,9 +40,13 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <!-- Except for the module named zipkin, all source is Java 11 -->
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
     <!-- We don't use animal-sniffer anymore as release obviates it.
          See https://github.com/mojohaus/animal-sniffer/issues/62 -->
     <maven.compiler.release>11</maven.compiler.release>
+    <maven.compiler.testSource>11</maven.compiler.testSource>
+    <maven.compiler.testTarget>11</maven.compiler.testTarget>
     <maven.compiler.testRelease>11</maven.compiler.testRelease>
 
     <!-- override to set exclusions per-project -->
