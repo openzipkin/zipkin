@@ -89,9 +89,9 @@ final class ThrottledCall extends Call.Base<Void> {
     if (t == null) return null; // success
 
     // Coerce the throwable to the signature of Call.execute()
-    if (t instanceof Error) throw (Error) t;
-    if (t instanceof IOException) throw (IOException) t;
-    if (t instanceof RuntimeException) throw (RuntimeException) t;
+    if (t instanceof Error error) throw error;
+    if (t instanceof IOException exception) throw exception;
+    if (t instanceof RuntimeException exception) throw exception;
     throw new RuntimeException(t);
   }
 

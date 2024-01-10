@@ -53,8 +53,10 @@ public class ZipkinHealthController {
     CompletableFuture<HttpResponse> responseFuture = new CompletableFuture<>();
     ctx.whenRequestTimingOut().handle((unused, unused2) -> {
       try {
-        String healthJson = writeJsonError("Timed out computing health status. "
-          + "This often means your storage backend is unreachable.");
+        String healthJson = writeJsonError("""
+          Timed out computing health status. \
+          This often means your storage backend is unreachable.\
+          """);
         responseFuture.complete(newHealthResponse(STATUS_DOWN, mediaType, healthJson));
       } catch (Throwable e) {
         // Shouldn't happen since we serialize to an array.

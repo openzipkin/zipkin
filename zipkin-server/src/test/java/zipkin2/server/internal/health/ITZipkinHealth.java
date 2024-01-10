@@ -55,18 +55,19 @@ class ITZipkinHealth {
     assertThat(health.isSuccessful()).isTrue();
     assertThat(health.body().contentType())
       .hasToString("application/json; charset=utf-8");
-    assertThat(health.body().string()).isEqualTo(""
-      + "{\n"
-      + "  \"status\" : \"UP\",\n"
-      + "  \"zipkin\" : {\n"
-      + "    \"status\" : \"UP\",\n"
-      + "    \"details\" : {\n"
-      + "      \"InMemoryStorage{}\" : {\n"
-      + "        \"status\" : \"UP\"\n"
-      + "      }\n"
-      + "    }\n"
-      + "  }\n"
-      + "}"
+    assertThat(health.body().string()).isEqualTo("""
+      {
+        "status" : "UP",
+        "zipkin" : {
+          "status" : "UP",
+          "details" : {
+            "InMemoryStorage{}" : {
+              "status" : "UP"
+            }
+          }
+        }
+      }\
+      """
     );
 
     // ensure we don't track health in prometheus

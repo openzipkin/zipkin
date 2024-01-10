@@ -50,22 +50,23 @@ class ITZipkinUiConfiguration {
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
   @Test void configJson() throws Exception {
-    assertThat(get("/zipkin/config.json").body().string()).isEqualTo(""
-      + "{\n"
-      + "  \"environment\" : \"\",\n"
-      + "  \"queryLimit\" : 10,\n"
-      + "  \"defaultLookback\" : 900000,\n"
-      + "  \"searchEnabled\" : true,\n"
-      + "  \"logsUrl\" : null,\n"
-      + "  \"supportUrl\" : null,\n"
-      + "  \"archivePostUrl\" : null,\n"
-      + "  \"archiveUrl\" : null,\n"
-      + "  \"dependency\" : {\n"
-      + "    \"enabled\" : true,\n"
-      + "    \"lowErrorRate\" : 0.5,\n"
-      + "    \"highErrorRate\" : 0.75\n"
-      + "  }\n"
-      + "}"
+    assertThat(get("/zipkin/config.json").body().string()).isEqualTo("""
+      {
+        "environment" : "",
+        "queryLimit" : 10,
+        "defaultLookback" : 900000,
+        "searchEnabled" : true,
+        "logsUrl" : null,
+        "supportUrl" : null,
+        "archivePostUrl" : null,
+        "archiveUrl" : null,
+        "dependency" : {
+          "enabled" : true,
+          "lowErrorRate" : 0.5,
+          "highErrorRate" : 0.75
+        }
+      }\
+      """
     );
   }
 

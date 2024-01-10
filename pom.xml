@@ -39,15 +39,15 @@
     <project.build.outputEncoding>UTF-8</project.build.outputEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <!-- Except for the module named zipkin, all source is Java 11 -->
+    <!-- With two exceptions, main code is Java 11
+         * zipkin core Jar is Java 1.8
+         * zipkin-server is 17, as that's the floor of Spring Boot 3. -->
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
-    <!-- We don't use animal-sniffer anymore as release obviates it.
-         See https://github.com/mojohaus/animal-sniffer/issues/62 -->
-    <maven.compiler.release>11</maven.compiler.release>
-    <maven.compiler.testSource>11</maven.compiler.testSource>
-    <maven.compiler.testTarget>11</maven.compiler.testTarget>
-    <maven.compiler.testRelease>11</maven.compiler.testRelease>
+    <maven.compiler.release>17</maven.compiler.release>
+    <maven.compiler.testSource>17</maven.compiler.testSource>
+    <maven.compiler.testTarget>17</maven.compiler.testTarget>
+    <maven.compiler.testRelease>17</maven.compiler.testRelease>
 
     <!-- override to set exclusions per-project -->
     <errorprone.args />
@@ -455,7 +455,7 @@
                 <requireJavaVersion>
                   <!-- Change this to control LTS JDK versions allowed to build
                        the project. Keep in sync with .github/workflows -->
-                  <version>[11,12),[17,18),[21,22)</version>
+                  <version>[17,18),[21,22)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -613,10 +613,10 @@
     </profile>
 
     <profile>
-      <id>error-prone-11+</id>
+      <id>error-prone-17+</id>
       <activation>
         <!-- Only LTS versions -->
-        <jdk>[11,12),[17,18),[21,22)</jdk>
+        <jdk>[17,18),[21,22)</jdk>
       </activation>
       <build>
         <plugins>

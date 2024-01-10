@@ -31,7 +31,7 @@ Apache Cassandra or Elasticsearch.
 ## Quick-start
 
 The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin&a=zipkin-server&v=LATEST&c=exec) as a self-contained
-executable jar. Note that the Zipkin server requires minimum JRE 11. For example:
+executable jar. Note that the Zipkin server requires minimum JRE 17+. For example:
 
 ```bash
 curl -sSL https://zipkin.io/quickstart.sh | bash -s
@@ -192,7 +192,7 @@ The [Zipkin server](zipkin-server) receives spans via HTTP POST and respond to q
 from its UI. It can also run collectors, such as RabbitMQ or Kafka.
 
 To run the server from the currently checked out source, enter the
-following. JDK 11 is required to compile the source.
+following. JDK 17+ is required to compile the source.
 ```bash
 # Build the server and also make its dependencies
 $ ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server clean install

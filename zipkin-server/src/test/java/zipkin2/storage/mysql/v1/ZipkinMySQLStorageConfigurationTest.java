@@ -114,8 +114,10 @@ class ZipkinMySQLStorageConfigurationTest {
     context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:mysql",
-        "zipkin.storage.mysql"
-      + ".jdbc-url:jdbc:mariadb://host1,host2,host3/zipkin")
+        """
+      zipkin.storage.mysql\
+      .jdbc-url:jdbc:mariadb://host1,host2,host3/zipkin\
+      """)
     .applyTo(context);
     Access.registerMySQL(context);
     context.refresh();
