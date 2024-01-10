@@ -252,10 +252,8 @@ spring:
     exclude:
       - com.linecorp.armeria.spring.actuate.CorsEndpointProperties
       # JMX is disabled
-      - org.springframework.boot.actuate.autoconfigure.web.server.ManagementServerProperties
       - org.springframework.boot.actuate.autoconfigure.endpoint.jmx.JmxEndpointAutoConfiguration
       # /health and /actuator/health served directly by Armeria
-      - org.springframework.boot.actuate.autoconfigure.health.HealthEndpointProperties
       - org.springframework.boot.actuate.autoconfigure.health.HealthEndpointAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.health.HealthContributorAutoConfiguration
       # /info and /actuator/info served directly by Armeria (content is /info.json)
