@@ -50,19 +50,5 @@
       <artifactId>assertj-core</artifactId>
       <version>${assertj.version}</version>
     </dependency>
-
-    <dependency>
-      <groupId>com.esotericsoftware</groupId>
-      <artifactId>kryo</artifactId>
-      <version>${kryo.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <version>${gson.version}</version>
-      <!-- this dependency is shaded out, but IntelliJ can't figure it out. -->
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 </project>

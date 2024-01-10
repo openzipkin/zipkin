@@ -51,6 +51,13 @@
       <!-- this dependency is shaded out -->
       <optional>true</optional>
     </dependency>
+
+    <dependency>
+      <groupId>com.esotericsoftware</groupId>
+      <artifactId>kryo</artifactId>
+      <version>${kryo.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

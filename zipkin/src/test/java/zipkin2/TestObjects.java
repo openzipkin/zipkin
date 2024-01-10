@@ -13,22 +13,16 @@
  */
 package zipkin2;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Random;
 import java.util.TimeZone;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import zipkin2.Span.Kind;
-import zipkin2.internal.WriteBuffer;
+import zipkin2.storage.QueryRequest;
 
 import static java.util.Arrays.asList;
-import static zipkin2.Span.Kind.CLIENT;
 
 public final class TestObjects {
-  public static final Charset UTF_8 = StandardCharsets.UTF_8;
   /** Notably, the cassandra implementation has day granularity */
   public static final long DAY = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);
 
@@ -43,7 +37,6 @@ public final class TestObjects {
     Endpoint.newBuilder().serviceName("backend").ip("192.168.99.101").port(9000).build();
   public static final Endpoint DB =
     Endpoint.newBuilder().serviceName("db").ip("2001:db8::c001").port(3036).build();
-  public static final Endpoint KAFKA = Endpoint.newBuilder().serviceName("kafka").build();
 
   /** For bucketed data floored to the day. For example, dependency links. */
   public static long midnightUTC(long epochMillis) {
@@ -73,16 +66,7 @@ public final class TestObjects {
     .build();
 
   /** Only for unit tests, not integration tests. Integration tests should use random trace IDs. */
-  public static final List<Span> TRACE = newTrace(CLIENT_SPAN.traceId(), "");
-
-  // storage query units are milliseconds, while trace data is microseconds
-  public static long startTs(List<Span> trace) {
-    return trace.get(0).timestampAsLong() / 1000L;
-  }
-
-  public static long endTs(List<Span> trace) {
-    return startTs(trace) + trace.get(0).durationAsLong() / 1000L;
-  }
+  public static final List<Span> TRACE = newTrace(CLIENT_SPAN.traceId());
 
   static final Span.Builder SPAN_BUILDER = newSpanBuilder();
 
@@ -95,30 +79,8 @@ public final class TestObjects {
       .putTag("environment", "test");
   }
 
-  /**
-   * Zipkin trace ids are random 64bit numbers. This creates a relatively large input to avoid
-   * flaking out due to PRNG nuance.
-   */
-  public static final Span[] LOTS_OF_SPANS =
-    new Random().longs(100_000).mapToObj(TestObjects::span).toArray(Span[]::new);
-
   public static Span span(long traceId) {
     return SPAN_BUILDER.traceId(0L, traceId).id(traceId).build();
-  }
-
-  public static Span newClientSpan(String serviceNameSuffix) {
-    return spanBuilder(serviceNameSuffix).kind(CLIENT)
-      .remoteEndpoint(BACKEND.toBuilder().serviceName("backend" + serviceNameSuffix).build())
-      .name("get /foo")
-      .clearTags()
-      .putTag("http.method", "GET")
-      .putTag("http.path", "/foo")
-      .build();
-  }
-
-  public static Span.Builder spanBuilder(String serviceNameSuffix) {
-    Endpoint frontend = suffixServiceName(FRONTEND, serviceNameSuffix);
-    return SPAN_BUILDER.clone().localEndpoint(frontend).traceId(newTraceId());
   }
 
   public static String appendSuffix(String serviceName, String serviceNameSuffix) {
@@ -133,14 +95,10 @@ public final class TestObjects {
     return endpoint.toBuilder().serviceName(prefixed).build();
   }
 
-  public static List<Span> newTrace(String serviceNameSuffix) {
-    return newTrace(newTraceId(), serviceNameSuffix);
-  }
-
-  static List<Span> newTrace(String traceId, String serviceNameSuffix) {
-    Endpoint frontend = suffixServiceName(FRONTEND, serviceNameSuffix);
-    Endpoint backend = suffixServiceName(BACKEND, serviceNameSuffix);
-    Endpoint db = suffixServiceName(DB, serviceNameSuffix);
+  static List<Span> newTrace(String traceId) {
+    Endpoint frontend = suffixServiceName(FRONTEND, "");
+    Endpoint backend = suffixServiceName(BACKEND, "");
+    Endpoint db = suffixServiceName(DB, "");
 
     return asList(
       Span.newBuilder().traceId(traceId).id("1")
@@ -176,11 +134,7 @@ public final class TestObjects {
     );
   }
 
-  public static String newTraceId() {
-    byte[] traceId = new byte[32];
-    WriteBuffer buffer = WriteBuffer.wrap(traceId);
-    buffer.writeLongHex(ThreadLocalRandom.current().nextLong());
-    buffer.writeLongHex(ThreadLocalRandom.current().nextLong());
-    return new String(traceId, UTF_8);
+  public static QueryRequest.Builder requestBuilder() {
+    return QueryRequest.newBuilder().endTs(TODAY + DAY).lookback(DAY * 2).limit(100);
   }
 }
