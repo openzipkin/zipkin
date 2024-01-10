@@ -17,10 +17,14 @@ import com.jayway.jsonpath.JsonPath;
 import com.linecorp.armeria.server.Server;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -75,8 +79,13 @@ class ITZipkinEureka {
     registry.add("zipkin.discovery.eureka.serviceUrl", eureka::serviceUrl);
   }
 
-  @Test @Order(1) void registersInEureka() throws Exception {
-    String json = getEurekaAsString(APPS_ZIPKIN);
+  @BeforeEach void awaitRegistration(){
+    // The zipkin server may start before Eureka processes the registration
+    await().until(this::getEurekaZipkinAppAsString, (s) -> true);
+  }
+
+  @Test @Order(1) void registersInEureka() throws IOException {
+    String json = getEurekaZipkinAppAsString();
 
     // Make sure the health status is OK
     assertThat(readString(json, "$.application.instance[0].status"))
@@ -99,22 +108,22 @@ class ITZipkinEureka {
     zipkin.close();
     await().untilAsserted( // wait for deregistration
       () -> {
-        try (Response response = getEureka(APPS_ZIPKIN)) {
+        try (Response response = getEurekaZipkinApp()) {
           assertThat(response.code()).isEqualTo(404);
         }
       });
   }
 
-  private String getEurekaAsString(String path) throws IOException {
-    try (Response response = getEureka(path); ResponseBody body = response.body()) {
+  private String getEurekaZipkinAppAsString() throws IOException {
+    try (Response response = getEurekaZipkinApp(); ResponseBody body = response.body()) {
       assertThat(response.isSuccessful()).withFailMessage(response.toString()).isTrue();
       return body != null ? body.string() : "";
     }
   }
 
-  private Response getEureka(String path) throws IOException {
+  private Response getEurekaZipkinApp() throws IOException {
     return client.newCall(new Request.Builder()
-      .url(eureka.serviceUrl() + path)
+      .url(eureka.serviceUrl() + APPS_ZIPKIN)
       .header("Accept", "application/json") // XML is default
       .build()).execute();
   }
