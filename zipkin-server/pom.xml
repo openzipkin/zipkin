@@ -108,7 +108,7 @@
       </exclusions>
     </dependency>
 
-    <!-- module support requires org.springframework.boot.loader.PropertiesLauncher
+    <!-- module support requires org.springframework.boot.loader.launch.PropertiesLauncher
          From version 3, this is no longer included in spring-boot-starter. -->
     <dependency>
       <groupId>org.springframework.boot</groupId>

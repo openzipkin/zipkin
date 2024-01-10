@@ -32,7 +32,7 @@ class ZipkinHealthControllerTest {
             "error" : "robots"
           }
         }
-      }\
+      }
       """
     );
   }
@@ -59,7 +59,7 @@ class ZipkinHealthControllerTest {
             }
           }
         }
-      }\
+      }
       """
     );
   }

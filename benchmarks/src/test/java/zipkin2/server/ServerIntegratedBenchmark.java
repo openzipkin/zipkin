@@ -241,8 +241,8 @@ class ServerIntegratedBenchmark {
 
     System.out.println("POST Spans latency (s)");
     printHistogram(prometheusClient, """
-      http_server_requests_seconds_bucket{\
-      method="POST",status="202",uri="/api/v2/spans"}\
+      http_server_requests_seconds_bucket{
+      method="POST",status="202",uri="/api/v2/spans"}
       """);
 
     if (WAIT_AFTER_BENCHMARK) {

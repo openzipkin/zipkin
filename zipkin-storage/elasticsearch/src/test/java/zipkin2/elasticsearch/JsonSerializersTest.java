@@ -39,7 +39,7 @@ class JsonSerializersTest {
         "name": "get-traces",
         "id": "6b221d5bc9e6496c",
         "parentId": null
-      }\
+      }
       """;
 
     parse(SPAN_PARSER, json);
@@ -53,7 +53,7 @@ class JsonSerializersTest {
         "name": "get-traces",
         "id": "6b221d5bc9e6496c",
         "timestamp": null
-      }\
+      }
       """;
 
     parse(SPAN_PARSER, json);
@@ -67,7 +67,7 @@ class JsonSerializersTest {
         "name": "get-traces",
         "id": "6b221d5bc9e6496c",
         "duration": null
-      }\
+      }
       """;
 
     parse(SPAN_PARSER, json);
@@ -81,7 +81,7 @@ class JsonSerializersTest {
         "name": "get-traces",
         "id": "6b221d5bc9e6496c",
         "debug": null
-      }\
+      }
       """;
 
     parse(SPAN_PARSER, json);
@@ -101,7 +101,7 @@ class JsonSerializersTest {
             "endpoint": null
           }
         ]
-      }\
+      }
       """;
 
     parse(SPAN_PARSER, json);
@@ -114,10 +114,10 @@ class JsonSerializersTest {
         "traceId": "6b221d5bc9e6496c",
         "name": "get-traces",
         "id": "6b221d5bc9e6496c",
-        "tags": {\
-            "num": 9223372036854775807\
-        }\
-      }\
+        "tags": {
+            "num": 9223372036854775807
+        }
+      }
       """;
 
     Span span = parse(SPAN_PARSER, json);
@@ -131,10 +131,10 @@ class JsonSerializersTest {
         "traceId": "6b221d5bc9e6496c",
         "name": "get-traces",
         "id": "6b221d5bc9e6496c",
-        "tags": {\
-            "num": 1.23456789\
-        }\
-      }\
+        "tags": {
+            "num": 1.23456789
+        }
+      }
       """;
 
     Span span = parse(SPAN_PARSER, json);
@@ -184,7 +184,7 @@ class JsonSerializersTest {
           "serviceName": "service",
           "port": 65535
         }
-      }\
+      }
       """;
 
     assertThat(parse(SPAN_PARSER, json).localEndpoint())
@@ -201,7 +201,7 @@ class JsonSerializersTest {
         "localEndpoint": {
           "port": 65535
         }
-      }\
+      }
       """;
 
     assertThat(parse(SPAN_PARSER, json).localEndpoint())
@@ -219,7 +219,7 @@ class JsonSerializersTest {
           "serviceName": null,
           "port": 65535
         }
-      }\
+      }
       """;
 
     assertThat(parse(SPAN_PARSER, json).localEndpoint())
@@ -233,7 +233,7 @@ class JsonSerializersTest {
           "traceId": "48485a3953bb61246b221d5bc9e6496c",
           "name": "get-traces",
           "id": "6b221d5bc9e6496c"
-        }\
+        }
         """);
     String withLower64bitsTraceId =
       ("""
@@ -241,7 +241,7 @@ class JsonSerializersTest {
           "traceId": "6b221d5bc9e6496c",
           "name": "get-traces",
           "id": "6b221d5bc9e6496c"
-        }\
+        }
         """);
 
     assertThat(parse(SPAN_PARSER, with128BitTraceId))

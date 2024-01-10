@@ -66,7 +66,7 @@ class ITZipkinHealth {
             }
           }
         }
-      }\
+      }
       """
     );
 

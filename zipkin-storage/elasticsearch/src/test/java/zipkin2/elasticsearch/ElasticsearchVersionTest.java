@@ -53,7 +53,7 @@ class ElasticsearchVersionTest {
           "minimum_index_compatibility_version" : "6.0.0-beta1"
         },
         "tagline" : "You Know, for Search"
-      }\
+      }
       """);
   static final AggregatedHttpResponse VERSION_RESPONSE_6 = AggregatedHttpResponse.of(
     HttpStatus.OK, MediaType.JSON_UTF_8, """
@@ -73,7 +73,7 @@ class ElasticsearchVersionTest {
           "minimum_index_compatibility_version" : "5.0.0"
         },
         "tagline" : "You Know, for Search"
-      }\
+      }
       """);
   static final AggregatedHttpResponse VERSION_RESPONSE_5 = AggregatedHttpResponse.of(
     HttpStatus.OK, MediaType.JSON_UTF_8, """
@@ -89,7 +89,7 @@ class ElasticsearchVersionTest {
           "lucene_version" : "6.2.0"
         },
         "tagline" : "You Know, for Search"
-      }\
+      }
       """);
   static final AggregatedHttpResponse VERSION_RESPONSE_2 = AggregatedHttpResponse.of(
     HttpStatus.OK, MediaType.JSON_UTF_8, """
@@ -104,7 +104,7 @@ class ElasticsearchVersionTest {
           "lucene_version" : "5.5.2"
         },
         "tagline" : "You Know, for Search"
-      }\
+      }
       """);
 
   @RegisterExtension static MockWebServerExtension server = new MockWebServerExtension();

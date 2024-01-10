@@ -109,7 +109,7 @@ class ElasticsearchStorageTest {
       "number_of_in_flight_fetch": 0,
       "task_max_waiting_in_queue_millis": 0,
       "active_shards_percent_as_number": 50
-    }\
+    }
     """);
 
   static final AggregatedHttpResponse RESPONSE_UNAUTHORIZED = AggregatedHttpResponse.of(

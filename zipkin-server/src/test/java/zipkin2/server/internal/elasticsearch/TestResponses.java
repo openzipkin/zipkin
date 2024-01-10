@@ -36,7 +36,7 @@ final class TestResponses {
         "minimum_index_compatibility_version" : "5.0.0"
       },
       "tagline" : "You Know, for Search"
-    }\
+    }
     """);
   static final AggregatedHttpResponse YELLOW_RESPONSE = AggregatedHttpResponse.of(OK, JSON, """
     {

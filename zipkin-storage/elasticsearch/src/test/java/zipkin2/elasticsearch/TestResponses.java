@@ -135,13 +135,13 @@ final class TestResponses {
               "parentId": "0000000000000002",
               "timestamp": 151000,
               "tags": {
-    "            \\"error\\": \\"\\"\\n"\
+                  "error": "💩"
               }
             }
           }
         ]
       }
-    }\
+    }
     """;
   static final String SERVICE_NAMES =
     """
@@ -186,7 +186,7 @@ final class TestResponses {
           }
         }
       }
-    }\
+    }
     """;
 
   static final String SPAN_NAMES =
@@ -220,7 +220,7 @@ final class TestResponses {
           ]
         }
       }
-    }\
+    }
     """;
 
   static final String AUTOCOMPLETE_VALUES = """
@@ -267,6 +267,6 @@ final class TestResponses {
           ]
         }
       }
-    }\
+    }
     """;
 }

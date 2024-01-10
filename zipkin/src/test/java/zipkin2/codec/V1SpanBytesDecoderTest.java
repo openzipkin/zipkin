@@ -247,7 +247,7 @@ class V1SpanBytesDecoderTest {
           "traceId": "48485A3953BB6124",
           "name": "get-traces",
           "id": "6b221d5bc9e6496c"
-        }\
+        }
         """;
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
@@ -262,7 +262,7 @@ class V1SpanBytesDecoderTest {
           "traceId": "48485a3953bb61246b221d5bc9e6496c",
           "name": "get-traces",
           "id": "6b221d5bc9e6496c"
-        }\
+        }
         """)
         .getBytes(UTF_8);
     byte[] withLower64bitsTraceId =
@@ -271,7 +271,7 @@ class V1SpanBytesDecoderTest {
           "traceId": "6b221d5bc9e6496c",
           "name": "get-traces",
           "id": "6b221d5bc9e6496c"
-        }\
+        }
         """)
         .getBytes(UTF_8);
 
@@ -298,7 +298,7 @@ class V1SpanBytesDecoderTest {
           "binaryAnnotations": null,
           "debug": null,
           "shared": null
-        }\
+        }
         """;
 
     SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
@@ -322,7 +322,7 @@ class V1SpanBytesDecoderTest {
               }
             }
           ]
-        }\
+        }
         """;
 
     assertThat(SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8)).localEndpoint())
@@ -347,7 +347,7 @@ class V1SpanBytesDecoderTest {
               }
             }
           ]
-        }\
+        }
         """;
     assertThat(SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8)).localEndpoint()).isNull();
     json =
@@ -363,7 +363,7 @@ class V1SpanBytesDecoderTest {
             }
           }
         ]
-      }\
+      }
       """;
     assertThat(SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8)).localEndpoint()).isNull();
   }
@@ -383,7 +383,7 @@ class V1SpanBytesDecoderTest {
             }
           }
         ]
-      }\
+      }
       """;
 
     Span decoded = SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
@@ -404,7 +404,7 @@ class V1SpanBytesDecoderTest {
           "annotations": [
             { "timestamp": 1472470996199000}
           ]
-        }\
+        }
         """;
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
@@ -421,7 +421,7 @@ class V1SpanBytesDecoderTest {
           "traceId": null,
           "name": "get-traces",
           "id": "6b221d5bc9e6496c"
-        }\
+        }
         """;
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
@@ -438,7 +438,7 @@ class V1SpanBytesDecoderTest {
           "traceId": "6b221d5bc9e6496c",
           "name": "get-traces",
           "id": null
-        }\
+        }
         """;
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
@@ -458,7 +458,7 @@ class V1SpanBytesDecoderTest {
           "annotations": [
             { "timestamp": 1472470996199000, "value": NULL}
           ]
-        }\
+        }
         """;
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
@@ -478,7 +478,7 @@ class V1SpanBytesDecoderTest {
           "annotations": [
             { "timestamp": NULL, "value": "foo"}
           ]
-        }\
+        }
         """;
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
@@ -496,7 +496,7 @@ class V1SpanBytesDecoderTest {
           "localEndpoint": {
             "ipv4": "127.0.0.1"
           }
-        }\
+        }
         """;
 
     assertThat(SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8)).localServiceName())
@@ -513,7 +513,7 @@ class V1SpanBytesDecoderTest {
           "remoteEndpoint": {
             "ipv4": "127.0.0.1"
           }
-        }\
+        }
         """;
 
     assertThat(SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8)).remoteServiceName())

@@ -37,7 +37,7 @@ class JsonReadersTest {
           "lucene_version" : "5.5.2"
         },
         "tagline" : "You Know, for Search"
-      }\
+      }
       """;
 
     assertThat(
@@ -70,7 +70,7 @@ class JsonReadersTest {
           "max_score": 0,
           "hits": []
         }
-      }\
+      }
       """;
 
     assertThat(collectValuesNamed(JSON_FACTORY.createParser(content), "key")).isEmpty();
@@ -128,7 +128,7 @@ class JsonReadersTest {
             ]
           }
         }
-      }\
+      }
       """;
 
     assertThat(collectValuesNamed(JSON_FACTORY.createParser(content), "key"))
