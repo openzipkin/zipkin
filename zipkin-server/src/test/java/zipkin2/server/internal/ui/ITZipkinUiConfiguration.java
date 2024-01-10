@@ -65,8 +65,7 @@ class ITZipkinUiConfiguration {
           "lowErrorRate" : 0.5,
           "highErrorRate" : 0.75
         }
-      }
-      """
+      }"""
     );
   }
 
