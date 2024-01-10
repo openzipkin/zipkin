@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -226,7 +226,7 @@ final class VersionSpecificTemplates {
   IndexTemplates get(ElasticsearchVersion version) {
     if (version.compareTo(V5_0) < 0 || version.compareTo(V9_0) >= 0) {
       throw new IllegalArgumentException(
-        "Elasticsearch versions 5-7.x are supported, was: " + version);
+        "Elasticsearch versions 5-8.x are supported, was: " + version);
     }
     return IndexTemplates.newBuilder()
       .version(version)
