@@ -242,11 +242,13 @@ class V1SpanBytesDecoderTest {
     Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
       String json =
-        "{\n"
-          + "  \"traceId\": \"48485A3953BB6124\",\n"
-          + "  \"name\": \"get-traces\",\n"
-          + "  \"id\": \"6b221d5bc9e6496c\"\n"
-          + "}";
+        """
+        {
+          "traceId": "48485A3953BB6124",
+          "name": "get-traces",
+          "id": "6b221d5bc9e6496c"
+        }\
+        """;
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
     });
@@ -255,18 +257,22 @@ class V1SpanBytesDecoderTest {
 
   @Test void readsTraceIdHighFromTraceIdField() {
     byte[] with128BitTraceId =
-      ("{\n"
-        + "  \"traceId\": \"48485a3953bb61246b221d5bc9e6496c\",\n"
-        + "  \"name\": \"get-traces\",\n"
-        + "  \"id\": \"6b221d5bc9e6496c\"\n"
-        + "}")
+      ("""
+        {
+          "traceId": "48485a3953bb61246b221d5bc9e6496c",
+          "name": "get-traces",
+          "id": "6b221d5bc9e6496c"
+        }\
+        """)
         .getBytes(UTF_8);
     byte[] withLower64bitsTraceId =
-      ("{\n"
-        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-        + "  \"name\": \"get-traces\",\n"
-        + "  \"id\": \"6b221d5bc9e6496c\"\n"
-        + "}")
+      ("""
+        {
+          "traceId": "6b221d5bc9e6496c",
+          "name": "get-traces",
+          "id": "6b221d5bc9e6496c"
+        }\
+        """)
         .getBytes(UTF_8);
 
     assertThat(SpanBytesDecoder.JSON_V1.decodeOne(with128BitTraceId))
@@ -280,40 +286,44 @@ class V1SpanBytesDecoderTest {
 
   @Test void ignoresNull_topLevelFields() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"parentId\": null,\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": null,\n"
-            + "  \"timestamp\": null,\n"
-            + "  \"duration\": null,\n"
-            + "  \"annotations\": null,\n"
-            + "  \"binaryAnnotations\": null,\n"
-            + "  \"debug\": null,\n"
-            + "  \"shared\": null\n"
-            + "}";
+        """
+        {
+          "traceId": "6b221d5bc9e6496c",
+          "parentId": null,
+          "id": "6b221d5bc9e6496c",
+          "name": null,
+          "timestamp": null,
+          "duration": null,
+          "annotations": null,
+          "binaryAnnotations": null,
+          "debug": null,
+          "shared": null
+        }\
+        """;
 
     SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
   }
 
   @Test void ignoresNull_endpoint_topLevelFields() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"binaryAnnotations\": [\n"
-            + "    {\n"
-            + "      \"key\": \"lc\",\n"
-            + "      \"value\": \"\",\n"
-            + "      \"endpoint\": {\n"
-            + "        \"serviceName\": null,\n"
-            + "    \"ipv4\": \"127.0.0.1\",\n"
-            + "        \"ipv6\": null,\n"
-            + "        \"port\": null\n"
-            + "      }\n"
-            + "    }\n"
-            + "  ]\n"
-            + "}";
+        """
+        {
+          "traceId": "6b221d5bc9e6496c",
+          "id": "6b221d5bc9e6496c",
+          "binaryAnnotations": [
+            {
+              "key": "lc",
+              "value": "",
+              "endpoint": {
+                "serviceName": null,
+            "ipv4": "127.0.0.1",
+                "ipv6": null,
+                "port": null
+              }
+            }
+          ]
+        }\
+        """;
 
     assertThat(SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8)).localEndpoint())
         .isEqualTo(Endpoint.newBuilder().ip("127.0.0.1").build());
@@ -321,54 +331,60 @@ class V1SpanBytesDecoderTest {
 
   @Test void skipsIncompleteEndpoint() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"binaryAnnotations\": [\n"
-            + "    {\n"
-            + "      \"key\": \"lc\",\n"
-            + "      \"value\": \"\",\n"
-            + "      \"endpoint\": {\n"
-            + "        \"serviceName\": null,\n"
-            + "        \"ipv4\": null,\n"
-            + "        \"ipv6\": null,\n"
-            + "        \"port\": null\n"
-            + "      }\n"
-            + "    }\n"
-            + "  ]\n"
-            + "}";
+        """
+        {
+          "traceId": "6b221d5bc9e6496c",
+          "id": "6b221d5bc9e6496c",
+          "binaryAnnotations": [
+            {
+              "key": "lc",
+              "value": "",
+              "endpoint": {
+                "serviceName": null,
+                "ipv4": null,
+                "ipv6": null,
+                "port": null
+              }
+            }
+          ]
+        }\
+        """;
     assertThat(SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8)).localEndpoint()).isNull();
     json =
-      "{\n"
-        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-        + "  \"id\": \"6b221d5bc9e6496c\",\n"
-        + "  \"binaryAnnotations\": [\n"
-        + "    {\n"
-        + "      \"key\": \"lc\",\n"
-        + "      \"value\": \"\",\n"
-        + "      \"endpoint\": {\n"
-        + "      }\n"
-        + "    }\n"
-        + "  ]\n"
-        + "}";
+      """
+      {
+        "traceId": "6b221d5bc9e6496c",
+        "id": "6b221d5bc9e6496c",
+        "binaryAnnotations": [
+          {
+            "key": "lc",
+            "value": "",
+            "endpoint": {
+            }
+          }
+        ]
+      }\
+      """;
     assertThat(SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8)).localEndpoint()).isNull();
   }
 
   @Test void ignoresNonAddressBooleanBinaryAnnotations() {
     String json =
-      "{\n"
-        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-        + "  \"id\": \"6b221d5bc9e6496c\",\n"
-        + "  \"binaryAnnotations\": [\n"
-        + "    {\n"
-        + "      \"key\": \"aa\",\n"
-        + "      \"value\": true,\n"
-        + "      \"endpoint\": {\n"
-        + "        \"serviceName\": \"foo\"\n"
-        + "      }\n"
-        + "    }\n"
-        + "  ]\n"
-        + "}";
+      """
+      {
+        "traceId": "6b221d5bc9e6496c",
+        "id": "6b221d5bc9e6496c",
+        "binaryAnnotations": [
+          {
+            "key": "aa",
+            "value": true,
+            "endpoint": {
+              "serviceName": "foo"
+            }
+          }
+        ]
+      }\
+      """;
 
     Span decoded = SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
     assertThat(decoded.tags()).isEmpty();
@@ -380,14 +396,16 @@ class V1SpanBytesDecoderTest {
     Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
       String json =
-        "{\n"
-          + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-          + "  \"name\": \"get-traces\",\n"
-          + "  \"id\": \"6b221d5bc9e6496c\",\n"
-          + "  \"annotations\": [\n"
-          + "    { \"timestamp\": 1472470996199000}\n"
-          + "  ]\n"
-          + "}";
+        """
+        {
+          "traceId": "6b221d5bc9e6496c",
+          "name": "get-traces",
+          "id": "6b221d5bc9e6496c",
+          "annotations": [
+            { "timestamp": 1472470996199000}
+          ]
+        }\
+        """;
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
     });
@@ -398,11 +416,13 @@ class V1SpanBytesDecoderTest {
     Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
       String json =
-        "{\n"
-          + "  \"traceId\": null,\n"
-          + "  \"name\": \"get-traces\",\n"
-          + "  \"id\": \"6b221d5bc9e6496c\"\n"
-          + "}";
+        """
+        {
+          "traceId": null,
+          "name": "get-traces",
+          "id": "6b221d5bc9e6496c"
+        }\
+        """;
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
     });
@@ -413,11 +433,13 @@ class V1SpanBytesDecoderTest {
     Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
       String json =
-        "{\n"
-          + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-          + "  \"name\": \"get-traces\",\n"
-          + "  \"id\": null\n"
-          + "}";
+        """
+        {
+          "traceId": "6b221d5bc9e6496c",
+          "name": "get-traces",
+          "id": null
+        }\
+        """;
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
     });
@@ -428,14 +450,16 @@ class V1SpanBytesDecoderTest {
     Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
       String json =
-        "{\n"
-          + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-          + "  \"name\": \"get-traces\",\n"
-          + "  \"id\": \"6b221d5bc9e6496c\",\n"
-          + "  \"annotations\": [\n"
-          + "    { \"timestamp\": 1472470996199000, \"value\": NULL}\n"
-          + "  ]\n"
-          + "}";
+        """
+        {
+          "traceId": "6b221d5bc9e6496c",
+          "name": "get-traces",
+          "id": "6b221d5bc9e6496c",
+          "annotations": [
+            { "timestamp": 1472470996199000, "value": NULL}
+          ]
+        }\
+        """;
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
     });
@@ -446,14 +470,16 @@ class V1SpanBytesDecoderTest {
     Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
 
       String json =
-        "{\n"
-          + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-          + "  \"name\": \"get-traces\",\n"
-          + "  \"id\": \"6b221d5bc9e6496c\",\n"
-          + "  \"annotations\": [\n"
-          + "    { \"timestamp\": NULL, \"value\": \"foo\"}\n"
-          + "  ]\n"
-          + "}";
+        """
+        {
+          "traceId": "6b221d5bc9e6496c",
+          "name": "get-traces",
+          "id": "6b221d5bc9e6496c",
+          "annotations": [
+            { "timestamp": NULL, "value": "foo"}
+          ]
+        }\
+        """;
 
       SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
     });
@@ -462,14 +488,16 @@ class V1SpanBytesDecoderTest {
 
   @Test void readSpan_localEndpoint_noServiceName() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"localEndpoint\": {\n"
-            + "    \"ipv4\": \"127.0.0.1\"\n"
-            + "  }\n"
-            + "}";
+        """
+        {
+          "traceId": "6b221d5bc9e6496c",
+          "name": "get-traces",
+          "id": "6b221d5bc9e6496c",
+          "localEndpoint": {
+            "ipv4": "127.0.0.1"
+          }
+        }\
+        """;
 
     assertThat(SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8)).localServiceName())
         .isNull();
@@ -477,14 +505,16 @@ class V1SpanBytesDecoderTest {
 
   @Test void readSpan_remoteEndpoint_noServiceName() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"remoteEndpoint\": {\n"
-            + "    \"ipv4\": \"127.0.0.1\"\n"
-            + "  }\n"
-            + "}";
+        """
+        {
+          "traceId": "6b221d5bc9e6496c",
+          "name": "get-traces",
+          "id": "6b221d5bc9e6496c",
+          "remoteEndpoint": {
+            "ipv4": "127.0.0.1"
+          }
+        }\
+        """;
 
     assertThat(SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8)).remoteServiceName())
         .isNull();

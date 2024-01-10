@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -92,23 +92,25 @@ class ElasticsearchStorageTest {
   static final AggregatedHttpResponse HEALTH_RESPONSE = AggregatedHttpResponse.of(
     HttpStatus.OK,
     MediaType.JSON_UTF_8,
-    "{\n"
-      + "  \"cluster_name\": \"elasticsearch_zipkin\",\n"
-      + "  \"status\": \"yellow\",\n"
-      + "  \"timed_out\": false,\n"
-      + "  \"number_of_nodes\": 1,\n"
-      + "  \"number_of_data_nodes\": 1,\n"
-      + "  \"active_primary_shards\": 5,\n"
-      + "  \"active_shards\": 5,\n"
-      + "  \"relocating_shards\": 0,\n"
-      + "  \"initializing_shards\": 0,\n"
-      + "  \"unassigned_shards\": 5,\n"
-      + "  \"delayed_unassigned_shards\": 0,\n"
-      + "  \"number_of_pending_tasks\": 0,\n"
-      + "  \"number_of_in_flight_fetch\": 0,\n"
-      + "  \"task_max_waiting_in_queue_millis\": 0,\n"
-      + "  \"active_shards_percent_as_number\": 50\n"
-      + "}");
+    """
+    {
+      "cluster_name": "elasticsearch_zipkin",
+      "status": "yellow",
+      "timed_out": false,
+      "number_of_nodes": 1,
+      "number_of_data_nodes": 1,
+      "active_primary_shards": 5,
+      "active_shards": 5,
+      "relocating_shards": 0,
+      "initializing_shards": 0,
+      "unassigned_shards": 5,
+      "delayed_unassigned_shards": 0,
+      "number_of_pending_tasks": 0,
+      "number_of_in_flight_fetch": 0,
+      "task_max_waiting_in_queue_millis": 0,
+      "active_shards_percent_as_number": 50
+    }\
+    """);
 
   static final AggregatedHttpResponse RESPONSE_UNAUTHORIZED = AggregatedHttpResponse.of(
     HttpStatus.UNAUTHORIZED,
@@ -196,7 +198,7 @@ class ElasticsearchStorageTest {
    */
   @Test void toStringContainsOnlySummaryInformation() {
     assertThat(storage).hasToString(
-      String.format("ElasticsearchStorage{initialEndpoints=%s, index=zipkin}", server.httpUri()));
+      "ElasticsearchStorage{initialEndpoints=%s, index=zipkin}".formatted(server.httpUri()));
   }
 
   /** Ensure that Zipkin doesn't include "include_type_name" parameter with unsupported versions */

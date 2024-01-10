@@ -88,8 +88,8 @@ class MySQLExtension implements BeforeAllCallback, AfterAllCallback {
   MySQLStorage.Builder computeStorageBuilder() {
     final MariaDbDataSource dataSource;
     try {
-      dataSource = new MariaDbDataSource(String.format(
-        "jdbc:mariadb://%s:%s/zipkin?autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8",
+      dataSource = new MariaDbDataSource(
+        "jdbc:mariadb://%s:%s/zipkin?autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8".formatted(
         host(), port()));
       dataSource.setUser("zipkin");
       dataSource.setPassword("zipkin");

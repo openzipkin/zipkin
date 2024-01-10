@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -194,16 +194,17 @@ class ElasticsearchSpanConsumerTest {
 
     assertThat(server.takeRequest().request().contentUtf8()) // put span template
       .contains(
-        ""
-          + "  \"mappings\": {\n"
-          + "    \"span\": {\n"
-          + "      \"properties\": {\n"
-          + "        \"traceId\": { \"type\": \"keyword\", \"norms\": false },\n"
-          + "        \"annotations\": { \"enabled\": false },\n"
-          + "        \"tags\": { \"enabled\": false }\n"
-          + "      }\n"
-          + "    }\n"
-          + "  }\n");
+        """
+          "mappings": {
+            "span": {
+              "properties": {
+                "traceId": { "type": "keyword", "norms": false },
+                "annotations": { "enabled": false },
+                "tags": { "enabled": false }
+              }
+            }
+          }
+        """);
   }
 
   /** Less overhead as a span json isn't rewritten to include a millis timestamp */
@@ -229,9 +230,10 @@ class ElasticsearchSpanConsumerTest {
     accept(Span.newBuilder().traceId("1").id("1").timestamp(1).putTag("environment", "A").build());
 
     assertThat(server.takeRequest().request().contentUtf8())
-      .endsWith(""
-        + "{\"index\":{\"_index\":\"zipkin:autocomplete-1970-01-01\",\"_type\":\"autocomplete\",\"_id\":\"environment=A\"}}\n"
-        + "{\"tagKey\":\"environment\",\"tagValue\":\"A\"}\n");
+      .endsWith("""
+        {"index":{"_index":"zipkin:autocomplete-1970-01-01","_type":"autocomplete","_id":"environment=A"}}
+        {"tagKey":"environment","tagValue":"A"}
+        """);
   }
 
   @Test void addsAutocompleteValue_suppressesWhenSameDay() throws Exception {
@@ -259,9 +261,10 @@ class ElasticsearchSpanConsumerTest {
     server.takeRequest(); // skip first
     // different day == different context
     assertThat(server.takeRequest().request().contentUtf8())
-      .endsWith(""
-        + "{\"index\":{\"_index\":\"zipkin:autocomplete-1970-01-02\",\"_type\":\"autocomplete\",\"_id\":\"environment=A\"}}\n"
-        + "{\"tagKey\":\"environment\",\"tagValue\":\"A\"}\n");
+      .endsWith("""
+        {"index":{"_index":"zipkin:autocomplete-1970-01-02","_type":"autocomplete","_id":"environment=A"}}
+        {"tagKey":"environment","tagValue":"A"}
+        """);
   }
 
   @Test void addsAutocompleteValue_revertsSuppressionOnFailure() throws Exception {

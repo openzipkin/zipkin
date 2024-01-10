@@ -189,8 +189,10 @@ class V1JsonSpanWriterTest {
 
     assertThat(new String(bytes, UTF_8))
         .contains(
-            "\"binaryAnnotations\":["
-                + "{\"key\":\"clnt/finagle.version\",\"value\":\"6.45.0\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},"
-                + "{\"key\":\"http.path\",\"value\":\"/api\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}}");
+            """
+            "binaryAnnotations":[\
+            {"key":"clnt/finagle.version","value":"6.45.0","endpoint":{"serviceName":"frontend","ipv4":"127.0.0.1"}},\
+            {"key":"http.path","value":"/api","endpoint":{"serviceName":"frontend","ipv4":"127.0.0.1"}}\
+            """);
   }
 }

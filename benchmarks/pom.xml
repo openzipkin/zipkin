@@ -34,7 +34,6 @@
     <maven.compiler.target>17</maven.compiler.target>
     <maven.compiler.release>17</maven.compiler.release>
 
-
     <jmh.version>1.37</jmh.version>
     <unpack-proto.directory>${project.build.directory}/main/proto</unpack-proto.directory>
   </properties>
