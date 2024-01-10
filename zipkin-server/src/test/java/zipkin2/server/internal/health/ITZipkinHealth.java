@@ -66,8 +66,7 @@ class ITZipkinHealth {
             }
           }
         }
-      }
-      """
+      }"""
     );
 
     // ensure we don't track health in prometheus
