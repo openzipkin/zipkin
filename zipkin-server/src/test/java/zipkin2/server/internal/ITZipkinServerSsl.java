@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -40,6 +40,7 @@ import static zipkin2.server.internal.elasticsearch.Access.configureSsl;
   properties = {
     "server.port=0",
     "spring.config.name=zipkin-server",
+    "spring.main.banner-mode=off",
     // TODO: use normal spring.server properties after https://github.com/line/armeria/issues/1834
     "armeria.ssl.enabled=true",
     "armeria.ssl.key-store=classpath:keystore.p12",
