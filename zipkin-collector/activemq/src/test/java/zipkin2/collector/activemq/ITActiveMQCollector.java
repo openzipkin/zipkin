@@ -119,7 +119,7 @@ class ITActiveMQCollector {
    */
   @Test void toStringContainsOnlySummaryInformation() {
     assertThat(collector).hasToString(
-      String.format("ActiveMQCollector{brokerURL=%s, queue=%s}", activemq.brokerURL(), testName));
+      "ActiveMQCollector{brokerURL=%s, queue=%s}".formatted(activemq.brokerURL(), testName));
   }
 
   /** Ensures list encoding works: a json encoded list of spans */

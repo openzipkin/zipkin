@@ -4,6 +4,13 @@
 TODO: list all the reasons why this has caused us pain. Also considerations that this helps with,
 such as our ability to change spring boot or armeria whenever we want.
 
+## Java 17
+
+As Zipkin Server is a Spring Boot 3 application, it requires minimum JRE 17 to
+run. The collector and storage modules it uses remain at Java 11 bytecode until
+the zipkin-dependencies job can run on JRE 17, or its tests no longer share
+storage classes.
+
 ## Modules
 
 ### Impact of auto-configuration being optional

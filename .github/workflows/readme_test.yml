@@ -44,8 +44,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          key: ${{ runner.os }}-jdk-21-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-jdk-21-maven-
       - name: Execute Server Build # command from zipkin-server/README.md
         run: ./mvnw -T1C -q --batch-mode -DskipTests --also-make -pl zipkin-server clean package
 
@@ -78,8 +78,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          key: ${{ runner.os }}-jdk-21-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-jdk-21-maven-
       - name: zipkin-server/README.md # Tests the build which is re-used for a few images
         run: ./mvnw -T1C -q --batch-mode -DskipTests --also-make -pl zipkin-server clean package
       - name: docker/README.md - openzipkin/zipkin

@@ -190,8 +190,8 @@ public class ZipkinSelfTracingConfiguration {
       if (result != null) return delegate;
       // synchronization is not needed as redundant calls have no ill effects
       result = factory.getBean(StorageComponent.class);
-      if (result instanceof TracingStorageComponent) {
-        result = ((TracingStorageComponent) result).delegate;
+      if (result instanceof TracingStorageComponent component) {
+        result = component.delegate;
       }
       return delegate = result;
     }

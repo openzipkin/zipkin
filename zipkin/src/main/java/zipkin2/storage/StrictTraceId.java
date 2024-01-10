@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -71,10 +71,10 @@ public final class StrictTraceId {
 
     // NOTE: It is probably more efficient to do clever sorting and peeking here, but the call site
     // is query side, which is not in the critical path of user code. A set is much easier to grok.
-    Set<String> traceIdLows = new LinkedHashSet<String>();
+    Set<String> traceIdLows = new LinkedHashSet<>();
     boolean clash = false;
-    for (int i = 0; i < traceCount; i++) {
-      String traceId = lowerTraceId(input.get(i).get(0).traceId());
+    for (List<Span> spans : input) {
+      String traceId = lowerTraceId(spans.get(0).traceId());
       if (!traceIdLows.add(traceId)) {
         clash = true;
         break;
@@ -96,7 +96,7 @@ public final class StrictTraceId {
 
     @Override public List<Span> map(List<Span> input) {
       Iterator<Span> i = input.iterator();
-      while (i.hasNext()) { // Not using removeIf as that's java 8+
+      while (i.hasNext()) {
         Span next = i.next();
         if (!next.traceId().equals(traceId)) i.remove();
       }
@@ -122,7 +122,7 @@ public final class StrictTraceId {
     final Set<String> traceIds;
 
     FilterTracesByIds(Iterable<String> sanitizedIds) {
-      traceIds = new LinkedHashSet<String>();
+      traceIds = new LinkedHashSet<>();
       for (String traceId : sanitizedIds) {
         traceIds.add(traceId);
       }

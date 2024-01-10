@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -114,8 +114,10 @@ class ZipkinMySQLStorageConfigurationTest {
     context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:mysql",
-        "zipkin.storage.mysql"
-      + ".jdbc-url:jdbc:mariadb://host1,host2,host3/zipkin")
+        """
+      zipkin.storage.mysql\
+      .jdbc-url:jdbc:mariadb://host1,host2,host3/zipkin\
+      """)
     .applyTo(context);
     Access.registerMySQL(context);
     context.refresh();

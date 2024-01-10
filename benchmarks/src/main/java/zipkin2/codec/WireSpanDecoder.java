@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -306,7 +306,7 @@ public class WireSpanDecoder {
     if (DEBUG) { // avoiding volatile reads as we don't log on skip in our normal codec
       int nextWireType = WireFormat.getTagWireType(tag);
       int nextFieldNumber = WireFormat.getTagFieldNumber(tag);
-      LOG.fine(String.format("Skipping field: byte=%s, fieldNumber=%s, wireType=%s",
+      LOG.fine("Skipping field: byte=%s, fieldNumber=%s, wireType=%s".formatted(
         0, nextFieldNumber, nextWireType));
     }
     input.skip();

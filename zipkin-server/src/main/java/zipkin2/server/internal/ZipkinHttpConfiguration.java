@@ -13,6 +13,7 @@
  */
 package zipkin2.server.internal;
 
+import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpResponse;
@@ -25,6 +26,7 @@ import com.linecorp.armeria.server.file.HttpFile;
 import com.linecorp.armeria.server.metric.PrometheusExpositionService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.prometheus.client.CollectorRegistry;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Function;
@@ -32,6 +34,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.io.Resource;
 import zipkin2.server.internal.health.ZipkinHealthController;
 import zipkin2.server.internal.prometheus.ZipkinMetricsController;
 
@@ -46,7 +49,9 @@ public class ZipkinHttpConfiguration {
     Optional<ZipkinHealthController> healthController,
     Optional<ZipkinMetricsController> metricsController,
     Optional<CollectorRegistry> collectorRegistry,
-    @Value("${zipkin.query.timeout:11s}") Duration queryTimeout) {
+    @Value("classpath:info.json") Resource info,
+    @Value("${zipkin.query.timeout:11s}") Duration queryTimeout) throws IOException {
+    HttpData infoData = HttpData.wrap(info.getContentAsByteArray());
     return sb -> {
       httpQuery.ifPresent(h -> {
         Function<HttpService, HttpService>
@@ -67,8 +72,8 @@ public class ZipkinHttpConfiguration {
       });
 
       // Directly implement info endpoint, but use different content type for the /actuator path
-      sb.service("/actuator/info", infoService(MEDIA_TYPE_ACTUATOR));
-      sb.service("/info", infoService(MediaType.JSON_UTF_8));
+      sb.service("/actuator/info", infoService(infoData, MEDIA_TYPE_ACTUATOR));
+      sb.service("/info", infoService(infoData, MediaType.JSON_UTF_8));
 
       // It's common for backend requests to have timeouts of the magic number 10s, so we go ahead
       // and default to a slightly longer timeout on the server to be able to handle these with
@@ -99,8 +104,8 @@ public class ZipkinHttpConfiguration {
     return builder -> builder.decorator(corsBuilder::build);
   }
 
-  HttpService infoService(MediaType mediaType) {
-    return HttpFile.builder(getClass().getClassLoader(), "info.json")
+  HttpService infoService(HttpData info, MediaType mediaType) {
+    return HttpFile.builder(info)
       .contentType(mediaType)
       .build()
       .asService();

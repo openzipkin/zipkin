@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -53,8 +53,10 @@ public class ZipkinHealthController {
     CompletableFuture<HttpResponse> responseFuture = new CompletableFuture<>();
     ctx.whenRequestTimingOut().handle((unused, unused2) -> {
       try {
-        String healthJson = writeJsonError("Timed out computing health status. "
-          + "This often means your storage backend is unreachable.");
+        String healthJson = writeJsonError("""
+          Timed out computing health status. \
+          This often means your storage backend is unreachable.\
+          """);
         responseFuture.complete(newHealthResponse(STATUS_DOWN, mediaType, healthJson));
       } catch (Throwable e) {
         // Shouldn't happen since we serialize to an array.

@@ -50,43 +50,14 @@ do support an "always share inside a package" in our repository. In other
 words, we trust our developers to proceed with caution. In the first seven
 years of project history, we have had no issues raised with this policy.
 
-### Java 1.6
-Some dependents of this library are instrumentation in nature and are limited
-to a floor JRE version. Java 1.6 is still a traced technology of August 2020.
-Here's a quote from Fabian Lange of Instana, a tracing vendor, at that time:
+### Java 8
 
-> We have 1.6 / 1.7 customers and we happily support them with our auto instrumentation.
-
-While other modules in this project are higher Java levels, the core library
-remains at 1.6. This allows the highest applicability at the cost of
-inconvenience to core library maintainers.
-
-#### Why is the compiler plugin set to source level 1.8?
-JDK 11 was the last JDK to allow writing Java 1.6 bytecode. We set the default
-compile target to 1.8 as that's the earliest target allowed by LTS JDK 21 (it
-[removed 1.7](https://bugs.openjdk.org/browse/JDK-8173605)).
-
-We enforce 1.6 only on the `release` Maven profile. This also requires a JDK no
-later than 11. JDK 11 went out of Oracle support in September 2023, but not for
-Zulu. Hence, we use Zulu for both testing and releasing Zipkin using JDK 11.
-
-The disparity between 1.8 and 1.6 can cause some problems in maintenance. For
-example, the IDE may suggest switching to diamond syntax, which will break
-compilation in 1.6. This is why the `release` profile is used in at least one
-CI matrix. The poor experience is limited to a rarely modified and smaller part
-of the project (this library).
-
-Note, an alternative is to use [Retrolambda](https://github.com/luontola/retrolambda) to backport 1.8 features to 1.6
-bytecode. However, this [stopped working in JDK 15](https://github.com/luontola/retrolambda/issues/161), so we can't use this tactic
-until that's resolved or another tool surfaces to do the same.
-
-#### Why are tests in a different module?
-The more common IDE in use in IntelliJ, which does yet support mixing source
-levels between main and test trees in [Maven projects](https://youtrack.jetbrains.com/issue/IDEA-85478).
-
-Until the above changes, we moved all unit tests to the zipkin-tests project.
-This allows them to use Java 1.8 language features. Once IntelliJ changes, we
-can likely move those tests back with little impact.
+Up until Zipkin 3, we supported instrumentation of very old applications via
+source level 1.6. Since then, Brave embedded its own JSON writer and no longer
+uses this library. Also, other instrumentation libraries, like OpenTelemetry,
+have a floor version of Java 8. Keeping Java 6 support here limits the LTS
+we can use to release to max JDK 11. We moved to Java 8 to compromise on these
+points, knowing Brave 6 can still serve old applications.
 
 ### Zero dependency policy
 Some dependents of this library are instrumentation in nature, and we cannot

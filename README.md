@@ -11,7 +11,7 @@ Features include both the collection and lookup of this data.
 If you have a trace ID in a log file, you can jump directly to it. Otherwise,
 you can query based on attributes such as service, operation name, tags and
 duration. Some interesting data will be summarized for you, such as the
-percentage of time spent in a service, and whether or not operations failed.
+percentage of time spent in a service, and whether operations failed.
 
 <img src="https://zipkin.io/public/img/web-screenshot.png" alt="Trace view screenshot" />
 
@@ -30,7 +30,8 @@ Apache Cassandra or Elasticsearch.
 
 ## Quick-start
 
-The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin&a=zipkin-server&v=LATEST&c=exec) as a self-contained executable jar. Note that the Zipkin server requires minimum JRE 8. For example:
+The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin&a=zipkin-server&v=LATEST&c=exec) as a self-contained
+executable jar. Note that the Zipkin server requires minimum JRE 17+. For example:
 
 ```bash
 curl -sSL https://zipkin.io/quickstart.sh | bash -s
@@ -66,9 +67,11 @@ docker run -d -p 9411:9411 openzipkin/zipkin-slim
 ```
 
 ## Core Library
-The [core library](zipkin/src/main/java/zipkin2) is used by both Zipkin instrumentation and the Zipkin server. Its minimum Java language level is 6, in efforts to support those writing agent instrumentation.
+The [core library](zipkin/src/main/java/zipkin2) is used by both Zipkin instrumentation and the Zipkin server.
 
-This includes built-in codec for Zipkin's v1 and v2 json formats. A direct dependency on gson (json library) is avoided by minifying and repackaging classes used. The result is a 155k jar which won't conflict with any library you use.
+This includes built-in codec for Zipkin's v1 and v2 json formats. A direct dependency on gson
+(json library) is avoided by minifying and repackaging classes used. The result is a 155k jar which
+won't conflict with any library you use.
 
 Ex.
 ```java
@@ -89,10 +92,18 @@ bytes = SpanBytesEncoder.JSON_V2.encode(span);
 
 Note: The above is just an example, most likely you'll want to use an existing tracing library like [Brave](https://github.com/openzipkin/brave)
 
+### Core Library Requires Java 8+
+
+The minimum Java language level of the core library is 8. This helps support those writing agent
+instrumentation. Version 2.x was the last to support Java 6.
+
+*Note*: [zipkin-reporter-brave](https://github.com/openzipkin/zipkin-reporter-java/blob/master/brave/README.md)
+does not use this library. So, [brave](https://github.com/openzipkin/brave) still supports Java 6.
+
 ## Storage Component
 Zipkin includes a [StorageComponent](zipkin/src/main/java/zipkin2/storage/StorageComponent.java), used to store and query spans and
-dependency links. This is used by the server and those making collectors, or span reporters. For this reason, storage
-components have minimal dependencies, but most require Java 11+
+dependency links. This is used by the server and those making collectors, or span reporters.
+For this reason, storage components have minimal dependencies, though require Java 11+.
 
 Ex.
 ```java
@@ -118,7 +129,7 @@ database needed.
 
 ### Cassandra
 The [Cassandra](zipkin-server#cassandra-storage) component uses Cassandra
-3.11.3+ features, but is tested against the latest patch of Cassandra 3.11.
+3.11.3+ features, but is tested against the latest patch of Cassandra 4.1.
 
 This is the second generation of our Cassandra schema. It stores spans
 using UDTs, such that they appear like Zipkin v2 json in cqlsh. It is
@@ -164,7 +175,7 @@ simpler v2 data model currently used.
 
 #### MySQL
 The [MySQL v1](zipkin-storage/mysql-v1) component uses MySQL 5.6+
-features, but is tested against MariaDB 10.3.
+features, but is tested against MariaDB 10.11.
 
 The schema was designed to be easy to understand and get started with;
 it was not designed for performance. Ex spans fields are columns, so
@@ -181,7 +192,7 @@ The [Zipkin server](zipkin-server) receives spans via HTTP POST and respond to q
 from its UI. It can also run collectors, such as RabbitMQ or Kafka.
 
 To run the server from the currently checked out source, enter the
-following. JDK 11 is required to compile the source.
+following. JDK 17+ is required to compile the source.
 ```bash
 # Build the server and also make its dependencies
 $ ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server clean install

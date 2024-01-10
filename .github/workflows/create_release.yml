@@ -24,13 +24,13 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'  # zulu as it supports a wide version range
-          java-version: '11'  # earliest LTS and last that can compile the 1.6 release profile.
+          java-version: '17'  # earliest LTS and last that can compile the 1.6 release profile.
       - name: Cache local Maven repository
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          key: ${{ runner.os }}-jdk-11-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-jdk-11-maven-
       - name: Create Release
         env:
           # GH_USER=<user that created GH_TOKEN>

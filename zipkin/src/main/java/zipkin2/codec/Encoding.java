@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -53,8 +53,8 @@ public enum Encoding {
     /** Encoding overhead is thrift type plus 32-bit length prefix */
     @Override public int listSizeInBytes(List<byte[]> values) {
       int sizeInBytes = 5;
-      for (int i = 0, length = values.size(); i < length; i++) {
-        sizeInBytes += values.get(i).length;
+      for (byte[] value : values) {
+        sizeInBytes += value.length;
       }
       return sizeInBytes;
     }

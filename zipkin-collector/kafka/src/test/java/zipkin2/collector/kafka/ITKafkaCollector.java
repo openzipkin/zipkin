@@ -299,7 +299,7 @@ class ITKafkaCollector {
       collector.start();
 
       assertThat(collector).hasToString(
-        String.format("KafkaCollector{bootstrapServers=%s, topic=%s}", kafka.bootstrapServer(),
+        "KafkaCollector{bootstrapServers=%s, topic=%s}".formatted(kafka.bootstrapServer(),
           "muah")
       );
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -35,7 +35,8 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   webEnvironment = SpringBootTest.WebEnvironment.NONE, // RANDOM_PORT requires spring-web
   properties = {
     "server.port=0",
-    "spring.config.name=zipkin-server"
+    "spring.config.name=zipkin-server",
+    "spring.main.banner-mode=off",
   }
 )
 class ITZipkinHealth {
@@ -54,18 +55,18 @@ class ITZipkinHealth {
     assertThat(health.isSuccessful()).isTrue();
     assertThat(health.body().contentType())
       .hasToString("application/json; charset=utf-8");
-    assertThat(health.body().string()).isEqualTo(""
-      + "{\n"
-      + "  \"status\" : \"UP\",\n"
-      + "  \"zipkin\" : {\n"
-      + "    \"status\" : \"UP\",\n"
-      + "    \"details\" : {\n"
-      + "      \"InMemoryStorage{}\" : {\n"
-      + "        \"status\" : \"UP\"\n"
-      + "      }\n"
-      + "    }\n"
-      + "  }\n"
-      + "}"
+    assertThat(health.body().string()).isEqualTo("""
+      {
+        "status" : "UP",
+        "zipkin" : {
+          "status" : "UP",
+          "details" : {
+            "InMemoryStorage{}" : {
+              "status" : "UP"
+            }
+          }
+        }
+      }"""
     );
 
     // ensure we don't track health in prometheus

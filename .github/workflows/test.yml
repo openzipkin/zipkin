@@ -32,13 +32,13 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'  # zulu as it supports a wide version range
-          java-version: '11'  # earliest LTS and last that can compile the 1.6 release profile.
+          java-version: '17'  # earliest LTS supported by Spring Boot 3
       - name: Cache local Maven repository
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-jdk-11-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-jdk-11-maven-
+          key: ${{ runner.os }}-jdk-17-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-jdk-17-maven-
       - name: Build JavaDoc
         run: ./mvnw clean javadoc:aggregate -Prelease
 
@@ -50,7 +50,7 @@ jobs:
       fail-fast: false  # don't fail fast as sometimes failures are operating system specific
       matrix:  # use latest available versions and be consistent on all workflows!
         include:
-          - java_version: 11  # Last that can compile zipkin core to 1.6 for zipkin-reporter
+          - java_version: 17  # earliest LTS supported by Spring Boot 3
             maven_args: -Prelease -Dgpg.skip -Dmaven.javadoc.skip=true
           - java_version: 21  # Most recent LTS
     steps:
@@ -104,8 +104,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          key: ${{ runner.os }}-jdk-${{ matrix.java_version }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-jdk-${{ matrix.java_version }}-maven-
       # Don't attempt to cache Docker. Sensitive information can be stolen
       # via forks, and login session ends up in ~/.docker. This is ok because
       # we publish DOCKER_PARENT_IMAGE to ghcr.io, hence local to the runner.

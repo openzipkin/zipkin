@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -188,7 +188,7 @@ public final class QueryRequest {
      */
     public Builder parseAnnotationQuery(@Nullable String annotationQuery) {
       if (annotationQuery == null || annotationQuery.isEmpty()) return this;
-      Map<String, String> map = new LinkedHashMap<String, String>();
+      Map<String, String> map = new LinkedHashMap<>();
       for (String ann : annotationQuery.split(" and ", 100)) {
         int idx = ann.indexOf('=');
         if (idx == -1) {
@@ -243,7 +243,7 @@ public final class QueryRequest {
       return this;
     }
 
-    public final QueryRequest build() {
+    public QueryRequest build() {
       // coerce service and span names to lowercase
       if (serviceName != null) serviceName = serviceName.toLowerCase(Locale.ROOT);
       if (remoteServiceName != null) remoteServiceName = remoteServiceName.toLowerCase(Locale.ROOT);
@@ -312,8 +312,7 @@ public final class QueryRequest {
     String serviceNameToMatch = serviceName();
     String remoteServiceNameToMatch = remoteServiceName();
     String spanNameToMatch = spanName();
-    Map<String, String> annotationQueryRemaining =
-      new LinkedHashMap<String, String>(annotationQuery());
+    Map<String, String> annotationQueryRemaining = new LinkedHashMap<>(annotationQuery());
 
     for (Span span : spans) {
       String localServiceName = span.localServiceName();

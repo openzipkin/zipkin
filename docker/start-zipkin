@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2015-2020 The OpenZipkin Authors
+# Copyright 2015-2024 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -40,5 +40,5 @@ else
   # Disable Log4j2 JMX extensions when running the full build
   exec java ${MODULE_OPTS} ${JAVA_OPTS} -cp . \
   -Dlog4j2.disable.jmx=true \
-  org.springframework.boot.loader.PropertiesLauncher "$@"
+  org.springframework.boot.loader.launch.PropertiesLauncher "$@"
 fi

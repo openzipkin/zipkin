@@ -88,8 +88,8 @@ class MySQLExtension implements BeforeAllCallback, AfterAllCallback {
   MySQLStorage.Builder computeStorageBuilder() {
     final MariaDbDataSource dataSource;
     try {
-      dataSource = new MariaDbDataSource(String.format(
-        "jdbc:mariadb://%s:%s/zipkin?autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8",
+      dataSource = new MariaDbDataSource(
+        "jdbc:mariadb://%s:%s/zipkin?autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8".formatted(
         host(), port()));
       dataSource.setUser("zipkin");
       dataSource.setPassword("zipkin");
@@ -113,7 +113,7 @@ class MySQLExtension implements BeforeAllCallback, AfterAllCallback {
   // mostly waiting for https://github.com/testcontainers/testcontainers-java/issues/3537
   static final class MySQLContainer extends GenericContainer<MySQLContainer> {
     MySQLContainer() {
-      super(parse("ghcr.io/openzipkin/zipkin-mysql:2.26.0"));
+      super(parse("ghcr.io/openzipkin/zipkin-mysql:2.27.1"));
       addExposedPort(3306);
       waitStrategy = Wait.forHealthcheck();
       withLogConsumer(new Slf4jLogConsumer(LOGGER));

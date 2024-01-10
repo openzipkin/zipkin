@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -52,7 +52,7 @@ public final class DelayLimiter<C> {
     public <C> DelayLimiter<C> build() {
       if (ttl <= 0L) throw new IllegalArgumentException("ttl <= 0");
       if (cardinality <= 0) throw new IllegalArgumentException("cardinality <= 0");
-      return new DelayLimiter<C>(new SuppressionFactory(ttlUnit.toNanos(ttl)), cardinality);
+      return new DelayLimiter<>(new SuppressionFactory(ttlUnit.toNanos(ttl)), cardinality);
     }
 
     Builder() {
@@ -60,8 +60,8 @@ public final class DelayLimiter<C> {
   }
 
   final SuppressionFactory suppressionFactory;
-  final ConcurrentHashMap<C, Suppression<C>> cache = new ConcurrentHashMap<C, Suppression<C>>();
-  final DelayQueue<Suppression<C>> suppressions = new DelayQueue<Suppression<C>>();
+  final ConcurrentHashMap<C, Suppression<C>> cache = new ConcurrentHashMap<>();
+  final DelayQueue<Suppression<C>> suppressions = new DelayQueue<>();
   final int cardinality;
 
   DelayLimiter(SuppressionFactory suppressionFactory, int cardinality) {
@@ -126,7 +126,7 @@ public final class DelayLimiter<C> {
     }
 
     <C> Suppression<C> create(C context) {
-      return new Suppression<C>(this, context, nanoTime() + ttlNanos);
+      return new Suppression<>(this, context, nanoTime() + ttlNanos);
     }
   }
 

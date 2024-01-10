@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.zipkin2</groupId>
     <artifactId>zipkin-collector-parent</artifactId>
-    <version>2.27.2-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-collector-scribe</artifactId>
@@ -42,7 +42,7 @@
 
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-thrift0.15</artifactId>
+      <artifactId>armeria-thrift0.18</artifactId>
       <version>${armeria.version}</version>
     </dependency>
 

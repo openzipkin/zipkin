@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 package zipkin2.v1;
 
+import java.util.Objects;
 import zipkin2.Annotation;
 import zipkin2.Endpoint;
 import zipkin2.Span;
@@ -71,7 +72,7 @@ public final class V1Annotation implements Comparable<V1Annotation> {
     V1Annotation that = (V1Annotation) o;
     return timestamp == that.timestamp
         && value.equals(that.value)
-        && (endpoint == null ? that.endpoint == null : endpoint.equals(that.endpoint));
+        && Objects.equals(endpoint, that.endpoint);
   }
 
   @Override

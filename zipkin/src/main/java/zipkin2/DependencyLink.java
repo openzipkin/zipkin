@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,15 +17,16 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import zipkin2.codec.DependencyLinkBytesDecoder;
 import zipkin2.codec.DependencyLinkBytesEncoder;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /** A dependency link is an edge between two services. */
 //@Immutable
 public final class DependencyLink implements Serializable { // for Spark and Flink jobs
-  static final Charset UTF_8 = Charset.forName("UTF-8"); // pre-Java 1.8
-
   private static final long serialVersionUID = 0L;
 
   public static Builder newBuilder() {
@@ -48,7 +49,7 @@ public final class DependencyLink implements Serializable { // for Spark and Fli
   }
 
   /**
-   * {@linkplan #callCount Count of calls} known to be errors (having one {@linkplain Span#tags()
+   * {@linkplain #callCount Count of calls} known to be errors (having one {@linkplain Span#tags()
    * tag} named "error").
    */
   public long errorCount() {
@@ -148,7 +149,7 @@ public final class DependencyLink implements Serializable { // for Spark and Fli
   }
 
   // This is an immutable object, and our encoder is faster than java's: use a serialization proxy.
-  final Object writeReplace() throws ObjectStreamException {
+  Object writeReplace() throws ObjectStreamException {
     return new SerializedForm(DependencyLinkBytesEncoder.JSON_V1.encode(this));
   }
 
