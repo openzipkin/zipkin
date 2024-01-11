@@ -44,7 +44,7 @@
          * zipkin-server is 17, as that's the floor of Spring Boot 3. -->
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
-    <maven.compiler.release>17</maven.compiler.release>
+    <maven.compiler.release>11</maven.compiler.release>
     <maven.compiler.testSource>17</maven.compiler.testSource>
     <maven.compiler.testTarget>17</maven.compiler.testTarget>
     <maven.compiler.testRelease>17</maven.compiler.testRelease>

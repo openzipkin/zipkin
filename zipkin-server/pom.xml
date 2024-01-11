@@ -29,6 +29,11 @@
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
 
+    <!-- Spring Boot 3 requires JRE 17 -->
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
+
     <!-- Sometimes we need to override Armeria's Brave version -->
     <brave.version>6.0.0</brave.version>
     <zipkin-reporter.version>3.1.1</zipkin-reporter.version>
