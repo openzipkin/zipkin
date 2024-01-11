@@ -24,7 +24,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'  # zulu as it supports a wide version range
-          java-version: '17'  # earliest LTS and last that can compile the 1.6 release profile.
+          java-version: '17'  # earliest LTS supported by Spring Boot 3
       - name: Cache local Maven repository
         uses: actions/cache@v3
         with:
