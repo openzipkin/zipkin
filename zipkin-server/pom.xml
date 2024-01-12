@@ -266,6 +266,13 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- the "slim" jar will exclude this -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- Optional, but packaged in the supported distribution -->
 
     <!-- Cassandra backend -->
@@ -466,11 +473,6 @@
     </dependency>
 
     <!-- Main code uses jul and tests log with log4j -->
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-jul</artifactId>

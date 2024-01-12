@@ -127,7 +127,7 @@ class ElasticsearchExtension implements BeforeAllCallback, AfterAllCallback {
   // mostly waiting for https://github.com/testcontainers/testcontainers-java/issues/3537
   static final class ElasticsearchContainer extends GenericContainer<ElasticsearchContainer> {
     ElasticsearchContainer(int majorVersion) {
-      super(parse("ghcr.io/openzipkin/zipkin-elasticsearch" + majorVersion + ":3.0.0"));
+      super(parse("ghcr.io/openzipkin/zipkin-elasticsearch" + majorVersion + ":3.0.1"));
       addExposedPort(9200);
       waitStrategy = Wait.forHealthcheck();
       withLogConsumer(new Slf4jLogConsumer(LOGGER));
