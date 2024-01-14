@@ -108,4 +108,4 @@ jobs:
           build-bin/test -Dgroups=docker -pl :${{ matrix.name }}
         env:
           MAVEN_GOAL: install  # docker build needs dependencies in mavenLocal
-          MAVEN_OPTS: -Dlicense.skip=true  # license check already run
+          MAVEN_CONFIG: '-Dlicense.skip=true'  # license check already run

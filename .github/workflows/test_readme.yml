@@ -60,7 +60,7 @@ jobs:
       - name: Execute Server Build  # command from zipkin-server/README.md
         run: ./mvnw --also-make -pl zipkin-server clean package
         env:
-          MAVEN_OPTS: '-T1C -q --batch-mode -DskipTests'
+          MAVEN_CONFIG: '-T1C -q --batch-mode -DskipTests'
 
   docker:
     runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
@@ -101,7 +101,7 @@ jobs:
       - name: Build zipkin-server  # redundant, but needed for docker/README.md
         run: ./mvnw --also-make -pl zipkin-server clean package
         env:
-          MAVEN_OPTS: '-T1C -q --batch-mode -DskipTests'
+          MAVEN_CONFIG: '-T1C -q --batch-mode -DskipTests'
       - name: docker/README.md - openzipkin/zipkin
         run: |
           build-bin/docker/docker_build openzipkin/zipkin:test &&
