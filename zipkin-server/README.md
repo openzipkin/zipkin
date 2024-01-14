@@ -525,6 +525,10 @@ Example usage:
 $ EUREKA_SERVICE_URL=http://localhost:8761/eureka/v2 java -jar zipkin.jar
 ```
 
+If you are using a containerized environment, you may need to set `EUREKA_HOSTNAME` to avoid
+detecting the wrong hostname. For example, if using docker-compose, set `EUREKA_HOSTNAME` to
+zipkin's `container_name`.
+
 Note: Eureka server registration only includes host and port details. Tracers need to resolve this
 to the POST endpoint "/api/v2/spans".
 

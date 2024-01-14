@@ -34,6 +34,33 @@ services:
       service: zipkin
     environment:
       - EUREKA_SERVICE_URL=http://eureka:8761/eureka/v2
+      - EUREKA_HOSTNAME=zipkin
     depends_on:
       eureka:
+        condition: service_healthy
+
+  # Generate traffic by hitting http://localhost:8081
+  frontend:
+    image: ghcr.io/openzipkin/brave-example:armeria
+    container_name: frontend
+    entrypoint: start-frontend
+    environment:
+      - EUREKA_SERVICE_URL=http://eureka:8761/eureka/v2
+    ports:
+      - 8081:8081
+    depends_on:
+      backend:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+
+  # Serves the /api endpoint the frontend uses
+  backend:
+    image: ghcr.io/openzipkin/brave-example:armeria
+    container_name: backend
+    entrypoint: start-backend
+    environment:
+      - EUREKA_SERVICE_URL=http://eureka:8761/eureka/v2
+    depends_on:
+      zipkin:
         condition: service_healthy

@@ -124,9 +124,12 @@ You can register Zipkin for service discovery in [Eureka](../test-images/zipkin-
 using the `docker-compose-eureka.yml` file. This configuration starts `zipkin` and `zipkin-eureka`
 in their own containers.
 
-To register Zipkin in Eureka, run:
+When `zipkin` starts, it registers its endpoint into `eureka`. Then, the two [example services](#example)
+discover zipkin's endpoint from `eureka` and use it to send spans.
+
+To try this out, run:
 ```bash
-$ docker-compose -f docker-compose-eureka.yml up
+$ docker-compose -f docker-compose.yml -f docker-compose-eureka.yml up
 ```
 
 ## Example
