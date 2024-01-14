@@ -4,13 +4,14 @@ name: deploy
 
 # We deploy on master and release versions, regardless of if the commit is
 # documentation-only or not.
-#
-# See https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
-on:
+on:  # yamllint disable-line rule:truthy
   push:
-    # Don't deploy tags as they conflict with [maven-release-plugin] prepare release MAJOR.MINOR.PATCH
-    tags: ''
-    branches: master
+    branches:
+      - master
+    # Don't deploy tags because the same commit for MAJOR.MINOR.PATCH is also
+    # on master: Redundant deployment of a release version will fail uploading.
+    tags-ignore:
+      - '*'
 
 jobs:
   deploy:
@@ -19,10 +20,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          # Prevent use of implicit GitHub Actions read-only token GITHUB_TOKEN.
-          # We push Javadocs to the gh-pages branch on commit.
+          # Prevent use of implicit GitHub Actions read-only GITHUB_TOKEN
+          # because javadoc_to_gh_pages pushes commits to the gh-pages branch.
           token: ${{ secrets.GH_TOKEN }}
-          fetch-depth: 0  # allow build-bin/idl_to_gh_pages to get the full history
+          # allow build-bin/javadoc_to_gh_pages to get the full history
+          fetch-depth: 0
       - name: Setup java
         uses: actions/setup-java@v4
         with:
@@ -38,6 +40,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.npm
+          # yamllint disable-line rule:line-length
           key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
       # Don't attempt to cache Docker. Sensitive information can be stolen
       # via forks, and login session ends up in ~/.docker. This is ok because
@@ -47,31 +50,30 @@ jobs:
           # GH_USER=<user that created GH_TOKEN>
           GH_USER: ${{ secrets.GH_USER }}
           # GH_TOKEN=<hex token value>
-          #   - pushes gh-pages during build-bin/javadoc_to_gh_pages
-          #   - pushes Docker images to ghcr.io
-          #   - create via https://github.com/settings/tokens
-          #   - needs repo:status, public_repo, write:packages, delete:packages
+          # * pushes gh-pages during build-bin/javadoc_to_gh_pages
+          # * pushes Docker images to ghcr.io
+          # * create via https://github.com/settings/tokens
+          # * needs repo:status, public_repo, write:packages, delete:packages
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
           # GPG_PASSPHRASE=<passphrase for GPG_SIGNING_KEY>
-          #   - referenced in .settings.xml
+          # * referenced in .settings.xml
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           # SONATYPE_USER=<sonatype account token>
-          #   - deploys snapshots and releases to Sonatype
-          #   - needs access to io.zipkin via https://issues.sonatype.org/browse/OSSRH-16669
-          #   - generate via https://oss.sonatype.org/#profile;User%20Token
-          #   - referenced in .settings.xml
+          # * deploys snapshots and releases to Sonatype
+          # * needs access to io.zipkin via OSSRH-16669
+          # * generate via https://oss.sonatype.org/#profile;User%20Token
+          # * referenced in .settings.xml
           SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
           # SONATYPE_PASSWORD=<password to sonatype account token>
-          #   - referenced in .settings.xml
+          #  * referenced in .settings.xml
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           # DOCKERHUB_USER=<typically dockerzipkindeployer>
-          #   - only push top-level projects: zipkin zipkin-aws zipkin-dependencies zipkin-gcp to Docker Hub, only on release
-          #   - login like this: echo "$DOCKERHUB_TOKEN"| docker login -u "$DOCKERHUB_USER" --password-stdin
+          #  * only push repos in openzipkin org to Docker Hub on release
           DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
           # DOCKERHUB_TOKEN=<access token for DOCKERHUB_USER>
-          #   -  Access Token from here https://hub.docker.com/settings/security
+          #  * Access Token from here https://hub.docker.com/settings/security
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-        run: |  # GITHUB_REF will be refs/heads/master or refs/tags/MAJOR.MINOR.PATCH
+        run: |  # GITHUB_REF = refs/heads/master or refs/tags/MAJOR.MINOR.PATCH
           build-bin/configure_deploy &&
           build-bin/deploy $(echo ${GITHUB_REF} | cut -d/ -f 3)

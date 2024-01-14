@@ -1,63 +1,43 @@
-# yamllint --format github .github/workflows/test.yml
 ---
 name: test
 
 # We don't test documentation-only commits.
-on:
-  # We run tests on non-tagged pushes to master that aren't a commit made by the release plugin
-  push:
-    tags: ""
-    branches: master
+on:  # yamllint disable-line rule:truthy
+  push:  # non-tagged pushes to master
+    branches:
+      - master
+    tags-ignore:
+      - '*'
     paths-ignore:
-      - "**/*.md"
+      - '**/*.md'
+      - './build-bin/*lint'
       - ./build-bin/mlc_config.json
-  # We also run tests on pull requests targeted at the master branch.
-  pull_request:
-    branches: master
+  pull_request:  # pull requests targeted at the master branch.
+    branches:
+      - master
     paths-ignore:
-      - "**/*.md"
+      - '**/*.md'
+      - './build-bin/*lint'
       - ./build-bin/mlc_config.json
 
 jobs:
-  test-javadoc:
-    name: Test JavaDoc Builds
-    runs-on: ubuntu-22.04 # newest available distribution, aka jellyfish
-    if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # full git history for license check
-      - name: Setup java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'  # zulu as it supports a wide version range
-          java-version: '17'  # earliest LTS supported by Spring Boot 3
-      - name: Cache local Maven repository
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-jdk-17-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-jdk-17-maven-
-      - name: Build JavaDoc
-        run: ./mvnw clean javadoc:aggregate -Prelease
-
   test:
     name: test (JDK ${{ matrix.java_version }})
-    runs-on: ubuntu-22.04 # newest available distribution, aka jellyfish
+    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
+    # skip commits made by the release plugin
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
     strategy:
-      fail-fast: false  # don't fail fast as sometimes failures are operating system specific
-      matrix:  # use latest available versions and be consistent on all workflows!
+      fail-fast: false  # don't fail fast as some failures are LTS specific
+      matrix:  # match with maven-enforcer-plugin rules in pom.xml
         include:
           - java_version: 17  # earliest LTS supported by Spring Boot 3
-            maven_args: -Prelease -Dgpg.skip -Dmaven.javadoc.skip=true
+            maven_args: -Prelease -Dgpg.skip
           - java_version: 21  # Most recent LTS
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # full git history for license check
+          fetch-depth: 0  # full git history for license check
       - name: Setup java
         uses: actions/setup-java@v4
         with:
@@ -67,18 +47,23 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
+          # yamllint disable-line rule:line-length
           key: ${{ runner.os }}-jdk-${{ matrix.java_version }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-jdk-${{ matrix.java_version }}-maven-
       - name: Cache NPM Packages
         uses: actions/cache@v3
         with:
           path: ~/.npm
+          # yamllint disable-line rule:line-length
           key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
       - name: Test without Docker
-        run: build-bin/maven_go_offline && build-bin/test -DexcludedGroups=docker ${{ matrix.maven_args }}
+        run: |
+          build-bin/maven_go_offline &&
+          build-bin/test -DexcludedGroups=docker ${{ matrix.maven_args }}
 
   test_docker:
-    runs-on: ubuntu-22.04 # newest available distribution, aka jellyfish
+    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
+    # skip commits made by the release plugin
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
     strategy:
       matrix:
@@ -94,7 +79,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1 # -Dlicense.skip=true so we don't need a full clone
+          fetch-depth: 1  # -Dlicense.skip=true, so we don't need a full clone
       - name: Setup java
         uses: actions/setup-java@v4
         with:
@@ -104,6 +89,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
+          # yamllint disable-line rule:line-length
           key: ${{ runner.os }}-jdk-${{ matrix.java_version }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-jdk-${{ matrix.java_version }}-maven-
       # Don't attempt to cache Docker. Sensitive information can be stolen
@@ -118,5 +104,8 @@ jobs:
         run: |
           build-bin/docker/configure_docker &&
           build-bin/maven/maven_go_offline &&
-          MAVEN_GOAL=install build-bin/maven/maven_build -pl :${{ matrix.name }} --am &&
-          build-bin/test -Dgroups=docker -pl :${{ matrix.name }} -Dlicense.skip=true
+          build-bin/maven/maven_build -pl :${{ matrix.name }} --am &&
+          build-bin/test -Dgroups=docker -pl :${{ matrix.name }}
+        env:
+          MAVEN_GOAL: install  # docker build needs dependencies in mavenLocal
+          MAVEN_OPTS: -Dlicense.skip=true  # license check already run
