@@ -83,7 +83,7 @@ To add Kafka configuration, run:
 $ docker-compose -f docker-compose-kafka.yml up
 ```
 
-Then configure the [Kafka sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/kafka11/src/main/java/zipkin2/reporter/kafka11/KafkaSender.java) using a `bootstrapServers` value of `host.docker.internal:9092` if your application is inside the same docker network or `localhost:19092` if not, but running on the same host.
+Then configure the [Kafka sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/kafka/src/main/java/zipkin2/reporter/kafka/KafkaSender.java) using a `bootstrapServers` value of `host.docker.internal:9092` if your application is inside the same docker network or `localhost:19092` if not, but running on the same host.
 
 In other words, if you are running a sample application on your laptop, you would use `localhost:19092` bootstrap server to send spans to the Kafka broker running in Docker.
 
@@ -141,9 +141,9 @@ $ docker-compose -f docker-compose.yml -f docker-compose-example.yml up
 ```
 
 Once the services start, open http://localhost:8081/
-* This calls the backend (http://127.0.0.1:9000/api) and shows its result: a formatted date.
+* This calls the backend (http://localhost:9000/api) and shows its result: a formatted date.
 
-Afterward, you can view traces that went through the backend via http://127.0.0.1:9411/zipkin?serviceName=backend
+Afterward, you can view traces that went through the backend via http://localhost:9411/zipkin?serviceName=backend
 
 ## UI
 

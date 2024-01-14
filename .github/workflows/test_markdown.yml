@@ -1,0 +1,33 @@
+# yamllint --format github .github/workflows/test_markdown.yml
+---
+name: test_markdown
+
+on:  # yamllint disable-line rule:truthy
+  push:  # non-tagged pushes to master
+    branches:
+      - master
+    tags-ignore:
+      - '*'
+    paths:
+      - '**/*.md'
+      - ./build-bin/mlc_config.json
+  pull_request:  # pull requests targeted at the master branch.
+    branches:
+      - master
+    paths:
+      - '**/*.md'
+      - ./build-bin/mlc_config.json
+
+jobs:
+  test-markdown:
+    name: Test Markdown
+    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
+    # skip commits made by the release plugin
+    if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Check Markdown links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          config-file: './build-bin/mlc_config.json'

@@ -22,6 +22,15 @@ On deploy:
 * Besides production Docker images, this project includes [../docker/test-images].
   * [docker_push] pushes test-images, but only to ghcr.io
 
+### Markdown validation
+
+[mlc_config.json](mlc_config.json) is run by GitHub Action, but you can also run it locally,
+assuming you installed markdown-link-check via NPM.
+
+```bash
+$ find . -name \*.md |grep -v node|xargs markdown-link-check -c ./build-bin/mlc_config.json
+```
+
 [//]: # (Below here should be standard for all projects)
 
 ## Build Overview

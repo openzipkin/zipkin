@@ -44,11 +44,11 @@ You can also start Zipkin via Docker.
 docker run -d -p 9411:9411 openzipkin/zipkin
 ```
 
-Once the server is running, you can view traces with the Zipkin UI at `http://your_host:9411/zipkin/`.
+Once the server is running, you can view traces with the Zipkin UI at http://localhost:9411/zipkin.
 
 If your applications aren't sending traces, yet, configure them with [Zipkin instrumentation](https://zipkin.io/pages/tracers_instrumentation) or try one of our [examples](https://github.com/openzipkin?utf8=%E2%9C%93&q=example).
 
-Check out the [`zipkin-server`](/zipkin-server) documentation for configuration details, or [Docker examples](docker/examples) for how to use docker-compose.
+Check out the [`zipkin-server`](zipkin-server/README.md) documentation for configuration details, or [Docker examples](docker/examples) for how to use docker-compose.
 
 ### Zipkin Slim
 
@@ -213,10 +213,10 @@ commits to master.
 
 ### Docker Images
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin` and GitHub
-Container Registry as `ghcr.io/openzipkin/zipkin`. See [docker](./docker) for details.
+Container Registry as `ghcr.io/openzipkin/zipkin`. See [docker](docker) for details.
 
 ### Helm Charts
-Helm charts are available at https://zipkin.io/zipkin-helm.
+Helm charts are available via `helm repo add zipkin https://zipkin.io/zipkin-helm`.
 See [zipkin-helm](https://github.com/openzipkin/zipkin-helm) for details.
 
 ### Javadocs

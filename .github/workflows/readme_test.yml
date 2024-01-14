@@ -13,6 +13,7 @@ on:
     paths-ignore:
       - "**/*.md"
       - "charts/**"
+      - ./build-bin/mlc_config.json
 
 jobs:
   zipkin-server:

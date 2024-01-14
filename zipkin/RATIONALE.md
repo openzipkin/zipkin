@@ -30,7 +30,7 @@ utilities.
 Zipkin is a library with embedded use cases, such as inside Java agents or
 Android code.
 
-For example, Android has a [hard limit on total methods in an application](https://developer.android.com/studio/build/multidex#avoid).
+For example, Android has a [hard limit on total methods in an application](https://developer.android.com/build/multidex#avoid).
 Fields marked private imply accessors in order to share state in the same
 package. We routinely share state, such as codec internals within a package.
 If we marked fields private, we'd count against that limit without adding

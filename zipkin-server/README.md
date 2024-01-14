@@ -22,13 +22,13 @@ $ curl -sSL https://zipkin.io/quickstart.sh | bash -s
 $ java -jar zipkin.jar
 ```
 
-Once you've started, browse to http://your_host:9411 to find traces!
+Once you've started, browse to http://localhost:9411/zipkin to find traces!
 
 ## Endpoints
 
-The following endpoints are defined under the base url http://your_host:9411
-* / - [UI](../zipkin-ui)
-* /config.json - [Configuration for the UI](#configuration-for-the-ui)
+The following endpoints are defined under the base url `http://your_host:9411`
+* / - [UI](../zipkin-lens)
+* /config.json - [Configuration for the UI](#ui)
 * /api/v2 - [API](https://zipkin.io/zipkin-api/#/)
 * /health - Returns 200 status if OK
 * /info - Provides the version of the running instance
@@ -170,21 +170,21 @@ Zipkin has a web UI, automatically included in the exec jar, and is hosted by de
 
 When the UI loads, it reads default configuration from the `/config.json` endpoint.
 
-| Attribute                | Property                             | Description                                                                                                                                                                                                                                      |
-|--------------------------|--------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| environment              | zipkin.ui.environment                | The value here becomes a label in the top-right corner. Not required.                                                                                                                                                                            |
-| defaultLookback          | zipkin.ui.default-lookback           | Default duration in millis to look back when finding traces. Affects the "Start time" element in the UI. Defaults to 900000 (15 minutes in millis).                                                                                              |
-| searchEnabled            | zipkin.ui.search-enabled             | If the Discover screen is enabled. Defaults to true.                                                                                                                                                                                             |
-| queryLimit               | zipkin.ui.query-limit                | Default limit for Find Traces. Defaults to 10.                                                                                                                                                                                                   |
-| instrumented             | zipkin.ui.instrumented               | Which sites this Zipkin UI covers. Regex syntax. e.g. `http:\/\/example.com\/.*` Defaults to match all websites (`.*`).                                                                                                                          |
-| logsUrl                  | zipkin.ui.logs-url                   | Logs query service url pattern. If specified, a button will appear on the trace page and will replace {traceId} in the url by the traceId. Not required.                                                                                         |
-| supportUrl               | zipkin.ui.support-url                | A URL where a user can ask for support. If specified, a link will be placed in the side menu to this URL, for example a page to file support tickets. Not required.                                                                              |
-| archivePostUrl           | zipkin.ui.archive-post-url           | Url to POST the current trace in Zipkin v2 json format. e.g. 'https://longterm/api/v2/spans'. If specified, a button will appear on the trace page accordingly. Not required.                                                                    |
-| archiveUrl               | zipkin.ui.archive-url                | Url to a web application serving an archived trace, templated by '{traceId}'. e.g. https://longterm/zipkin/trace/{traceId}'. This is shown in a confirmation message after a trace is successfully POSTed to the `archivePostUrl`. Not required. |
-| dependency.enabled       | zipkin.ui.dependency.enabled         | If the Dependencies screen is enabled. Defaults to true.                                                                                                                                                                                         |
-| dependency.lowErrorRate  | zipkin.ui.dependency.low-error-rate  | The rate of error calls on a dependency link that turns it yellow. Defaults to 0.5 (50%) set to >1 to disable.                                                                                                                                   |
-| dependency.highErrorRate | zipkin.ui.dependency.high-error-rate | The rate of error calls on a dependency link that turns it red. Defaults to 0.75 (75%) set to >1 to disable.                                                                                                                                     |
-| basePath                 | zipkin.ui.basepath                   | path prefix placed into the <base> tag in the UI HTML; useful when running behind a reverse proxy. Default "/zipkin"                                                                                                                             |
+| Attribute                | Property                             | Description                                                                                                                                                                                                                                       |
+|--------------------------|--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| environment              | zipkin.ui.environment                | The value here becomes a label in the top-right corner. Not required.                                                                                                                                                                             |
+| defaultLookback          | zipkin.ui.default-lookback           | Default duration in millis to look back when finding traces. Affects the "Start time" element in the UI. Defaults to 900000 (15 minutes in millis).                                                                                               |
+| searchEnabled            | zipkin.ui.search-enabled             | If the Discover screen is enabled. Defaults to true.                                                                                                                                                                                              |
+| queryLimit               | zipkin.ui.query-limit                | Default limit for Find Traces. Defaults to 10.                                                                                                                                                                                                    |
+| instrumented             | zipkin.ui.instrumented               | Which sites this Zipkin UI covers. Regex syntax. e.g. `http:\/\/example.com\/.*` Defaults to match all websites (`.*`).                                                                                                                           |
+| logsUrl                  | zipkin.ui.logs-url                   | Logs query service url pattern. If specified, a button will appear on the trace page and will replace {traceId} in the url by the traceId. Not required.                                                                                          |
+| supportUrl               | zipkin.ui.support-url                | A URL where a user can ask for support. If specified, a link will be placed in the side menu to this URL, for example a page to file support tickets. Not required.                                                                               |
+| archivePostUrl           | zipkin.ui.archive-post-url           | Url to POST the current trace in Zipkin v2 json format. e.g. `https://longterm/api/v2/spans`. If specified, a button will appear on the trace page accordingly. Not required.                                                                     |
+| archiveUrl               | zipkin.ui.archive-url                | Url to a web application serving an archived trace, templated by '{traceId}'. e.g. `https://longterm/zipkin/trace/{traceId}`. This is shown in a confirmation message after a trace is successfully POSTed to the `archivePostUrl`. Not required. |
+| dependency.enabled       | zipkin.ui.dependency.enabled         | If the Dependencies screen is enabled. Defaults to true.                                                                                                                                                                                          |
+| dependency.lowErrorRate  | zipkin.ui.dependency.low-error-rate  | The rate of error calls on a dependency link that turns it yellow. Defaults to 0.5 (50%) set to >1 to disable.                                                                                                                                    |
+| dependency.highErrorRate | zipkin.ui.dependency.high-error-rate | The rate of error calls on a dependency link that turns it red. Defaults to 0.75 (75%) set to >1 to disable.                                                                                                                                      |
+| basePath                 | zipkin.ui.basepath                   | path prefix placed into the <base> tag in the UI HTML; useful when running behind a reverse proxy. Default "/zipkin"                                                                                                                              |
 
 To map properties to environment variables, change them to upper-underscore case format. For
 example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
@@ -414,7 +414,7 @@ $ ACTIVEMQ_URL=tcp://localhost:61616 java -jar zipkin.jar
 ### Kafka Collector
 The Kafka collector is enabled when `KAFKA_BOOTSTRAP_SERVERS` is set to
 a v0.10+ server. The following settings apply in this case. Some settings
-correspond to "New Consumer Configs" in [Kafka documentation](https://kafka.apache.org/documentation/#newconsumerconfigs).
+correspond to "New Consumer Configs" in [Kafka documentation](https://kafka.apache.org/documentation/#consumerconfigs).
 
 | Variable                  | New Consumer Config | Description                                                                                  |
 |---------------------------|---------------------|----------------------------------------------------------------------------------------------|
@@ -433,7 +433,7 @@ $ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
 
 #### Other Kafka consumer properties
 You may need to set other
-[Kafka consumer properties](https://kafka.apache.org/documentation/#newconsumerconfigs), in
+[Kafka consumer properties](https://kafka.apache.org/documentation/#consumerconfigs), in
 addition to the ones with explicit properties defined by the collector. In this case, you need to
 prefix that property name with `zipkin.collector.kafka.overrides` and pass it as a system property
 argument.
@@ -514,7 +514,7 @@ a valid v2 endpoint of the [Eureka REST API](https://github.com/Netflix/eureka/w
 | Variable                   | Instance field | Description                                                                                    |
 |----------------------------|----------------|------------------------------------------------------------------------------------------------|
 | `DISCOVERY_EUREKA_ENABLED` | N/A            | `false` disables Eureka registration. Defaults to `true`.                                      |
-| `EUREKA_SERVICE_URL`       | N/A            | v2 endpoint of Eureka, e.g. https://eureka-prod/eureka/v2. No default                          |
+| `EUREKA_SERVICE_URL`       | N/A            | v2 endpoint of Eureka, e.g. `https://eureka-prod/eureka/v2`. No default                        |
 | `EUREKA_APP_NAME`          | .app           | The application this instance registers to. Defaults to `zipkin`                               |
 | `EUREKA_HOSTNAME`          | .hostName      | The hostname used with `${QUERY_PORT}` to build the instance `vipAddress`. Defaults to detect. |
 | `EUREKA_INSTANCE_ID`       | .instanceId    | Defaults to `${EUREKA_HOSTNAME}:${EUREKA_APP_NAME}:${QUERY_PORT}`.                             |
