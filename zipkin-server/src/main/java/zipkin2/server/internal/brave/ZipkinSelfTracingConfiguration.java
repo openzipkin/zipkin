@@ -35,12 +35,9 @@ import org.springframework.context.annotation.Bean;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.CollectorMetrics;
-import zipkin2.reporter.Call;
-import zipkin2.reporter.Callback;
-import zipkin2.reporter.CheckResult;
+import zipkin2.reporter.BytesMessageSender;
 import zipkin2.reporter.Encoding;
 import zipkin2.reporter.ReporterMetrics;
-import zipkin2.reporter.Sender;
 import zipkin2.reporter.brave.AsyncZipkinSpanHandler;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
@@ -135,44 +132,29 @@ public class ZipkinSelfTracingConfiguration {
   }
 
   /** Lazily looks up the storage component in order to avoid proxying. */
-  static final class LocalSender extends Sender {
+  static final class LocalSender extends BytesMessageSender.Base {
     final BeanFactory factory;
     volatile StorageComponent delegate; // volatile to prevent stale reads
 
     LocalSender(BeanFactory factory) {
-      this.factory = factory;
-    }
-
-    @Override public Encoding encoding() {
       // TODO: less memory efficient, but not a huge problem for self-tracing which is rarely on
       // https://github.com/openzipkin/zipkin-reporter-java/issues/178
-      return Encoding.JSON;
+      super(Encoding.JSON);
+      this.factory = factory;
     }
 
     @Override public int messageMaxBytes() {
       return 5 * 1024 * 1024; // arbitrary
     }
 
-    @Override public int messageSizeInBytes(List<byte[]> list) {
-      return Encoding.JSON.listSizeInBytes(list);
-    }
-
-    @Override public Call<Void> sendSpans(List<byte[]> encodedSpans) {
+    @Override public void send(List<byte[]> encodedSpans) throws IOException {
       List<Span> spans = new ArrayList<>(encodedSpans.size());
       for (byte[] encodedSpan : encodedSpans) {
         Span v2Span = SpanBytesDecoder.JSON_V2.decodeOne(encodedSpan);
         spans.add(v2Span);
       }
 
-      return new CallAdapter<>(delegate().spanConsumer().accept(spans));
-    }
-
-    @Override public CheckResult check() {
-      zipkin2.CheckResult result = delegate().check();
-      if (result.ok()) {
-        return CheckResult.OK;
-      }
-      return CheckResult.failed(result.error());
+      delegate().spanConsumer().accept(spans).execute();
     }
 
     @Override public String toString() {
@@ -196,36 +178,6 @@ public class ZipkinSelfTracingConfiguration {
       return delegate = result;
     }
   }
-
-  static final class CallAdapter<V> extends Call<V> {
-    private final zipkin2.Call<V> delegate;
-
-    public CallAdapter(zipkin2.Call<V> delegate) {
-      this.delegate = delegate;
-    }
-
-    @Override public V execute() throws IOException {
-      return delegate.execute();
-    }
-
-    @Override public void enqueue(Callback<V> callback) {
-      delegate.enqueue(new CallbackAdapter<>(callback));
-    }
-
-    @Override public void cancel() {
-      delegate.cancel();
-    }
-
-    @Override public boolean isCanceled() {
-      return delegate.isCanceled();
-    }
-
-    @Override public Call<V> clone() {
-      return new CallAdapter<>(delegate.clone());
-    }
-  }
-
-
 
   static final class ReporterMetricsAdapter implements ReporterMetrics {
     final BeanFactory factory;
