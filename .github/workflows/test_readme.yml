@@ -1,30 +1,40 @@
-# yamllint --format github .github/workflows/readme_test.yml
 ---
-name: readme_test
+name: test_readme
 
 # These test build commands mentioned in various README.md files.
 #
-# This doesn't literally scrape the README.md, so we don't test documentation-only commits.
-on:
-  # We run tests on only on pull requests targeted at the master branch.
-  # * This skips master pushes as it is rare things not done in PRs break, and conserves resources
-  pull_request:
-    branches: master
+# We don't test documentation-only commits.
+on:  # yamllint disable-line rule:truthy
+  push:  # non-tagged pushes to master
+    branches:
+      - master
+    tags-ignore:
+      - '*'
     paths-ignore:
-      - "**/*.md"
-      - "charts/**"
+      - '**/*.md'
+      - './build-bin/*lint'
+      - ./build-bin/mlc_config.json
+  pull_request:  # pull requests targeted at the master branch.
+    branches:
+      - master
+    paths-ignore:
+      - '**/*.md'
+      - './build-bin/*lint'
+      - ./build-bin/mlc_config.json
 
 jobs:
   zipkin-server:
     name: zipkin-server/README.md ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    # skip commits made by the release plugin
+    if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
     strategy:
       matrix:
-        include: # ubuntu is tested as a part of the docker job
+        include:  # Not ubuntu as already tested as a part of the docker job
           - name: macos
-            os: macos-latest
+            os: macos-12
           - name: windows
-            os: windows-latest
+            os: windows-2022
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -39,6 +49,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.npm
+          # yamllint disable-line rule:line-length
           key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
       - name: Cache local Maven repository
         uses: actions/cache@v3
@@ -46,11 +57,15 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-jdk-21-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-jdk-21-maven-
-      - name: Execute Server Build # command from zipkin-server/README.md
-        run: ./mvnw -T1C -q --batch-mode -DskipTests --also-make -pl zipkin-server clean package
+      - name: Execute Server Build  # command from zipkin-server/README.md
+        run: ./mvnw --also-make -pl zipkin-server clean package
+        env:
+          MAVEN_CONFIG: '-T1C -q --batch-mode -DskipTests'
 
   docker:
-    runs-on: ubuntu-22.04 # newest available distribution, aka jellyfish
+    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
+    # skip commits made by the release plugin
+    if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -60,7 +75,9 @@ jobs:
       # See https://github.com/actions/virtual-environments/issues/323
       - name: Remove broken apt repos
         run: |
-          for apt_file in `grep -lr microsoft /etc/apt/sources.list.d/`; do sudo rm $apt_file; done
+          for apt_file in `grep -lr microsoft /etc/apt/sources.list.d/`
+          do sudo rm $apt_file
+          done
       - name: Setup java
         uses: actions/setup-java@v4
         with:
@@ -73,6 +90,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.npm
+          # yamllint disable-line rule:line-length
           key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
       - name: Cache local Maven repository
         uses: actions/cache@v3
@@ -80,8 +98,10 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-jdk-21-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-jdk-21-maven-
-      - name: zipkin-server/README.md # Tests the build which is re-used for a few images
-        run: ./mvnw -T1C -q --batch-mode -DskipTests --also-make -pl zipkin-server clean package
+      - name: Build zipkin-server  # redundant, but needed for docker/README.md
+        run: ./mvnw --also-make -pl zipkin-server clean package
+        env:
+          MAVEN_CONFIG: '-T1C -q --batch-mode -DskipTests'
       - name: docker/README.md - openzipkin/zipkin
         run: |
           build-bin/docker/docker_build openzipkin/zipkin:test &&
@@ -114,15 +134,17 @@ jobs:
           DOCKER_FILE: docker/test-images/zipkin-cassandra/Dockerfile
       - name: docker/test-images/zipkin-elasticsearch7/README.md
         run: |
-          build-bin/docker/docker_build openzipkin/zipkin-elasticsearch7:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-elasticsearch7:test
+          build-bin/docker/docker_build ${DOCKER_TAG} &&
+          build-bin/docker/docker_test_image ${DOCKER_TAG}
         env:
+          DOCKER_TAG: openzipkin/zipkin-elasticsearch7:test
           DOCKER_FILE: docker/test-images/zipkin-elasticsearch7/Dockerfile
       - name: docker/test-images/zipkin-elasticsearch8/README.md
         run: |
-          build-bin/docker/docker_build openzipkin/zipkin-elasticsearch8:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-elasticsearch8:test
+          build-bin/docker/docker_build ${DOCKER_TAG} &&
+          build-bin/docker/docker_test_image ${DOCKER_TAG}
         env:
+          DOCKER_TAG: openzipkin/zipkin-elasticsearch8:test
           DOCKER_FILE: docker/test-images/zipkin-elasticsearch8/Dockerfile
       - name: docker/test-images/zipkin-eureka/README.md
         run: |

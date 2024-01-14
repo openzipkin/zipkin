@@ -1,13 +1,12 @@
-# yamllint --format github .github/workflows/create_release.yml
 ---
 name: create_release
 
-# We create a release version on a trigger tag, regardless of if the commit is documentation-only.
-#
-# See https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
-on:
+# We create a release version on a trigger tag, regardless of if the commit is
+# documentation-only.
+on:  # yamllint disable-line rule:truthy
   push:
-    tags: 'release-[0-9]+.[0-9]+.[0-9]+**'  # Ex. release-1.2.3
+    tags:  # e.g. release-1.2.3
+      - 'release-[0-9]+.[0-9]+.[0-9]+**'
 
 jobs:
   create_release:
@@ -16,10 +15,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          # Prevent use of implicit GitHub Actions read-only token GITHUB_TOKEN. We don't deploy on
-          # the tag MAJOR.MINOR.PATCH event, but we still need to deploy the maven-release-plugin master commit.
+          # Prevent use of implicit GitHub Actions read-only GITHUB_TOKEN
+          # because maven-release-plugin pushes commits to master.
           token: ${{ secrets.GH_TOKEN }}
-          fetch-depth: 1  # only need the HEAD commit as license check isn't run
+          fetch-depth: 1  # license check is skipped, so we don't need history
       - name: Setup java
         uses: actions/setup-java@v4
         with:
@@ -36,9 +35,9 @@ jobs:
           # GH_USER=<user that created GH_TOKEN>
           GH_USER: ${{ secrets.GH_USER }}
           # GH_TOKEN=<hex token value>
-          #   - makes release commits and tags
-          #   - needs repo:status, public_repo
-          #   - referenced in .settings.xml
+          # * makes release commits and tags
+          # * needs repo:status, public_repo
+          # * referenced in .settings.xml
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |  # GITHUB_REF will be refs/tags/release-MAJOR.MINOR.PATCH
           build-bin/git/login_git &&

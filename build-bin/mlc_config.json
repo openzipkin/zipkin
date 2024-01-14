@@ -1,0 +1,25 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "https://oss.sonatype.org/content/repositories/snapshots"
+    },
+    {
+      "pattern": "http://localhost:9411/api/v[12]/spans"
+    },
+    {
+      "pattern": "http://localhost:9411/zipkin"
+    },
+    {
+      "pattern": "http://localhost:9411/zipkin?serviceName=backend"
+    },
+    {
+      "pattern": "http://localhost:8081"
+    },
+    {
+      "pattern": "http://localhost:9000/api"
+    },
+    {
+      "pattern": "http://localhost:3000"
+    }
+  ]
+}

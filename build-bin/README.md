@@ -38,13 +38,77 @@ CI-provider specific tools, doing so can easily create a dependency where no one
 release anymore. Do not use provider-specific mechanisms to implement release flow. Instead,
 automate triggering of the scripts here.
 
-The only scripts that should be modified per project are in the base directory. Those in sub
-directories, such as [docker], should not vary project to project except accident of version drift.
-Intentional changes in sub directories should be relevant and tested on multiple projects to ensure
-they can be blindly copy/pasted.
+The only scripts that should be modified per project are in the base directory. Those in
+subdirectories, such as [docker](docker), should not vary project to project except accident of
+version drift. Intentional changes in subdirectories should be relevant and tested on multiple
+projects to ensure they can be blindly copy/pasted.
 
 Conversely, the files in the base directory are project specific entry-points for test and deploy
 actions and are entirely appropriate to vary per project. Here's an overview:
+
+## Lint
+
+Lint makes sure that documentation and workflows are in-tact. CI providers should be configured to
+run lint on pull requests or pushes to the master branch, notably when the tag is blank. Linters
+should only run on documentation-only commits or those who affect workflow files. Linters must not
+depend on authenticated resources, as running lint can leak credentials.
+
+* [configure_lint](configure_lint) - Ensures linters are installed
+* [lint](lint) - Runs the linters
+
+We minimally check the following:
+
+* [markdown-link-check](https://github.com/tcort/markdown-link-check) on our Markdown content.
+  * we maintain [mlc_config.json](mlc_config.json) for exceptions
+* [yamllint](https://github.com/adrienverge/yamllint) on our GitHub Actions Workflow YAML.
+  * occasionally need line length exceptions via `# yamllint disable-line rule:line-length`
+
+### Example GitHub Actions setup
+
+A simplest GitHub Actions `lint.yml` runs linters after configuring them, but only on relevant event
+conditions. The name `lint.yml` and job `lint` allows easy references to status badges and parity of
+the scripts it uses.
+
+The `on:` section obviates job creation and resource usage for irrelevant events. Notably, GitHub
+Actions includes the ability to skip documentation-only jobs.
+
+Here's a partial `lint.yml` including only the aspects mentioned above.
+```yaml
+---
+on:  # yamllint disable-line rule:truthy
+  push:  # non-tagged pushes to master
+    branches:
+      - master
+    tags-ignore:
+      - '*'
+    paths:
+      - '**/*.md'
+      - '.github/workflows/*.yml'
+      - './build-bin/*lint'
+      - ./build-bin/mlc_config.json
+  pull_request:  # pull requests targeted at the master branch.
+    branches:
+      - master
+    paths:
+      - '**/*.md'
+      - '.github/workflows/*.yml'
+      - './build-bin/*lint'
+      - ./build-bin/mlc_config.json
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
+    # skip commits made by the release plugin
+    if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Lint
+        run: |
+          build-bin/configure_lint
+          build-bin/lint
+```
 
 ## Test
 
@@ -54,8 +118,8 @@ blank. Tests should not run on documentation-only commits. Tests must not depend
 resources, as running tests can leak credentials. Git checkouts should include the full history so
 that license headers or other git analysis can take place.
 
- * [configure_test] - Sets up build environment for tests.
- * [test] - Builds and runs tests for this project.
+ * [configure_test](configure_test) - Sets up build environment for tests.
+ * [test](test) - Builds and runs tests for this project.
 
 ### Example GitHub Actions setup
 
@@ -68,14 +132,23 @@ Actions includes the ability to skip documentation-only jobs.
 
 Here's a partial `test.yml` including only the aspects mentioned above.
 ```yaml
-on:
-  push:
-    tags: ''
-    branches: master
-    paths-ignore: '**/*.md'
-  pull_request:
-    branches: master
-    paths-ignore: '**/*.md'
+on:  # yamllint disable-line rule:truthy
+  push:  # non-tagged pushes to master
+    branches:
+      - master
+    tags-ignore:
+      - '*'
+    paths-ignore:
+      - '**/*.md'
+      - './build-bin/*lint'
+      - ./build-bin/mlc_config.json
+  pull_request:  # pull requests targeted at the master branch.
+    branches:
+      - master
+    paths-ignore:
+      - '**/*.md'
+      - './build-bin/*lint'
+      - ./build-bin/mlc_config.json
 
 jobs:
   test:
@@ -97,8 +170,8 @@ providers deploy pushes to master on when the tag is blank, but not on documenta
 Releases should deploy on version tags (ex `/^[0-9]+\.[0-9]+\.[0-9]+/`), without consideration of if
 the commit is documentation only or not.
 
- * [configure_deploy] - Sets up environment and logs in, assuming [configure_test] was not called.
- * [deploy] - deploys the project, with arg0 being "master" or a release commit like "1.2.3"
+ * [configure_deploy](configure_deploy) - Sets up environment and logs in.
+ * [deploy](deploy) - deploys the project, with arg1 being "master" or a release commit like "1.2.3"
 
 ### Example GitHub Actions setup
 
@@ -114,24 +187,28 @@ Here's a partial `deploy.yml` including only the aspects mentioned above. Notice
 explicitly defined and `on.tags` is a [glob pattern](https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet).
 
 ```yaml
-on:
+on:  # yamllint disable-line rule:truthy
   push:
-    tags: '[0-9]+.[0-9]+.[0-9]+**'  # e.g. 8.272.10 or 15.0.1_p9
-    branches: master
+    branches:
+      - master
+    # Don't deploy tags because the same commit for MAJOR.MINOR.PATCH is also
+    # on master: Redundant deployment of a release version will fail uploading.
+    tags-ignore:
+      - '*'
 
 jobs:
   deploy:
+    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1  # only needed to get the sha label
-      - name: Configure Deploy
-        run: build-bin/configure_deploy
+      - name: Deploy
         env:
           GH_USER: ${{ secrets.GH_USER }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      - name: Deploy
-        # GITHUB_REF will be refs/heads/master or refs/tags/1.2.3
-        run: build-bin/deploy $(echo ${GITHUB_REF} | cut -d/ -f 3)
+        run: |  # GITHUB_REF = refs/heads/master or refs/tags/MAJOR.MINOR.PATCH
+          build-bin/configure_deploy &&
+          build-bin/deploy $(echo ${GITHUB_REF} | cut -d/ -f 3)
 ```

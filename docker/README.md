@@ -41,7 +41,7 @@ We also provide [example compose files](examples/README.md) that integrate colle
 such as Kafka or Elasticsearch.
 
 ## Configuration
-Configuration is via environment variables, defined by [zipkin-server](https://github.com/openzipkin/zipkin/blob/master/zipkin-server/README.md). Notably, you'll want to look at the `STORAGE_TYPE` environment variables, which
+Configuration is via environment variables, defined by [zipkin-server](../zipkin-server/README.md). Notably, you'll want to look at the `STORAGE_TYPE` environment variables, which
 include "cassandra", "mysql" and "elasticsearch".
 
 Note: the `openzipkin/zipkin-slim` image only supports "elasticsearch" storage. To use other storage types, you must use the main image `openzipkin/zipkin`.
@@ -102,7 +102,7 @@ The above is mentioned only for historical reasons. The OpenZipkin community
 do not support Docker's deprecated container links.
 
 ### MySQL
-If using an external MySQL server or image, ensure schema and other parameters match the [docs](https://github.com/openzipkin/zipkin/tree/master/zipkin-storage/mysql-v1#applying-the-schema).
+If using an external MySQL server or image, ensure schema and other parameters match the [docs](../zipkin-storage/mysql-v1/README.md#applying-the-schema).
 
 ## Building images
 
