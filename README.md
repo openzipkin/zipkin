@@ -66,6 +66,15 @@ Running via Docker:
 docker run -d -p 9411:9411 openzipkin/zipkin-slim
 ```
 
+Running via [Homebrew](https://formulae.brew.sh/formula/zipkin):
+```bash
+brew install zipkin
+# to run in foreground
+zipkin
+# to run in background
+brew services start zipkin
+```
+
 ## Core Library
 The [core library](zipkin/src/main/java/zipkin2) is used by both Zipkin instrumentation and the Zipkin server.
 
