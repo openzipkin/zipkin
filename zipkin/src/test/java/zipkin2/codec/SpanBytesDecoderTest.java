@@ -23,6 +23,7 @@ import zipkin2.Endpoint;
 import zipkin2.Span;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.TRACE;
@@ -299,7 +300,7 @@ class SpanBytesDecoderTest {
           "traceId": "48485A3953BB6124",
           "name": "get-traces",
           "id": "6b221d5bc9e6496c"
-        }\
+        }
         """;
 
       SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
@@ -313,14 +314,14 @@ class SpanBytesDecoderTest {
         "traceId": "48485a3953bb61246b221d5bc9e6496c",
         "name": "get-traces",
         "id": "6b221d5bc9e6496c"
-      }\
+      }
       """).getBytes(UTF_8);
     byte[] withLower64bitsTraceId = ("""
       {
         "traceId": "6b221d5bc9e6496c",
         "name": "get-traces",
         "id": "6b221d5bc9e6496c"
-      }\
+      }
       """).getBytes(UTF_8);
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(with128BitTraceId))
@@ -343,7 +344,7 @@ class SpanBytesDecoderTest {
         "tags": null,
         "debug": null,
         "shared": null
-      }\
+      }
       """;
 
     SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
@@ -361,7 +362,7 @@ class SpanBytesDecoderTest {
           "ipv6": null,
           "port": null
         }
-      }\
+      }
       """;
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8)).localEndpoint())
@@ -379,7 +380,7 @@ class SpanBytesDecoderTest {
           "ipv6": null,
           "port": null
         }
-      }\
+      }
       """)
       .getBytes(UTF_8)).localEndpoint()).isNull();
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(("""
@@ -388,7 +389,7 @@ class SpanBytesDecoderTest {
         "id": "6b221d5bc9e6496c",
         "localEndpoint": {
         }
-      }\
+      }
       """)
       .getBytes(UTF_8)).localEndpoint()).isNull();
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(("""
@@ -401,7 +402,7 @@ class SpanBytesDecoderTest {
           "ipv6": null,
           "port": null
         }
-      }\
+      }
       """)
       .getBytes(UTF_8)).remoteEndpoint()).isNull();
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(("""
@@ -410,7 +411,7 @@ class SpanBytesDecoderTest {
         "id": "6b221d5bc9e6496c",
         "remoteEndpoint": {
         }
-      }\
+      }
       """)
       .getBytes(UTF_8)).remoteEndpoint()).isNull();
   }
@@ -426,7 +427,7 @@ class SpanBytesDecoderTest {
           "annotations": [
             { "timestamp": 1472470996199000}
           ]
-        }\
+        }
         """;
 
       SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
@@ -442,7 +443,7 @@ class SpanBytesDecoderTest {
           "traceId": null,
           "name": "get-traces",
           "id": "6b221d5bc9e6496c"
-        }\
+        }
         """;
 
       SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
@@ -458,7 +459,7 @@ class SpanBytesDecoderTest {
           "traceId": "6b221d5bc9e6496c",
           "name": "get-traces",
           "id": null
-        }\
+        }
         """;
 
       SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
@@ -477,7 +478,7 @@ class SpanBytesDecoderTest {
           "tags": {
             "foo": NULL
           }
-        }\
+        }
         """;
 
       SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
@@ -496,7 +497,7 @@ class SpanBytesDecoderTest {
           "annotations": [
             { "timestamp": 1472470996199000, "value": NULL}
           ]
-        }\
+        }
         """;
 
       SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
@@ -515,12 +516,28 @@ class SpanBytesDecoderTest {
           "annotations": [
             { "timestamp": NULL, "value": "foo"}
           ]
-        }\
+        }
         """;
 
       SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
     });
     assertThat(exception.getMessage()).contains("$.annotations[0].timestamp");
+  }
+
+  @Test void niceErrorOnNonStringTagValue() {
+    String json = """
+      {
+        "traceId": "6b221d5bc9e6496c",
+        "name": "get-traces",
+        "id": "6b221d5bc9e6496c",
+        "tags": {
+          "error": true
+        }
+      }
+      """;
+
+    assertThatThrownBy(() -> SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8)))
+      .hasMessageContaining("Expected a string but was BOOLEAN");
   }
 
   @Test void readSpan_localEndpoint_noServiceName() {
@@ -532,7 +549,7 @@ class SpanBytesDecoderTest {
         "localEndpoint": {
           "ipv4": "127.0.0.1"
         }
-      }\
+      }
       """;
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8)).localServiceName())
@@ -548,7 +565,7 @@ class SpanBytesDecoderTest {
         "remoteEndpoint": {
           "ipv4": "127.0.0.1"
         }
-      }\
+      }
       """;
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8)).remoteServiceName())
