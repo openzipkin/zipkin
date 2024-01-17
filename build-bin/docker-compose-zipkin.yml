@@ -1,0 +1,35 @@
+#
+# Copyright 2015-2024 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+# uses 2.4 so we can use condition: service_healthy
+version: "2.4"
+
+services:
+  zipkin:
+    # Use last build of Zipkin instead of adding a matrix build dependency
+    image: openzipkin/zipkin:test
+    container_name: zipkin
+  # Use fixed service and container name 'sut; so our test script can copy/pasta
+  sut:
+    container_name: sut
+    image: ghcr.io/openzipkin/alpine:3.19.0
+    entrypoint: /bin/sh
+    # Keep the container running until HEALTHCHECK passes
+    command: "-c \"sleep 5m\""
+    healthcheck:
+      # Return 0 when we can load the UI resources
+      test: wget -qO- --spider http://zipkin:9411/zipkin/
+    depends_on:
+      zipkin:
+        condition: service_healthy
