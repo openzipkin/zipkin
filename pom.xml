@@ -564,6 +564,8 @@
             <exclude>build-bin/configure_test</exclude>
             <exclude>build-bin/deploy</exclude>
             <exclude>build-bin/test</exclude>
+            <!-- temporarily patched file from line/armeria#5391 -->
+            <exclude>**/HttpFile.java</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
         </configuration>
