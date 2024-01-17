@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -30,6 +30,7 @@ import zipkin2.storage.StorageComponent;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -95,6 +96,25 @@ public class CollectorTest {
 
   @Test void acceptSpans_decodingError() {
     byte[] bytes = "[\"='".getBytes(UTF_8); // screwed up json
+    collector.acceptSpans(bytes, SpanBytesDecoder.JSON_V2, callback);
+
+    verify(callback).onError(any(IllegalArgumentException.class));
+    assertDebugLogIs("Malformed reading List<Span> from json");
+    verify(metrics).incrementMessagesDropped();
+  }
+
+  /** Tags in zipkin v2 model are stringly typed. */
+  @Test void acceptSpans_decodingError_nonStringValue() {
+    byte[] bytes = """
+      {
+        "traceId": "6b221d5bc9e6496c",
+        "name": "get-traces",
+        "id": "6b221d5bc9e6496c",
+        "tags": {
+          "error": true
+        }
+      }
+      """.getBytes(UTF_8); // error tag has a bool instead of string value
     collector.acceptSpans(bytes, SpanBytesDecoder.JSON_V2, callback);
 
     verify(callback).onError(any(IllegalArgumentException.class));
@@ -172,7 +192,7 @@ public class CollectorTest {
     verify(metrics).incrementSpansDropped(4);
   }
 
-  public void handleStorageError_onErrorWithNullMessage() {
+  @Test void handleStorageError_onErrorWithNullMessage() {
     RuntimeException error = new RuntimeException();
     collector.handleStorageError(TRACE, error, callback);
 
