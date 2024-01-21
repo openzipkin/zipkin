@@ -33,7 +33,7 @@ import static org.springframework.security.crypto.factory.PasswordEncoderFactori
 @Configuration
 @ConditionalOnProperty("eureka.username")
 @EnableConfigurationProperties(EurekaProperties.class)
-@Import(SecurityAutoConfiguration.class)
+@ImportAutoConfiguration(SecurityAutoConfiguration.class)
 public class EurekaSecurity {
   @Bean InMemoryUserDetailsManager userDetailsService(EurekaProperties props) {
     PasswordEncoder encoder = createDelegatingPasswordEncoder();
