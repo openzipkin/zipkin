@@ -50,6 +50,15 @@
       <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-config</artifactId>
+    </dependency>
+
     <!-- Get rid of log warning saying to use Caffeine -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
