@@ -115,33 +115,6 @@ zipkin:
     mem:
       # Maximum number of spans to keep in memory.  When exceeded, oldest traces (and their spans) will be purged.
       max-spans: ${MEM_MAX_SPANS:500000}
-    cassandra:
-      # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
-      contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
-      # Name of the datacenter that will be considered "local" for load balancing.
-      local-dc: ${CASSANDRA_LOCAL_DC:datacenter1}
-      # Will throw an exception on startup if authentication fails.
-      username: ${CASSANDRA_USERNAME:}
-      password: ${CASSANDRA_PASSWORD:}
-      keyspace: ${CASSANDRA_KEYSPACE:zipkin}
-      # Max pooled connections per datacenter-local host.
-      max-connections: ${CASSANDRA_MAX_CONNECTIONS:8}
-      # Ensuring that schema exists, if enabled tries to execute script /zipkin-cassandra-core/resources/cassandra-schema.cql.
-      ensure-schema: ${CASSANDRA_ENSURE_SCHEMA:true}
-      # 7 days in seconds
-      span-ttl: ${CASSANDRA_SPAN_TTL:604800}
-      # 3 days in seconds
-      index-ttl: ${CASSANDRA_INDEX_TTL:259200}
-      # the maximum trace index metadata entries to cache
-      index-cache-max: ${CASSANDRA_INDEX_CACHE_MAX:100000}
-      # how long to cache index metadata about a trace. 1 minute in seconds
-      index-cache-ttl: ${CASSANDRA_INDEX_CACHE_TTL:60}
-      # how many more index rows to fetch than the user-supplied query limit
-      index-fetch-multiplier: ${CASSANDRA_INDEX_FETCH_MULTIPLIER:3}
-      # Using ssl for connection, rely on Keystore
-      use-ssl: ${CASSANDRA_USE_SSL:false}
-      # Override hostname verification in Cassandra setting
-      override-hostname-verification: ${CASSANDRA_OVERRIDE_HOSTNAME_VERIFICATION:false}
     cassandra3:
       # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
       contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
@@ -159,8 +132,8 @@ zipkin:
       index-fetch-multiplier: ${CASSANDRA_INDEX_FETCH_MULTIPLIER:3}
       # Using ssl for connection, rely on Keystore
       use-ssl: ${CASSANDRA_USE_SSL:false}
-      # Override hostname verification in Cassandra setting
-      override-hostname-verification: ${CASSANDRA_OVERRIDE_HOSTNAME_VERIFICATION:false}
+      # Controls validation of Cassandra server hostname
+      ssl-hostname-validation: ${CASSANDRA_SSL_HOSTNAME_VALIDATION:true}
     elasticsearch:
       # host is left unset intentionally, to defer the decision
       hosts: ${ES_HOSTS:}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -123,5 +123,31 @@ class ZipkinCassandraStorageAutoConfigurationTest {
 
     assertThat(context.getBean(CassandraStorage.class).autocompleteCardinality)
       .isEqualTo(5000);
+  }
+
+  @Test void useSsl() {
+    TestPropertyValues.of(
+        "zipkin.storage.type:cassandra3",
+        "zipkin.storage.cassandra3.use-ssl:true")
+      .applyTo(context);
+    Access.registerCassandra3(context);
+    context.refresh();
+
+    assertThat(context.getBean(CassandraStorage.class).useSsl).isTrue();
+    assertThat(context.getBean(CassandraStorage.class).sslHostnameValidation).isTrue();
+  }
+
+  @Test void sslHostnameValidation_canSetToFalse() {
+    TestPropertyValues.of(
+        "zipkin.storage.type:cassandra3",
+        "zipkin.storage.cassandra3.use-ssl:true",
+        "zipkin.storage.cassandra3.ssl-hostname-validation:false"
+      )
+      .applyTo(context);
+    Access.registerCassandra3(context);
+    context.refresh();
+
+    assertThat(context.getBean(CassandraStorage.class).useSsl).isTrue();
+    assertThat(context.getBean(CassandraStorage.class).sslHostnameValidation).isFalse();
   }
 }

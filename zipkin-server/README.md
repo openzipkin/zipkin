@@ -231,6 +231,7 @@ and applies when `STORAGE_TYPE` is set to `cassandra3`:
     * `CASSANDRA_ENSURE_SCHEMA`: Ensuring cassandra has the latest schema. If enabled tries to execute scripts in the classpath prefixed with `cassandra-schema-cql3`. Defaults to true
     * `CASSANDRA_USERNAME` and `CASSANDRA_PASSWORD`: Cassandra authentication. Will throw an exception on startup if authentication fails. No default
     * `CASSANDRA_USE_SSL`: Requires `javax.net.ssl.trustStore` and `javax.net.ssl.trustStorePassword`, defaults to false.
+    * `CASSANDRA_SSL_HOSTNAME_VALIDATION`: Controls validation of Cassandra server hostname. defaults to true.
 
 The following are tuning parameters which may not concern all users:
 

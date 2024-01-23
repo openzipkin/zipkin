@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -43,14 +43,10 @@ import zipkin2.storage.cassandra.CassandraStorage.SessionFactory;
 // This component is named .*Cassandra3.* even though the package already says cassandra3 because
 // Spring Boot configuration endpoints only printout the simple name of the class
 public class ZipkinCassandra3StorageConfiguration {
-
   @Bean SessionFactory sessionFactory() {
     return SessionFactory.DEFAULT;
   }
-
-  @Bean
-  @ConditionalOnMissingBean
-  StorageComponent storage(
+  @Bean @ConditionalOnMissingBean StorageComponent storage(
       ZipkinCassandra3StorageProperties properties,
       SessionFactory sessionFactory,
       @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
