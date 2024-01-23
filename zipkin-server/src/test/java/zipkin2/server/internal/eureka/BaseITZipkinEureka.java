@@ -81,12 +81,10 @@ abstract class BaseITZipkinEureka {
     this.serviceUrl = serviceUrl;
   }
 
-  @BeforeEach void awaitRegistration() {
+  @Test @Order(1) void registersInEureka() throws IOException {
     // The zipkin server may start before Eureka processes the registration
     await().until(this::getEurekaZipkinAppAsString, (s) -> true);
-  }
 
-  @Test @Order(1) void registersInEureka() throws IOException {
     String json = getEurekaZipkinAppAsString();
 
     // Make sure the health status is OK
