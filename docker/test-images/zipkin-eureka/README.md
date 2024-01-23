@@ -6,7 +6,7 @@ integration of the Zipkin server. This listens on port 8761.
 Besides norms defined in [docker-java](https://github.com/openzipkin/docker-java), this accepts the
 following environment variables:
 
-* `EUREKA_USERNAME`: password for authenticating endpoints under "/eureka".
+* `EUREKA_USERNAME`: username for authenticating endpoints under "/eureka".
 * `EUREKA_PASSWORD`: password for authenticating endpoints under "/eureka".
 * `JAVA_OPTS`: to change settings such as heap size for Eureka.
 
