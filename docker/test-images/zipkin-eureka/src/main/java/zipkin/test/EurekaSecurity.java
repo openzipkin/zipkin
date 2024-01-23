@@ -32,22 +32,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @ConditionalOnProperty("eureka.username")
 @EnableConfigurationProperties(EurekaProperties.class)
 public class EurekaSecurity {
-
-  /** Setup authentication only of the Eureka API */
   @Bean FilterRegistrationBean<BasicAuthFilter> authFilter(EurekaProperties props) {
     FilterRegistrationBean<BasicAuthFilter> registrationBean = new FilterRegistrationBean<>();
-
     registrationBean.setFilter(new BasicAuthFilter(props.getUsername(), props.getPassword()));
-    registrationBean.addUrlPatterns("/eureka/*"); // though only v2 is valid
+    registrationBean.addUrlPatterns("/eureka/*"); // Auth /eureka, though only v2 is valid
     registrationBean.setOrder(2);
-
     return registrationBean;
   }
 
-  /**
-   * User-defined filter is simpler than spring-security for a test image as we can avoid explicit
-   * handling of CORS, CSRF and management endpoints.
-   */
+  /** Implements BASIC instead of spring-security + CORS, CSRF and management exclusions. */
   static final class BasicAuthFilter extends OncePerRequestFilter {
     final String expectedAuthorization;
 
@@ -56,19 +49,15 @@ public class EurekaSecurity {
         "Basic " + Base64.getEncoder().encodeToString((username + ':' + password).getBytes(UTF_8));
     }
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
+    @Override protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
       FilterChain chain) throws ServletException, IOException {
-      // Pass on the supplied credentials
       String authHeader = req.getHeader("Authorization");
       if (expectedAuthorization.equals(authHeader)) {
-        chain.doFilter(req, res);
+        chain.doFilter(req, res); // Pass on the supplied credentials
         return;
       }
-
-      // Return 401 otherwise.
       res.setHeader("WWW-Authenticate", "Basic realm=\"Realm'\"");
-      res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+      res.sendError(HttpServletResponse.SC_UNAUTHORIZED); // Return 401 otherwise.
     }
   }
 }
