@@ -44,7 +44,7 @@ class ZipkinEurekaDiscoveryConfigurationTest {
     });
   }
 
-  @Test void providesDiscoveryComponent_whenServiceUrlEmptyString() {
+  @Test void doesNotProvidesEurekaUpdatingListener_whenServiceUrlEmptyString() {
     assertThatExceptionOfType(NoSuchBeanDefinitionException.class).isThrownBy(() -> {
       TestPropertyValues.of("zipkin.discovery.eureka.service-url:").applyTo(context);
       context.register(
@@ -58,6 +58,19 @@ class ZipkinEurekaDiscoveryConfigurationTest {
 
   @Test void providesDiscoveryComponent_whenServiceUrlSet() {
     TestPropertyValues.of("zipkin.discovery.eureka.service-url:http://localhost:8761/eureka/v2")
+      .applyTo(context);
+    context.register(
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinEurekaDiscoveryConfiguration.class,
+      InMemoryConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(EurekaUpdatingListener.class)).isNotNull();
+  }
+
+  @Test void providesDiscoveryComponent_whenServiceUrlAuthenticates() {
+    TestPropertyValues.of(
+        "zipkin.discovery.eureka.service-url:http://myuser:mypassword@localhost:8761/eureka/v2")
       .applyTo(context);
     context.register(
       PropertyPlaceholderAutoConfiguration.class,

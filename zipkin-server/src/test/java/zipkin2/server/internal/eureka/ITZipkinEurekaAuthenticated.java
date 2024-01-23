@@ -13,17 +13,19 @@
  */
 package zipkin2.server.internal.eureka;
 
-import java.util.Collections;
+import java.util.Map;
 import okhttp3.HttpUrl;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
 
-class ITZipkinEureka extends BaseITZipkinEureka {
-  @Container static EurekaContainer eureka = new EurekaContainer(Collections.emptyMap());
+class ITZipkinEurekaAuthenticated extends BaseITZipkinEureka {
+  static final String username = "user", password = "pass";
+  @Container static EurekaContainer eureka =
+    new EurekaContainer(Map.of("EUREKA_USERNAME", username, "EUREKA_PASSWORD", password));
 
   static HttpUrl serviceUrl() {
-    return eureka.serviceUrl();
+    return eureka.serviceUrl().newBuilder().username(username).password(password).build();
   }
 
   /** Get the serviceUrl of the Eureka container prior to booting Zipkin. */
@@ -31,7 +33,7 @@ class ITZipkinEureka extends BaseITZipkinEureka {
     registry.add("zipkin.discovery.eureka.serviceUrl", () -> serviceUrl().url());
   }
 
-  ITZipkinEureka() {
+  ITZipkinEurekaAuthenticated() {
     super(serviceUrl());
   }
 }

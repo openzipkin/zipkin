@@ -529,6 +529,11 @@ If you are using a containerized environment, you may need to set `EUREKA_HOSTNA
 detecting the wrong hostname. For example, if using docker-compose, set `EUREKA_HOSTNAME` to
 zipkin's `container_name`.
 
+If your Eureka server requires authentication, adjust `EUREKA_SERVICE_URL` accordingly. If user info
+is present, those credentials will be used for BASIC authentication. For example, if the URL is
+`https://myuser:mypassword@1.1.3.1/eureka/v2/`, requests to Eureka will authenticate with the user
+"myuser" and password "mypassword".
+
 Note: Eureka server registration only includes host and port details. Tracers need to resolve this
 to the POST endpoint "/api/v2/spans".
 
