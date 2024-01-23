@@ -28,6 +28,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+/** This enables security, particularly only BASIC auth, when {@code EUREKA_USERNAME} is set. */
 @Configuration
 @ConditionalOnProperty("eureka.username")
 @EnableConfigurationProperties(EurekaProperties.class)
