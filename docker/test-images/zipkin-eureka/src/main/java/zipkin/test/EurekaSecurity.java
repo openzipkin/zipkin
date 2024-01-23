@@ -50,7 +50,7 @@ public class EurekaSecurity {
    * See <a href="https://cloud.spring.io/spring-cloud-netflix/reference/html/#securing-the-eureka-server">Securing The Eureka Server</a>
    */
   @Bean SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http.csrf(csrf -> csrf.ignoringRequestMatchers("/eureka/**"));
+    http.csrf(csrf -> csrf.ignoringRequestMatchers("/actuator/health", "/eureka/**"));
     http.authorizeHttpRequests(authz -> authz.requestMatchers("/eureka/**").authenticated())
       .httpBasic(Customizer.withDefaults());
     return http.build();
