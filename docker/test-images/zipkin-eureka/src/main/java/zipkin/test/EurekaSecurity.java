@@ -13,46 +13,62 @@
  */
 package zipkin.test;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Base64;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.filter.OncePerRequestFilter;
 
-import static org.springframework.security.crypto.factory.PasswordEncoderFactories.createDelegatingPasswordEncoder;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-/** This enables security, particularly only BASIC auth, when {@code EUREKA_USERNAME} is set. */
 @Configuration
 @ConditionalOnProperty("eureka.username")
 @EnableConfigurationProperties(EurekaProperties.class)
-@Import(SecurityAutoConfiguration.class)
 public class EurekaSecurity {
-  @Bean InMemoryUserDetailsManager userDetailsService(EurekaProperties props) {
-    PasswordEncoder encoder = createDelegatingPasswordEncoder();
-    UserDetails user = User.withUsername(props.getUsername())
-      .password(encoder.encode(props.getPassword()))
-      .roles("ADMIN")
-      .build();
-    return new InMemoryUserDetailsManager(user);
+
+  /** Setup authentication only of the Eureka API */
+  @Bean FilterRegistrationBean<BasicAuthFilter> authFilter(EurekaProperties props) {
+    FilterRegistrationBean<BasicAuthFilter> registrationBean = new FilterRegistrationBean<>();
+
+    registrationBean.setFilter(new BasicAuthFilter(props.getUsername(), props.getPassword()));
+    registrationBean.addUrlPatterns("/eureka/*"); // though only v2 is valid
+    registrationBean.setOrder(2);
+
+    return registrationBean;
   }
 
   /**
-   * You have to disable CSRF to allow BASIC authenticating Eureka clients to operate.
-   * <p>
-   * See <a href="https://cloud.spring.io/spring-cloud-netflix/reference/html/#securing-the-eureka-server">Securing The Eureka Server</a>
+   * User-defined filter is simpler than spring-security for a test image as we can avoid explicit
+   * handling of CORS, CSRF and management endpoints.
    */
-  @Bean SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http.csrf(csrf -> csrf.ignoringRequestMatchers("/actuator/health", "/eureka/**"));
-    http.authorizeHttpRequests(authz -> authz.requestMatchers("/eureka/**").authenticated())
-      .httpBasic(Customizer.withDefaults());
-    return http.build();
+  static final class BasicAuthFilter extends OncePerRequestFilter {
+    final String expectedAuthorization;
+
+    BasicAuthFilter(String username, String password) {
+      expectedAuthorization =
+        "Basic " + Base64.getEncoder().encodeToString((username + ':' + password).getBytes(UTF_8));
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
+      FilterChain chain) throws ServletException, IOException {
+      // Pass on the supplied credentials
+      String authHeader = req.getHeader("Authorization");
+      if (expectedAuthorization.equals(authHeader)) {
+        chain.doFilter(req, res);
+        return;
+      }
+
+      // Return 401 otherwise.
+      res.setHeader("WWW-Authenticate", "Basic realm=\"Realm'\"");
+      res.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+    }
   }
 }
