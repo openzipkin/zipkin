@@ -283,8 +283,10 @@ logging:
     com.datastax.oss.driver.internal.core.time.Clock: 'WARN'
     # Unless it's serious we don't want to know
     com.linecorp.armeria: 'WARN'
-    # # But allow to say it's ready to serve requests
+    # # But log when ready to serve requests
     com.linecorp.armeria.server.Server: 'INFO'
+    # # and when registered in Eureka
+    com.linecorp.armeria.server.eureka.EurekaUpdatingListener: 'INFO'
     # kafka is quite chatty, so we switch everything off by default
     org.apache.kafka: 'OFF'
 #     # investigate /api/v2/dependencies
