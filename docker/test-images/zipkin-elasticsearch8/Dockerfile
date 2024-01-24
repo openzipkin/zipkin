@@ -17,7 +17,7 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/java
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG java_version=21.0.2_p13
+ARG java_version=21.0.1_p12
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -26,16 +26,18 @@ FROM scratch as scratch
 
 COPY build-bin/docker/docker-healthcheck /docker-bin/
 COPY docker/test-images/zipkin-elasticsearch8/start-elasticsearch /docker-bin/
-COPY docker/test-images/zipkin-elasticsearch8/config/ /config/
+COPY docker/test-images/zipkin-elasticsearch7/config/ /config/
 
 FROM ghcr.io/openzipkin/java:${java_version} as install
 
 WORKDIR /install
 
-# Use latest 7.x version from https://www.elastic.co/downloads/past-releases#elasticsearch
+# Use latest 8.x version from https://www.elastic.co/downloads/past-releases#elasticsearch
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
 ARG elasticsearch7_version=8.12.0
+# TODO ^^ match java_version with others and remove this comment on 8.13.1
+# See https://github.com/elastic/elasticsearch/pull/104347
 
 # Download only the OSS distribution (lacks X-Pack)
 RUN \
