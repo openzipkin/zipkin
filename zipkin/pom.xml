@@ -64,22 +64,6 @@
 
   <build>
     <plugins>
-      <plugin>
-        <groupId>de.qaware.maven</groupId>
-        <artifactId>go-offline-maven-plugin</artifactId>
-        <configuration>
-          <dynamicDependencies>
-            <DynamicDependency>
-              <groupId>org.codehaus.mojo.signature</groupId>
-              <artifactId>java16</artifactId>
-              <version>1.0</version>
-              <type>signature</type>
-              <repositoryType>MAIN</repositoryType>
-            </DynamicDependency>
-          </dynamicDependencies>
-        </configuration>
-      </plugin>
-
       <!-- Use of gson is internal only -->
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>

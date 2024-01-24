@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,14 +13,15 @@
  */
 package zipkin2.collector;
 
+import com.github.valfirst.slf4jtest.TestLoggerFactoryExtension;
 import java.util.concurrent.RejectedExecutionException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.org.lidalia.slf4jext.Level;
-import uk.org.lidalia.slf4jtest.TestLogger;
-import uk.org.lidalia.slf4jtest.TestLoggerFactory;
+import org.slf4j.event.Level;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
@@ -28,6 +29,7 @@ import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
+import static com.github.valfirst.slf4jtest.TestLoggerFactory.getLoggingEvents;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,15 +42,15 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.TRACE;
 import static zipkin2.TestObjects.UTF_8;
 
-public class CollectorTest {
+@ExtendWith(TestLoggerFactoryExtension.class)
+class CollectorTest {
   InMemoryStorage storage = InMemoryStorage.newBuilder().build();
   Callback<Void> callback = mock(Callback.class);
   CollectorMetrics metrics = mock(CollectorMetrics.class);
   Collector collector;
-  private TestLogger testLogger = TestLoggerFactory.getTestLogger("");
+  Logger testLogger = LoggerFactory.getLogger(CollectorTest.class);
 
   @BeforeEach void setup() {
-    testLogger.clearAll();
     collector = spy(
       new Collector.Builder(testLogger).metrics(metrics).storage(storage).build());
     when(collector.idString(CLIENT_SPAN)).thenReturn("1"); // to make expectations easier to read
@@ -68,7 +70,7 @@ public class CollectorTest {
     collector.accept(TRACE, callback);
 
     verify(callback).onSuccess(null);
-    assertThat(testLogger.getLoggingEvents()).isEmpty();
+    assertThat(getLoggingEvents()).isEmpty();
     verify(metrics).incrementSpans(4);
     verify(metrics).incrementSpansDropped(4);
     assertThat(storage.getTraces()).isEmpty();
@@ -88,7 +90,7 @@ public class CollectorTest {
     verify(collector).acceptSpans(bytes, SpanBytesDecoder.JSON_V2, callback);
 
     verify(callback).onSuccess(null);
-    assertThat(testLogger.getLoggingEvents()).isEmpty();
+    assertThat(getLoggingEvents()).isEmpty();
     verify(metrics).incrementSpans(4);
     assertThat(storage.getTraces()).containsOnly(TRACE);
   }
@@ -126,7 +128,7 @@ public class CollectorTest {
     verify(collector).acceptSpans(bytes, SpanBytesDecoder.JSON_V1, callback);
 
     verify(callback).onSuccess(null);
-    assertThat(testLogger.getLoggingEvents()).isEmpty();
+    assertThat(getLoggingEvents()).isEmpty();
     assertThat(storage.getTraces()).isEmpty();
   }
 
@@ -172,7 +174,7 @@ public class CollectorTest {
     verify(metrics).incrementSpansDropped(4);
   }
 
-  public void handleStorageError_onErrorWithNullMessage() {
+  @Test void handleStorageError_onErrorWithNullMessage() {
     RuntimeException error = new RuntimeException();
     collector.handleStorageError(TRACE, error, callback);
 
@@ -231,7 +233,7 @@ public class CollectorTest {
   }
 
   private void assertDebugLogIs(String message) {
-    assertThat(testLogger.getLoggingEvents())
+    assertThat(getLoggingEvents())
       .hasSize(1)
       .filteredOn(event -> event.getLevel().equals(Level.DEBUG))
       .extracting(event -> unprefixIdString(event.getMessage()))
