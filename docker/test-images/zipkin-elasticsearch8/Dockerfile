@@ -17,7 +17,7 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/java
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG java_version=21.0.2_p13
+ARG java_version=21.0.1_p12
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -36,6 +36,8 @@ WORKDIR /install
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
 ARG elasticsearch7_version=8.12.0
+# TODO ^^ match java_version with others and remove this comment on 8.13.1
+# See https://github.com/elastic/elasticsearch/pull/104347
 
 # Download only the OSS distribution (lacks X-Pack)
 RUN \
