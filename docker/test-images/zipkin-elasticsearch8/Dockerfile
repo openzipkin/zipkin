@@ -74,6 +74,6 @@ USER ${USER}
 COPY --from=install --chown=${USER} /install .
 
 # Use to set heap, trust store or other system properties.
-ENV ES_JAVA_OPTS="-Xms256m -Xmx256m -XX:+ExitOnOutOfMemoryError"
+ENV ES_JAVA_OPTS="-Xms512m -Xmx512m -XX:+ExitOnOutOfMemoryError"
 ENV LIBFFI_TMPDIR=/tmp
 EXPOSE 9200
