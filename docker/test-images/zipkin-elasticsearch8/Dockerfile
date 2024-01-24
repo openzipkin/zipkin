@@ -26,13 +26,13 @@ FROM scratch as scratch
 
 COPY build-bin/docker/docker-healthcheck /docker-bin/
 COPY docker/test-images/zipkin-elasticsearch8/start-elasticsearch /docker-bin/
-COPY docker/test-images/zipkin-elasticsearch8/config/ /config/
+COPY docker/test-images/zipkin-elasticsearch7/config/ /config/
 
 FROM ghcr.io/openzipkin/java:${java_version} as install
 
 WORKDIR /install
 
-# Use latest 7.x version from https://www.elastic.co/downloads/past-releases#elasticsearch
+# Use latest 8.x version from https://www.elastic.co/downloads/past-releases#elasticsearch
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
 ARG elasticsearch7_version=8.12.0
