@@ -36,12 +36,24 @@
       <artifactId>slf4j-api</artifactId>
       <version>${slf4j.version}</version>
     </dependency>
-    <!-- TODO: abandoned dependency -->
     <dependency>
-      <groupId>uk.org.lidalia</groupId>
+      <groupId>com.github.valfirst</groupId>
       <artifactId>slf4j-test</artifactId>
-      <version>1.2.0</version>
+      <version>3.0.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <classpathDependencyExcludes>
+            <classpathDependencyExcludes>org.slf4j:slf4j-simple</classpathDependencyExcludes>
+          </classpathDependencyExcludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
