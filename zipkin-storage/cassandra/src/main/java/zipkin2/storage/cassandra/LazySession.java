@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,6 @@ package zipkin2.storage.cassandra;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.core.cql.ResultSet;
 import zipkin2.storage.cassandra.CassandraStorage.SessionFactory;
 
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
@@ -51,9 +50,9 @@ final class LazySession {
     return metadata;
   }
 
-  ResultSet healthCheck() {
+  void healthCheck() {
     get();
-    return session.execute(healthCheck.bind());
+    session.execute(healthCheck.bind());
   }
 
   void close() {

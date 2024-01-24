@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -129,7 +129,7 @@ final class InsertSpan extends ResultSetFutureCall<Void> {
    * <p>If there's consistently 8 tombstones (nulls) per row, then we'll only need 125 spans in a
    * trace (rows in a partition) to trigger the `tombstone_warn_threshold warnings being logged in
    * the C* nodes. And if we go to 12500 spans in a trace then that whole trace partition would
-   * become unreadable. Cassandra warns at a 1000 tombstones in any query, and fails on 100000
+   * become unreadable. Cassandra warns at 1000 tombstones in any query, and fails on 100000
    * tombstones.
    *
    * <p>There's also a small question about disk usage efficiency. Each tombstone is a cell name
@@ -143,8 +143,8 @@ final class InsertSpan extends ResultSetFutureCall<Void> {
    * <p>Another popular practice is to insert those potentially null columns as separate statements
    * (and optionally put them together into UNLOGGED batches). This works as multiple writes to the
    * same partition has little overhead, and here we're not worried about lack of isolation between
-   * those writes, as the write is asynchronous anyway. An example of this approach is in the
-   * cassandra-reaper project here: https://github.com/thelastpickle/cassandra-reaper/blob/master/src/server/src/main/java/io/cassandrareaper/storage/CassandraStorage.java#L622-L642
+   * writes, as it is asynchronous anyway. An example of this approach is in the cassandra-reaper
+   * project here: https://github.com/thelastpickle/cassandra-reaper/blob/master/src/server/src/main/java/io/cassandrareaper/storage/CassandraStorage.java#L622-L642
    */
   @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
     BoundStatementBuilder bound = factory.preparedStatement.boundStatementBuilder()

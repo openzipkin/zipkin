@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -60,7 +60,7 @@ final class CassandraUtil {
    * <p>Values over {@link RecyclableBuffers#SHORT_STRING_LENGTH} are not considered. Zipkin's
    * {@link QueryRequest#annotationQuery()} are equals match. Not all values are lookup values. For
    * example, {@code sql.query} isn't something that is likely to be looked up by value and indexing
-   * that could add a potentially kilobyte partition key on {@link Schema#TABLE_SPAN}
+   * that could add a kilobyte partition key on {@link Schema#TABLE_SPAN}
    *
    * @see QueryRequest#annotationQuery()
    */

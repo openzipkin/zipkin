@@ -73,8 +73,8 @@
       <groupId>org.apache.cassandra</groupId>
       <artifactId>java-driver-core</artifactId>
       <version>${java-driver.version}</version>
-      <!-- Exclude unused graph and geo dependencies -->
       <exclusions>
+        <!-- Exclude unused graph and geo dependencies -->
         <exclusion>
           <groupId>com.esri.geometry</groupId>
           <artifactId>*</artifactId>
@@ -92,6 +92,16 @@
              Mockito dies trying to mock CqlSession without it. -->
       </exclusions>
     </dependency>
+
+    <!-- Set SLF4J version to what's used by the server, without excluding the version
+         of cassandra, which is used in the zipkin-dependencies spark job. -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- temporary until https://github.com/apache/cassandra-java-driver/pull/1904 -->
     <dependency>
       <groupId>com.github.jnr</groupId>

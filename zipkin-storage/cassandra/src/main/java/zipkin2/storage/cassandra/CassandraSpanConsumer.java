@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -36,8 +36,7 @@ import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_REMOTE_SERVICES;
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_SPANS;
 
 class CassandraSpanConsumer implements SpanConsumer { // not final for testing
-  final CqlSession session;
-  final boolean strictTraceId, searchEnabled;
+  final boolean searchEnabled;
   final InsertSpan.Factory insertSpan;
   final Set<String> autocompleteKeys;
 
@@ -62,12 +61,9 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     );
   }
 
-  // Exposed to allow tests to switch from strictTraceId to not
   CassandraSpanConsumer(CqlSession session, Schema.Metadata metadata, boolean strictTraceId,
     boolean searchEnabled, Set<String> autocompleteKeys, int autocompleteTtl,
     int autocompleteCardinality) {
-    this.session = session;
-    this.strictTraceId = strictTraceId;
     this.searchEnabled = searchEnabled;
     this.autocompleteKeys = autocompleteKeys;
 
