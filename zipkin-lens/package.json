@@ -44,7 +44,7 @@
     "history": "^4.10.1",
     "http-proxy-middleware": "2.0.6",
     "lodash": "4.17.21",
-    "moment": "2.29.0",
+    "moment": "^2.29.4",
     "node-fetch": "2.6.7",
     "prettier": "3.1.1",
     "prop-types": "15.8.1",
@@ -62,6 +62,7 @@
     "redux-thunk": "^2.3.0",
     "shortid": "2.2.16",
     "styled-components": "6.1.2",
+    "three": "0.125.0",
     "vizceral-react": "4.8.0"
   },
   "scripts": {
