@@ -18,3 +18,7 @@ cluster.name: "docker-cluster"
 xpack.ml.enabled: false
 cluster.initial_master_nodes:
   - zipkin-elasticsearch
+# Avoid "flood stage disk watermark" errors
+cluster.routing.allocation.disk.threshold_enabled: false
+# We don't use geoip
+ingest.geoip.downloader.enabled: false
