@@ -13,7 +13,7 @@
 #
 
 # Use latest from https://hub.docker.com/_/rabbitmq/tags?page=1&name=alpine
-ARG rabbitmq_version=3.12.11
+ARG rabbitmq_version=3.12.12
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
