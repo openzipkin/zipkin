@@ -23,10 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.opentest4j.TestAbortedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -41,19 +37,19 @@ import static zipkin2.storage.cassandra.ITCassandraStorage.SEARCH_TABLES;
 import static zipkin2.storage.cassandra.Schema.TABLE_DEPENDENCY;
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
-public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCallback {
-  static final Logger LOGGER = LoggerFactory.getLogger(CassandraStorageExtension.class);
-
-  final CassandraContainer container = new CassandraContainer();
+class CassandraContainer extends GenericContainer<CassandraContainer> {
+  static final Logger LOGGER = LoggerFactory.getLogger(CassandraContainer.class);
   CqlSession globalSession;
 
-  @Override public void beforeAll(ExtensionContext context) {
-    if (context.getRequiredTestClass().getEnclosingClass() != null) {
-      // Only run once in outermost scope.
-      return;
-    }
+  CassandraContainer() {
+    super(parse("ghcr.io/openzipkin/zipkin-cassandra:3.0.5"));
+    addExposedPort(9042);
+    waitStrategy = Wait.forHealthcheck();
+    withLogConsumer(new Slf4jLogConsumer(LOGGER));
+  }
 
-    container.start();
+  @Override public void start() {
+    super.start();
     LOGGER.info("Using contactPoint {}", contactPoint());
     globalSession = tryToInitializeSession(contactPoint());
   }
@@ -82,7 +78,7 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
   }
 
   String contactPoint() {
-    return container.getHost() + ":" + container.getMappedPort(9042);
+    return getHost() + ":" + getMappedPort(9042);
   }
 
   void clear(CassandraStorage storage) {
@@ -108,12 +104,9 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
     blockWhileInFlight(storage);
   }
 
-  @Override public void afterAll(ExtensionContext context) {
-    if (context.getRequiredTestClass().getEnclosingClass() != null) {
-      // Only run once in outermost scope.
-      return;
-    }
+  @Override public void stop() {
     if (globalSession != null) globalSession.close();
+    super.stop();
   }
 
   static void blockWhileInFlight(CassandraStorage storage) {
@@ -151,15 +144,5 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
       if (inFlight > 0) return true;
     }
     return false;
-  }
-
-  // mostly waiting for https://github.com/testcontainers/testcontainers-java/issues/3537
-  static final class CassandraContainer extends GenericContainer<CassandraContainer> {
-    CassandraContainer() {
-      super(parse("ghcr.io/openzipkin/zipkin-cassandra:3.0.4"));
-      addExposedPort(9042);
-      waitStrategy = Wait.forHealthcheck();
-      withLogConsumer(new Slf4jLogConsumer(LOGGER));
-    }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -166,7 +166,7 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
    * Creates a call representing one or more queries against {@link Schema#TABLE_TRACE_BY_SERVICE_SPAN}
    * and possibly {@link Schema#TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE}.
    *
-   * <p>The result will be an aggregate if the input requests's serviceName is null, both span name
+   * <p>The result will be an aggregate if the input request serviceName is null, both span name
    * and remote service name are supplied, or there's more than one day of data in the timestamp
    * range.
    *
@@ -226,7 +226,7 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
           traceIndexFetchSize));
     }
 
-    if ("".equals(serviceName)) {
+    if (serviceName.isEmpty()) {
       // If we have no service name, we have to lookup service names before running trace ID queries
       Call<List<String>> serviceNames = getServiceNames();
       if (serviceRemoteServices.isEmpty()) {

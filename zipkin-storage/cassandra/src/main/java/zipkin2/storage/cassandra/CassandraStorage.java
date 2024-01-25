@@ -206,7 +206,7 @@ public final class CassandraStorage extends StorageComponent {
     return ResultSetFutureCall.isOverCapacity(e);
   }
 
-  @Override public final String toString() {
+  @Override public String toString() {
     return "CassandraStorage{contactPoints=" + contactPoints + ", keyspace=" + keyspace + "}";
   }
 

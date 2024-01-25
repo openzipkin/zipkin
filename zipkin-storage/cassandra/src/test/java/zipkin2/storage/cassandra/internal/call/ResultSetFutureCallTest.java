@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -31,7 +31,7 @@ class ResultSetFutureCallTest {
   CompletableFuture<AsyncResultSet> future = new CompletableFuture<>();
   AsyncResultSet resultSet = mock(AsyncResultSet.class);
 
-  ResultSetFutureCall<AsyncResultSet> call = new ResultSetFutureCall<AsyncResultSet>() {
+  ResultSetFutureCall<AsyncResultSet> call = new ResultSetFutureCall<>() {
     @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
       return ResultSetFutureCallTest.this.future;
     }
@@ -82,7 +82,7 @@ class ResultSetFutureCallTest {
 
   @Test void enqueue_callbackError_onErrorCreatingFuture() {
     IllegalArgumentException error = new IllegalArgumentException();
-    call = new ResultSetFutureCall<AsyncResultSet>() {
+    call = new ResultSetFutureCall<>() {
       @Override protected CompletionStage<AsyncResultSet> newCompletionStage() {
         throw error;
       }

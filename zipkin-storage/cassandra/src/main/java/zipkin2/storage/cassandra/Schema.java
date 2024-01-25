@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,7 +19,6 @@ import com.datastax.oss.driver.api.core.metadata.Node;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,7 +104,7 @@ final class Schema {
     return version;
   }
 
-  static KeyspaceMetadata ensureExists(String keyspace, boolean searchEnabled, CqlSession session) {
+  static void ensureExists(String keyspace, boolean searchEnabled, CqlSession session) {
     KeyspaceMetadata result = session.getMetadata().getKeyspace(keyspace).orElse(null);
     if (result == null || result.getTable(Schema.TABLE_SPAN).isEmpty()) {
       LOG.info("Installing schema {} for keyspace {}", SCHEMA_RESOURCE, keyspace);
@@ -125,7 +124,6 @@ final class Schema {
       LOG.info("Upgrading schema {}", UPGRADE_2);
       applyCqlFile(keyspace, session, UPGRADE_2);
     }
-    return result;
   }
 
   static boolean hasUpgrade1_autocompleteTags(KeyspaceMetadata keyspaceMetadata) {

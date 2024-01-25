@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import zipkin2.Span;
 import zipkin2.storage.StorageComponent.Builder;
 
@@ -34,7 +34,7 @@ import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_SPANS;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Testcontainers
 @Tag("docker")
 class ITCassandraStorage {
   static final List<String> SEARCH_TABLES = asList(
@@ -45,7 +45,7 @@ class ITCassandraStorage {
     TABLE_TRACE_BY_SERVICE_SPAN
   );
 
-  @RegisterExtension CassandraStorageExtension cassandra = new CassandraStorageExtension();
+  @Container static CassandraContainer cassandra = new CassandraContainer();
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<CassandraStorage> {
@@ -60,7 +60,7 @@ class ITCassandraStorage {
     }
 
     @Override protected void blockWhileInFlight() {
-      CassandraStorageExtension.blockWhileInFlight(storage);
+      CassandraContainer.blockWhileInFlight(storage);
     }
 
     @Override public void clear() {
@@ -75,7 +75,7 @@ class ITCassandraStorage {
     }
 
     @Override protected void blockWhileInFlight() {
-      CassandraStorageExtension.blockWhileInFlight(storage);
+      CassandraContainer.blockWhileInFlight(storage);
     }
 
     @Override public void clear() {
@@ -90,7 +90,7 @@ class ITCassandraStorage {
     }
 
     @Override protected void blockWhileInFlight() {
-      CassandraStorageExtension.blockWhileInFlight(storage);
+      CassandraContainer.blockWhileInFlight(storage);
     }
 
     @Override public void clear() {
@@ -107,7 +107,7 @@ class ITCassandraStorage {
     }
 
     @BeforeEach void initializeStorageBeforeSwitch() {
-      strictTraceId = CassandraStorageExtension.newStorageBuilder(storage.contactPoints)
+      strictTraceId = CassandraContainer.newStorageBuilder(storage.contactPoints)
         .keyspace(storage.keyspace)
         .build();
     }
@@ -119,7 +119,7 @@ class ITCassandraStorage {
       }
     }
 
-    /** Ensures we can still lookup fully 128-bit traces when strict trace ID id disabled */
+    /** Ensures we can still lookup fully 128-bit traces when strict trace ID disabled */
     @Test
     public void getTraces_128BitTraceId(TestInfo testInfo) throws Exception {
       getTraces_128BitTraceId(accept128BitTrace(strictTraceId, testInfo), testInfo);
@@ -133,7 +133,7 @@ class ITCassandraStorage {
     }
 
     @Override protected void blockWhileInFlight() {
-      CassandraStorageExtension.blockWhileInFlight(storage);
+      CassandraContainer.blockWhileInFlight(storage);
     }
 
     @Override public void clear() {
@@ -148,7 +148,7 @@ class ITCassandraStorage {
     }
 
     @Override protected void blockWhileInFlight() {
-      CassandraStorageExtension.blockWhileInFlight(storage);
+      CassandraContainer.blockWhileInFlight(storage);
     }
 
     @Override public void clear() {
@@ -163,7 +163,7 @@ class ITCassandraStorage {
     }
 
     @Override protected void blockWhileInFlight() {
-      CassandraStorageExtension.blockWhileInFlight(storage);
+      CassandraContainer.blockWhileInFlight(storage);
     }
 
     @Override public void clear() {
@@ -178,7 +178,7 @@ class ITCassandraStorage {
     }
 
     @Override protected void blockWhileInFlight() {
-      CassandraStorageExtension.blockWhileInFlight(storage);
+      CassandraContainer.blockWhileInFlight(storage);
     }
 
     @Override public void clear() {
@@ -203,7 +203,7 @@ class ITCassandraStorage {
     }
 
     @Override protected void blockWhileInFlight() {
-      CassandraStorageExtension.blockWhileInFlight(storage);
+      CassandraContainer.blockWhileInFlight(storage);
     }
 
     @Override public void clear() {

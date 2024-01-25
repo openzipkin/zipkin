@@ -150,7 +150,7 @@ As you'll notice, the duration component is optional, and stored in
 millisecond resolution as opposed to microsecond (which the query represents).
 The final query shows that the input is rounded up to the nearest millisecond.
 
-The reason we can query on `duration` is due to a SASI index. Eventhough the
+The reason we can query on `duration` is due to a SASI index. Even though the
 search granularity is millisecond, original duration data remains microsecond
 granularity. Meanwhile, write performance is dramatically better than writing
 discrete values, due to fewer distinct writes.
@@ -175,6 +175,6 @@ optimised for queries within a single day. The penalty of reading multiple days 
 otherwise overhead of reading a significantly larger amount of data.
 
 ### Benchmarking
-Benchmarking the new datamodel demonstrates a significant performance improvement on reads. How much of this translates to the
+Benchmarking the new data model demonstrates a significant performance improvement on reads. How much of this translates to the
 Zipkin UI is hard to tell due to the complexity of CassandraSpanConsumer and how searches are possible. Benchmarking stress
 profiles are found in traces-stress.yaml and trace_by_service_span-stress.yaml and span_by_service-stress.yaml.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -34,7 +34,7 @@ import static zipkin2.TestObjects.spanBuilder;
 
 abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
   @Override protected void configureStorageForTest(StorageComponent.Builder storage) {
-    storage.autocompleteKeys(asList("environment"));
+    storage.autocompleteKeys(List.of("environment"));
   }
 
   /**
@@ -65,7 +65,8 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
       .name("get")
       .kind(Span.Kind.CLIENT)
       .localEndpoint(trace[0].localEndpoint())
-      .timestamp(trace[0].timestampAsLong() + i * 1000) // all peer span timestamps happen 1ms later
+      .timestamp(
+        trace[0].timestampAsLong() + i * 1000L) // all peer span timestamps happen 1ms later
       .duration(10L)
       .build());
 
@@ -105,7 +106,8 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
       .localEndpoint(trace[0].localEndpoint())
       .putTag("environment", "dev")
       .putTag("a", "b")
-      .timestamp(trace[0].timestampAsLong() + i * 1000) // all peer span timestamps happen 1ms later
+      .timestamp(
+        trace[0].timestampAsLong() + i * 1000L) // all peer span timestamps happen 1ms later
       .duration(10L)
       .build());
 
@@ -120,10 +122,8 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
   /** It is easier to use a real Cassandra connection than mock a prepared statement. */
   @Test void insertEntry_niceToString() {
     // This test can use fake data as it is never written to cassandra
-    Span clientSpan = CLIENT_SPAN;
-
     AggregateCall<?, ?> acceptCall =
-      (AggregateCall<?, ?>) storage.spanConsumer().accept(asList(clientSpan));
+      (AggregateCall<?, ?>) storage.spanConsumer().accept(List.of(CLIENT_SPAN));
 
     List<Call<?>> insertEntryCalls = acceptCall.delegate().stream()
       .filter(c -> c instanceof InsertEntry)
@@ -155,7 +155,7 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
   static String getTagValue(CassandraStorage storage, String key) {
     return storage
       .session()
-      .execute("SELECT value from " + Schema.TABLE_AUTOCOMPLETE_TAGS + " WHERE key='environment'")
+      .execute("SELECT value from " + Schema.TABLE_AUTOCOMPLETE_TAGS + " WHERE key='" + key + "'")
       .one()
       .getString(0);
   }

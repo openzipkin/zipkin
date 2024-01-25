@@ -141,7 +141,7 @@ class SchemaTest {
 
   @Test void reviseCql_removes_dclocal_read_repair_chance_on_v4() {
     assertThat(Schema.reviseCQL(Version.V4_0_0, schemaWithReadRepair))
-      // literal used to show newlines etc are in-tact
+      // literal used to show newlines etc. are in-tact
       .isEqualTo("""
         CREATE TABLE IF NOT EXISTS zipkin2.remote_service_by_service (
             service text,

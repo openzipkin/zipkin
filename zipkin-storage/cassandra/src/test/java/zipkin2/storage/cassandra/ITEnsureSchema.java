@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,7 +24,6 @@ import zipkin2.storage.ITStorage;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static zipkin2.TestObjects.BACKEND;
@@ -40,7 +39,7 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
 
   @Override protected void configureStorageForTest(StorageComponent.Builder storage) {
     ((CassandraStorage.Builder) storage)
-      .ensureSchema(false).autocompleteKeys(asList("environment"));
+      .ensureSchema(false).autocompleteKeys(List.of("environment"));
   }
 
   @Override protected boolean initializeStoragePerTest() {

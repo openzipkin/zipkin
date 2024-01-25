@@ -35,7 +35,7 @@ import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUES
 import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_LOGGER_SUCCESS_ENABLED;
 import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_LOGGER_VALUES;
 import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_TIMEOUT;
-import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_TRACKER_CLASS;
+import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_TRACKER_CLASSES;
 import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.REQUEST_WARN_IF_SET_KEYSPACE;
 import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.SSL_ENGINE_FACTORY_CLASS;
 import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.SSL_HOSTNAME_VALIDATION;
@@ -86,7 +86,7 @@ public final class SessionBuilder {
     // Log categories can enable query logging
     Logger requestLogger = LoggerFactory.getLogger(SessionBuilder.class);
     if (requestLogger.isDebugEnabled()) {
-      config = config.withClass(REQUEST_TRACKER_CLASS, RequestLogger.class);
+      config = config.withClassList(REQUEST_TRACKER_CLASSES, List.of(RequestLogger.class));
       config = config.withBoolean(REQUEST_LOGGER_SUCCESS_ENABLED, true);
       // Only show bodies when TRACE is enabled
       config = config.withBoolean(REQUEST_LOGGER_VALUES, requestLogger.isTraceEnabled());

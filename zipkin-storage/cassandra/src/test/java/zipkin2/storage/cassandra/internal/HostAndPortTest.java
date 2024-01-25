@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -27,10 +27,8 @@ class HostAndPortTest {
       "google.com",
       "192.0.2.1",
       "2001::3"
-    ).forEach(host -> {
-      assertThat(HostAndPort.fromString(host, 77))
-        .isEqualTo(new HostAndPort(host, 77));
-    });
+    ).forEach(host -> assertThat(HostAndPort.fromString(host, 77))
+      .isEqualTo(new HostAndPort(host, 77)));
   }
 
   @Test void parsesHost_emptyPortOk() {
