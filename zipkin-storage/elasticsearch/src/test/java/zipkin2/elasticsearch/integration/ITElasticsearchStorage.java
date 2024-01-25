@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -163,12 +163,14 @@ abstract class ITElasticsearchStorage {
     final AggregatedHttpResponse response =
       webClient.execute(HttpRequest.of(RequestHeaders.of(HttpMethod.GET,
         "/_migration/deprecations"))).aggregate().join();
-    if (!response.contentAscii().isEmpty()) {
+    String responseBody = response.contentAscii();
+    if (!responseBody.equals("""
+      {"cluster_settings":[],"node_settings":[],"index_settings":{},"ml_settings":[],"ccr_auto_followed_system_indices":[]}""")) {
       LOGGER.warn("The ElasticSearch instance used during IT's is using deprecated features or "
         + "configuration. This is likely nothing to be really worried about (for example 'xpack.monitoring.enabled' "
         + "setting), but nevertheless it should be looked at to see if our docker image used during "
         + "integration tests needs updating for the next version of ElasticSearch. "
-        + "See https://www.elastic.co/guide/en/elasticsearch/reference/current/migration-api-deprecation.html"
+        + "See https://www.elastic.co/guide/en/elasticsearch/reference/current/migration-api-deprecation.html "
         + "for more information. This is the deprecation warning we received:\n\n"
         + response.contentAscii());
     }
