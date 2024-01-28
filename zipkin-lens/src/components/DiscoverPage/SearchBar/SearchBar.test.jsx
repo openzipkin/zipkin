@@ -14,7 +14,7 @@
 
 import { fireEvent, screen } from '@testing-library/react';
 import React from 'react';
-import { vi, describe, it, expect, afterEach } from 'vitest';
+import { vi, describe, it, expect } from 'vitest';
 import { SearchBarImpl } from './SearchBar';
 import render from '../../../test/util/render-with-default-settings';
 
@@ -40,8 +40,6 @@ vi.mock('./CriterionBox', () => ({
 }));
 
 describe('<SearchBar />', () => {
-  afterEach(() => {});
-
   const commonProps = {
     criteria: [],
     onChange: vi.fn(),

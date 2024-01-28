@@ -20,7 +20,6 @@ import Vizceral from 'vizceral-react';
 // So this class inherits Vizceral and overrides componentWillUnmount for releasing resources.
 class VizceralExt extends Vizceral {
   componentWillUnmount() {
-    this.vizceral.animate = () => {};
     delete this.vizceral;
   }
 }

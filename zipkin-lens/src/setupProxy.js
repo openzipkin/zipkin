@@ -12,7 +12,7 @@
  * the License.
  */
 
-const { createProxyMiddleware } = require('http-proxy-middleware');
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 const API_BASE = process.env.API_BASE || 'http://localhost:9411';
 
@@ -23,6 +23,6 @@ const proxy = createProxyMiddleware(['**/api/**', '**/config.json'], {
   changeOrigin: true,
 });
 
-module.exports = (app) => {
+export default (app) => {
   app.use('/', proxy);
 };

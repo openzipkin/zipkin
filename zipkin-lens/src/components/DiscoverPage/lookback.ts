@@ -132,10 +132,7 @@ export const fixedLookbacks: Array<FixedLookbackEntry> = [
   },
 ];
 
-export const fixedLookbackMap = fixedLookbacks.reduce(
-  (acc, cur) => {
-    acc[cur.value] = cur;
-    return acc;
-  },
-  {} as { [key: string]: FixedLookbackEntry },
-);
+export const fixedLookbackMap = fixedLookbacks.reduce((acc, cur) => {
+  acc[cur.value] = cur;
+  return acc;
+}, {} as { [key: string]: FixedLookbackEntry });

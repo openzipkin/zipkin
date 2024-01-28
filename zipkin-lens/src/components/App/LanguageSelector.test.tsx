@@ -29,16 +29,16 @@ import { fireEvent, screen } from '@testing-library/react';
 import React from 'react';
 
 import render from '../../test/util/render-with-default-settings';
-import {describe, it,expect} from 'vitest'
+import { describe, it, expect } from 'vitest';
 import LanguageSelector from './LanguageSelector';
-import i18n from "../../translations/i18n";
+import i18n from '../../translations/i18n';
 
 describe('<LanguageSelector />', () => {
   it('displays button', async () => {
     render(<LanguageSelector />);
     const changeLanguageButton = screen.getByTestId('change-language-button');
     expect(changeLanguageButton).toBeDefined();
-    i18n.language
+    i18n.language;
     expect(i18n.language).toEqual('en');
   });
 

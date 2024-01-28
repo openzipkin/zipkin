@@ -14,7 +14,7 @@
 
 /* eslint-disable no-shadow */
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { cleanup, fireEvent, waitForElement } from '@testing-library/react';
+import { cleanup, fireEvent } from '@testing-library/react';
 import fetchMock from 'fetch-mock';
 // @ts-ignore
 import { createMemoryHistory } from 'history';
@@ -25,7 +25,7 @@ import DependenciesPage from './DependenciesPage';
 import render from '../../test/util/render-with-default-settings';
 
 vi.mock('@material-ui/pickers', () => {
-  // eslint-disable-next-line global-require
+  // eslint-disable-next-line
   const moment = require('moment');
   return {
     // eslint-disable-next-line react/prop-types

@@ -53,7 +53,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-interface DependenciesPageProps extends RouteComponentProps {}
+type DependenciesPageProps = RouteComponentProps;
 
 const useTimeRange = (history: any, location: any) => {
   const setTimeRange = useCallback(

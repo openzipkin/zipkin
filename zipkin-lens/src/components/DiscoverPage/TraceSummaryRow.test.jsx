@@ -15,7 +15,6 @@ import { describe, it, expect } from 'vitest';
 import React from 'react';
 import TraceSummaryRow from './TraceSummaryRow';
 import render from '../../test/util/render-with-default-settings';
-import { screen } from '@testing-library/react';
 
 describe('<TraceSummaryRow />', () => {
   it('should render timestamp and duration in correct unit', () => {

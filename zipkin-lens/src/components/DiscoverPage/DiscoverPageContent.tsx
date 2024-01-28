@@ -397,13 +397,10 @@ const useTraceSummaryOpenState = (traceSummaries: TraceSummary[]) => {
 
   const expandAll = useCallback(() => {
     setTraceSummaryOpenMap(
-      traceSummaries.reduce(
-        (acc, cur) => {
-          acc[cur.traceId] = true;
-          return acc;
-        },
-        {} as { [key: string]: boolean },
-      ),
+      traceSummaries.reduce((acc, cur) => {
+        acc[cur.traceId] = true;
+        return acc;
+      }, {} as { [key: string]: boolean }),
     );
   }, [traceSummaries]);
 

@@ -15,7 +15,6 @@ import { describe, it, expect, afterEach } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
 import ServiceBadge from './ServiceBadge';
-import { render, screen } from '@testing-library/react';
 
 describe('<ServiceBadge />', () => {
   afterEach(cleanup);
@@ -36,13 +35,7 @@ describe('<ServiceBadge />', () => {
   });
 
   it('should render delete button when onDelete is set', () => {
-    const { getByTestId } = render(
-      <ServiceBadge
-        serviceName="serviceA"
-        onClick={() => {}}
-        onDelete={() => {}}
-      />,
-    );
+    const { getByTestId } = render(<ServiceBadge serviceName="serviceA" />);
     const items = getByTestId('delete-button');
     expect(items.children.length).toBe(1);
   });

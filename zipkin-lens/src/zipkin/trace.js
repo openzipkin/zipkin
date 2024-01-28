@@ -15,7 +15,6 @@ import orderBy from 'lodash/orderBy';
 import moment from 'moment';
 import { compare } from './span-cleaner';
 import { getErrorType, newSpanRow, getServiceName } from './span-row';
-import AdjustedTrace from "src/models/AdjustedTrace";
 
 // To ensure data doesn't scroll off the screen, we need all timestamps, not just
 // client/server ones.

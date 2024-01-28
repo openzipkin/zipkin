@@ -49,7 +49,6 @@ export const SpanTable = ({
         renderCell: (params) => {
           const spanId = params.value!.toString();
           return (
-            // eslint-disable-next-line jsx-a11y/anchor-is-valid
             <Link
               component="button"
               onClick={() => {

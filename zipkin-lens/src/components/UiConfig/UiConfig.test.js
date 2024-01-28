@@ -29,7 +29,7 @@ beforeEach(() => {
 });
 
 const UiConfig = () => {
-  // eslint-disable-next-line global-require
+  // eslint-disable-next-line
   const UiConfigModule = require('./UiConfig');
   const { UiConfig: RawUiConfig } = UiConfigModule;
   const { UiConfigConsumer } = UiConfigModule;

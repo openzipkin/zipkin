@@ -20,7 +20,7 @@ type Criterion = {
   id: string; // for React key props.
 };
 
-export const newCriterion = (key: string = '', value: string = '') => {
+export const newCriterion = (key = '', value = '') => {
   return {
     key,
     value,

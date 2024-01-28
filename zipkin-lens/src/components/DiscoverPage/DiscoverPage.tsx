@@ -46,7 +46,6 @@ const DiscoverPageImpl: React.FC<DiscoverPageImplProps> = ({
   useEffect(() => {
     loadAutocompleteKeys();
     loadServices();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!config.searchEnabled) {
@@ -55,7 +54,7 @@ const DiscoverPageImpl: React.FC<DiscoverPageImplProps> = ({
         <Trans t={t}>
           Searching has been disabled via the searchEnabled property. You can
           still view specific traces of which you know the trace id by entering
-          it in the "Trace ID..." textbox on the top-right.
+          it in the &quot;Trace ID...&quot; textbox on the top-right.
         </Trans>
       </Typography>
     );

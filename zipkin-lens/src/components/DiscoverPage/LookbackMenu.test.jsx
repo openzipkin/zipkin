@@ -20,7 +20,7 @@ import LookbackMenu from './LookbackMenu';
 import render from '../../test/util/render-with-default-settings';
 
 vi.mock('@material-ui/pickers', () => {
-  // eslint-disable-next-line global-require,no-shadow
+  // eslint-disable-next-line
   const moment = require('moment');
   return {
     // eslint-disable-next-line react/prop-types

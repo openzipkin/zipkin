@@ -24,7 +24,7 @@ import {
   treeCorrectedForClockSkew,
   detailedTraceSummary as buildDetailedTraceSummary,
 } from '../zipkin';
-import AdjustedTrace from "../models/AdjustedTrace";
+import AdjustedTrace from '../models/AdjustedTrace';
 
 const frontend = {
   serviceName: 'frontend',
@@ -215,7 +215,9 @@ describe('tracesSlice', () => {
       const mockStore = configureStore([thunk]);
 
       const skewCorrectedTrace = treeCorrectedForClockSkew(httpTrace);
-      const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(skewCorrectedTrace) as unknown as AdjustedTrace
+      const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(
+        skewCorrectedTrace,
+      ) as unknown as AdjustedTrace;
 
       const initialState: { traces: TracesState } = {
         traces: {
@@ -254,7 +256,9 @@ describe('tracesSlice', () => {
       const mockStore = configureStore([thunk]);
 
       const skewCorrectedTrace = treeCorrectedForClockSkew(httpTrace);
-      const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(skewCorrectedTrace) as any;
+      const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(
+        skewCorrectedTrace,
+      ) as any;
 
       const initialState: { traces: TracesState } = {
         traces: {
@@ -293,7 +297,9 @@ describe('tracesSlice', () => {
       const mockStore = configureStore([thunk]);
 
       const skewCorrectedTrace = treeCorrectedForClockSkew(httpTrace);
-      const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(skewCorrectedTrace)  as any;
+      const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(
+        skewCorrectedTrace,
+      ) as any;
 
       const initialState: { traces: TracesState } = {
         traces: {
