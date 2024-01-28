@@ -12,7 +12,12 @@
  * the License.
  */
 module.exports = {
-  extends: ['plugin:prettier/recommended', 'react-app', 'react-app/jest'],
+  parser: "@typescript-eslint/parser",
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
   rules: {
     'import/no-anonymous-default-export': 'off',
     'import/prefer-default-export': 'off',
@@ -38,7 +43,6 @@ module.exports = {
   },
   plugins: [
     '@typescript-eslint',
-    'jest',
     'react-hooks'
   ],
   globals: {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ import orderBy from 'lodash/orderBy';
 import moment from 'moment';
 import { compare } from './span-cleaner';
 import { getErrorType, newSpanRow, getServiceName } from './span-row';
+import AdjustedTrace from "src/models/AdjustedTrace";
 
 // To ensure data doesn't scroll off the screen, we need all timestamps, not just
 // client/server ones.

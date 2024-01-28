@@ -1,21 +1,21 @@
 import i18n from 'i18next'
 import {initReactI18next} from "react-i18next";
 import LanguageDetector from 'i18next-browser-languagedetector'
-import fr_translation from './fr/messages.json'
-import es_translation from './es/messages.json'
+import {messages as messages_fr} from './fr/messages'
+import {messages as messages_es} from './es/messages'
 
-import cn from './zh-cn/messages.json'
+import {messages as messages_zh} from './zh-cn/messages'
 
 
 const resources = {
   es: {
-    translation: es_translation
+    translation: messages_fr
   },
   fr:{
-    translation: fr_translation
+    translation: messages_es
   },
   zh_cn: {
-    translation:cn
+    translation:messages_zh
   }
 }
 
