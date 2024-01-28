@@ -15,6 +15,7 @@ import { describe, it, expect } from 'vitest';
 import React from 'react';
 import TraceSummaryRow from './TraceSummaryRow';
 import render from '../../test/util/render-with-default-settings';
+import {queryByTestId, screen} from "@testing-library/react";
 
 describe('<TraceSummaryRow />', () => {
   it('should render timestamp and duration in correct unit', () => {
@@ -39,7 +40,7 @@ describe('<TraceSummaryRow />', () => {
       </table>,
     );
 
-    const startTimeFormat = queryByTestId('TraceSummaryRow-startTimeFormat');
+    const startTimeFormat = screen.getByTestId('TraceSummaryRow-startTimeFormat');
     expect(startTimeFormat).toBeDefined();
     // Don't assert on hour as the timezone will be different in CI
     expect(startTimeFormat.textContent).toMatch(
@@ -47,7 +48,7 @@ describe('<TraceSummaryRow />', () => {
     );
     // Intentionally not asserting the relative time from now as it would drift tests
 
-    const duration = queryByTestId('TraceSummaryRow-duration');
+    const duration = screen.getByTestId('TraceSummaryRow-duration');
     expect(duration).toBeDefined();
     expect(duration.textContent).toBe('131.848ms');
   });

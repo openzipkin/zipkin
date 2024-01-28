@@ -14,7 +14,7 @@
 
 /* eslint-disable react/prop-types */
 import { describe, it, expect, afterEach } from 'vitest';
-import { fireEvent, cleanup } from '@testing-library/react';
+import { fireEvent, cleanup, screen } from '@testing-library/react';
 import { createMemoryHistory } from 'history';
 import moment from 'moment';
 import React from 'react';

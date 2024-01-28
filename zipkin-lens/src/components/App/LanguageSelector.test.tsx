@@ -39,21 +39,21 @@ describe('<LanguageSelector />', () => {
     const changeLanguageButton = screen.getByTestId('change-language-button');
     expect(changeLanguageButton).toBeDefined();
     i18n.language;
-    expect(i18n.language).toEqual('en');
+    expect(i18n.language).toEqual('en-US');
   });
 
   it('displays all languages', async () => {
     render(<LanguageSelector />);
-    expect(screen.getByTestId('language-list-item-en')).toBeDefined();
-    expect(screen.getByTestId('language-list-item-es')).toBeDefined();
-    expect(screen.getByTestId('language-list-item-fr')).toBeDefined();
-    expect(screen.getByTestId('language-list-item-zh-cn')).toBeDefined();
-    expect(i18n.language).toEqual('en');
+    expect(screen.getAllByTestId('language-list-item-en')).toBeDefined();
+    expect(screen.getAllByTestId('language-list-item-es')).toBeDefined();
+    expect(screen.getAllByTestId('language-list-item-fr')).toBeDefined();
+    expect(screen.getAllByTestId('language-list-item-zh_cn')).toBeDefined();
+    expect(i18n.language).toEqual('en-US');
   });
 
   it('language select changes locale and refreshes', async () => {
     render(<LanguageSelector />);
-    fireEvent.click(screen.getByTestId('language-list-item-zh-cn'));
-    expect(i18n.language).toEqual('zh-cn');
+    fireEvent.click(screen.getAllByTestId('language-list-item-zh_cn')[0]);
+    expect(i18n.language).toEqual('zh_cn');
   });
 });

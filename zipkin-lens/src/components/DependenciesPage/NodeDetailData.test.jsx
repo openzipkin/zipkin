@@ -12,7 +12,7 @@
  * the License.
  */
 import { describe, it, expect } from 'vitest';
-import { fireEvent } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { createMemoryHistory } from 'history';
 import React from 'react';
 

@@ -14,7 +14,7 @@
 
 /* eslint-disable no-shadow */
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { cleanup, fireEvent } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import fetchMock from 'fetch-mock';
 // @ts-ignore
 import { createMemoryHistory } from 'history';

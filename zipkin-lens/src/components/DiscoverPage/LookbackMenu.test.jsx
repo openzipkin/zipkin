@@ -12,7 +12,7 @@
  * the License.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { cleanup, fireEvent } from '@testing-library/react';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
 import moment from 'moment';
 import React from 'react';
 

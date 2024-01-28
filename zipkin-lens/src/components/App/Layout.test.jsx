@@ -14,7 +14,7 @@
 import React from 'react';
 
 import { describe, it, expect, afterEach } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import render from '../../test/util/render-with-default-settings';
 import Layout from './Layout';
 
@@ -28,7 +28,8 @@ describe('<Layout />', () => {
         <span>Test</span>
       </Layout>,
     );
-    expect(queryByTitle('Support')).toBeNull();
+    const helpLink = screen.queryByTitle('Support');
+    expect(helpLink).toBeNull();
   });
 
   it('does render help link when defined', () => {
@@ -44,7 +45,7 @@ describe('<Layout />', () => {
         },
       },
     );
-    const helpLink = queryByTitle('Support');
+    const helpLink = screen.getByTitle('Support');
     expect(helpLink).toBeDefined();
     expect(helpLink.href).toEqual('https://gitter.im/openzipkin/zipkin');
   });
@@ -57,7 +58,7 @@ describe('<Layout />', () => {
         <span>Test</span>
       </Layout>,
     );
-    expect(queryByText('Dependencies')).toBeDefined();
+    expect(screen.queryByText('Dependencies')).toBeDefined();
   });
 
   it('does not render Dependencies Page when disabled', () => {
@@ -75,6 +76,6 @@ describe('<Layout />', () => {
         },
       },
     );
-    expect(queryByTitle('Dependencies')).toBeNull();
+    expect(screen.queryByTitle('Dependencies')).toBeNull();
   });
 });

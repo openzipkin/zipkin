@@ -18,6 +18,7 @@
 // a parent span ID that is in the list of spans
 
 import { convertSpansToSpanTree } from './helpers';
+import { describe, it, expect } from 'vitest';
 
 describe('convertSpansToSpanTree', () => {
   it('should return an empty array when there are no spans', () => {
