@@ -37,9 +37,9 @@
       <version>${slf4j.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.github.valfirst</groupId>
+      <groupId>uk.org.lidalia</groupId>
       <artifactId>slf4j-test</artifactId>
-      <version>3.0.1</version>
+      <version>1.2.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2023 The OpenZipkin Authors
+# Copyright 2015-2024 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -37,7 +37,7 @@ HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthche
 ENTRYPOINT ["start-mysql"]
 
 # Use latest from https://pkgs.alpinelinux.org/packages?name=mysql
-ARG mysql_version=10.11.5
+ARG mysql_version=10.11.6-r0
 LABEL mysql-version=$mysql_version
 ENV MYSQL_VERSION=$mysql_version
 

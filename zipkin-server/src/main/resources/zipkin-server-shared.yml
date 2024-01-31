@@ -264,6 +264,8 @@ logging:
     com.linecorp.armeria.server.Server: 'INFO'
     # # and when registered in Eureka
     com.linecorp.armeria.server.eureka.EurekaUpdatingListener: 'INFO'
+    # # and when http-logging is enabled
+    com.linecorp.armeria.client.logging.LoggingClient: 'INFO'
     # kafka is quite chatty, so we switch everything off by default
     org.apache.kafka: 'OFF'
 #     # investigate /api/v2/dependencies
