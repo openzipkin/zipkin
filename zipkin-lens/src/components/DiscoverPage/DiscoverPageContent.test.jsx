@@ -16,14 +16,9 @@
 
 import { fireEvent, screen } from '@testing-library/react';
 import { act, renderHook } from '@testing-library/react-hooks';
-import { createMemoryHistory } from 'history';
 import moment from 'moment';
 import React from 'react';
-import {
-  createMemoryRouter,
-  MemoryRouter,
-  RouterProvider,
-} from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 import DiscoverPageContent, {
   buildApiQuery,
@@ -74,16 +69,13 @@ describe('useQueryParams', () => {
   });
 
   it('should extract fixed lookback from query string', () => {
-    const history = createMemoryHistory();
-    const wrapper = ({ children }) => {
-      return <Router history={history}>{children}</Router>;
-    };
-    history.push({
-      pathname: '/zipkin/',
-      search: '?lookback=2h&endTs=1588558961791',
-    });
+    const initialEntries = ['/zipkin/?lookback=2h&endTs=1588558961791']; // 初期URLを設定
+    const wrapper = ({ children }) => (
+      <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+    );
 
     const { result } = renderHook(() => useQueryParams([]), { wrapper });
+
     expect(result.current.lookback.type).toBe('fixed');
     expect(result.current.lookback.value).toBe('2h');
     expect(result.current.lookback.endTime.valueOf()).toBe(1588558961791);
@@ -113,8 +105,18 @@ describe('useQueryParams', () => {
     expect(result.current.limit).toBe(300);
   });
 
-  it('should set query string using setQueryParams', () => {
-    const { result } = renderHook(() => useQueryParams(['key3']), { wrapper });
+  it('should set query string using setQueryParams', async () => {
+    const wrapper = ({ children }) => (
+      <MemoryRouter initialEntries={['/zipkin/?limit=300']}>
+        <Routes>
+          <Route path="/zipkin/*" element={children} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const { result, waitFor } = renderHook(() => useQueryParams(['key3']), {
+      wrapper,
+    });
 
     act(() => {
       result.current.setQueryParams(
@@ -122,10 +124,8 @@ describe('useQueryParams', () => {
           { key: 'serviceName', value: 'serviceA' },
           { key: 'spanName', value: 'spanB' },
           { key: 'remoteServiceName', value: 'remoteServiceNameC' },
-          // Durations will NOT converted to microsecond values.
           { key: 'minDuration', value: '10us' },
           { key: 'maxDuration', value: '100ms' },
-          // AnnotationQuery
           { key: 'tagQuery', value: 'key1=value1 and key2' },
           { key: 'key3', value: 'value3' },
         ],
@@ -137,9 +137,25 @@ describe('useQueryParams', () => {
         10,
       );
     });
-    expect(history.location.search).toBe(
-      '?serviceName=serviceA&spanName=spanB&remoteServiceName=remoteServiceNameC&minDuration=10us&maxDuration=100ms&annotationQuery=key1%3Dvalue1+and+key2+and+key3%3Dvalue3&lookback=2h&endTs=1588558961791&limit=10',
+
+    // URLの更新を待つ
+    await waitFor(() => {
+      return new URLSearchParams(window.location.search).has('limit');
+    });
+
+    // URLパラメータの検証
+    const urlParams = new URLSearchParams(window.location.search);
+    expect(urlParams.get('serviceName')).toBe('serviceA');
+    expect(urlParams.get('spanName')).toBe('spanB');
+    expect(urlParams.get('remoteServiceName')).toBe('remoteServiceNameC');
+    expect(urlParams.get('minDuration')).toBe('10us');
+    expect(urlParams.get('maxDuration')).toBe('100ms');
+    expect(urlParams.get('annotationQuery')).toBe(
+      'key1=value1 and key2 and key3=value3',
     );
+    expect(urlParams.get('lookback')).toBe('2h');
+    expect(urlParams.get('endTs')).toBe('1588558961791');
+    expect(urlParams.get('limit')).toBe('10');
   });
 });
 
