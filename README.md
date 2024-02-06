@@ -11,7 +11,7 @@ Features include both the collection and lookup of this data.
 If you have a trace ID in a log file, you can jump directly to it. Otherwise,
 you can query based on attributes such as service, operation name, tags and
 duration. Some interesting data will be summarized for you, such as the
-percentage of time spent in a service, and whether or not operations failed.
+percentage of time spent in a service, and whether operations failed.
 
 <img src="https://zipkin.io/public/img/web-screenshot.png" alt="Trace view screenshot" />
 
@@ -30,7 +30,8 @@ Apache Cassandra or Elasticsearch.
 
 ## Quick-start
 
-The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin&a=zipkin-server&v=LATEST&c=exec) as a self-contained executable jar. Note that the Zipkin server requires minimum JRE 8. For example:
+The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin&a=zipkin-server&v=LATEST&c=exec) as a self-contained
+executable jar. Note that the Zipkin server requires minimum JRE 17+. For example:
 
 ```bash
 curl -sSL https://zipkin.io/quickstart.sh | bash -s
@@ -43,11 +44,11 @@ You can also start Zipkin via Docker.
 docker run -d -p 9411:9411 openzipkin/zipkin
 ```
 
-Once the server is running, you can view traces with the Zipkin UI at `http://your_host:9411/zipkin/`.
+Once the server is running, you can view traces with the Zipkin UI at http://localhost:9411/zipkin.
 
 If your applications aren't sending traces, yet, configure them with [Zipkin instrumentation](https://zipkin.io/pages/tracers_instrumentation) or try one of our [examples](https://github.com/openzipkin?utf8=%E2%9C%93&q=example).
 
-Check out the [`zipkin-server`](/zipkin-server) documentation for configuration details, or [Docker examples](docker/examples) for how to use docker-compose.
+Check out the [`zipkin-server`](zipkin-server/README.md) documentation for configuration details, or [Docker examples](docker/examples) for how to use docker-compose.
 
 ### Zipkin Slim
 
@@ -65,10 +66,21 @@ Running via Docker:
 docker run -d -p 9411:9411 openzipkin/zipkin-slim
 ```
 
-## Core Library
-The [core library](zipkin/src/main/java/zipkin2) is used by both Zipkin instrumentation and the Zipkin server. Its minimum Java language level is 6, in efforts to support those writing agent instrumentation.
+Running via [Homebrew](https://formulae.brew.sh/formula/zipkin):
+```bash
+brew install zipkin
+# to run in foreground
+zipkin
+# to run in background
+brew services start zipkin
+```
 
-This includes built-in codec for Zipkin's v1 and v2 json formats. A direct dependency on gson (json library) is avoided by minifying and repackaging classes used. The result is a 155k jar which won't conflict with any library you use.
+## Core Library
+The [core library](zipkin/src/main/java/zipkin2) is used by both Zipkin instrumentation and the Zipkin server.
+
+This includes built-in codec for Zipkin's v1 and v2 json formats. A direct dependency on gson
+(json library) is avoided by minifying and repackaging classes used. The result is a 155k jar which
+won't conflict with any library you use.
 
 Ex.
 ```java
@@ -89,10 +101,18 @@ bytes = SpanBytesEncoder.JSON_V2.encode(span);
 
 Note: The above is just an example, most likely you'll want to use an existing tracing library like [Brave](https://github.com/openzipkin/brave)
 
+### Core Library Requires Java 8+
+
+The minimum Java language level of the core library is 8. This helps support those writing agent
+instrumentation. Version 2.x was the last to support Java 6.
+
+*Note*: [zipkin-reporter-brave](https://github.com/openzipkin/zipkin-reporter-java/blob/master/brave/README.md)
+does not use this library. So, [brave](https://github.com/openzipkin/brave) still supports Java 6.
+
 ## Storage Component
 Zipkin includes a [StorageComponent](zipkin/src/main/java/zipkin2/storage/StorageComponent.java), used to store and query spans and
-dependency links. This is used by the server and those making collectors, or span reporters. For this reason, storage
-components have minimal dependencies, but most require Java 8+
+dependency links. This is used by the server and those making collectors, or span reporters.
+For this reason, storage components have minimal dependencies, though require Java 11+.
 
 Ex.
 ```java
@@ -118,7 +138,7 @@ database needed.
 
 ### Cassandra
 The [Cassandra](zipkin-server#cassandra-storage) component uses Cassandra
-3.11.3+ features, but is tested against the latest patch of Cassandra 3.11.
+3.11.3+ features, but is tested against the latest patch of Cassandra 4.1.
 
 This is the second generation of our Cassandra schema. It stores spans
 using UDTs, such that they appear like Zipkin v2 json in cqlsh. It is
@@ -129,7 +149,7 @@ Note: This store requires a [job to aggregate](https://github.com/openzipkin/zip
 
 ### Elasticsearch
 The [Elasticsearch](zipkin-server#elasticsearch-storage) component uses
-Elasticsearch 5+ features, but is tested against Elasticsearch 6-7.x.
+Elasticsearch 5+ features, but is tested against Elasticsearch 7-8.x.
 
 It stores spans as Zipkin v2 json so that integration with other tools is
 straightforward. To help with scale, this uses a combination of custom
@@ -164,7 +184,7 @@ simpler v2 data model currently used.
 
 #### MySQL
 The [MySQL v1](zipkin-storage/mysql-v1) component uses MySQL 5.6+
-features, but is tested against MariaDB 10.3.
+features, but is tested against MariaDB 10.11.
 
 The schema was designed to be easy to understand and get started with;
 it was not designed for performance. Ex spans fields are columns, so
@@ -181,7 +201,7 @@ The [Zipkin server](zipkin-server) receives spans via HTTP POST and respond to q
 from its UI. It can also run collectors, such as RabbitMQ or Kafka.
 
 To run the server from the currently checked out source, enter the
-following. JDK 11 is required to compile the source.
+following. JDK 17+ is required to compile the source.
 ```bash
 # Build the server and also make its dependencies
 $ ./mvnw -q --batch-mode -DskipTests --also-make -pl zipkin-server clean install
@@ -202,10 +222,11 @@ commits to master.
 
 ### Docker Images
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin` and GitHub
-Container Registry as `ghcr.io/openzipkin/zipkin`. See [docker](./docker) for details.
+Container Registry as `ghcr.io/openzipkin/zipkin`. See [docker](docker) for details.
 
 ### Helm Charts
-Helm charts are available at https://openzipkin.github.io/zipkin. See [charts](./charts/zipkin) for details.
+Helm charts are available via `helm repo add zipkin https://zipkin.io/zipkin-helm`.
+See [zipkin-helm](https://github.com/openzipkin/zipkin-helm) for details.
 
 ### Javadocs
 https://zipkin.io/zipkin contains versioned folders with JavaDocs published on each (non-PR) build, as well

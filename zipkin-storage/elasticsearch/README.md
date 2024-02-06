@@ -3,22 +3,22 @@
 This is a plugin to the Elasticsearch storage component, which uses
 HTTP by way of [Armeria](https://github.com/line/armeria) and
 [Jackson](https://github.com/FasterXML/jackson). This uses Elasticsearch 5+
-features, but is tested against Elasticsearch 6-7.x.
+features, but is tested against Elasticsearch 7-8.x.
 
 ## Multiple hosts
 Most users will supply a DNS name that's mapped to multiple A or AAAA
 records. For example, `http://elasticsearch:9200` will use normal host
 lookups to get the list of IP addresses, though you can alternatively supply
-a list of http base urls. In either case, all of the resolved IP addresses
+a list of http base urls. In either case, all the resolved IP addresses
 from all provided hosts will be iterated over round-robin, with requests made
 only to healthy addresses.
 
 Here are some examples:
 
-* http://1.1.1.1:9200,http://2.2.2.2:19200
-* http://1.1.1.1:9200,http://[2001:db8::c001]:9200
-* http://elasticsearch:9200,http://1.2.3.4:9200
-* http://elasticsearch-1:9200,http://elasticsearch-2:9200
+* `http://1.1.1.1:9200,http://2.2.2.2:19200`
+* `http://1.1.1.1:9200,http://[2001:db8::c001]:9200`
+* `http://elasticsearch:9200,http://1.2.3.4:9200`
+* `http://elasticsearch-1:9200,http://elasticsearch-2:9200`
 
 ## Format
 Spans are stored in version 2 format, which is the same as the [v2 POST endpoint](https://zipkin.io/zipkin-api/#/default/post_spans)
@@ -125,7 +125,7 @@ Elasticsearch 7.8 introduces [composable templates](https://www.elastic.co/guide
 deprecates [legacy/v1 templates](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-templates-v1.html) used in version prior.
 Merging of multiple templates with matching index patterns is no longer allowed, and Elasticsearch will return error on PUT of the second template
 with matching index pattern and priority. Templates with matching index patterns are required to have different priorities, and Elasticsearch will
-only use the template with the highest priority. This also means that [secondary template](https://gist.github.com/adriancole/1af1259102e7a2da1b3c9103565165d7)
+only use the template with the highest priority. This also means that [secondary template](https://gist.github.com/codefromthecrypt/1af1259102e7a2da1b3c9103565165d7)
 is no longer achievable.
 
 By default, Zipkin will use legacy template during initialization, but you can opt to use composable template by

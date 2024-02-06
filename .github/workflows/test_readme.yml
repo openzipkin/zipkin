@@ -1,0 +1,172 @@
+---
+name: test_readme
+
+# These test build commands mentioned in various README.md files.
+#
+# We don't test documentation-only commits.
+on:  # yamllint disable-line rule:truthy
+  push:  # non-tagged pushes to master
+    branches:
+      - master
+    tags-ignore:
+      - '*'
+    paths-ignore:
+      - '**/*.md'
+      - './build-bin/*lint'
+      - ./build-bin/mlc_config.json
+  pull_request:  # pull requests targeted at the master branch.
+    branches:
+      - master
+    paths-ignore:
+      - '**/*.md'
+      - './build-bin/*lint'
+      - ./build-bin/mlc_config.json
+
+jobs:
+  zipkin-server:
+    name: zipkin-server/README.md ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    # skip commits made by the release plugin
+    if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
+    strategy:
+      matrix:
+        include:  # Not ubuntu as already tested as a part of the docker job
+          - name: macos
+            os: macos-12
+          - name: windows
+            os: windows-2022
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Setup java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'  # zulu as it supports a wide version range
+          java-version: '21'  # Most recent LTS
+      - name: Cache NPM Packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          # yamllint disable-line rule:line-length
+          key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-jdk-21-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-jdk-21-maven-
+      - name: Execute Server Build  # command from zipkin-server/README.md
+        run: ./mvnw --also-make -pl zipkin-server clean package
+        env:
+          MAVEN_CONFIG: '-T1C -q --batch-mode -DskipTests'
+
+  docker:
+    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
+    # skip commits made by the release plugin
+    if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      # Remove apt repos that are known to break from time to time.
+      # See https://github.com/actions/virtual-environments/issues/323
+      - name: Remove broken apt repos
+        run: |
+          for apt_file in `grep -lr microsoft /etc/apt/sources.list.d/`
+          do sudo rm $apt_file
+          done
+      - name: Setup java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'  # zulu as it supports a wide version range
+          java-version: '21'  # Most recent LTS
+      # Don't attempt to cache Docker. Sensitive information can be stolen
+      # via forks, and login session ends up in ~/.docker. This is ok because
+      # we publish DOCKER_PARENT_IMAGE to ghcr.io, hence local to the runner.
+      - name: Cache NPM Packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          # yamllint disable-line rule:line-length
+          key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-jdk-21-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-jdk-21-maven-
+      - name: Build zipkin-server  # redundant, but needed for docker/README.md
+        run: ./mvnw --also-make -pl zipkin-server clean package
+        env:
+          MAVEN_CONFIG: '-T1C -q --batch-mode -DskipTests'
+      - name: docker/README.md - openzipkin/zipkin
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin:test
+        env:
+          RELEASE_FROM_MAVEN_BUILD: true
+      - name: docker/README.md - openzipkin/zipkin-slim
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-slim:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-slim:test
+        env:
+          DOCKER_TARGET: zipkin-slim
+          RELEASE_FROM_MAVEN_BUILD: true
+      - name: docker/test-images/zipkin-ui/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-ui:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-ui:test
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-ui/Dockerfile
+          RELEASE_FROM_MAVEN_BUILD: true
+      - name: docker/test-images/zipkin-activemq/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-activemq:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-activemq:test
+      - name: docker/test-images/zipkin-cassandra/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-cassandra:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-cassandra:test
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-cassandra/Dockerfile
+      - name: docker/test-images/zipkin-elasticsearch7/README.md
+        run: |
+          build-bin/docker/docker_build ${DOCKER_TAG} &&
+          build-bin/docker/docker_test_image ${DOCKER_TAG}
+        env:
+          DOCKER_TAG: openzipkin/zipkin-elasticsearch7:test
+          DOCKER_FILE: docker/test-images/zipkin-elasticsearch7/Dockerfile
+      - name: docker/test-images/zipkin-elasticsearch8/README.md
+        run: |
+          build-bin/docker/docker_build ${DOCKER_TAG} &&
+          build-bin/docker/docker_test_image ${DOCKER_TAG}
+        env:
+          DOCKER_TAG: openzipkin/zipkin-elasticsearch8:test
+          DOCKER_FILE: docker/test-images/zipkin-elasticsearch8/Dockerfile
+      - name: docker/test-images/zipkin-eureka/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-eureka:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-eureka:test
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-eureka/Dockerfile
+      - name: docker/test-images/zipkin-kafka/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-kafka:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-kafka:test
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-kafka/Dockerfile
+      - name: docker/test-images/zipkin-mysql/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-mysql:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-mysql:test
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-mysql/Dockerfile
+      - name: docker/test-images/zipkin-rabbitmq/README.md
+        run: |
+          build-bin/docker/docker_build openzipkin/zipkin-rabbitmq:test &&
+          build-bin/docker/docker_test_image openzipkin/zipkin-rabbitmq:test
+        env:
+          DOCKER_FILE: docker/test-images/zipkin-rabbitmq/Dockerfile

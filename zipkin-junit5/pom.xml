@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2023 The OpenZipkin Authors
+    Copyright 2015-2024 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>2.25.3-SNAPSHOT</version>
+    <version>3.0.5-SNAPSHOT</version>
   </parent>
 
   <groupId>io.zipkin.zipkin2</groupId>
@@ -30,22 +30,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-
-    <!-- temporarily control okio version until okhttp5 is releasing again -->
-    <okio.version>3.6.0</okio.version>
   </properties>
-
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.squareup.okio</groupId>
-        <artifactId>okio-bom</artifactId>
-        <version>${okio.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
 
   <dependencies>
     <dependency>

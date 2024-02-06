@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -34,7 +34,7 @@ class VersionSpecificTemplatesTest {
   /** Unsupported, but we should test that parsing works */
   @Test void version2_unsupported() {
     assertThatThrownBy(() -> storage.versionSpecificTemplates(V2_4))
-      .hasMessage("Elasticsearch versions 5-7.x are supported, was: 2.4");
+      .hasMessage("Elasticsearch versions 5-8.x are supported, was: 2.4");
   }
 
   @Test void version5() {
@@ -61,23 +61,25 @@ class VersionSpecificTemplatesTest {
   @Test void version6_wrapsPropertiesWithType() {
     IndexTemplates template = storage.versionSpecificTemplates(V6_7);
 
-    assertThat(template.dependency()).contains(""
-      + "  \"mappings\": {\n"
-      + "    \"dependency\": {\n"
-      + "      \"enabled\": false\n"
-      + "    }\n"
-      + "  }");
+    assertThat(template.dependency()).contains("""
+        "mappings": {
+          "dependency": {
+            "enabled": false
+          }
+        }\
+      """);
 
-    assertThat(template.autocomplete()).contains(""
-      + "  \"mappings\": {\n"
-      + "    \"autocomplete\": {\n"
-      + "      \"enabled\": true,\n"
-      + "      \"properties\": {\n"
-      + "        \"tagKey\": { \"type\": \"keyword\", \"norms\": false },\n"
-      + "        \"tagValue\": { \"type\": \"keyword\", \"norms\": false }\n"
-      + "      }\n"
-      + "    }\n"
-      + "  }");
+    assertThat(template.autocomplete()).contains("""
+        "mappings": {
+          "autocomplete": {
+            "enabled": true,
+            "properties": {
+              "tagKey": { "type": "keyword", "norms": false },
+              "tagValue": { "type": "keyword", "norms": false }
+            }
+          }
+        }\
+      """);
   }
 
   @Test void version7() {
@@ -95,19 +97,21 @@ class VersionSpecificTemplatesTest {
   @Test void version7_doesntWrapPropertiesWithType() {
     IndexTemplates template = storage.versionSpecificTemplates(V7_0);
 
-    assertThat(template.dependency()).contains(""
-      + "  \"mappings\": {\n"
-      + "    \"enabled\": false\n"
-      + "  }");
+    assertThat(template.dependency()).contains("""
+        "mappings": {
+          "enabled": false
+        }\
+      """);
 
-    assertThat(template.autocomplete()).contains(""
-      + "  \"mappings\": {\n"
-      + "    \"enabled\": true,\n"
-      + "    \"properties\": {\n"
-      + "      \"tagKey\": { \"type\": \"keyword\", \"norms\": false },\n"
-      + "      \"tagValue\": { \"type\": \"keyword\", \"norms\": false }\n"
-      + "    }\n"
-      + "  }");
+    assertThat(template.autocomplete()).contains("""
+        "mappings": {
+          "enabled": true,
+          "properties": {
+            "tagKey": { "type": "keyword", "norms": false },
+            "tagValue": { "type": "keyword", "norms": false }
+          }
+        }\
+      """);
   }
 
   @Test void version78_legacy() {
@@ -199,16 +203,17 @@ class VersionSpecificTemplatesTest {
     IndexTemplates template = storage.versionSpecificTemplates(V6_7);
 
     assertThat(template.span())
-      .contains(""
-        + "  \"mappings\": {\n"
-        + "    \"span\": {\n"
-        + "      \"properties\": {\n"
-        + "        \"traceId\": { \"type\": \"keyword\", \"norms\": false },\n"
-        + "        \"annotations\": { \"enabled\": false },\n"
-        + "        \"tags\": { \"enabled\": false }\n"
-        + "      }\n"
-        + "    }\n"
-        + "  }");
+      .contains("""
+          "mappings": {
+            "span": {
+              "properties": {
+                "traceId": { "type": "keyword", "norms": false },
+                "annotations": { "enabled": false },
+                "tags": { "enabled": false }
+              }
+            }
+          }\
+        """);
   }
 
   @Test void searchEnabled_minimalSpanIndexing_7x() {
@@ -220,14 +225,15 @@ class VersionSpecificTemplatesTest {
 
     // doesn't wrap in a type name
     assertThat(template.span())
-      .contains(""
-        + "  \"mappings\": {\n"
-        + "    \"properties\": {\n"
-        + "      \"traceId\": { \"type\": \"keyword\", \"norms\": false },\n"
-        + "      \"annotations\": { \"enabled\": false },\n"
-        + "      \"tags\": { \"enabled\": false }\n"
-        + "    }\n"
-        + "  }");
+      .contains("""
+          "mappings": {
+            "properties": {
+              "traceId": { "type": "keyword", "norms": false },
+              "annotations": { "enabled": false },
+              "tags": { "enabled": false }
+            }
+          }\
+        """);
   }
 
   @Test void strictTraceId_doesNotIncludeAnalysisSection() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -67,10 +67,10 @@ public class ZipkinConfiguration {
     BeanFactory beanFactory;
 
     @Override public Object postProcessAfterInitialization(Object bean, String beanName) {
-      if (bean instanceof StorageComponent) {
+      if (bean instanceof StorageComponent component) {
         ZipkinStorageThrottleProperties throttleProperties =
           beanFactory.getBean(ZipkinStorageThrottleProperties.class);
-        return new ThrottledStorageComponent((StorageComponent) bean,
+        return new ThrottledStorageComponent(component,
           beanFactory.getBean(MeterRegistry.class),
           beanFactory.containsBean("tracing") ? beanFactory.getBean(Tracing.class) : null,
           throttleProperties.getMinConcurrency(),
@@ -100,9 +100,9 @@ public class ZipkinConfiguration {
     }
 
     @Override public Object postProcessAfterInitialization(Object bean, String beanName) {
-      if (bean instanceof StorageComponent && beanFactory.containsBean("tracing")) {
+      if (bean instanceof StorageComponent component && beanFactory.containsBean("tracing")) {
         Tracing tracing = beanFactory.getBean(Tracing.class);
-        return new TracingStorageComponent(tracing, (StorageComponent) bean);
+        return new TracingStorageComponent(tracing, component);
       }
       return bean;
     }

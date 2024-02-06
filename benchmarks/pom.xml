@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2023 The OpenZipkin Authors
+    Copyright 2015-2024 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>2.25.3-SNAPSHOT</version>
+    <version>3.0.5-SNAPSHOT</version>
   </parent>
 
   <artifactId>benchmarks</artifactId>
@@ -29,6 +29,11 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
+
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
+
     <jmh.version>1.37</jmh.version>
     <unpack-proto.directory>${project.build.directory}/main/proto</unpack-proto.directory>
   </properties>
@@ -218,8 +223,6 @@
             <configuration combine.self="override">
               <!-- instead of javac-with-errorprone -->
               <compilerId>javac</compilerId>
-              <source>1.8</source>
-              <target>1.8</target>
               <!-- scrub errorprone compiler args -->
               <compilerArgs />
             </configuration>

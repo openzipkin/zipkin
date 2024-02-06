@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2023 The OpenZipkin Authors
+    Copyright 2015-2024 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>2.25.3-SNAPSHOT</version>
+    <version>3.0.5-SNAPSHOT</version>
   </parent>
 
   <groupId>io.zipkin.zipkin2</groupId>
@@ -49,20 +49,6 @@
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <version>${assertj.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.esotericsoftware</groupId>
-      <artifactId>kryo</artifactId>
-      <version>${kryo.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <version>${gson.version}</version>
-      <!-- this dependency is shaded out, but IntelliJ can't figure it out. -->
-      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

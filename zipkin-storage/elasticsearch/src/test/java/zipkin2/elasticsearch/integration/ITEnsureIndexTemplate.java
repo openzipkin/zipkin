@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -76,7 +76,7 @@ abstract class ITEnsureIndexTemplate extends ITStorage<ElasticsearchStorage> {
           .build(),
         asList(span));
     } finally {
-      // Delete "catch-all" index template so it does not interfere with any other test
+      // Delete "catch-all" index template, so it does not interfere with any other test
       http(DELETE, catchAllIndexPath());
     }
   }
@@ -100,18 +100,20 @@ abstract class ITEnsureIndexTemplate extends ITStorage<ElasticsearchStorage> {
 
   /** Catch-all template doesn't store source */
   String catchAllTemplate() {
-    return "{\n"
-      + "  \"index_patterns\" : [\"*\"],\n"
-      + "  \"priority\" : 0,\n"
-      + "  \"template\": {\n"
-      + "    \"settings\" : {\n"
-      + "      \"number_of_shards\" : 1\n"
-      + "    },\n"
-      + "    \"mappings\" : {\n"
-      + "      \"_source\": {\"enabled\": false }\n"
-      + "    }\n"
-      + "  }\n"
-      + "}";
+    return """
+      {
+        "index_patterns" : ["*"],
+        "priority" : 5,
+        "template": {
+          "settings" : {
+            "number_of_shards" : 1
+          },
+          "mappings" : {
+            "_source": {"enabled": false }
+          }
+        }
+      }\
+      """;
   }
 
   void http(HttpMethod method, String path) throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,6 @@ package zipkin2.internal;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +38,7 @@ public final class DateUtil {
     long startMillis = endTs - (lookback != 0 ? lookback : endTs);
     long from = startMillis <= 0 ? 0 : midnightUTC(startMillis); // >= 1970
 
-    List<Long> days = new ArrayList<Long>();
+    List<Long> days = new ArrayList<>();
     for (long time = from; time <= to; time += TimeUnit.DAYS.toMillis(1)) {
       days.add(time);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,6 +16,7 @@ package zipkin2.v1;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.Span.Kind;
@@ -33,11 +34,11 @@ public final class V1SpanConverter {
   }
 
   final Span.Builder first = Span.newBuilder();
-  final List<Span.Builder> spans = new ArrayList<Span.Builder>();
+  final List<Span.Builder> spans = new ArrayList<>();
   V1Annotation cs, sr, ss, cr, ms, mr, ws, wr;
 
   public List<Span> convert(V1Span source) {
-    List<Span> out = new ArrayList<Span>();
+    List<Span> out = new ArrayList<>();
     convert(source, out);
     return out;
   }
@@ -177,8 +178,8 @@ public final class V1SpanConverter {
 
   void handleIncompleteRpc(V1Span source) {
     handleIncompleteRpc(first);
-    for (int i = 0, length = spans.size(); i < length; i++) {
-      handleIncompleteRpc(spans.get(i));
+    for (Span.Builder span : spans) {
+      handleIncompleteRpc(span);
     }
     if (source.timestamp != 0) {
       first.timestamp(source.timestamp).duration(source.duration);
@@ -280,8 +281,7 @@ public final class V1SpanConverter {
   Span.Builder forEndpoint(V1Span source, @Nullable zipkin2.Endpoint e) {
     if (e == null) return first; // allocate missing endpoint data to first span
     if (closeEnoughEndpoint(first, e)) return first;
-    for (int i = 0, length = spans.size(); i < length; i++) {
-      Span.Builder next = spans.get(i);
+    for (Span.Builder next : spans) {
       if (closeEnoughEndpoint(next, e)) return next;
     }
     return newSpanBuilder(source, e);
@@ -304,17 +304,13 @@ public final class V1SpanConverter {
 
   void finish(Collection<Span> sink) {
     sink.add(first.build());
-    for (int i = 0, length = spans.size(); i < length; i++) {
-      sink.add(spans.get(i).build());
+    for (Span.Builder span : spans) {
+      sink.add(span.build());
     }
   }
 
   static boolean hasSameServiceName(Endpoint left, @Nullable Endpoint right) {
-    return equal(left.serviceName(), right.serviceName());
-  }
-
-  static boolean equal(Object a, Object b) {
-    return a == b || (a != null && a.equals(b));
+    return Objects.equals(left.serviceName(), right.serviceName());
   }
 
   static Span.Builder newBuilder(Span.Builder builder, V1Span source) {

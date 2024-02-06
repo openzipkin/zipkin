@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import com.datastax.oss.driver.api.core.CqlSession;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
@@ -41,6 +42,7 @@ import static zipkin2.storage.cassandra.InternalForTests.writeDependencyLinks;
  * keyspace. As schema installation takes ~10s, hesitate adding too many tests here.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Tag("docker")
 class ITCassandraStorageHeavy {
 
   @RegisterExtension CassandraStorageExtension backend = new CassandraStorageExtension();

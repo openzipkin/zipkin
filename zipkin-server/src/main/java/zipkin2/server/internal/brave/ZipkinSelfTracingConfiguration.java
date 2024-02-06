@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -25,20 +25,19 @@ import brave.sampler.Sampler;
 import com.linecorp.armeria.common.brave.RequestContextCurrentTraceContext;
 import com.linecorp.armeria.server.brave.BraveService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import zipkin2.Call;
-import zipkin2.CheckResult;
 import zipkin2.Span;
-import zipkin2.codec.Encoding;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.CollectorMetrics;
+import zipkin2.reporter.BytesMessageSender;
+import zipkin2.reporter.Encoding;
 import zipkin2.reporter.ReporterMetrics;
-import zipkin2.reporter.Sender;
 import zipkin2.reporter.brave.AsyncZipkinSpanHandler;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
@@ -83,7 +82,7 @@ public class ZipkinSelfTracingConfiguration {
    * tracer itself, this isn't used as {@link Tracing.Builder#sampler(Sampler)}. The impact of this
    * is that we can't currently start traces from Kafka or Rabbit (until we use a messaging
    * sampler).
-   *
+   * <p>
    * See https://github.com/openzipkin/brave/pull/914 for the messaging abstraction
    */
   @Bean Sampler sampler(SelfTracingProperties config) {
@@ -100,7 +99,8 @@ public class ZipkinSelfTracingConfiguration {
   }
 
   /** Controls aspects of tracing such as the name that shows up in the UI */
-  @Bean Tracing tracing(AsyncZipkinSpanHandler zipkinSpanHandler, CurrentTraceContext currentTraceContext) {
+  @Bean Tracing tracing(AsyncZipkinSpanHandler zipkinSpanHandler,
+    CurrentTraceContext currentTraceContext) {
     return Tracing.newBuilder()
       .localServiceName("zipkin-server")
       .sampler(Sampler.NEVER_SAMPLE) // don't sample traces at this abstraction
@@ -131,40 +131,30 @@ public class ZipkinSelfTracingConfiguration {
     return server -> server.decorator(BraveService.newDecorator(tracing));
   }
 
-  /** Lazily looks up the storage component in order to to avoid proxying. */
-  static final class LocalSender extends Sender {
+  /** Lazily looks up the storage component in order to avoid proxying. */
+  static final class LocalSender extends BytesMessageSender.Base {
     final BeanFactory factory;
     volatile StorageComponent delegate; // volatile to prevent stale reads
 
     LocalSender(BeanFactory factory) {
-      this.factory = factory;
-    }
-
-    @Override public Encoding encoding() {
       // TODO: less memory efficient, but not a huge problem for self-tracing which is rarely on
       // https://github.com/openzipkin/zipkin-reporter-java/issues/178
-      return Encoding.JSON;
+      super(Encoding.JSON);
+      this.factory = factory;
     }
 
     @Override public int messageMaxBytes() {
       return 5 * 1024 * 1024; // arbitrary
     }
 
-    @Override public int messageSizeInBytes(List<byte[]> list) {
-      return Encoding.JSON.listSizeInBytes(list);
-    }
-
-    @Override public Call<Void> sendSpans(List<byte[]> encodedSpans) {
+    @Override public void send(List<byte[]> encodedSpans) throws IOException {
       List<Span> spans = new ArrayList<>(encodedSpans.size());
       for (byte[] encodedSpan : encodedSpans) {
         Span v2Span = SpanBytesDecoder.JSON_V2.decodeOne(encodedSpan);
         spans.add(v2Span);
       }
-      return delegate().spanConsumer().accept(spans);
-    }
 
-    @Override public CheckResult check() {
-      return delegate().check();
+      delegate().spanConsumer().accept(spans).execute();
     }
 
     @Override public String toString() {
@@ -182,8 +172,8 @@ public class ZipkinSelfTracingConfiguration {
       if (result != null) return delegate;
       // synchronization is not needed as redundant calls have no ill effects
       result = factory.getBean(StorageComponent.class);
-      if (result instanceof TracingStorageComponent) {
-        result = ((TracingStorageComponent) result).delegate;
+      if (result instanceof TracingStorageComponent component) {
+        result = component.delegate;
       }
       return delegate = result;
     }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2023 The OpenZipkin Authors
+    Copyright 2015-2024 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.zipkin2</groupId>
     <artifactId>zipkin-storage-parent</artifactId>
-    <version>2.25.3-SNAPSHOT</version>
+    <version>3.0.5-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-storage-mysql-v1</artifactId>
@@ -29,9 +29,8 @@
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
 
-    <!-- TODO: upgrade when we make floor JDK 11 or 17
-         3.16 is the last to compile with JDK <17; 3.14 last for Java 8 -->
-    <jooq.version>3.14.16</jooq.version>
+    <!-- 3.16 is the last to compile with JDK 11 -->
+    <jooq.version>3.16.23</jooq.version>
 
     <!-- jOOQ doesn't add the Generated annotation, so we have to explicitly disable rules -->
     <errorprone.args>-Xep:InconsistentCapitalization:OFF</errorprone.args>

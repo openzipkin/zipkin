@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Locale;
+import java.util.Objects;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.RecyclableBuffers;
 
@@ -157,7 +158,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
      *
      * @see #parseIp(String)
      */
-    public final boolean parseIp(@Nullable InetAddress addr) {
+    public boolean parseIp(@Nullable InetAddress addr) {
       if (addr == null) return false;
       if (addr instanceof Inet4Address) {
         ipv4 = addr.getHostAddress();
@@ -179,7 +180,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
      *
      * @param ipBytes byte array whose ownership is exclusively transferred to this endpoint.
      */
-    public final boolean parseIp(byte[] ipBytes) {
+    public boolean parseIp(byte[] ipBytes) {
       if (ipBytes == null) return false;
       if (ipBytes.length == 4) {
         ipv4Bytes = ipBytes;
@@ -241,7 +242,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
      *
      * @see #parseIp(InetAddress)
      */
-    public final boolean parseIp(@Nullable String ipString) {
+    public boolean parseIp(@Nullable String ipString) {
       if (ipString == null || ipString.isEmpty()) return false;
       IpFamily format = detectFamily(ipString);
       if (format == IpFamily.IPv4) {
@@ -441,7 +442,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
     // This indicates that a run of zeroes has been skipped.
     int skipIndex = -1;
     for (int i = 1; i < parts.length - 1; i++) {
-      if (parts[i].length() == 0) {
+      if (parts[i].isEmpty()) {
         if (skipIndex >= 0) {
           return null; // Can't have more than one ::
         }
@@ -455,10 +456,10 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
       // If we found a "::", then check if it also covers the endpoints.
       partsHi = skipIndex;
       partsLo = parts.length - skipIndex - 1;
-      if (parts[0].length() == 0 && --partsHi != 0) {
+      if (parts[0].isEmpty() && --partsHi != 0) {
         return null; // ^: requires ^::
       }
-      if (parts[parts.length - 1].length() == 0 && --partsLo != 0) {
+      if (parts[parts.length - 1].isEmpty() && --partsLo != 0) {
         return null; // :$ requires ::$
       }
     } else {
@@ -571,10 +572,9 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
     if (o == this) return true;
     if (!(o instanceof Endpoint)) return false;
     Endpoint that = (Endpoint) o;
-    return ((serviceName == null)
-      ? (that.serviceName == null) : serviceName.equals(that.serviceName))
-      && ((ipv4 == null) ? (that.ipv4 == null) : ipv4.equals(that.ipv4))
-      && ((ipv6 == null) ? (that.ipv6 == null) : ipv6.equals(that.ipv6))
+    return Objects.equals(serviceName, that.serviceName)
+      && Objects.equals(ipv4, that.ipv4)
+      && Objects.equals(ipv6, that.ipv6)
       && port == that.port;
   }
 
@@ -592,7 +592,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
   }
 
   // As this is an immutable object (no default constructor), defer to a serialization proxy.
-  final Object writeReplace() throws ObjectStreamException {
+  Object writeReplace() throws ObjectStreamException {
     return new SerializedForm(this);
   }
 

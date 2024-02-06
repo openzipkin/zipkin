@@ -59,6 +59,19 @@ zipkin:
       enabled: ${COLLECTOR_SCRIBE_ENABLED:${SCRIBE_ENABLED:false}}
       category: ${SCRIBE_CATEGORY:zipkin}
       port: ${COLLECTOR_PORT:9410}
+
+  discovery:
+    eureka:
+      enabled: ${DISCOVERY_EUREKA_ENABLED:true}
+      # URL of the Eureka v2 endpoint. e.g. http://eureka:8761/eureka/v2
+      service-url: ${EUREKA_SERVICE_URL:}
+      # The appName property of the instance
+      app-name: ${EUREKA_APP_NAME:zipkin}
+      # The instanceId property of the instance
+      instance-id: ${EUREKA_INSTANCE_ID:}
+      # The hostName property of the instance
+      hostname: ${EUREKA_HOSTNAME:}
+
   query:
     enabled: ${QUERY_ENABLED:true}
     # Timeout for requests to the query API
@@ -102,31 +115,6 @@ zipkin:
     mem:
       # Maximum number of spans to keep in memory.  When exceeded, oldest traces (and their spans) will be purged.
       max-spans: ${MEM_MAX_SPANS:500000}
-    cassandra:
-      # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
-      contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
-      # Name of the datacenter that will be considered "local" for load balancing.
-      local-dc: ${CASSANDRA_LOCAL_DC:datacenter1}
-      # Will throw an exception on startup if authentication fails.
-      username: ${CASSANDRA_USERNAME:}
-      password: ${CASSANDRA_PASSWORD:}
-      keyspace: ${CASSANDRA_KEYSPACE:zipkin}
-      # Max pooled connections per datacenter-local host.
-      max-connections: ${CASSANDRA_MAX_CONNECTIONS:8}
-      # Ensuring that schema exists, if enabled tries to execute script /zipkin-cassandra-core/resources/cassandra-schema.cql.
-      ensure-schema: ${CASSANDRA_ENSURE_SCHEMA:true}
-      # 7 days in seconds
-      span-ttl: ${CASSANDRA_SPAN_TTL:604800}
-      # 3 days in seconds
-      index-ttl: ${CASSANDRA_INDEX_TTL:259200}
-      # the maximum trace index metadata entries to cache
-      index-cache-max: ${CASSANDRA_INDEX_CACHE_MAX:100000}
-      # how long to cache index metadata about a trace. 1 minute in seconds
-      index-cache-ttl: ${CASSANDRA_INDEX_CACHE_TTL:60}
-      # how many more index rows to fetch than the user-supplied query limit
-      index-fetch-multiplier: ${CASSANDRA_INDEX_FETCH_MULTIPLIER:3}
-      # Using ssl for connection, rely on Keystore
-      use-ssl: ${CASSANDRA_USE_SSL:false}
     cassandra3:
       # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
       contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
@@ -144,6 +132,8 @@ zipkin:
       index-fetch-multiplier: ${CASSANDRA_INDEX_FETCH_MULTIPLIER:3}
       # Using ssl for connection, rely on Keystore
       use-ssl: ${CASSANDRA_USE_SSL:false}
+      # Controls validation of Cassandra server hostname
+      ssl-hostname-validation: ${CASSANDRA_SSL_HOSTNAME_VALIDATION:true}
     elasticsearch:
       # host is left unset intentionally, to defer the decision
       hosts: ${ES_HOSTS:}
@@ -209,6 +199,11 @@ server:
     min-response-size: 2048
 
 armeria:
+  # TODO: This is only to help with Eureka. After line/armeria#5369, add the
+  # same in EurekaUpdatingListenerBuilder#toBuilder and remove from here. This
+  # will remove the following log warning:
+  # WARN RejectedRouteHandler - Virtual host '*' has a duplicate route: /health
+  healthCheckPath: /health
   ports:
     - port: ${server.port}
       protocols:
@@ -265,8 +260,10 @@ logging:
     com.datastax.oss.driver.internal.core.time.Clock: 'WARN'
     # Unless it's serious we don't want to know
     com.linecorp.armeria: 'WARN'
-    # # But allow to say it's ready to serve requests
+    # # But log when ready to serve requests
     com.linecorp.armeria.server.Server: 'INFO'
+    # # and when registered in Eureka
+    com.linecorp.armeria.server.eureka.EurekaUpdatingListener: 'INFO'
     # kafka is quite chatty, so we switch everything off by default
     org.apache.kafka: 'OFF'
 #     # investigate /api/v2/dependencies

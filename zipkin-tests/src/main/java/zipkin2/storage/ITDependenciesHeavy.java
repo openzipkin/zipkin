@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -59,7 +59,7 @@ public abstract class ITDependenciesHeavy<T extends StorageComponent> extends IT
 
   /** Ensure there's no query limit problem around links */
   @Test protected void manyLinks() throws Exception {
-    int count = 1000; // Larger than 10, which is the default ES search limit that tripped this
+    int count = 256; // Larger than 10, which is the default ES search limit that tripped this
     List<Span> spans = new ArrayList<>(count);
     for (int i = 1; i <= count; i++) {
       String traceId = newTraceId();

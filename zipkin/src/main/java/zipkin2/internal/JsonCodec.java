@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import static com.google.gson.stream.JsonToken.BOOLEAN;
 import static com.google.gson.stream.JsonToken.NULL;
 import static com.google.gson.stream.JsonToken.STRING;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This explicitly constructs instances of model classes via manual parsing for a number of
@@ -41,8 +42,6 @@ import static java.lang.String.format;
  * this should be easy to justify as these objects don't change much at all.
  */
 public final class JsonCodec {
-  static final Charset UTF_8 = Charset.forName("UTF-8");
-
   // Hides gson types for internal use in other submodules
   public static final class JsonReader {
     final com.google.gson.stream.JsonReader delegate;
@@ -132,7 +131,7 @@ public final class JsonCodec {
   }
 
   public static @Nullable <T> T readOne(JsonReaderAdapter<T> adapter, ReadBuffer buffer) {
-    List<T> out = new ArrayList<T>(1); // TODO: could make single-element list w/o array
+    List<T> out = new ArrayList<>(1); // TODO: could make single-element list w/o array
     if (!read(adapter, buffer, out)) return null;
     return out.get(0);
   }
@@ -156,8 +155,8 @@ public final class JsonCodec {
     int length = value.size();
     int sizeInBytes = 2; // []
     if (length > 1) sizeInBytes += length - 1; // comma to join elements
-    for (int i = 0; i < length; i++) {
-      sizeInBytes += writer.sizeInBytes(value.get(i));
+    for (T t : value) {
+      sizeInBytes += writer.sizeInBytes(t);
     }
     return sizeInBytes;
   }
@@ -187,9 +186,7 @@ public final class JsonCodec {
           lengthWritten,
           result.length,
           new String(result, 0, lengthWritten, UTF_8));
-      AssertionError error = new AssertionError(message);
-      error.initCause(e);
-      throw error;
+      throw new AssertionError(message, e);
     }
     return result;
   }
@@ -225,7 +222,7 @@ public final class JsonCodec {
 
   static IllegalArgumentException exceptionReading(String type, Exception e) {
     String cause = e.getMessage() == null ? "Error" : e.getMessage();
-    if (cause.indexOf("Expected BEGIN_OBJECT") != -1 || cause.indexOf("malformed") != -1) {
+    if (cause.contains("Expected BEGIN_OBJECT") || cause.contains("malformed")) {
       cause = "Malformed";
     }
     String message = format("%s reading %s from json", cause, type);

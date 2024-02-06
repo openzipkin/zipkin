@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,6 +32,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   properties = {
     "server.port=0",
     "spring.config.name=zipkin-server",
+    "spring.main.banner-mode=off",
     "zipkin.storage.type=elasticsearch",
     "zipkin.storage.elasticsearch.hosts=127.0.0.1:9999"
   }

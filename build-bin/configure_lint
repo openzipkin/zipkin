@@ -1,0 +1,7 @@
+#!/bin/sh -ue
+
+# Attempt to install markdown-link-check if absent
+markdown-link-check -V || npm install -g markdown-link-check
+
+# Attempt to install yamllint if absent
+yamllint || pip install --user yamllint

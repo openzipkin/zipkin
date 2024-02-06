@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 import zipkin2.codec.SpanBytesDecoder;
@@ -32,6 +34,7 @@ import zipkin2.internal.Nullable;
 import zipkin2.internal.RecyclableBuffers;
 
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.logging.Level.FINEST;
 import static zipkin2.internal.HexCodec.HEX_DIGITS;
 
@@ -61,7 +64,6 @@ import static zipkin2.internal.HexCodec.HEX_DIGITS;
  */
 //@Immutable
 public final class Span implements Serializable { // for Spark and Flink jobs
-  static final Charset UTF_8 = Charset.forName("UTF-8");
   static final Endpoint EMPTY_ENDPOINT = Endpoint.newBuilder().build();
 
   static final int FLAG_DEBUG = 1 << 1;
@@ -341,11 +343,11 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       localEndpoint = source.localEndpoint;
       remoteEndpoint = source.remoteEndpoint;
       if (!source.annotations.isEmpty()) {
-        annotations = new ArrayList<Annotation>(source.annotations.size());
+        annotations = new ArrayList<>(source.annotations.size());
         annotations.addAll(source.annotations);
       }
       if (!source.tags.isEmpty()) {
-        tags = new TreeMap<String, String>();
+        tags = new TreeMap<>();
         tags.putAll(source.tags);
       }
       flags = source.flags;
@@ -375,12 +377,12 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       }
       if (!source.annotations.isEmpty()) {
         if (annotations == null) {
-          annotations = new ArrayList<Annotation>(source.annotations.size());
+          annotations = new ArrayList<>(source.annotations.size());
         }
         annotations.addAll(source.annotations);
       }
       if (!source.tags.isEmpty()) {
-        if (tags == null) tags = new TreeMap<String, String>();
+        if (tags == null) tags = new TreeMap<>();
         tags.putAll(source.tags);
       }
       flags = flags | source.flags;
@@ -528,7 +530,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
 
     /** Sets {@link Span#annotations} */
     public Builder addAnnotation(long timestamp, String value) {
-      if (annotations == null) annotations = new ArrayList<Annotation>(2);
+      if (annotations == null) annotations = new ArrayList<>(2);
       annotations.add(Annotation.create(timestamp, value));
       return this;
     }
@@ -542,7 +544,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
 
     /** Sets {@link Span#tags} */
     public Builder putTag(String key, String value) {
-      if (tags == null) tags = new TreeMap<String, String>();
+      if (tags == null) tags = new TreeMap<>();
       if (key == null) throw new NullPointerException("key == null");
       if (value == null) throw new NullPointerException("value of " + key + " == null");
       this.tags.put(key, value);
@@ -746,8 +748,8 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     remoteEndpoint = builder.remoteEndpoint;
     annotations = sortedList(builder.annotations);
     tags = builder.tags == null
-      ? Collections.<String, String>emptyMap()
-      : new LinkedHashMap<String, String>(builder.tags);
+      ? Collections.emptyMap()
+      : new LinkedHashMap<>(builder.tags);
     flags = builder.flags;
   }
 
@@ -756,16 +758,14 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     if (!(o instanceof Span)) return false;
     Span that = (Span) o;
     return traceId.equals(that.traceId)
-      && (parentId == null ? that.parentId == null : parentId.equals(that.parentId))
+      && Objects.equals(parentId, that.parentId)
       && id.equals(that.id)
-      && (kind == null ? that.kind == null : kind.equals(that.kind))
-      && (name == null ? that.name == null : name.equals(that.name))
+      && Objects.equals(kind, that.kind)
+      && Objects.equals(name, that.name)
       && timestamp == that.timestamp
       && duration == that.duration
-      && (localEndpoint == null
-      ? that.localEndpoint == null : localEndpoint.equals(that.localEndpoint))
-      && (remoteEndpoint == null
-      ? that.remoteEndpoint == null : remoteEndpoint.equals(that.remoteEndpoint))
+      && Objects.equals(localEndpoint, that.localEndpoint)
+      && Objects.equals(remoteEndpoint, that.remoteEndpoint)
       && annotations.equals(that.annotations)
       && tags.equals(that.tags)
       && flags == that.flags;
@@ -801,7 +801,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
   }
 
   // This is an immutable object, and our encoder is faster than java's: use a serialization proxy.
-  final Object writeReplace() throws ObjectStreamException {
+  Object writeReplace() throws ObjectStreamException {
     return new SerializedForm(SpanBytesEncoder.PROTO3.encode(this));
   }
 

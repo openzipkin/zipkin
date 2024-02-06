@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import org.jooq.DSLContext;
 import org.jooq.Query;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
@@ -35,6 +36,7 @@ import static zipkin2.storage.ITDependencies.aggregateLinks;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependencies.ZIPKIN_DEPENDENCIES;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Tag("docker")
 class ITMySQLStorage {
 
   @RegisterExtension MySQLExtension mysql = new MySQLExtension();

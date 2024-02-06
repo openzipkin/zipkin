@@ -1,0 +1,4 @@
+#!/bin/sh -ue
+
+yamllint --format github .github/workflows/*.yml
+find . -name \*.md |grep -v node|xargs markdown-link-check -c ./build-bin/mlc_config.json

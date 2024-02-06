@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2023 The OpenZipkin Authors
+    Copyright 2015-2024 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>2.25.3-SNAPSHOT</version>
+    <version>3.0.5-SNAPSHOT</version>
   </parent>
 
   <groupId>io.zipkin.zipkin2</groupId>
@@ -39,21 +39,12 @@
 
     <main.basedir>${project.basedir}/..</main.basedir>
 
-    <!-- Note: CI should run the "release" profile during tests to ensure no 1.8
-         features are in use. -->
-    <!-- The core jar needs to be Java 1.6 bytecode -->
-    <main.signature.artifact>java16</main.signature.artifact>
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
+    <maven.compiler.release>8</maven.compiler.release>
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>org.jvnet</groupId>
-      <artifactId>animal-sniffer-annotation</artifactId>
-      <version>1.0</version>
-      <!-- annotations are not runtime retention, so don't need a runtime dep -->
-      <scope>provided</scope>
-    </dependency>
-
     <!-- Internal classes used in SpanBytesDecoder.JSON_V[12] -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -62,10 +53,33 @@
       <!-- this dependency is shaded out -->
       <optional>true</optional>
     </dependency>
+
+    <dependency>
+      <groupId>com.esotericsoftware</groupId>
+      <artifactId>kryo</artifactId>
+      <version>${kryo.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>de.qaware.maven</groupId>
+        <artifactId>go-offline-maven-plugin</artifactId>
+        <configuration>
+          <dynamicDependencies>
+            <DynamicDependency>
+              <groupId>org.codehaus.mojo.signature</groupId>
+              <artifactId>java16</artifactId>
+              <version>1.0</version>
+              <type>signature</type>
+              <repositoryType>MAIN</repositoryType>
+            </DynamicDependency>
+          </dynamicDependencies>
+        </configuration>
+      </plugin>
+
       <!-- Use of gson is internal only -->
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
@@ -121,39 +135,4 @@
       </resource>
     </resources>
   </build>
-
-  <profiles>
-    <profile>
-      <id>release</id>
-      <properties>
-        <!-- The core jar needs to be Java 1.6 bytecode -->
-        <main.java.version>1.6</main.java.version>
-      </properties>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-enforcer-plugin</artifactId>
-            <version>${maven-enforcer-plugin.version}</version>
-            <executions>
-              <execution>
-                <id>enforce-java</id>
-                <goals>
-                  <goal>enforce</goal>
-                </goals>
-                <configuration>
-                  <rules>
-                    <!-- The only LTS JDK we support that can compile 1.6 bytecode is 11.
-                         https://www.oracle.com/java/technologies/javase/12-relnote-issues.html -->
-                    <requireJavaVersion>
-                      <version>[11,12)</version>
-                    </requireJavaVersion>
-                  </rules>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>

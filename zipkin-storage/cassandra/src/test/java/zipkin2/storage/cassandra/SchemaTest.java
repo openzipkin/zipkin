@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -118,20 +118,21 @@ class SchemaTest {
       .hasMessageStartingWith("Cannot read keyspace metadata for keyspace");
   }
 
-  String schemaWithReadRepair = ""
-    + "CREATE TABLE IF NOT EXISTS zipkin2.remote_service_by_service (\n"
-    + "    service text,\n"
-    + "    remote_service text,\n"
-    + "    PRIMARY KEY (service, remote_service)\n"
-    + ")\n"
-    + "    WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}\n"
-    + "    AND caching = {'rows_per_partition': 'ALL'}\n"
-    + "    AND default_time_to_live =  259200\n"
-    + "    AND gc_grace_seconds = 3600\n"
-    + "    AND read_repair_chance = 0\n"
-    + "    AND dclocal_read_repair_chance = 0\n"
-    + "    AND speculative_retry = '95percentile'\n"
-    + "    AND comment = 'Secondary table for looking up remote service names by a service name.';";
+  String schemaWithReadRepair = """
+    CREATE TABLE IF NOT EXISTS zipkin2.remote_service_by_service (
+        service text,
+        remote_service text,
+        PRIMARY KEY (service, remote_service)
+    )
+        WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}
+        AND caching = {'rows_per_partition': 'ALL'}
+        AND default_time_to_live =  259200
+        AND gc_grace_seconds = 3600
+        AND read_repair_chance = 0
+        AND dclocal_read_repair_chance = 0
+        AND speculative_retry = '95percentile'
+        AND comment = 'Secondary table for looking up remote service names by a service name.';\
+    """;
 
   @Test void reviseCql_leaves_read_repair_chance_on_v3() {
     assertThat(Schema.reviseCQL(Version.parse("3.11.9"), schemaWithReadRepair))
@@ -141,17 +142,18 @@ class SchemaTest {
   @Test void reviseCql_removes_dclocal_read_repair_chance_on_v4() {
     assertThat(Schema.reviseCQL(Version.V4_0_0, schemaWithReadRepair))
       // literal used to show newlines etc are in-tact
-      .isEqualTo(""
-        + "CREATE TABLE IF NOT EXISTS zipkin2.remote_service_by_service (\n"
-        + "    service text,\n"
-        + "    remote_service text,\n"
-        + "    PRIMARY KEY (service, remote_service)\n"
-        + ")\n"
-        + "    WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}\n"
-        + "    AND caching = {'rows_per_partition': 'ALL'}\n"
-        + "    AND default_time_to_live =  259200\n"
-        + "    AND gc_grace_seconds = 3600\n"
-        + "    AND speculative_retry = '95percentile'\n"
-        + "    AND comment = 'Secondary table for looking up remote service names by a service name.';");
+      .isEqualTo("""
+        CREATE TABLE IF NOT EXISTS zipkin2.remote_service_by_service (
+            service text,
+            remote_service text,
+            PRIMARY KEY (service, remote_service)
+        )
+            WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}
+            AND caching = {'rows_per_partition': 'ALL'}
+            AND default_time_to_live =  259200
+            AND gc_grace_seconds = 3600
+            AND speculative_retry = '95percentile'
+            AND comment = 'Secondary table for looking up remote service names by a service name.';\
+        """);
   }
 }

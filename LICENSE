@@ -214,3 +214,8 @@ This product contains a modified part of Okio, distributed by Square:
 
   * License: Apache License v2.0
   * Homepage: https://github.com/square/okio
+
+This product contains a modified part of Armeria, distributed by LINE Corporation:
+
+  * License: Apache License v2.0
+  * Homepage: https://github.com/line/armeria

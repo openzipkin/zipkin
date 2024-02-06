@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Timeout;
@@ -44,6 +45,7 @@ import static zipkin2.codec.SpanBytesEncoder.THRIFT;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Timeout(60)
+@Tag("docker")
 class ITRabbitMQCollector {
   @RegisterExtension RabbitMQExtension rabbit = new RabbitMQExtension();
 
@@ -204,7 +206,7 @@ class ITRabbitMQCollector {
       collector.start();
 
       assertThat(collector).hasToString(
-        String.format("RabbitMQCollector{addresses=[%s:%s], queue=%s}", rabbit.host(),
+        "RabbitMQCollector{addresses=[%s:%s], queue=%s}".formatted(rabbit.host(),
           rabbit.port(), "bugs bunny")
       );
     }

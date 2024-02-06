@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2023 The OpenZipkin Authors
+    Copyright 2015-2024 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>2.25.3-SNAPSHOT</version>
+    <version>3.0.5-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-server</artifactId>
@@ -29,16 +29,28 @@
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
 
+    <!-- Spring Boot 3 requires JRE 17 -->
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
+
     <!-- Sometimes we need to override Armeria's Brave version -->
-    <brave.version>5.16.0</brave.version>
-    <!-- Version overrides to avoid CVEs due to out-of-date Spring deps -->
-    <log4j2.version>2.22.0</log4j2.version>
-    <snakeyaml.version>2.2</snakeyaml.version>
+    <brave.version>6.0.0</brave.version>
+    <zipkin-reporter.version>3.2.1</zipkin-reporter.version>
+    <log4j.version>2.21.1</log4j.version>
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-bom</artifactId>
+        <version>${log4j.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
       <dependency>
         <groupId>io.netty</groupId>
         <artifactId>netty-bom</artifactId>
@@ -55,25 +67,10 @@
         <scope>import</scope>
       </dependency>
 
-      <!-- Don't bring in brave's transitive dep on zipkin -->
       <dependency>
         <groupId>io.zipkin.brave</groupId>
         <artifactId>brave</artifactId>
         <version>${brave.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>io.zipkin.zipkin2</groupId>
-            <artifactId>zipkin</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-bom</artifactId>
-        <version>${log4j2.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
       </dependency>
 
       <dependency>
@@ -97,20 +94,8 @@
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-starter-logging</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.yaml</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
-
-    <!-- Override spring-boot-starter to avoid CVEs. -->
-    <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
-      <version>${snakeyaml.version}</version>
-    </dependency>
-
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
@@ -120,7 +105,20 @@
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-starter-logging</artifactId>
         </exclusion>
+        <!-- We only include a couple actuator endpoints, and metrics are served directly -->
+        <exclusion>
+          <groupId>io.micrometer</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+
+    <!-- module support requires org.springframework.boot.loader.launch.PropertiesLauncher
+         From version 3, this is no longer included in spring-boot-starter. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-loader-classic</artifactId>
+      <version>${spring-boot.version}</version>
     </dependency>
 
     <!-- Use log4j 2 as default logging implementation -->
@@ -128,12 +126,25 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-log4j2</artifactId>
       <version>${spring-boot.version}</version>
+      <exclusions>
+        <!-- spring boot configures slf4j2 not slf4j -->
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-slf4j2-impl</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!-- spring boot configures slf4j2 not slf4j -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <version>${log4j.version}</version>
     </dependency>
 
     <!-- More efficient, gRPC ready server with brave tracing built-in -->
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-spring-boot2-autoconfigure</artifactId>
+      <artifactId>armeria-spring-boot3-autoconfigure</artifactId>
       <version>${armeria.version}</version>
       <exclusions>
         <exclusion>
@@ -199,6 +210,13 @@
       <scope>runtime</scope>
     </dependency>
 
+    <!-- Eureka service discovery -->
+    <dependency>
+      <groupId>${armeria.groupId}</groupId>
+      <artifactId>armeria-eureka</artifactId>
+      <version>${armeria.version}</version>
+    </dependency>
+
     <!--Prometheus metrics-->
     <dependency>
       <groupId>io.micrometer</groupId>
@@ -245,6 +263,13 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
       <version>${slf4j.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- the "slim" jar will exclude this -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
       <scope>provided</scope>
     </dependency>
 
@@ -329,6 +354,12 @@
       <artifactId>brave-context-slf4j</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>io.zipkin.reporter2</groupId>
+      <artifactId>zipkin-reporter-brave</artifactId>
+      <version>${zipkin-reporter.version}</version>
+      <optional>true</optional>
+    </dependency>
 <!--    <dependency>-->
 <!--      <groupId>io.zipkin.brave.cassandra</groupId>-->
 <!--      <artifactId>brave-instrumentation-cassandra-driver</artifactId>-->
@@ -377,6 +408,13 @@
       <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-junit5</artifactId>
       <version>${armeria.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -433,6 +471,19 @@
       <version>2.8.0</version>
       <scope>test</scope>
     </dependency>
+
+    <!-- Main code uses jul and tests log with log4j -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-jul</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Don't add log4j-slf4j-impl as simplelogger is in the classpath! -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-1.2-api</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <profiles>
@@ -447,7 +498,7 @@
         <!-- /actuator endpoints -->
         <dependency>
           <groupId>${armeria.groupId}</groupId>
-          <artifactId>armeria-spring-boot2-actuator-autoconfigure</artifactId>
+          <artifactId>armeria-spring-boot3-actuator-autoconfigure</artifactId>
           <version>${armeria.version}</version>
           <optional>true</optional>
         </dependency>
@@ -483,6 +534,17 @@
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
       </plugin>
+
+      <!-- Ensure jul -> log4j -->
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <java.util.logging.manager>org.apache.logging.log4j.jul.LogManager</java.util.logging.manager>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>de.m3y.maven</groupId>
         <artifactId>wire-maven-plugin</artifactId>
@@ -577,7 +639,7 @@
                 <!-- Actuator -->
                 <dependency>
                   <groupId>${armeria.groupId}</groupId>
-                  <artifactId>armeria-spring-boot2-actuator-autoconfigure</artifactId>
+                  <artifactId>armeria-spring-boot3-actuator-autoconfigure</artifactId>
                 </dependency>
                 <dependency>
                   <groupId>org.springframework.boot</groupId>
@@ -662,7 +724,7 @@
                 </dependency>
                 <exclude>
                   <groupId>${armeria.groupId}</groupId>
-                  <artifactId>armeria-thrift0.15</artifactId>
+                  <artifactId>armeria-thrift0.18</artifactId>
                 </exclude>
               </excludes>
             </configuration>

@@ -9,7 +9,7 @@ When submitting code, please apply [Square Code Style](https://github.com/square
 ## License
 
 By contributing your code, you agree to license your contribution under
-the terms of the [APLv2](LICENSE).
+the terms of the [APLv2](../LICENSE).
 
 All files are released with the Apache 2.0 license.
 

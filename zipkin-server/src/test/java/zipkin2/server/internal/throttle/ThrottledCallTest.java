@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,18 +22,19 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
-import zipkin2.reporter.AwaitableCallback;
 
 import static com.linecorp.armeria.common.util.Exceptions.clearTrace;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -181,7 +182,7 @@ class ThrottledCallTest {
       .isEqualTo(STORAGE_THROTTLE_MAX_CONCURRENCY);
   }
 
-  @Test void enqueue_throttlesBack_whenStorageRejects() {
+  @Test void enqueue_throttlesBack_whenStorageRejects() throws Exception {
     Listener listener = mock(Listener.class);
     FakeCall call = new FakeCall();
     call.overCapacity = true;
@@ -189,10 +190,22 @@ class ThrottledCallTest {
     ThrottledCall throttle =
       new ThrottledCall(call, executor, mockLimiter(listener), limiterMetrics, isOverCapacity);
 
-    AwaitableCallback callback = new AwaitableCallback();
-    throttle.enqueue(callback);
+    final CountDownLatch countDown = new CountDownLatch(1);
+    final AtomicReference<Throwable> throwable = new AtomicReference<>();
+    throttle.enqueue(new Callback<>() {
+      @Override public void onSuccess(Void value) {
+        countDown.countDown();
+      }
 
-    assertThatThrownBy(callback::await).isEqualTo(OVER_CAPACITY);
+      @Override public void onError(Throwable t) {
+        throwable.set(t);
+        countDown.countDown();
+      }
+    });
+
+    countDown.await();
+
+    assertThat(throwable).hasValue(OVER_CAPACITY);
 
     verify(listener).onDropped();
   }

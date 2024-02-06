@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -88,8 +88,8 @@ class MySQLExtension implements BeforeAllCallback, AfterAllCallback {
   MySQLStorage.Builder computeStorageBuilder() {
     final MariaDbDataSource dataSource;
     try {
-      dataSource = new MariaDbDataSource(String.format(
-        "jdbc:mariadb://%s:%s/zipkin?autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8",
+      dataSource = new MariaDbDataSource(
+        "jdbc:mariadb://%s:%s/zipkin?autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8".formatted(
         host(), port()));
       dataSource.setUser("zipkin");
       dataSource.setPassword("zipkin");
@@ -113,10 +113,7 @@ class MySQLExtension implements BeforeAllCallback, AfterAllCallback {
   // mostly waiting for https://github.com/testcontainers/testcontainers-java/issues/3537
   static final class MySQLContainer extends GenericContainer<MySQLContainer> {
     MySQLContainer() {
-      super(parse("ghcr.io/openzipkin/zipkin-mysql:2.25.2"));
-      if ("true".equals(System.getProperty("docker.skip"))) {
-        throw new TestAbortedException("${docker.skip} == true");
-      }
+      super(parse("ghcr.io/openzipkin/zipkin-mysql:3.0.4"));
       addExposedPort(3306);
       waitStrategy = Wait.forHealthcheck();
       withLogConsumer(new Slf4jLogConsumer(LOGGER));

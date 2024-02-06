@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -41,6 +41,7 @@ public abstract class CassandraStorageBuilder<B extends CassandraStorageBuilder<
   protected String localDc = "datacenter1";
   @Nullable protected String username, password;
   protected boolean useSsl = false;
+  protected boolean sslHostnameValidation = true;
 
   protected String keyspace;
   protected boolean ensureSchema = true;
@@ -140,6 +141,12 @@ public abstract class CassandraStorageBuilder<B extends CassandraStorageBuilder<
   /** Use ssl for connection. Defaults to false. */
   public B useSsl(boolean useSsl) {
     this.useSsl = useSsl;
+    return (B) this;
+  }
+
+  /** Controls validation of Cassandra server hostname. Defaults to true. */
+  public B sslHostnameValidation(boolean sslHostnameValidation) {
+    this.sslHostnameValidation = sslHostnameValidation;
     return (B) this;
   }
 

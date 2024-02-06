@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,6 +19,7 @@ import zipkin2.server.internal.activemq.ZipkinActiveMQCollectorConfiguration;
 import zipkin2.server.internal.brave.ZipkinSelfTracingConfiguration;
 import zipkin2.server.internal.cassandra3.ZipkinCassandra3StorageConfiguration;
 import zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration;
+import zipkin2.server.internal.eureka.ZipkinEurekaDiscoveryConfiguration;
 import zipkin2.server.internal.health.ZipkinHealthController;
 import zipkin2.server.internal.kafka.ZipkinKafkaCollectorConfiguration;
 import zipkin2.server.internal.mysql.ZipkinMySQLStorageConfiguration;
@@ -46,7 +47,8 @@ import zipkin2.server.internal.ui.ZipkinUiConfiguration;
   ZipkinRabbitMQCollectorConfiguration.class,
   ZipkinMetricsController.class,
   ZipkinHealthController.class,
-  ZipkinPrometheusMetricsConfiguration.class
+  ZipkinPrometheusMetricsConfiguration.class,
+  ZipkinEurekaDiscoveryConfiguration.class,
 })
 public class InternalZipkinConfiguration {
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package zipkin2;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
@@ -27,7 +28,7 @@ import static java.util.Arrays.asList;
 import static zipkin2.Span.Kind.CLIENT;
 
 public final class TestObjects {
-  public static final Charset UTF_8 = Charset.forName("UTF-8");
+  public static final Charset UTF_8 = StandardCharsets.UTF_8;
   /** Notably, the cassandra implementation has day granularity */
   public static final long DAY = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);
 

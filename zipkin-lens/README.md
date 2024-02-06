@@ -37,7 +37,7 @@ It correctly bundles React in production mode and optimizes the build for the be
 ## Localization
 
 We use [LinguiJS](https://lingui.js.org/) for localization of the UI. Translations for strings are
-found in the JSON files under [here](./src/translations). The Javascript files in the directory are
+found in the JSON files under [here](src/translations). The Javascript files in the directory are
 compiled from the JSON files. We're always excited to have help maintaining these translations - if
 you see a string in the UI that is not translated or mistranslated, please feel free to send a PR to
 the JSON file to fix it. If you can, please run `yarn run compile` to also compile the translation
@@ -46,13 +46,13 @@ of it.
 
 ### Adding a new locale
 
-To add a new translated locale, first edit [.linguirc](./.linguirc) and add the locale to the
+To add a new translated locale, first edit [.linguirc](.linguirc) and add the locale to the
 `locales` section. Next, run `yarn run extract` to extract a new file under `src/translations` for
 the locale. Translate as many strings in the JSON file as you can. Then run `yarn run compile` to
 compile the strings.
 
-Finally, edit [App.jsx](./src/components/App/App.jsx) and
-[LanguageSelector.tsx](./src/components/App/LanguageSelector.tsx) to import the new translation and
+Finally, edit [App.tsx](src/components/App/App.tsx) and
+[LanguageSelector.tsx](src/components/App/LanguageSelector.tsx) to import the new translation and
 add an entry to the language selector respectively.
 
 ## Dev Tools

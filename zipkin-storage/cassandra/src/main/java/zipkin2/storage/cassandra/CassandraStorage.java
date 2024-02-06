@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -93,7 +93,8 @@ public final class CassandraStorage extends StorageComponent {
       }
       return new CassandraStorage(strictTraceId, searchEnabled, autocompleteKeys, autocompleteTtl,
         autocompleteCardinality, contactPoints, localDc, poolingOptions(), authProvider, useSsl,
-        sessionFactory, keyspace, ensureSchema, maxTraceCols, indexFetchMultiplier);
+        sslHostnameValidation, sessionFactory, keyspace, ensureSchema, maxTraceCols,
+        indexFetchMultiplier);
     }
   }
 
@@ -105,6 +106,7 @@ public final class CassandraStorage extends StorageComponent {
   final Map<DriverOption, Integer> poolingOptions;
   @Nullable final AuthProvider authProvider;
   final boolean useSsl;
+  final boolean sslHostnameValidation;
   final String keyspace;
   final boolean ensureSchema;
 
@@ -115,8 +117,8 @@ public final class CassandraStorage extends StorageComponent {
   CassandraStorage(boolean strictTraceId, boolean searchEnabled, Set<String> autocompleteKeys,
     int autocompleteTtl, int autocompleteCardinality, String contactPoints, String localDc,
     Map<DriverOption, Integer> poolingOptions, AuthProvider authProvider, boolean useSsl,
-    SessionFactory sessionFactory, String keyspace, boolean ensureSchema, int maxTraceCols,
-    int indexFetchMultiplier) {
+    boolean sslHostnameValidation, SessionFactory sessionFactory, String keyspace,
+    boolean ensureSchema, int maxTraceCols, int indexFetchMultiplier) {
     // Assign generic configuration for all storage components
     this.strictTraceId = strictTraceId;
     this.searchEnabled = searchEnabled;
@@ -130,6 +132,7 @@ public final class CassandraStorage extends StorageComponent {
     this.poolingOptions = poolingOptions;
     this.authProvider = authProvider;
     this.useSsl = useSsl;
+    this.sslHostnameValidation = sslHostnameValidation;
     this.ensureSchema = ensureSchema;
     this.keyspace = keyspace;
 

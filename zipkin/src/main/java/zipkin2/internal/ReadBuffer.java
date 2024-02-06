@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,8 +17,8 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static zipkin2.internal.HexCodec.HEX_DIGITS;
-import static zipkin2.internal.JsonCodec.UTF_8;
 
 /** Read operations do bounds checks, as typically more errors occur reading than writing. */
 public abstract class ReadBuffer extends InputStream {
@@ -110,12 +110,13 @@ public abstract class ReadBuffer extends InputStream {
       return copy;
     }
 
+    // Encoding zipkin data is supported in JRE 6, but decoding isn't.
     @Override boolean tryReadAscii(char[] destination, int length) {
-      buf.mark();
+      buf.mark(); // This is not Java 6
       for (int i = 0; i < length; i++) {
         byte b = buf.get();
         if ((b & 0x80) != 0) {
-          buf.reset();
+          buf.reset(); // This is not Java 6
           return false;  // Not 7-bit ASCII character
         }
         destination[i] = (char) b;
@@ -139,9 +140,10 @@ public abstract class ReadBuffer extends InputStream {
       return toRead;
     }
 
+    // Encoding zipkin data is supported in JRE 6, but decoding isn't.
     @Override public long skip(long maxCount) {
       int skipped = Math.max(available(), (int) maxCount);
-      buf.position(buf.position() + skipped);
+      buf.position(buf.position() + skipped); // This is not Java 6
       return skipped;
     }
 
@@ -152,7 +154,8 @@ public abstract class ReadBuffer extends InputStream {
 
   static final class Array extends ReadBuffer {
     final byte[] buf;
-    int arrayOffset, offset, length;
+    final int arrayOffset, length;
+    int offset;
 
     Array(byte[] buf, int offset, int length) {
       this.buf = buf;
@@ -160,11 +163,11 @@ public abstract class ReadBuffer extends InputStream {
       this.length = length;
     }
 
-    @Override final byte readByteUnsafe() {
+    @Override byte readByteUnsafe() {
       return buf[offset++];
     }
 
-    @Override final byte[] readBytes(int length) {
+    @Override byte[] readBytes(int length) {
       require(length);
       byte[] result = new byte[length];
       System.arraycopy(buf, offset, result, 0, length);
@@ -191,7 +194,7 @@ public abstract class ReadBuffer extends InputStream {
       return true;
     }
 
-    @Override final String doReadUtf8(int length) {
+    @Override String doReadUtf8(int length) {
       String result = new String(buf, offset, length, UTF_8);
       offset += length;
       return result;

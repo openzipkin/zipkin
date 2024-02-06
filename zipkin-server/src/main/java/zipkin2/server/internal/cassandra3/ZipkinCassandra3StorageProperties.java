@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -27,6 +27,7 @@ class ZipkinCassandra3StorageProperties implements Serializable { // for Spark j
   private int maxConnections = 8;
   private boolean ensureSchema = true;
   private boolean useSsl = false;
+  private boolean sslHostnameValidation = true;
   private String username;
   private String password;
   /** See {@link CassandraStorage.Builder#indexFetchMultiplier(int)} */
@@ -80,6 +81,14 @@ class ZipkinCassandra3StorageProperties implements Serializable { // for Spark j
     this.useSsl = useSsl;
   }
 
+  public boolean isSslHostnameValidation() {
+    return sslHostnameValidation;
+  }
+
+  public void setSslHostnameValidation(boolean sslHostnameValidation) {
+    this.sslHostnameValidation = sslHostnameValidation;
+  }
+
   public String getUsername() {
     return username;
   }
@@ -112,6 +121,7 @@ class ZipkinCassandra3StorageProperties implements Serializable { // for Spark j
       .maxConnections(maxConnections)
       .ensureSchema(ensureSchema)
       .useSsl(useSsl)
+      .sslHostnameValidation(sslHostnameValidation)
       .username(username)
       .password(password)
       .indexFetchMultiplier(indexFetchMultiplier);

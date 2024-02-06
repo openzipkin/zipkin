@@ -25,7 +25,7 @@ easier in the same way as bundling elasticsearch does.
 
 ## On a potential single-transport client
 
-This package is using the normal activemq-jms client. During a [mail thread](http://activemq.2283324.n4.nabble.com/Interest-in-using-ActiveMQ-as-a-trace-data-transport-for-Zipkin-td4749755.html), we learned the
+This package is using the normal activemq-jms client. During a [mail thread](https://marc.info/?l=activemq-users&m=155356007513108), we learned the
 the STOMP and AMQP 1.0 protocol are the more portable options for a portable integration as
 ActiveMQ, Artemis and RabbitMQ all support these. On the other hand Kafka does not support these
 protocols. Any future portability work could be limited by this. Meanwhile, using the standard JMS
