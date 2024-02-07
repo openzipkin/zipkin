@@ -60,7 +60,6 @@ import static org.testcontainers.utility.DockerImageName.parse;
     "zipkin.collector.http.enabled=false",
     "zipkin.query.enabled=false",
     "zipkin.ui.enabled=false",
-    // TODO: Remove when armeria doesn't set the vip address to include a port.
     "zipkin.discovery.eureka.hostname=localhost"
   })
 @Tag("docker")
