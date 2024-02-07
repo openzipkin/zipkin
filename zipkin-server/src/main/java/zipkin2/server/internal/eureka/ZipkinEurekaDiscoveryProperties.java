@@ -14,12 +14,14 @@
 package zipkin2.server.internal.eureka;
 
 import com.linecorp.armeria.common.auth.BasicToken;
+import com.linecorp.armeria.server.Server;
 import com.linecorp.armeria.server.eureka.EurekaUpdatingListener;
 import com.linecorp.armeria.server.eureka.EurekaUpdatingListenerBuilder;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import zipkin2.storage.cassandra.internal.HostAndPort;
 
 /**
  * Settings for Eureka registration.
@@ -105,11 +107,17 @@ class ZipkinEurekaDiscoveryProperties implements Serializable { // for Spark job
   }
 
   EurekaUpdatingListenerBuilder toBuilder() {
-    EurekaUpdatingListenerBuilder result = EurekaUpdatingListener.builder(serviceUrl);
+    EurekaUpdatingListenerBuilder result = EurekaUpdatingListener.builder(serviceUrl)
+      .healthCheckUrlPath("/health");
     if (auth != null) result.auth(auth);
     if (appName != null) result.appName(appName);
     if (instanceId != null) result.instanceId(instanceId);
-    if (hostname != null) result.hostname(hostname);
+    if (hostname != null) {
+      result.hostname(hostname);
+      // Armeria defaults the vipAddress incorrectly to include the port. This is redundant with
+      // the server port, so override it until we have a PR to fix that.
+      result.vipAddress(hostname);
+    }
     return result;
   }
 

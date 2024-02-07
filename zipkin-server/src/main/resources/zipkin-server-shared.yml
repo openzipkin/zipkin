@@ -199,11 +199,6 @@ server:
     min-response-size: 2048
 
 armeria:
-  # TODO: This is only to help with Eureka. After line/armeria#5369, add the
-  # same in EurekaUpdatingListenerBuilder#toBuilder and remove from here. This
-  # will remove the following log warning:
-  # WARN RejectedRouteHandler - Virtual host '*' has a duplicate route: /health
-  healthCheckPath: /health
   ports:
     - port: ${server.port}
       protocols:
