@@ -23,7 +23,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -60,7 +59,8 @@ import static org.testcontainers.utility.DockerImageName.parse;
     "zipkin.storage.type=", // cheat and test empty storage type
     "zipkin.collector.http.enabled=false",
     "zipkin.query.enabled=false",
-    "zipkin.ui.enabled=false"
+    "zipkin.ui.enabled=false",
+    "zipkin.discovery.eureka.hostname=localhost"
   })
 @Tag("docker")
 @Testcontainers(disabledWithoutDocker = true)
@@ -96,17 +96,16 @@ abstract class BaseITZipkinEureka {
     assertThat(readString(json, "$.application.instance[0].status"))
       .isEqualTo("UP");
 
-    String zipkinHostname = zipkin.defaultHostname();
     int zipkinPort = zipkin.activePort().localAddress().getPort();
 
     // Note: Netflix/Eureka says use hostname, which can conflict on laptops.
     // Armeria adopts the spring-cloud-netflix convention shown here.
     assertThat(readString(json, "$.application.instance[0].instanceId"))
-      .isEqualTo(zipkinHostname + ":zipkin:" + zipkinPort);
+      .isEqualTo("localhost:zipkin:" + zipkinPort);
 
-    // Make sure the vip address is relevant
+    // Make sure the vip address does not include the port!
     assertThat(readString(json, "$.application.instance[0].vipAddress"))
-      .isEqualTo(zipkinHostname + ":" + zipkinPort);
+      .isEqualTo("localhost");
   }
 
   @Test @Order(2) void deregistersOnClose() {

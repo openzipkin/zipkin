@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,13 +32,58 @@ class BulkCallBuilderTest {
         "rejected execution of org.elasticsearch.transport.TransportService$7@7ec1ea93 on EsThreadPoolExecutor[bulk, queue capacity = 200, org.elasticsearch.common.util.concurrent.EsThreadPoolExecutor@621571ba[Running, pool size = 4, active threads = 4, queued tasks = 200, completed tasks = 3838534]]");
   }
 
-  @Test void throwsRuntimeExceptionAsReasonWhenPresent() {
-    String response =
-      "{\"error\":{\"root_cause\":[{\"type\":\"illegal_argument_exception\",\"reason\":\"Fielddata is disabled on text fields by default. Set fielddata=true on [spanName] in order to load fielddata in memory by uninverting the inverted index. Note that this can however use significant memory. Alternatively use a keyword field instead.\"}],\"type\":\"search_phase_execution_exception\",\"reason\":\"all shards failed\",\"phase\":\"query\",\"grouped\":true,\"failed_shards\":[{\"shard\":0,\"index\":\"zipkin-2017-05-14\",\"node\":\"IqceAwZnSvyv0V0xALkEnQ\",\"reason\":{\"type\":\"illegal_argument_exception\",\"reason\":\"Fielddata is disabled on text fields by default. Set fielddata=true on [spanName] in order to load fielddata in memory by uninverting the inverted index. Note that this can however use significant memory. Alternatively use a keyword field instead.\"}}]},\"status\":400}";
+  @Test void throwsRuntimeExceptionAsRootCauseReasonWhenPresent() {
+    String response = """
+      {
+        "error": {
+          "root_cause": [
+            {
+              "type": "illegal_argument_exception",
+              "reason": "Fielddata is disabled on text fields by default. Set fielddata=true on [spanName] in order to load fielddata in memory by uninverting the inverted index. Note that this can however use significant memory. Alternatively use a keyword field instead."
+            }
+          ],
+          "type": "search_phase_execution_exception",
+          "reason": "all shards failed",
+          "phase": "query",
+          "grouped": true,
+          "failed_shards": [
+            {
+              "shard": 0,
+              "index": "zipkin-2017-05-14",
+              "node": "IqceAwZnSvyv0V0xALkEnQ",
+              "reason": {
+                "type": "illegal_argument_exception",
+                "reason": "Fielddata is disabled on text fields by default. Set fielddata=true on [spanName] in order to load fielddata in memory by uninverting the inverted index. Note that this can however use significant memory. Alternatively use a keyword field instead."
+              }
+            }
+          ]
+        },
+        "status": 400
+      }
+      """;
 
     assertThatThrownBy(
       () -> CHECK_FOR_ERRORS.convert(JSON_FACTORY.createParser(response), () -> response))
       .isInstanceOf(RuntimeException.class)
       .hasMessage("Fielddata is disabled on text fields by default. Set fielddata=true on [spanName] in order to load fielddata in memory by uninverting the inverted index. Note that this can however use significant memory. Alternatively use a keyword field instead.");
+  }
+
+  /** Tests lack of a root cause won't crash */
+  @Test void throwsRuntimeExceptionAsReasonWhenPresent() {
+    String response = """
+      {
+        "error": {
+          "type": "search_phase_execution_exception",
+          "reason": "all shards failed",
+          "phase": "query"
+        },
+        "status": 400
+      }
+      """;
+
+    assertThatThrownBy(
+      () -> CHECK_FOR_ERRORS.convert(JSON_FACTORY.createParser(response), () -> response))
+      .isInstanceOf(RuntimeException.class)
+      .hasMessage("all shards failed");
   }
 }

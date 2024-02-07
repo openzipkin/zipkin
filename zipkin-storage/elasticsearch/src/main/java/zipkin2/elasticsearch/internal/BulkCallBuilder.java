@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -45,6 +45,7 @@ import zipkin2.elasticsearch.internal.client.HttpCall.BodyConverter;
 import static zipkin2.Call.propagateIfFatal;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
 import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
+import static zipkin2.elasticsearch.internal.client.HttpCall.maybeRootCauseReason;
 
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
 // exposed to re-use for testing writes of dependency links
@@ -60,7 +61,7 @@ public final class BulkCallBuilder {
         // only throw when we know it is an error
         if (!root.at("/errors").booleanValue() && !root.at("/error").isObject()) return null;
 
-        String message = root.findPath("reason").textValue();
+        String message = maybeRootCauseReason(root);
         if (message == null) message = contentString.get();
         Number status = root.findPath("status").numberValue();
         if (status != null && status.intValue() == 429) {
