@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -233,7 +233,7 @@ public final class HttpCall<V> extends Call.Base<V> {
         String message = null;
         try {
           JsonNode root = OBJECT_MAPPER.readTree(parser);
-          message = root.findPath("reason").textValue();
+          message = maybeRootCauseReason(root);
           if (message == null) message = root.at("/Message").textValue();
         } catch (RuntimeException | IOException possiblyParseException) {
           // EmptyCatch ignored
@@ -251,5 +251,16 @@ public final class HttpCall<V> extends Call.Base<V> {
 
       return bodyConverter.convert(parser, content::toStringUtf8);
     }
+  }
+
+  public static String maybeRootCauseReason(JsonNode root) {
+    // Prefer the root cause to an arbitrary reason.
+    String message;
+    if (!root.findPath("root_cause").isMissingNode()) {
+      message = root.findPath("root_cause").findPath("reason").textValue();
+    } else {
+      message = root.findPath("reason").textValue();
+    }
+    return message;
   }
 }
