@@ -16,6 +16,7 @@ package zipkin2.internal;
 import com.squareup.wire.ProtoWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import okio.ByteString;
 import org.assertj.core.data.MapEntry;
 import org.junit.jupiter.api.Test;
