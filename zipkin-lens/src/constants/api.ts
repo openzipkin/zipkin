@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-export const BASE_PATH = import.meta.env.VITE_API_URL;
+export const BASE_PATH = import.meta.env.BASE_PATH;
 export const ZIPKIN_API = `${BASE_PATH}/api/v2`;
 export const UI_CONFIG = `${BASE_PATH}/config.json`;
 export const SERVICES = `${ZIPKIN_API}/services`;

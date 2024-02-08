@@ -17,7 +17,7 @@ import {
   ThemeProvider as MuiThemeProvider,
 } from '@material-ui/core';
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';
-import React, { Suspense } from 'react';
+import React, {Suspense, useMemo} from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter, Route } from 'react-router-dom';
 import { useTitle } from 'react-use';
@@ -34,6 +34,9 @@ import AlertSnackbar from './AlertSnackbar';
 
 const App: React.FC = () => {
   useTitle('Zipkin');
+  const baseName = useMemo(()=>{
+    return import.meta.env.DEV ? '/zipkin' : import.meta.env.BASE_PATH as string
+  },[])
 
   return (
     <Suspense fallback={<CircularProgress />}>
@@ -45,7 +48,7 @@ const App: React.FC = () => {
                 {(config) => (
                   <Provider store={configureStore(config)}>
                     <AlertSnackbar />
-                    <BrowserRouter basename={import.meta.env.VITE_UI_URL}>
+                    <BrowserRouter basename={baseName}>
                       <Layout>
                         <Route exact path="/" component={DiscoverPage} />
                         {config.dependency.enabled && (
