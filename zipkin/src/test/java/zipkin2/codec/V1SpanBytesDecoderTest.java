@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static zipkin2.TestObjects.BACKEND;
@@ -30,7 +31,6 @@ import static zipkin2.codec.SpanBytesEncoderTest.LOCAL_SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.NO_ANNOTATIONS_ROOT_SERVER_SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.UTF8_SPAN;
-import static zipkin2.codec.SpanBytesEncoderTest.UTF_8;
 
 /** V1 tests for {@link SpanBytesDecoderTest} */
 class V1SpanBytesDecoderTest {

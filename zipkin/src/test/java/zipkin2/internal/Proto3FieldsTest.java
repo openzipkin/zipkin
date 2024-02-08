@@ -13,6 +13,7 @@
  */
 package zipkin2.internal;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import zipkin2.internal.Proto3Fields.BooleanField;
 import zipkin2.internal.Proto3Fields.BytesField;
@@ -20,7 +21,6 @@ import zipkin2.internal.Proto3Fields.Fixed64Field;
 import zipkin2.internal.Proto3Fields.Utf8Field;
 import zipkin2.internal.Proto3Fields.VarintField;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin2.internal.Proto3Fields.Field;
@@ -97,7 +97,7 @@ class Proto3FieldsTest {
   }
 
   @Test void supportedFields() {
-    for (Field field : asList(
+    for (Field field : List.of(
       new VarintField(128 << 3 | WIRETYPE_VARINT),
       new BooleanField(128 << 3 | WIRETYPE_VARINT),
       new HexField(128 << 3 | WIRETYPE_LENGTH_DELIMITED),
@@ -124,7 +124,7 @@ class Proto3FieldsTest {
   }
 
   @Test void wireType_unsupported() {
-    for (int unsupported : asList(3, 4, 6)) {
+    for (int unsupported : List.of(3, 4, 6)) {
       try {
         Field.wireType(1 << 3 | unsupported, 2);
         failBecauseExceptionWasNotThrown(IllegalArgumentException.class);

@@ -35,7 +35,6 @@ import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.storage.InMemoryStorage;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
 import static zipkin2.server.internal.ITZipkinServer.url;
@@ -85,7 +84,7 @@ class ITZipkinMetrics {
   }
 
   @Test void apiTemplate_prometheus() throws Exception {
-    List<Span> spans = asList(LOTS_OF_SPANS[0]);
+    List<Span> spans = List.of(LOTS_OF_SPANS[0]);
     byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
     assertThat(post("/api/v2/spans", body).isSuccessful())
       .isTrue();
@@ -135,7 +134,7 @@ class ITZipkinMetrics {
 
   @Test void writesSpans_readMetricsFormat() throws Exception {
     byte[] span = {'z', 'i', 'p', 'k', 'i', 'n'};
-    List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
+    List<Span> spans = List.of(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
     byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
     post("/api/v2/spans", body);
     post("/api/v2/spans", body);

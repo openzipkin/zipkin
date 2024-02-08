@@ -72,7 +72,7 @@ public class ZipkinHealthController {
           // Computing health of a component may block so we make sure to invoke in the blocking
           // executor.
           ctx.blockingTaskExecutor()))
-      .collect(Collectors.toList());
+      .toList();
 
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
       .handle((unused, t) -> {
@@ -95,7 +95,10 @@ public class ZipkinHealthController {
 
     String overallStatus = STATUS_UP;
     for (ComponentHealth health : healths) {
-      if (health.status.equals(STATUS_DOWN)) overallStatus = STATUS_DOWN;
+      if (health.status.equals(STATUS_DOWN)) {
+        overallStatus = STATUS_DOWN;
+        break;
+      }
     }
 
     final String healthJson;

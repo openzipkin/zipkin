@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -31,7 +31,6 @@ import zipkin2.internal.DependencyLinker;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V1SpanConverter;
 
-import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -96,7 +95,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     Endpoint frontend = suffixServiceName(TestObjects.FRONTEND, testSuffix);
     Endpoint backend = suffixServiceName(TestObjects.BACKEND, testSuffix);
 
-    List<Span> mixedTrace = asList(
+    List<Span> mixedTrace = List.of(
       Span.newBuilder().traceId(traceId).id("1").name("get")
         .kind(Kind.SERVER)
         .timestamp(TODAY * 1000L)
@@ -164,7 +163,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     Endpoint twoPort3002 = two.toBuilder().port(3002).build();
     Endpoint three = Endpoint.newBuilder().serviceName(db).ip("127.0.0.3").build();
 
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId(traceId).id("10").name("get")
         .kind(Kind.SERVER)
         .timestamp(TODAY * 1000L)
@@ -217,7 +216,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     String testSuffix = testSuffix(testInfo);
     List<Span> trace = newTrace(testSuffix);
 
-    List<Span> traceWithLoopback = asList(
+    List<Span> traceWithLoopback = List.of(
       trace.get(0),
       trace.get(1).toBuilder().remoteEndpoint(trace.get(0).localEndpoint()).build()
     );
@@ -300,7 +299,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     Endpoint backend = suffixServiceName(TestObjects.BACKEND, testSuffix);
     Endpoint db = suffixServiceName(TestObjects.DB, testSuffix);
 
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId(traceId).id("20").name("get")
         .timestamp(TODAY * 1000L).duration(350L * 1000L)
         .kind(Kind.SERVER)
@@ -366,7 +365,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     Endpoint backend = suffixServiceName(TestObjects.BACKEND, testSuffix);
     Endpoint db = suffixServiceName(TestObjects.DB, testSuffix);
 
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId(traceId).id("10").name("get")
         .timestamp((TODAY + 50L) * 1000L).duration(250L * 1000L)
         .kind(Kind.CLIENT)
@@ -409,7 +408,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     Endpoint frontend = suffixServiceName(TestObjects.FRONTEND, testSuffix);
     Endpoint backend = suffixServiceName(TestObjects.BACKEND, testSuffix);
 
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId(traceId).id("10").name("send")
         .timestamp((TODAY + 50L) * 1000L).duration(1)
         .kind(Kind.PRODUCER)
@@ -448,7 +447,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     Endpoint frontend = suffixServiceName(TestObjects.FRONTEND, testSuffix);
     Endpoint backend = suffixServiceName(TestObjects.BACKEND, testSuffix);
 
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId(traceId).id("20").name("get")
         .timestamp(TODAY * 1000L).duration(350L * 1000L)
         .kind(Kind.SERVER)
@@ -517,7 +516,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     Endpoint backend = suffixServiceName(TestObjects.BACKEND, testSuffix);
     Endpoint db = suffixServiceName(TestObjects.DB, testSuffix);
 
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId(traceId).id("20").name("get")
         .timestamp(TODAY * 1000L).duration(350L * 1000L)
         .localEndpoint(kafka)
@@ -561,7 +560,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     Endpoint backend = suffixServiceName(TestObjects.BACKEND, testSuffix);
     Endpoint db = suffixServiceName(TestObjects.DB, testSuffix);
 
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId(traceId).id("20").name("get")
         .timestamp(TODAY * 1000L).duration(350L * 1000L)
         .localEndpoint(Endpoint.newBuilder().ip("172.17.0.4").build())
@@ -607,7 +606,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     Endpoint backend = suffixServiceName(TestObjects.BACKEND, testSuffix);
     Endpoint db = suffixServiceName(TestObjects.DB, testSuffix);
 
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId(traceId).id("20").name("get")
         .timestamp(TODAY * 1000L).duration(350L * 1000L)
         .kind(Kind.SERVER)
@@ -704,7 +703,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     Endpoint frontend = suffixServiceName(TestObjects.FRONTEND, testSuffix);
     Endpoint backend = suffixServiceName(TestObjects.BACKEND, testSuffix);
 
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId(traceId).id("10")
         .timestamp((TODAY + 50) * 1000)
         .kind(Kind.CLIENT)
@@ -736,7 +735,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     Endpoint frontend = suffixServiceName(TestObjects.FRONTEND, testSuffix);
     Endpoint backend = suffixServiceName(TestObjects.BACKEND, testSuffix);
 
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId(traceId).id("10")
         .timestamp((TODAY + 50) * 1000)
         .kind(Kind.CLIENT)
@@ -769,7 +768,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     Endpoint backend = suffixServiceName(TestObjects.BACKEND, testSuffix);
     Endpoint kafka = suffixServiceName(TestObjects.KAFKA, testSuffix);
 
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId(traceId).id("10").name("receive")
         .timestamp(TODAY * 1000)
         .kind(Kind.SERVER)
@@ -824,7 +823,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     String frontend = appendSuffix(TestObjects.FRONTEND.serviceName(), testSuffix);
     String backend = appendSuffix(TestObjects.BACKEND.serviceName(), testSuffix);
     String db = appendSuffix(TestObjects.DB.serviceName(), testSuffix);
-    return asList(
+    return List.of(
       DependencyLink.newBuilder().parent(frontend).child(backend).callCount(1L).build(),
       DependencyLink.newBuilder().parent(backend).child(db).callCount(1L).errorCount(1L).build()
     );

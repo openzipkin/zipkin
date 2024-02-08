@@ -26,7 +26,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import zipkin2.Span;
 import zipkin2.storage.StorageComponent.Builder;
 
-import static java.util.Arrays.asList;
 import static zipkin2.storage.cassandra.InternalForTests.writeDependencyLinks;
 import static zipkin2.storage.cassandra.Schema.TABLE_AUTOCOMPLETE_TAGS;
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_REMOTE_SERVICES;
@@ -37,7 +36,7 @@ import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 @Testcontainers
 @Tag("docker")
 class ITCassandraStorage {
-  static final List<String> SEARCH_TABLES = asList(
+  static final List<String> SEARCH_TABLES = List.of(
     TABLE_AUTOCOMPLETE_TAGS,
     TABLE_SERVICE_REMOTE_SERVICES,
     TABLE_SERVICE_SPANS,

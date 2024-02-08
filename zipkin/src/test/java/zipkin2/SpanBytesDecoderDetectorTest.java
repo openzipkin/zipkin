@@ -13,11 +13,11 @@
  */
 package zipkin2;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static zipkin2.TestObjects.FRONTEND;
@@ -54,13 +54,13 @@ class SpanBytesDecoderDetectorTest {
 
   @Test void decoderForMessage_json_v1_list() {
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
-      byte[] message = SpanBytesEncoder.JSON_V1.encodeList(asList(span1, span2));
+      byte[] message = SpanBytesEncoder.JSON_V1.encodeList(List.of(span1, span2));
       SpanBytesDecoderDetector.decoderForMessage(message);
     });
   }
 
   @Test void decoderForListMessage_json_v1() {
-    byte[] message = SpanBytesEncoder.JSON_V1.encodeList(asList(span1, span2));
+    byte[] message = SpanBytesEncoder.JSON_V1.encodeList(List.of(span1, span2));
     assertThat(SpanBytesDecoderDetector.decoderForListMessage(message))
         .isEqualTo(SpanBytesDecoder.JSON_V1);
   }
@@ -83,13 +83,13 @@ class SpanBytesDecoderDetectorTest {
 
   @Test void decoderForMessage_json_v2_list() {
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
-      byte[] message = SpanBytesEncoder.JSON_V2.encodeList(asList(span1, span2));
+      byte[] message = SpanBytesEncoder.JSON_V2.encodeList(List.of(span1, span2));
       SpanBytesDecoderDetector.decoderForMessage(message);
     });
   }
 
   @Test void decoderForListMessage_json_v2() {
-    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(asList(span1, span2));
+    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(List.of(span1, span2));
     assertThat(SpanBytesDecoderDetector.decoderForListMessage(message))
         .isEqualTo(SpanBytesDecoder.JSON_V2);
   }
@@ -102,7 +102,7 @@ class SpanBytesDecoderDetectorTest {
             .localEndpoint(Endpoint.newBuilder().serviceName("foo").build())
             .build();
 
-    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(asList(span));
+    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(List.of(span));
     assertThat(SpanBytesDecoderDetector.decoderForListMessage(message))
         .isEqualTo(SpanBytesDecoder.JSON_V2);
   }
@@ -116,7 +116,7 @@ class SpanBytesDecoderDetectorTest {
             .remoteEndpoint(Endpoint.newBuilder().serviceName("foo").build())
             .build();
 
-    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(asList(span));
+    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(List.of(span));
     assertThat(SpanBytesDecoderDetector.decoderForListMessage(message))
         .isEqualTo(SpanBytesDecoder.JSON_V2);
   }
@@ -124,7 +124,7 @@ class SpanBytesDecoderDetectorTest {
   @Test void decoderForListMessage_json_v2_partial_tag() {
     Span span = Span.newBuilder().traceId("a").id("b").putTag("foo", "bar").build();
 
-    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(asList(span));
+    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(List.of(span));
     assertThat(SpanBytesDecoderDetector.decoderForListMessage(message))
         .isEqualTo(SpanBytesDecoder.JSON_V2);
   }
@@ -144,13 +144,13 @@ class SpanBytesDecoderDetectorTest {
 
   @Test void decoderForMessage_thrift_list() {
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
-      byte[] message = SpanBytesEncoder.THRIFT.encodeList(asList(span1, span2));
+      byte[] message = SpanBytesEncoder.THRIFT.encodeList(List.of(span1, span2));
       SpanBytesDecoderDetector.decoderForMessage(message);
     });
   }
 
   @Test void decoderForListMessage_thrift() {
-    byte[] message = SpanBytesEncoder.THRIFT.encodeList(asList(span1, span2));
+    byte[] message = SpanBytesEncoder.THRIFT.encodeList(List.of(span1, span2));
     assertThat(SpanBytesDecoderDetector.decoderForListMessage(message))
         .isEqualTo(SpanBytesDecoder.THRIFT);
   }
@@ -161,7 +161,7 @@ class SpanBytesDecoderDetectorTest {
    * <p>See openzipkin/zipkin-reporter-java#133
    */
   @Test void decoderForListMessage_thrift_incorrectFirstByte() {
-    byte[] message = SpanBytesEncoder.THRIFT.encodeList(asList(span1, span2));
+    byte[] message = SpanBytesEncoder.THRIFT.encodeList(List.of(span1, span2));
     message[0] = 11; // We made a typo.. it should have been 12
     assertThat(SpanBytesDecoderDetector.decoderForListMessage(message))
       .isEqualTo(SpanBytesDecoder.THRIFT);
@@ -187,13 +187,13 @@ class SpanBytesDecoderDetectorTest {
 
   @Test void decoderForMessage_proto3_list() {
     assertThatExceptionOfType(UnsupportedOperationException.class).isThrownBy(() -> {
-      byte[] message = SpanBytesEncoder.PROTO3.encodeList(asList(span1, span2));
+      byte[] message = SpanBytesEncoder.PROTO3.encodeList(List.of(span1, span2));
       SpanBytesDecoderDetector.decoderForMessage(message);
     });
   }
 
   @Test void decoderForListMessage_proto3() {
-    byte[] message = SpanBytesEncoder.PROTO3.encodeList(asList(span1, span2));
+    byte[] message = SpanBytesEncoder.PROTO3.encodeList(List.of(span1, span2));
     assertThat(SpanBytesDecoderDetector.decoderForListMessage(message))
         .isEqualTo(SpanBytesDecoder.PROTO3);
   }

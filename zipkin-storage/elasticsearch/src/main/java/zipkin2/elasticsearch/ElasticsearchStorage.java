@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,7 +24,6 @@ import com.linecorp.armeria.common.HttpMethod;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -46,8 +45,8 @@ import zipkin2.storage.StorageComponent;
 import zipkin2.storage.Traces;
 
 import static com.linecorp.armeria.common.HttpMethod.GET;
-import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V6_7;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V7_8;
 import static zipkin2.elasticsearch.EnsureIndexTemplate.ensureIndexTemplate;
 import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_AUTOCOMPLETE;
@@ -89,7 +88,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       .ensureTemplates(true)
       .namesLookback(86400000)
       .flushOnWrites(false)
-      .autocompleteKeys(Collections.emptyList())
+      .autocompleteKeys(List.of())
       .autocompleteTtl((int) TimeUnit.HOURS.toMillis(1))
       .autocompleteCardinality(5 * 4000); // Ex. 5 site tags with cardinality 4000 each
   }
@@ -315,7 +314,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       // Unwrap the marker exception as the health check is not relevant for the throttle component.
       // Unwrap any IOException from the first call to ensureIndexTemplates()
       if (e instanceof RejectedExecutionException || e instanceof UncheckedIOException) {
-        e = e.getCause();
+        return CheckResult.failed(e.getCause());
       }
       return CheckResult.failed(e);
     }

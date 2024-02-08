@@ -15,7 +15,7 @@ package zipkin2.internal;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -39,7 +39,7 @@ class WriteBufferTest {
 
   /** Uses test data and codepoint wrapping trick from okhttp3.FormBodyTest */
   @Test void utf8_malformed() {
-    for (int codepoint : Arrays.asList(0xD800, 0xDFFF, 0xD83D)) {
+    for (int codepoint : List.of(0xD800, 0xDFFF, 0xD83D)) {
       String test = new String(new int[] {'a', codepoint, 'c'}, 0, 3);
       assertThat(WriteBuffer.utf8SizeInBytes(test))
         .isEqualTo(3);
@@ -81,7 +81,7 @@ class WriteBufferTest {
 
   @Test void utf8_matchesJRE() {
     // examples from http://utf8everywhere.org/
-    for (String string : Arrays.asList(
+    for (String string : List.of(
       "Приве́т नमस्ते שָׁלוֹם",
       "ю́ cyrillic small letter yu with acute",
       "∃y ∀x ¬(x ≺ y)"
@@ -167,7 +167,7 @@ class WriteBufferTest {
   }
 
   @Test void writeLongLe_matchesByteBuffer() {
-    for (long number : Arrays.asList(Long.MIN_VALUE, 0L, Long.MAX_VALUE)) {
+    for (long number : List.of(Long.MIN_VALUE, 0L, Long.MAX_VALUE)) {
       byte[] bytes = new byte[8];
       WriteBuffer.wrap(bytes).writeLongLe(number);
 

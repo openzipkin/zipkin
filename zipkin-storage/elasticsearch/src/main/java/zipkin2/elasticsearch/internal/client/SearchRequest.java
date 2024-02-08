@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,7 +16,6 @@ package zipkin2.elasticsearch.internal.client;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,7 +106,7 @@ public final class SearchRequest {
   }
 
   SearchRequest query(Object filter) {
-    query = Collections.singletonMap("bool", Collections.singletonMap("filter", filter));
+    query = Map.of("bool", Map.of("filter", filter));
     return this;
   }
 
@@ -116,7 +115,7 @@ public final class SearchRequest {
     final Map<String, String> term;
 
     Term(String field, String value) {
-      term = Collections.singletonMap(field, value);
+      term = Map.of(field, value);
     }
     public Map<String, String> getTerm() {
       return term;
@@ -127,7 +126,7 @@ public final class SearchRequest {
     final Map<String, Collection<String>> terms;
 
     Terms(String field, Collection<String> values) {
-      this.terms = Collections.singletonMap(field, values);
+      this.terms = Map.of(field, values);
     }
 
     public Map<String, Collection<String>> getTerms() {
@@ -139,7 +138,7 @@ public final class SearchRequest {
     final Map<String, Bounds> range;
 
     Range(String field, long from, Long to) {
-      range = Collections.singletonMap(field, new Bounds(from, to));
+      range = Map.of(field, new Bounds(from, to));
     }
 
     public Map<String, Bounds> getRange() {
@@ -181,7 +180,7 @@ public final class SearchRequest {
     final Map<String, Object> bool;
 
     BoolQuery(String op, Object clause) {
-      bool = Collections.singletonMap(op, clause);
+      bool = Map.of(op, clause);
     }
 
     public Map<String, Object> getBool() {

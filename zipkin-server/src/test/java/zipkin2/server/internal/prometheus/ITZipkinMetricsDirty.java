@@ -32,7 +32,6 @@ import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.storage.InMemoryStorage;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
@@ -74,7 +73,7 @@ class ITZipkinMetricsDirty {
   }
 
   @Test void writeSpans_updatesMetrics() throws Exception {
-    List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
+    List<Span> spans = List.of(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
     byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
     double messagesCount =
       registry.counter("zipkin_collector.messages", "transport", "http").count();
@@ -135,7 +134,7 @@ class ITZipkinMetricsDirty {
    * Makes sure the prometheus filter doesn't count twice
    */
   @Test void writeSpans_updatesPrometheusMetrics() throws Exception {
-    List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
+    List<Span> spans = List.of(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
     byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
 
     post("/api/v2/spans", body);

@@ -13,14 +13,14 @@
  */
 package zipkin2.server.internal.eureka;
 
-import java.util.Collections;
+import java.util.Map;
 import okhttp3.HttpUrl;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
 
 class ITZipkinEureka extends BaseITZipkinEureka {
-  @Container static EurekaContainer eureka = new EurekaContainer(Collections.emptyMap());
+  @Container static EurekaContainer eureka = new EurekaContainer(Map.of());
 
   static HttpUrl serviceUrl() {
     return eureka.serviceUrl();

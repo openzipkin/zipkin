@@ -35,7 +35,6 @@ import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -50,7 +49,7 @@ import static org.mockito.Mockito.when;
   }
 )
 class ITZipkinServerTimeout {
-  static final List<Span> TRACE = asList(TestObjects.CLIENT_SPAN);
+  static final List<Span> TRACE = List.of(TestObjects.CLIENT_SPAN);
 
   SlowSpanStore spanStore;
 

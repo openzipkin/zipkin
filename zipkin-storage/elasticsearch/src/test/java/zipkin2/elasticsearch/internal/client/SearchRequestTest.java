@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,15 +13,15 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
 
 class SearchRequestTest {
 
-  SearchRequest request = SearchRequest.create(asList("zipkin-2016.11.31"));
+  SearchRequest request = SearchRequest.create(List.of("zipkin-2016.11.31"));
 
   @Test void defaultSizeIsMaxResultWindow() {
     assertThat(request.size)

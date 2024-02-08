@@ -30,7 +30,6 @@ import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.DependencyLink;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
@@ -51,24 +50,24 @@ class AggregateCallTest {
 
   @Test void newVoidCall_emptyNotAllowed() {
     assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> {
-      AggregateCall.newVoidCall(asList());
+      AggregateCall.newVoidCall(List.of());
     });
   }
 
   @Test void newVoidCall_singletonReturnsOnlyElement() {
-    assertThat(AggregateCall.newVoidCall(asList(call1)))
+    assertThat(AggregateCall.newVoidCall(List.of(call1)))
       .isEqualTo(call1);
   }
 
   @Test void newVoidCall_joinsMultipleCalls() {
-    assertThat(AggregateCall.newVoidCall(asList(call1, call2)))
+    assertThat(AggregateCall.newVoidCall(List.of(call1, call2)))
       .isInstanceOf(AggregateCall.AggregateVoidCall.class)
       .extracting("delegate")
-      .isEqualTo(asList(call1, call2));
+      .isEqualTo(List.of(call1, call2));
   }
 
   @Test void execute() throws Exception {
-    Call<Void> call = AggregateCall.newVoidCall(asList(call1, call2));
+    Call<Void> call = AggregateCall.newVoidCall(List.of(call1, call2));
 
     assertThat(call.execute())
       .isNull();
@@ -82,7 +81,7 @@ class AggregateCallTest {
     successCallback(call1);
     successCallback(call2);
 
-    Call<Void> call = AggregateCall.newVoidCall(asList(call1, call2));
+    Call<Void> call = AggregateCall.newVoidCall(List.of(call1, call2));
 
     call.enqueue(callback);
 
@@ -97,7 +96,7 @@ class AggregateCallTest {
     call1 = Call.create(null);
     call2 = Call.create(null);
 
-    Call<Void> call = AggregateCall.newVoidCall(asList(call1, call2));
+    Call<Void> call = AggregateCall.newVoidCall(List.of(call1, call2));
     call.cancel();
 
     assertThat(call.isCanceled()).isTrue();
@@ -110,7 +109,7 @@ class AggregateCallTest {
   }
 
   @Test void executesOnce() throws Exception {
-    Call<Void> call = AggregateCall.newVoidCall(asList(call1, call2));
+    Call<Void> call = AggregateCall.newVoidCall(List.of(call1, call2));
     call.execute();
 
     assertThatThrownBy(call::execute)
@@ -121,7 +120,7 @@ class AggregateCallTest {
   }
 
   @Test void enqueuesOnce() {
-    Call<Void> call = AggregateCall.newVoidCall(asList(call1, call2));
+    Call<Void> call = AggregateCall.newVoidCall(List.of(call1, call2));
     call.enqueue(callback);
 
     assertThatThrownBy(() -> call.enqueue(callback))
@@ -134,7 +133,7 @@ class AggregateCallTest {
   @Test void execute_errorDoesntStopOtherCalls() throws Exception {
     Exception e = new IllegalArgumentException();
     when(call1.execute()).thenThrow(e);
-    Call<Void> call = AggregateCall.newVoidCall(asList(call1, call2));
+    Call<Void> call = AggregateCall.newVoidCall(List.of(call1, call2));
 
     try {
       call.execute();
@@ -217,7 +216,7 @@ class AggregateCallTest {
     errorCallback(call1, e);
     successCallback(call2);
 
-    Call<Void> call = AggregateCall.newVoidCall(asList(call1, call2));
+    Call<Void> call = AggregateCall.newVoidCall(List.of(call1, call2));
 
     call.enqueue(callback);
 
@@ -243,9 +242,9 @@ class AggregateCallTest {
   }
 
   @Test void execute_finish() throws Exception {
-    Call<List<DependencyLink>> call = new AggregateDependencyLinks(asList(
-      Call.create(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(1).build())),
-      Call.create(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(3).build()))
+    Call<List<DependencyLink>> call = new AggregateDependencyLinks(List.of(
+      Call.create(List.of(DependencyLink.newBuilder().parent("a").child("b").callCount(1).build())),
+      Call.create(List.of(DependencyLink.newBuilder().parent("a").child("b").callCount(3).build()))
     ));
 
     assertThat(call.execute())
@@ -253,9 +252,9 @@ class AggregateCallTest {
   }
 
   @Test void enqueue_finish() {
-    Call<List<DependencyLink>> call = new AggregateDependencyLinks(asList(
-      Call.create(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(1).build())),
-      Call.create(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(3).build()))
+    Call<List<DependencyLink>> call = new AggregateDependencyLinks(List.of(
+      Call.create(List.of(DependencyLink.newBuilder().parent("a").child("b").callCount(1).build())),
+      Call.create(List.of(DependencyLink.newBuilder().parent("a").child("b").callCount(3).build()))
     ));
 
     Callback<List<DependencyLink>> callback = mock(Callback.class);
@@ -263,7 +262,7 @@ class AggregateCallTest {
     call.enqueue(callback);
 
     verify(callback)
-      .onSuccess(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(4).build()));
+      .onSuccess(List.of(DependencyLink.newBuilder().parent("a").child("b").callCount(4).build()));
   }
 
   static final class AggregateDependencyLinks

@@ -545,7 +545,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
 
     Collection<V> get(K key) {
       Collection<V> result = delegate.get(key);
-      return result != null ? result : Collections.<V>emptySet();
+      return result != null ? result : Collections.emptySet();
     }
   }
 

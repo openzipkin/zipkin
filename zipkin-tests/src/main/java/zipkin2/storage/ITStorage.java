@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,7 +28,6 @@ import zipkin2.Span;
 import zipkin2.internal.Trace;
 
 import static java.lang.Boolean.TRUE;
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
@@ -114,7 +113,7 @@ public abstract class ITStorage<T extends StorageComponent> {
   }
 
   protected final void accept(Span... spans) throws IOException {
-    accept(asList(spans));
+    accept(List.of(spans));
   }
 
   protected final void accept(List<Span> spans) throws IOException {
@@ -139,11 +138,11 @@ public abstract class ITStorage<T extends StorageComponent> {
     throws IOException {
     assertThat(sortTraces(store().getTraces(request).execute()))
       .usingRecursiveFieldByFieldElementComparator()
-      .containsAll(sortTraces(asList(traces)));
+      .containsAll(sortTraces(List.of(traces)));
   }
 
   protected void assertGetTraceReturns(Span onlySpan) throws IOException {
-    assertGetTraceReturns(onlySpan.traceId(), asList(onlySpan));
+    assertGetTraceReturns(onlySpan.traceId(), List.of(onlySpan));
   }
 
   protected void assertGetTraceReturns(String traceId, List<Span> trace) throws IOException {
@@ -164,7 +163,7 @@ public abstract class ITStorage<T extends StorageComponent> {
     throws IOException {
     assertThat(sortTraces(storage.traces().getTraces(traceIds).execute()))
       .usingRecursiveFieldByFieldElementComparator()
-      .containsAll(sortTraces(asList(traces)));
+      .containsAll(sortTraces(List.of(traces)));
   }
 
   protected void assertGetTracesReturnsEmpty(List<String> traceIds) throws IOException {

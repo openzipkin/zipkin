@@ -26,7 +26,7 @@ import static zipkin2.elasticsearch.integration.ElasticsearchExtension.index;
 @Tag("docker")
 class ITElasticsearchStorageV7 extends ITElasticsearchStorage {
 
-  @RegisterExtension ElasticsearchExtension elasticsearch = new ElasticsearchExtension(7);
+  @RegisterExtension static ElasticsearchExtension elasticsearch = new ElasticsearchExtension(7);
 
   @Override ElasticsearchExtension elasticsearch() {
     return elasticsearch;

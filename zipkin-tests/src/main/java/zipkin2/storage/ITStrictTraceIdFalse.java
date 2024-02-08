@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,7 +21,6 @@ import org.junit.jupiter.api.TestInfo;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 
-import static java.util.Arrays.asList;
 import static zipkin2.TestObjects.appendSuffix;
 import static zipkin2.TestObjects.newTrace;
 import static zipkin2.TestObjects.spanBuilder;
@@ -135,16 +134,16 @@ public abstract class ITStrictTraceIdFalse<T extends StorageComponent> extends I
     accept(with128BitId1, with64BitId1, with128BitId2, with64BitId2, with128BitId3, with64BitId3);
 
     List<Span>[] trace1And3 =
-      new List[] {asList(with128BitId1, with64BitId1), asList(with128BitId3, with64BitId3)};
+      new List[] {List.of(with128BitId1, with64BitId1), List.of(with128BitId3, with64BitId3)};
 
     assertGetTracesReturns(
-      asList(with128BitId1.traceId(), with64BitId1.traceId(), with128BitId3.traceId(),
+      List.of(with128BitId1.traceId(), with64BitId1.traceId(), with128BitId3.traceId(),
         with64BitId3.traceId()), trace1And3);
 
     assertGetTracesReturns(
-      asList(with64BitId1.traceId(), with64BitId3.traceId()), trace1And3);
+      List.of(with64BitId1.traceId(), with64BitId3.traceId()), trace1And3);
 
     assertGetTracesReturns(
-      asList(with128BitId1.traceId(), with128BitId3.traceId()), trace1And3);
+      List.of(with128BitId1.traceId(), with128BitId3.traceId()), trace1And3);
   }
 }

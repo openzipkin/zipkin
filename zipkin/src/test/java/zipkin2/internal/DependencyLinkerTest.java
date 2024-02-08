@@ -14,6 +14,7 @@
 package zipkin2.internal;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -24,13 +25,12 @@ import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.Span.Kind;
 
-import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class DependencyLinkerTest {
   // in reverse order as reporting is more likely to occur this way
-  static final List<Span> TRACE = asList(
+  static final List<Span> TRACE = List.of(
     span("a", "b", "c", Kind.CLIENT, "app", "db", true),
     span("a", "a", "b", Kind.SERVER, "app", "web", false)
       .toBuilder().shared(true).build(),
@@ -84,7 +84,7 @@ class DependencyLinkerTest {
    * <p>See https://github.com/openzipkin/zipkin/pull/1745
    */
   @Test void linksSpans_serverMissingParentId() {
-    List<Span> trace = asList(
+    List<Span> trace = Arrays.asList( // to allow sorting
       span("a", null, "a", Kind.SERVER, "arn", null, false),
       span("a", "a", "b", Kind.CLIENT, "arn", "link", false),
       // below the parent ID is null as it wasn't propagated
@@ -138,7 +138,7 @@ class DependencyLinkerTest {
   }
 
   @Test void messagingSpansDontLinkWithoutBroker_consumer() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.PRODUCER, "producer", null, false),
       span("a", "a", "b", Kind.CONSUMER, "consumer", "kafka", false)
     );
@@ -149,7 +149,7 @@ class DependencyLinkerTest {
   }
 
   @Test void messagingSpansDontLinkWithoutBroker_producer() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.PRODUCER, "producer", "kafka", false),
       span("a", "a", "b", Kind.CONSUMER, "consumer", null, false)
     );
@@ -160,7 +160,7 @@ class DependencyLinkerTest {
   }
 
   @Test void messagingWithBroker_both_sides_same() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.PRODUCER, "producer", "kafka", false),
       span("a", "a", "b", Kind.CONSUMER, "consumer", "kafka", false)
     );
@@ -172,7 +172,7 @@ class DependencyLinkerTest {
   }
 
   @Test void messagingWithBroker_different() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.PRODUCER, "producer", "kafka1", false),
       span("a", "a", "b", Kind.CONSUMER, "consumer", "kafka2", false)
     );
@@ -185,7 +185,7 @@ class DependencyLinkerTest {
 
   /** Shows we don't assume there's a direct link between producer and consumer. */
   @Test void messagingWithoutBroker_noLinks() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.PRODUCER, "producer", null, false),
       span("a", "a", "b", Kind.CONSUMER, "consumer", null, false)
     );
@@ -196,7 +196,7 @@ class DependencyLinkerTest {
 
   /** When a server is the child of a producer span, make a link as it is really an RPC */
   @Test void producerLinksToServer_childSpan() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.PRODUCER, "producer", null, false),
       span("a", "a", "b", Kind.SERVER, "server", null, false)
     );
@@ -211,7 +211,7 @@ class DependencyLinkerTest {
    * instead of a client.
    */
   @Test void producerLinksToServer_sameSpan() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.PRODUCER, "producer", null, false),
       span("a", null, "a", Kind.SERVER, "server", null, false)
         .toBuilder().shared(true).build()
@@ -227,7 +227,7 @@ class DependencyLinkerTest {
    * is authoritative.
    */
   @Test void clientDoesntLinkToConsumer_child() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.CLIENT, "client", null, false),
       span("a", "a", "b", Kind.CONSUMER, "consumer", null, false)
     );
@@ -241,21 +241,21 @@ class DependencyLinkerTest {
    * cases, the peer is known and kind establishes the direction.
    */
   @Test void linksSpansDirectedByKind() {
-    List<Span> validRootSpans = asList(
+    List<Span> validRootSpans = List.of(
       span("a", null, "a", Kind.SERVER, "server", "client", false),
       span("a", null, "a", Kind.CLIENT, "client", "server", false)
         .toBuilder().shared(true).build()
     );
 
     for (Span span : validRootSpans) {
-      assertThat(new DependencyLinker().putTrace(asList(span)).link()).containsOnly(
+      assertThat(new DependencyLinker().putTrace(List.of(span)).link()).containsOnly(
         DependencyLink.newBuilder().parent("client").child("server").callCount(1L).build()
       );
     }
   }
 
   @Test void callsAgainstTheSameLinkIncreasesCallCount_span() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.SERVER, "client", null, false),
       span("a", "a", "b", Kind.CLIENT, null, "server", false),
       span("a", "a", "c", Kind.CLIENT, null, "server", false)
@@ -267,7 +267,7 @@ class DependencyLinkerTest {
   }
 
   @Test void callsAgainstTheSameLinkIncreasesCallCount_trace() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.SERVER, "client", null, false),
       span("a", "a", "b", Kind.CLIENT, null, "server", false)
     );
@@ -284,7 +284,7 @@ class DependencyLinkerTest {
    * link these without duplicating call count.
    */
   @Test void singleHostSpansResultInASingleCallCount() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.CLIENT, "client", null, false),
       span("a", "a", "b", Kind.SERVER, "server", null, false)
     );
@@ -295,7 +295,7 @@ class DependencyLinkerTest {
   }
 
   @Test void singleHostSpansResultInASingleErrorCount() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.CLIENT, "client", null, true),
       span("a", "a", "b", Kind.SERVER, "server", null, true)
     );
@@ -311,7 +311,7 @@ class DependencyLinkerTest {
   }
 
   @Test void singleHostSpansResultInASingleErrorCount_sameId() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.CLIENT, "client", null, true),
       span("a", null, "a", Kind.SERVER, "server", null, true)
         .toBuilder().shared(true).build()
@@ -328,7 +328,7 @@ class DependencyLinkerTest {
   }
 
   @Test void singleHostSpansResultInASingleCallCount_defersNameToServer() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.CLIENT, "client", "server", false),
       span("a", "a", "b", Kind.SERVER, "server", null, false)
     );
@@ -339,7 +339,7 @@ class DependencyLinkerTest {
   }
 
   @Test void singleHostSpans_multipleChildren() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.CLIENT, "client", null, false),
       span("a", "a", "b", Kind.SERVER, "server", "client", true),
       span("a", "a", "c", Kind.SERVER, "server", "client", false)
@@ -356,7 +356,7 @@ class DependencyLinkerTest {
   }
 
   @Test void singleHostSpans_multipleChildren_defersNameToServer() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.CLIENT, "client", "server", false),
       span("a", "a", "b", Kind.SERVER, "server", null, false),
       span("a", "a", "c", Kind.SERVER, "server", null, false)
@@ -372,7 +372,7 @@ class DependencyLinkerTest {
    * accounting for them.
    */
   @Test void intermediatedClientSpansMissingLocalServiceNameLinkToNearestServer() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.SERVER, "client", null, false),
       span("a", "a", "b", null, null, null, false),
       // possibly a local fan-out span
@@ -386,7 +386,7 @@ class DependencyLinkerTest {
   }
 
   @Test void errorsOnUninstrumentedLinks() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.SERVER, "client", null, false),
       span("a", "a", "b", null, null, null, false),
       // there's no remote here, so we shouldn't see any error count
@@ -400,7 +400,7 @@ class DependencyLinkerTest {
   }
 
   @Test void errorsOnInstrumentedLinks() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.SERVER, "foo", null, false),
       span("a", "a", "b", null, null, null, false),
       span("a", "b", "c", Kind.CLIENT, "bar", "baz", true),
@@ -414,8 +414,8 @@ class DependencyLinkerTest {
   }
 
   @Test void linkWithErrorIsLogged() {
-    List<Span> trace = asList(
-      span("a", "b", "c", Kind.CLIENT, "foo", "bar", true)
+    List<Span> trace = List.of(
+        span("a", "b", "c", Kind.CLIENT, "foo", "bar", true)
     );
     new DependencyLinker(logger).putTrace(trace).link();
 
@@ -426,9 +426,9 @@ class DependencyLinkerTest {
 
   /** Tag indicates a failed span, not an annotation */
   @Test void annotationNamedErrorDoesntIncrementErrorCount() {
-    List<Span> trace = asList(
-      span("a", "b", "c", Kind.CLIENT, "foo", "bar", false)
-        .toBuilder().addAnnotation(1L, "error").build()
+    List<Span> trace = List.of(
+        span("a", "b", "c", Kind.CLIENT, "foo", "bar", false)
+            .toBuilder().addAnnotation(1L, "error").build()
     );
 
     assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
@@ -438,20 +438,20 @@ class DependencyLinkerTest {
 
   /** A loopback span is direction-agnostic, so can be linked properly regardless of kind. */
   @Test void linksLoopbackSpans() {
-    List<Span> validRootSpans = asList(
+    List<Span> validRootSpans = List.of(
       span("a", null, "a", Kind.SERVER, "service", "service", false),
       span("b", null, "b", Kind.CLIENT, "service", "service", false)
     );
 
     for (Span span : validRootSpans) {
-      assertThat(new DependencyLinker().putTrace(asList(span)).link()).containsOnly(
+      assertThat(new DependencyLinker().putTrace(List.of(span)).link()).containsOnly(
         DependencyLink.newBuilder().parent("service").child("service").callCount(1L).build()
       );
     }
   }
 
   @Test void noSpanKindTreatedSameAsClient() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", null, "some-client", "web", false),
       span("a", "a", "b", null, "web", "app", false),
       span("a", "b", "c", null, "app", "db", false)
@@ -465,7 +465,7 @@ class DependencyLinkerTest {
   }
 
   @Test void noSpanKindWithError() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", null, "some-client", "web", false),
       span("a", "a", "b", null, "web", "app", true),
       span("a", "b", "c", null, "app", "db", false)
@@ -480,7 +480,7 @@ class DependencyLinkerTest {
 
   /** A dependency link is between two services. We cannot link if we don't know both service names. */
   @Test void cannotLinkSingleSpanWithoutBothServiceNames() {
-    List<Span> incompleteRootSpans = asList(
+    List<Span> incompleteRootSpans = List.of(
       span("a", null, "a", Kind.SERVER, null, null, false),
       span("a", null, "a", Kind.SERVER, "server", null, false),
       span("a", null, "a", Kind.SERVER, null, "client", false),
@@ -491,14 +491,14 @@ class DependencyLinkerTest {
 
     for (Span span : incompleteRootSpans) {
       assertThat(new DependencyLinker(logger)
-        .putTrace(asList(span)).link())
+        .putTrace(List.of(span)).link())
         .isEmpty();
     }
   }
 
   @Test void doesntLinkUnrelatedSpansWhenMissingRootSpan() {
     String missingParentId = "a";
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", missingParentId, "b", Kind.SERVER, "service1", null, false),
       span("a", missingParentId, "c", Kind.SERVER, "service2", null, false)
     );
@@ -510,7 +510,7 @@ class DependencyLinkerTest {
 
   @Test void linksRelatedSpansWhenMissingRootSpan() {
     String missingParentId = "a";
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", missingParentId, "b", Kind.SERVER, "service1", null, false),
       span("a", "b", "c", Kind.SERVER, "service2", null, false)
     );
@@ -522,7 +522,7 @@ class DependencyLinkerTest {
 
   /** Client+Server spans that don't share IDs are treated as server spans missing their peer */
   @Test void linksSingleHostSpans() {
-    List<Span> singleHostSpans = asList(
+    List<Span> singleHostSpans = List.of(
       span("a", null, "a", Kind.CLIENT, "web", null, false),
       span("a", "a", "b", Kind.SERVER, "app", null, false)
     );
@@ -533,7 +533,7 @@ class DependencyLinkerTest {
   }
 
   @Test void linksSingleHostSpans_errorOnClient() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.CLIENT, "web", null, true),
       span("a", "a", "b", Kind.SERVER, "app", null, false)
     );
@@ -545,7 +545,7 @@ class DependencyLinkerTest {
 
   /** Creates a link when there's a span missing, in this case 2L which is an RPC from web to app */
   @Test void missingSpan() {
-    List<Span> singleHostSpans = asList(
+    List<Span> singleHostSpans = List.of(
       span("a", null, "a", Kind.SERVER, "web", null, false),
       span("a", "a", "b", Kind.CLIENT, "app", null, false)
     );
@@ -559,7 +559,7 @@ class DependencyLinkerTest {
   }
 
   @Test void merge() {
-    List<DependencyLink> links = asList(
+    List<DependencyLink> links = List.of(
       DependencyLink.newBuilder().parent("foo").child("bar").callCount(2L).errorCount(1L).build(),
       DependencyLink.newBuilder().parent("foo").child("bar").callCount(2L).errorCount(2L).build(),
       DependencyLink.newBuilder().parent("foo").child("foo").callCount(1L).build()
@@ -572,7 +572,7 @@ class DependencyLinkerTest {
   }
 
   @Test void merge_error() {
-    List<DependencyLink> links = asList(
+    List<DependencyLink> links = List.of(
       DependencyLink.newBuilder().parent("client").child("server").callCount(2L).build(),
       DependencyLink.newBuilder().parent("client").child("server").callCount(2L).build(),
       DependencyLink.newBuilder().parent("client").child("client").callCount(1L).build()

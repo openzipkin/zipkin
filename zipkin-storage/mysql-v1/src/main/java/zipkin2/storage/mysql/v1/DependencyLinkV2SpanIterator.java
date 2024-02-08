@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -192,7 +192,7 @@ final class DependencyLinkV2SpanIterator implements Iterator<Span> {
 
   static @Nullable String emptyToNull(Record next, TableField<Record, String> field) {
     String result = next.getValue(field);
-    return result != null && !"".equals(result) ? result : null;
+    return result != null && !result.isEmpty() ? result : null;
   }
 
   static Endpoint ep(@Nullable String serviceName) {

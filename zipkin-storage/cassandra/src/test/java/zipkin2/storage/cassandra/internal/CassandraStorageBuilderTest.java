@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import zipkin2.storage.StorageComponent;
 
 import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE;
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -36,7 +35,7 @@ class CassandraStorageBuilderTest {
   }
 
   @Test void badArguments() {
-    List<Function<CassandraStorageBuilder<?>, CassandraStorageBuilder<?>>> badArguments = asList(
+    List<Function<CassandraStorageBuilder<?>, CassandraStorageBuilder<?>>> badArguments = List.of(
       b -> b.autocompleteTtl(0),
       b -> b.autocompleteCardinality(0),
       b -> b.maxTraceCols(0),
@@ -50,7 +49,7 @@ class CassandraStorageBuilderTest {
 
   /** Ensure NPE happens early. */
   @Test void nullPointers() {
-    List<Function<CassandraStorageBuilder<?>, CassandraStorageBuilder<?>>> nullPointers = asList(
+    List<Function<CassandraStorageBuilder<?>, CassandraStorageBuilder<?>>> nullPointers = List.of(
       b -> b.autocompleteKeys(null),
       b -> b.contactPoints(null),
       b -> b.localDc(null),

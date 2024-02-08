@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 package zipkin2.storage.mysql.v1;
 
+import java.util.List;
 import org.jooq.Record;
 import org.jooq.Record7;
 import org.jooq.SQLDialect;
@@ -22,7 +23,6 @@ import zipkin2.Span;
 import zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations;
 import zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static zipkin2.storage.mysql.v1.Schema.maybeGet;
@@ -212,7 +212,7 @@ class DependencyLinkV2SpanIteratorTest {
 
   static DependencyLinkV2SpanIterator iterator(Record... records) {
     return new DependencyLinkV2SpanIterator(
-        new PeekingIterator<>(asList(records).iterator()),
+        new PeekingIterator<>(List.of(records).iterator()),
         maybeGet(records[0], ZipkinSpans.ZIPKIN_SPANS.TRACE_ID_HIGH, 0L),
         records[0].get(ZipkinSpans.ZIPKIN_SPANS.TRACE_ID));
   }

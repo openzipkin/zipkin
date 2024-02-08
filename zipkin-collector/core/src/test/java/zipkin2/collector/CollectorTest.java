@@ -13,6 +13,7 @@
  */
 package zipkin2.collector;
 
+import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,9 +29,7 @@ import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -154,7 +153,7 @@ public class CollectorTest {
     Span span2 = CLIENT_SPAN.toBuilder().id("3").build();
     when(collector.idString(span2)).thenReturn("3");
 
-    assertThat(collector.new StoreSpans(asList(CLIENT_SPAN, span2)))
+    assertThat(collector.new StoreSpans(List.of(CLIENT_SPAN, span2)))
       .hasToString("StoreSpans([1, 3])");
   }
 

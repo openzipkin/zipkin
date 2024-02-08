@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -111,8 +111,7 @@ class ElasticsearchSpanStoreTest {
     long yesterday = today - TimeUnit.DAYS.toMillis(1);
 
     // 24 hrs ago always will fall into 2 days (ex. if it is 4:00pm, 24hrs ago is a different day)
-    String indexesToSearch = ""
-      + storage.indexNameFormatter().formatTypeAndTimestamp(TYPE_SPAN, yesterday)
+    String indexesToSearch = storage.indexNameFormatter().formatTypeAndTimestamp(TYPE_SPAN, yesterday)
       + ","
       + storage.indexNameFormatter().formatTypeAndTimestamp(TYPE_SPAN, today);
 

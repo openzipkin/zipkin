@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -30,7 +30,6 @@ import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static zipkin2.Span.Kind.CLIENT;
 import static zipkin2.Span.Kind.SERVER;
@@ -76,7 +75,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     String testSuffix = testSuffix(testInfo);
     Span span = spanBuilder(testSuffix).build();
 
-    Call<Void> call = storage.spanConsumer().accept(asList(span));
+    Call<Void> call = storage.spanConsumer().accept(List.of(span));
 
     // Ensure the implementation didn't accidentally do I/O at assembly time.
     assertGetTraceReturnsEmpty(span.traceId());
@@ -96,7 +95,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     String testSuffix = testSuffix(testInfo);
     Span span = spanBuilder(testSuffix).build();
 
-    Call<Void> call = storage.spanConsumer().accept(asList(span));
+    Call<Void> call = storage.spanConsumer().accept(List.of(span));
     // Ensure the implementation didn't accidentally do I/O at assembly time.
     assertGetTraceReturnsEmpty(span.traceId());
 
@@ -137,7 +136,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     assertGetTracesReturns(
       requestBuilder().build(),
-      asList(traceASpan1, traceASpan2), asList(traceBSpan1, traceBSpan2)
+      List.of(traceASpan1, traceASpan2), List.of(traceBSpan1, traceBSpan2)
     );
   }
 
@@ -159,12 +158,12 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     accept(span1, span2, span3);
 
-    for (Span span : Arrays.asList(span1, span2, span3)) {
+    for (Span span : List.of(span1, span2, span3)) {
       assertGetTracesReturns(
         requestBuilder().serviceName(frontend.serviceName())
           .parseAnnotationQuery("foo=" + span.tags().get("foo"))
           .build(),
-        asList(span));
+        List.of(span));
     }
   }
 
@@ -193,9 +192,9 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     accept(lateSpans);
 
     List<Span>[] earlyTraces =
-      Stream.of(earlySpans).map(Collections::singletonList).toArray(List[]::new);
+      Stream.of(earlySpans).map(List::of).toArray(List[]::new);
     List<Span>[] lateTraces =
-      Stream.of(lateSpans).map(Collections::singletonList).toArray(List[]::new);
+      Stream.of(lateSpans).map(List::of).toArray(List[]::new);
 
     assertGetTracesReturnsCount(requestBuilder().build(), 20);
 
@@ -225,7 +224,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     assertGetTracesReturns(
       requestBuilder().serviceName(clientSpan.localServiceName()).build(),
-      asList(clientSpan));
+      List.of(clientSpan));
 
     assertGetTracesReturnsEmpty(
       requestBuilder()
@@ -238,7 +237,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
         .serviceName(clientSpan.localServiceName())
         .remoteServiceName(clientSpan.remoteServiceName())
         .build(),
-      asList(clientSpan));
+      List.of(clientSpan));
   }
 
   @Test protected void getTraces_serviceNames_mixedTraceIdLength(TestInfo testInfo)
@@ -275,14 +274,14 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     assertGetTracesReturns(
       requestBuilder().spanName(clientSpan.name()).build(),
-      asList(clientSpan));
+      List.of(clientSpan));
 
     assertGetTracesReturns(
       requestBuilder()
         .serviceName(clientSpan.localServiceName())
         .spanName(clientSpan.name())
         .build(),
-      asList(clientSpan));
+      List.of(clientSpan));
   }
 
   @Test protected void getTraces_spanName_mixedTraceIdLength(TestInfo testInfo) throws Exception {
@@ -305,11 +304,11 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     accept(clientSpan);
 
     assertGetTracesReturnsEmpty(
-      requestBuilder().annotationQuery(Collections.singletonMap("foo", "bar")).build());
+      requestBuilder().annotationQuery(Map.of("foo", "bar")).build());
 
     assertGetTracesReturns(
       requestBuilder().annotationQuery(clientSpan.tags()).build(),
-      asList(clientSpan));
+      List.of(clientSpan));
   }
 
   @Test protected void getTraces_minDuration(TestInfo testInfo) throws Exception {
@@ -323,7 +322,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     assertGetTracesReturns(
       requestBuilder().minDuration(clientSpan.durationAsLong()).build(),
-      asList(clientSpan));
+      List.of(clientSpan));
   }
 
   // pretend we had a late update of only timestamp/duration info
@@ -346,7 +345,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     assertGetTracesReturns(
       requestBuilder().minDuration(clientSpan.durationAsLong()).build(),
-      asList(lateDuration, missingDuration));
+      List.of(lateDuration, missingDuration));
   }
 
   @Test protected void getTraces_maxDuration(TestInfo testInfo) throws Exception {
@@ -366,7 +365,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
         .minDuration(clientSpan.durationAsLong())
         .maxDuration(clientSpan.durationAsLong())
         .build(),
-      asList(clientSpan));
+      List.of(clientSpan));
   }
 
   /**
@@ -388,10 +387,10 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     QueryRequest.Builder requestBuilder =
       requestBuilder().serviceName(serviceName); // so this doesn't die on cassandra v1
 
-    assertGetTracesReturns(requestBuilder.build(), asList(errorSpan));
+    assertGetTracesReturns(requestBuilder.build(), List.of(errorSpan));
 
     assertGetTracesReturns(
-      requestBuilder.parseAnnotationQuery("error").build(), asList(errorSpan));
+      requestBuilder.parseAnnotationQuery("error").build(), List.of(errorSpan));
 
     assertGetTracesReturnsEmpty(
       requestBuilder.parseAnnotationQuery("error=1").build());
@@ -413,7 +412,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     accept(span);
 
     // read back to ensure the data wasn't truncated
-    assertGetTracesReturns(requestBuilder().build(), asList(span));
+    assertGetTracesReturns(requestBuilder().build(), List.of(span));
     assertGetTraceReturns(span);
   }
 
@@ -443,10 +442,10 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     assertGetTracesReturns(
       requestBuilder().serviceName(part1.localServiceName()).spanName(json).build(),
-      asList(part2, part1)
+      List.of(part2, part1)
     );
 
-    assertGetTraceReturns(part1.traceId(), asList(part2, part1));
+    assertGetTraceReturns(part1.traceId(), List.of(part2, part1));
   }
 
   /** Shows that duration queries go against the root span, not the child */
@@ -530,21 +529,21 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     assertGetTracesReturns(
       requestBuilder().serviceName(span.localServiceName()).build(),
-      asList(spanWithoutTimestamp, span));
+      List.of(spanWithoutTimestamp, span));
 
     assertGetTracesReturns(
       requestBuilder()
         .serviceName(span.localServiceName())
         .remoteServiceName(span.remoteServiceName())
         .build(),
-      asList(spanWithoutTimestamp, span));
+      List.of(spanWithoutTimestamp, span));
 
     assertGetTracesReturns(
       requestBuilder()
         .serviceName(span.localServiceName())
         .spanName(span.name())
         .build(),
-      asList(spanWithoutTimestamp, span));
+      List.of(spanWithoutTimestamp, span));
   }
 
   /** Prevents subtle bugs which can result in mixed-length traces from linking. */
@@ -560,7 +559,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     accept(clientSpan, serverSpan);
 
     // assertGetTracesReturns does recursive comparison
-    assertGetTracesReturns(requestBuilder().build(), asList(clientSpan, serverSpan));
+    assertGetTracesReturns(requestBuilder().build(), List.of(clientSpan, serverSpan));
   }
 
   @Test protected void getTraces_annotation(TestInfo testInfo) throws Exception {
@@ -577,7 +576,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
         .serviceName(clientSpan.localServiceName())
         .parseAnnotationQuery(clientSpan.annotations().get(0).value())
         .build(),
-      asList(clientSpan));
+      List.of(clientSpan));
 
     // should find traces by a tag
     Map.Entry<String, String> tag = clientSpan.tags().entrySet().iterator().next();
@@ -586,7 +585,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
         .serviceName(clientSpan.localServiceName())
         .parseAnnotationQuery(tag.getKey() + "=" + tag.getValue())
         .build(),
-      asList(clientSpan));
+      List.of(clientSpan));
   }
 
   @Test
@@ -622,26 +621,26 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     assertGetTracesReturns(
       requestBuilder().serviceName(frontend.serviceName()).parseAnnotationQuery("foo").build(),
-      asList(foo), asList(barAndFoo), asList(fooAndBazAndQux), asList(barAndFooAndBazAndQux)
+      List.of(foo), List.of(barAndFoo), List.of(fooAndBazAndQux), List.of(barAndFooAndBazAndQux)
     );
 
     assertGetTracesReturns(
       requestBuilder().serviceName(frontend.serviceName())
         .parseAnnotationQuery("foo and bar")
         .build(),
-      asList(barAndFoo), asList(barAndFooAndBazAndQux)
+      List.of(barAndFoo), List.of(barAndFooAndBazAndQux)
     );
 
     assertGetTracesReturns(
       requestBuilder().serviceName(frontend.serviceName())
         .parseAnnotationQuery("foo and bar and baz=qux")
         .build(),
-      asList(barAndFooAndBazAndQux));
+      List.of(barAndFooAndBazAndQux));
 
     // ensure we can search only by tag key
     assertGetTracesReturns(
       requestBuilder().serviceName(frontend.serviceName()).parseAnnotationQuery("baz").build(),
-      asList(fooAndBazAndQux), asList(barAndFooAndBazAndQux)
+      List.of(fooAndBazAndQux), List.of(barAndFooAndBazAndQux)
     );
   }
 
@@ -689,22 +688,22 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     accept(trace1, trace1Server, trace2, trace2Server);
 
     // Sanity check
-    assertGetTraceReturns(trace1.traceId(), asList(trace1, trace1Server));
-    assertGetTraceReturns(trace2.traceId(), asList(trace2, trace2Server));
+    assertGetTraceReturns(trace1.traceId(), List.of(trace1, trace1Server));
+    assertGetTraceReturns(trace2.traceId(), List.of(trace2, trace2Server));
     assertGetTracesReturns(requestBuilder().build(),
-      asList(trace1, trace1Server), asList(trace2, trace2Server));
+      List.of(trace1, trace1Server), List.of(trace2, trace2Server));
 
     // We only return traces where the service specified caused the data queried.
     assertGetTracesReturns(
       requestBuilder().serviceName(frontend.serviceName()).parseAnnotationQuery("web").build(),
-      asList(trace1, trace1Server));
+      List.of(trace1, trace1Server));
 
     assertGetTracesReturnsEmpty(
       requestBuilder().serviceName(backend.serviceName()).parseAnnotationQuery("web").build());
 
     assertGetTracesReturns(
       requestBuilder().serviceName(backend.serviceName()).parseAnnotationQuery("app").build(),
-      asList(trace2, trace2Server));
+      List.of(trace2, trace2Server));
 
     assertGetTracesReturnsEmpty(
       requestBuilder().serviceName(frontend.serviceName()).parseAnnotationQuery("app").build());
@@ -712,14 +711,14 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     // tags are returned on annotation queries
     assertGetTracesReturns(
       requestBuilder().serviceName(frontend.serviceName()).parseAnnotationQuery("web-b").build(),
-      asList(trace1, trace1Server));
+      List.of(trace1, trace1Server));
 
     assertGetTracesReturnsEmpty(
       requestBuilder().serviceName(backend.serviceName()).parseAnnotationQuery("web-b").build());
 
     assertGetTracesReturns(
       requestBuilder().serviceName(backend.serviceName()).parseAnnotationQuery("app-b").build(),
-      asList(trace2, trace2Server));
+      List.of(trace2, trace2Server));
 
     assertGetTracesReturnsEmpty(
       requestBuilder().serviceName(frontend.serviceName()).parseAnnotationQuery("app-b").build());
@@ -729,7 +728,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       requestBuilder().serviceName(frontend.serviceName())
         .parseAnnotationQuery("local=web")
         .build(),
-      asList(trace1, trace1Server));
+      List.of(trace1, trace1Server));
 
     assertGetTracesReturnsEmpty(
       requestBuilder().serviceName(backend.serviceName())
@@ -738,7 +737,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     assertGetTracesReturns(
       requestBuilder().serviceName(backend.serviceName()).parseAnnotationQuery("local=app").build(),
-      asList(trace2, trace2Server));
+      List.of(trace2, trace2Server));
 
     assertGetTracesReturnsEmpty(
       requestBuilder().serviceName(frontend.serviceName())
@@ -755,7 +754,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     assertGetTracesReturns(
       requestBuilder().serviceName(span1.localServiceName()).limit(1).build(),
-      asList(span2));
+      List.of(span2));
   }
 
   /** Traces whose root span has timestamps between (endTs - lookback) and endTs are returned */
@@ -770,30 +769,30 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     assertGetTracesReturns(
       requestBuilder().endTs(TODAY + 1).build(),
-      asList(span1));
+      List.of(span1));
 
     assertGetTracesReturns(
       requestBuilder().endTs(TODAY + 2).build(),
-      asList(span1), asList(span2));
+      List.of(span1), List.of(span2));
 
     assertGetTracesReturns(
       requestBuilder().endTs(TODAY + 3).build(),
-      asList(span1), asList(span2));
+      List.of(span1), List.of(span2));
 
     assertGetTracesReturnsEmpty(
       requestBuilder().endTs(TODAY).build());
 
     assertGetTracesReturns(
       requestBuilder().endTs(TODAY + 1).lookback(1).build(),
-      asList(span1));
+      List.of(span1));
 
     assertGetTracesReturns(
       requestBuilder().endTs(TODAY + 2).lookback(1).build(),
-      asList(span1), asList(span2));
+      List.of(span1), List.of(span2));
 
     assertGetTracesReturns(
       requestBuilder().endTs(TODAY + 3).lookback(1).build(),
-      asList(span2));
+      List.of(span2));
   }
 
   @Test protected void names_goLowercase(TestInfo testInfo) throws Exception {
@@ -807,20 +806,20 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
         .serviceName(clientSpan.localServiceName())
         .remoteServiceName(clientSpan.remoteServiceName().toUpperCase(Locale.ROOT))
         .build(),
-      asList(clientSpan));
+      List.of(clientSpan));
 
     assertGetTracesReturns(
       requestBuilder()
         .serviceName(clientSpan.localServiceName())
         .spanName(clientSpan.name().toUpperCase(Locale.ROOT)).build(),
-      asList(clientSpan));
+      List.of(clientSpan));
 
     assertGetTracesReturns(
       requestBuilder()
         .serviceName(clientSpan.localServiceName())
         .remoteServiceName(clientSpan.remoteServiceName().toUpperCase(Locale.ROOT))
         .build(),
-      asList(clientSpan));
+      List.of(clientSpan));
   }
 
   /** Ensure complete traces are aggregated, even if they complete after endTs */
@@ -867,8 +866,8 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .remoteEndpoint(backend)
       .putTag("lc", "archiver").build();
 
-    List<Span> trace1 = asList(targz, tar, gz);
-    List<Span> trace2 = asList(
+    List<Span> trace1 = List.of(targz, tar, gz);
+    List<Span> trace2 = List.of(
       targz.toBuilder().traceId(traceId2).timestamp(offsetMicros + 110L)
         .localEndpoint(db)
         .remoteEndpoint(frontend)
@@ -881,11 +880,11 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
         .localEndpoint(frontend)
         .remoteEndpoint(backend)
         .putTag("lc", "archiver").build());
-    List<Span> trace3 = asList(zip);
+    List<Span> trace3 = List.of(zip);
 
     accept(trace1);
     accept(trace2);
     accept(trace3);
-    return asList(trace1, trace2, trace3);
+    return List.of(trace1, trace2, trace3);
   }
 }

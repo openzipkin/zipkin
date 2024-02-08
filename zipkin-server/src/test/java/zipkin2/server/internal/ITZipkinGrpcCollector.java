@@ -15,6 +15,7 @@ package zipkin2.server.internal;
 
 import com.linecorp.armeria.server.Server;
 import java.io.IOException;
+import java.util.List;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -34,7 +35,6 @@ import zipkin2.proto3.ListOfSpans;
 import zipkin2.proto3.ReportResponse;
 import zipkin2.storage.InMemoryStorage;
 
-import static java.util.Arrays.asList;
 import static okhttp3.Protocol.H2_PRIOR_KNOWLEDGE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -59,7 +59,7 @@ class ITZipkinGrpcCollector {
     storage.clear();
   }
 
-  OkHttpClient client = new OkHttpClient.Builder().protocols(asList(H2_PRIOR_KNOWLEDGE)).build();
+  OkHttpClient client = new OkHttpClient.Builder().protocols(List.of(H2_PRIOR_KNOWLEDGE)).build();
 
   ListOfSpans request;
 

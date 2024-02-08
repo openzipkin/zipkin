@@ -13,7 +13,6 @@
  */
 package zipkin2.server.internal.eureka;
 
-import com.linecorp.armeria.server.Server;
 import com.linecorp.armeria.server.eureka.EurekaUpdatingListener;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;

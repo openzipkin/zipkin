@@ -35,7 +35,6 @@ import zipkin2.TestObjects;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.storage.InMemoryStorage;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.FRONTEND;
@@ -52,7 +51,7 @@ import static zipkin2.TestObjects.UTF_8;
   }
 )
 public class ITZipkinServer {
-  static final List<Span> TRACE = asList(TestObjects.CLIENT_SPAN);
+  static final List<Span> TRACE = List.of(TestObjects.CLIENT_SPAN);
 
   @Autowired InMemoryStorage storage;
   @Autowired Server server;
@@ -170,7 +169,7 @@ public class ITZipkinServer {
 
   @Test void remoteServiceNameReturnsCorrectJsonForEscapedWhitespaceInName()
     throws Exception {
-    storage.accept(Arrays.asList(CLIENT_SPAN.toBuilder()
+    storage.accept(List.of(CLIENT_SPAN.toBuilder()
       .localEndpoint(FRONTEND.toBuilder().serviceName("foo\tbar").build())
       .build()))
       .execute();
@@ -180,9 +179,9 @@ public class ITZipkinServer {
   }
 
   @Test void setsCacheControlOnNameEndpointsWhenMoreThan3Services() throws Exception {
-    List<String> services = asList("foo", "bar", "baz", "quz");
+    List<String> services = List.of("foo", "bar", "baz", "quz");
     for (int i = 0; i < services.size(); i++) {
-      storage.accept(asList(
+      storage.accept(List.of(
         Span.newBuilder().traceId("a").id(i + 1).timestamp(TODAY).name("whopper")
           .localEndpoint(Endpoint.newBuilder().serviceName(services.get(i)).build())
           .remoteEndpoint(Endpoint.newBuilder().serviceName(services.get(i) + 1).build())

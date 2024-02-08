@@ -123,6 +123,9 @@ public final class QueryRequest {
     for (Iterator<Map.Entry<String, String>> i = annotationQuery().entrySet().iterator();
       i.hasNext(); ) {
       Map.Entry<String, String> next = i.next();
+      if (next.getKey().isEmpty()) {
+        continue; // Values can be empty, but keys cannot. Don't err as we didn't before.
+      }
       result.append(next.getKey());
       if (!next.getValue().isEmpty()) result.append('=').append(next.getValue());
       if (i.hasNext()) result.append(" and ");
@@ -249,8 +252,6 @@ public final class QueryRequest {
       if (remoteServiceName != null) remoteServiceName = remoteServiceName.toLowerCase(Locale.ROOT);
       if (spanName != null) spanName = spanName.toLowerCase(Locale.ROOT);
 
-      // remove any accidental empty strings
-      annotationQuery.remove("");
       if ("".equals(serviceName)) serviceName = null;
       if ("".equals(remoteServiceName)) remoteServiceName = null;
       if ("".equals(spanName) || "all".equals(spanName)) spanName = null;

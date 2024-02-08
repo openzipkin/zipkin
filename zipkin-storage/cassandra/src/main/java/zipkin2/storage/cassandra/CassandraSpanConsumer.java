@@ -15,7 +15,6 @@ package zipkin2.storage.cassandra;
 
 import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.uuid.Uuids;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -145,9 +144,9 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       // service span and remote service indexes is refreshed regardless of timestamp
       String remoteService = s.remoteServiceName();
       if (insertServiceRemoteService != null && remoteService != null) {
-        serviceRemoteServices.add(new SimpleImmutableEntry<>(service, remoteService));
+        serviceRemoteServices.add(Map.entry(service, remoteService));
       }
-      serviceSpans.add(new SimpleImmutableEntry<>(service, span));
+      serviceSpans.add(Map.entry(service, span));
 
       if (ts_micro == 0L) continue; // search is only valid with a timestamp, don't index w/o it!
       int bucket = durationIndexBucket(ts_micro); // duration index is milliseconds not microseconds

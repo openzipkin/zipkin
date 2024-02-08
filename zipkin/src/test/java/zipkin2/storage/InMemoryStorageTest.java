@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import zipkin2.Component;
@@ -25,7 +24,6 @@ import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
-import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
@@ -34,12 +32,12 @@ import static zipkin2.TestObjects.requestBuilder;
 
 class InMemoryStorageTest {
   InMemoryStorage storage =
-    InMemoryStorage.newBuilder().autocompleteKeys(asList("http.path")).build();
+    InMemoryStorage.newBuilder().autocompleteKeys(List.of("http.path")).build();
 
   @Test void getTraces_filteringMatchesMostRecentTraces() throws IOException {
     List<Endpoint> endpoints = IntStream.rangeClosed(1, 10)
       .mapToObj(i -> Endpoint.newBuilder().serviceName("service" + i).ip("127.0.0.1").build())
-      .collect(Collectors.toList());
+      .toList();
 
     long gapBetweenSpans = 100;
     List<Span> earlySpans =
@@ -83,8 +81,8 @@ class InMemoryStorageTest {
 
   /** Ensures we don't overload a partition due to key equality being conflated with order */
   @Test void differentiatesOnTraceIdWhenTimestampEqual() throws IOException {
-    storage.accept(asList(CLIENT_SPAN)).execute();
-    storage.accept(asList(CLIENT_SPAN.toBuilder().traceId("333").build())).execute();
+    storage.accept(List.of(CLIENT_SPAN)).execute();
+    storage.accept(List.of(CLIENT_SPAN.toBuilder().traceId("333").build())).execute();
 
     assertThat(storage).extracting("spansByTraceIdTimestamp.delegate")
       .satisfies(map -> assertThat((Map) map).hasSize(2));
@@ -99,8 +97,8 @@ class InMemoryStorageTest {
       .timestamp(TODAY * 1000)
       .build();
 
-    storage.accept(asList(span)).execute();
-    storage.accept(asList(span)).execute();
+    storage.accept(List.of(span)).execute();
+    storage.accept(List.of(span)).execute();
 
     assertThat(storage.getDependencies(TODAY + 1000L, TODAY).execute()).containsOnly(
       DependencyLink.newBuilder().parent("kafka").child("app").callCount(1L).build()
@@ -118,7 +116,7 @@ class InMemoryStorageTest {
       .timestamp(TODAY * 1000)
       .build();
 
-    storage.accept(asList(span1, span2)).execute();
+    storage.accept(List.of(span1, span2)).execute();
 
     assertThat(storage.getSpanNames("app").execute()).containsOnly(
       "root"
@@ -152,7 +150,7 @@ class InMemoryStorageTest {
       .putTag("http.path", "/users")
       .timestamp(TODAY * 1000)
       .build();
-    storage.accept(asList(span1, span2, span3, span4)).execute();
+    storage.accept(List.of(span1, span2, span3, span4)).execute();
 
     assertThat(storage.getKeys().execute()).containsOnlyOnce("http.path");
     assertThat(storage.getValues("http.path").execute()).containsOnlyOnce("/users");
@@ -177,11 +175,11 @@ class InMemoryStorageTest {
       .timestamp(TODAY * 1000)
       .build();
 
-    storage.accept(asList(trace1Span1, trace1Span2, trace2Span1, trace2Span2)).execute();
+    storage.accept(List.of(trace1Span1, trace1Span2, trace2Span1, trace2Span2)).execute();
 
-    assertThat(storage.getTraces(asList("1", "2")).execute()).containsExactly(
-      asList(trace1Span1, trace1Span2),
-      asList(trace2Span1, trace2Span2)
+    assertThat(storage.getTraces(List.of("1", "2")).execute()).containsExactly(
+      List.of(trace1Span1, trace1Span2),
+      List.of(trace2Span1, trace2Span2)
     );
   }
 

@@ -14,13 +14,13 @@
 package zipkin2.storage;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -68,8 +68,8 @@ class QueryRequestTest {
     Map<String, String> query = new LinkedHashMap<>();
     query.put("", "bar");
 
-    assertThat(queryBuilder.annotationQuery(query).build().annotationQuery())
-      .isEmpty();
+    assertThat(queryBuilder.annotationQuery(query).build().annotationQueryString())
+      .isNull();
   }
 
   @Test void annotationQueryTrimsSpaces() {
@@ -184,7 +184,7 @@ class QueryRequestTest {
     QueryRequest request = queryBuilder
       .build();
 
-    assertThat(request.test(asList(span)))
+    assertThat(request.test(List.of(span)))
       .isTrue();
   }
 
@@ -192,7 +192,7 @@ class QueryRequestTest {
     QueryRequest request = queryBuilder
       .build();
 
-    assertThat(request.test(asList(
+    assertThat(request.test(List.of(
       span.toBuilder().id("2").parentId(span.id()).timestamp(null).build(),
       span
     ))).isTrue();
@@ -202,7 +202,7 @@ class QueryRequestTest {
     QueryRequest request = queryBuilder
       .build();
 
-    assertThat(request.test(asList(
+    assertThat(request.test(List.of(
       span.toBuilder().id("2").parentId(span.id()).timestamp(span.timestamp() + TestObjects.DAY * 1000).build(),
       span.toBuilder().id("3").parentId(span.id()).build()
     ))).isTrue();
@@ -212,7 +212,7 @@ class QueryRequestTest {
     QueryRequest request = queryBuilder
       .build();
 
-    assertThat(request.test(asList(span.toBuilder().timestamp(null).build())))
+    assertThat(request.test(List.of(span.toBuilder().timestamp(null).build())))
       .isFalse();
   }
 
@@ -221,7 +221,7 @@ class QueryRequestTest {
       .endTs(TestObjects.TODAY + 70)
       .build();
 
-    assertThat(request.test(asList(span)))
+    assertThat(request.test(List.of(span)))
       .isFalse();
   }
 
@@ -230,7 +230,7 @@ class QueryRequestTest {
       .serviceName("aloha")
       .build();
 
-    assertThat(request.test(asList(span)))
+    assertThat(request.test(List.of(span)))
       .isFalse();
   }
 
@@ -239,10 +239,10 @@ class QueryRequestTest {
       .spanName("aloha")
       .build();
 
-    assertThat(request.test(asList(span)))
+    assertThat(request.test(List.of(span)))
       .isFalse();
 
-    assertThat(request.test(asList(span.toBuilder().name("aloha").build())))
+    assertThat(request.test(List.of(span.toBuilder().name("aloha").build())))
       .isTrue();
   }
 
@@ -251,10 +251,10 @@ class QueryRequestTest {
       .remoteServiceName("db")
       .build();
 
-    assertThat(request.test(asList(span)))
+    assertThat(request.test(List.of(span)))
       .isFalse();
 
-    assertThat(request.test(asList(span.toBuilder().remoteEndpoint(Endpoint.newBuilder().serviceName("db").build()).build())))
+    assertThat(request.test(List.of(span.toBuilder().remoteEndpoint(Endpoint.newBuilder().serviceName("db").build()).build())))
       .isTrue();
   }
 
@@ -263,10 +263,10 @@ class QueryRequestTest {
       .minDuration(100L)
       .build();
 
-    assertThat(request.test(asList(span.toBuilder().duration(99L).build())))
+    assertThat(request.test(List.of(span.toBuilder().duration(99L).build())))
       .isFalse();
 
-    assertThat(request.test(asList(span.toBuilder().duration(100L).build())))
+    assertThat(request.test(List.of(span.toBuilder().duration(100L).build())))
       .isTrue();
   }
 
@@ -276,13 +276,13 @@ class QueryRequestTest {
       .maxDuration(110L)
       .build();
 
-    assertThat(request.test(asList(span.toBuilder().duration(99L).build())))
+    assertThat(request.test(List.of(span.toBuilder().duration(99L).build())))
       .isFalse();
 
-    assertThat(request.test(asList(span.toBuilder().duration(100L).build())))
+    assertThat(request.test(List.of(span.toBuilder().duration(100L).build())))
       .isTrue();
 
-    assertThat(request.test(asList(span.toBuilder().duration(111L).build())))
+    assertThat(request.test(List.of(span.toBuilder().duration(111L).build())))
       .isFalse();
   }
 
@@ -306,13 +306,13 @@ class QueryRequestTest {
     QueryRequest query = queryBuilder
       .parseAnnotationQuery("baz").build();
 
-    assertThat(query.test(asList(foo)))
+    assertThat(query.test(List.of(foo)))
       .isFalse();
-    assertThat(query.test(asList(barAndFoo)))
+    assertThat(query.test(List.of(barAndFoo)))
       .isFalse();
-    assertThat(query.test(asList(barAndFooAndBazAndQux)))
+    assertThat(query.test(List.of(barAndFooAndBazAndQux)))
       .isTrue();
-    assertThat(query.test(asList(fooAndBazAndQux)))
+    assertThat(query.test(List.of(fooAndBazAndQux)))
       .isTrue();
   }
 
@@ -320,13 +320,13 @@ class QueryRequestTest {
     QueryRequest query = queryBuilder
       .parseAnnotationQuery("foo").build();
 
-    assertThat(query.test(asList(foo)))
+    assertThat(query.test(List.of(foo)))
       .isTrue();
-    assertThat(query.test(asList(barAndFoo)))
+    assertThat(query.test(List.of(barAndFoo)))
       .isTrue();
-    assertThat(query.test(asList(barAndFooAndBazAndQux)))
+    assertThat(query.test(List.of(barAndFooAndBazAndQux)))
       .isTrue();
-    assertThat(query.test(asList(fooAndBazAndQux)))
+    assertThat(query.test(List.of(fooAndBazAndQux)))
       .isTrue();
   }
 
@@ -334,13 +334,13 @@ class QueryRequestTest {
     QueryRequest query = queryBuilder
       .parseAnnotationQuery("foo and bar").build();
 
-    assertThat(query.test(asList(foo)))
+    assertThat(query.test(List.of(foo)))
       .isFalse();
-    assertThat(query.test(asList(barAndFoo)))
+    assertThat(query.test(List.of(barAndFoo)))
       .isTrue();
-    assertThat(query.test(asList(barAndFooAndBazAndQux)))
+    assertThat(query.test(List.of(barAndFooAndBazAndQux)))
       .isTrue();
-    assertThat(query.test(asList(fooAndBazAndQux)))
+    assertThat(query.test(List.of(fooAndBazAndQux)))
       .isFalse();
   }
 
@@ -348,13 +348,13 @@ class QueryRequestTest {
     QueryRequest query = queryBuilder
       .parseAnnotationQuery("foo and bar and baz=qux").build();
 
-    assertThat(query.test(asList(foo)))
+    assertThat(query.test(List.of(foo)))
       .isFalse();
-    assertThat(query.test(asList(barAndFoo)))
+    assertThat(query.test(List.of(barAndFoo)))
       .isFalse();
-    assertThat(query.test(asList(barAndFooAndBazAndQux)))
+    assertThat(query.test(List.of(barAndFooAndBazAndQux)))
       .isTrue();
-    assertThat(query.test(asList(fooAndBazAndQux)))
+    assertThat(query.test(List.of(fooAndBazAndQux)))
       .isFalse();
   }
 }
