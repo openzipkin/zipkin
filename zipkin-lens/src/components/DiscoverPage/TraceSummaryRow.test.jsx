@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest';
 import React from 'react';
 import TraceSummaryRow from './TraceSummaryRow';
 import render from '../../test/util/render-with-default-settings';
-import {queryByTestId, screen} from "@testing-library/react";
+import { screen } from '@testing-library/react';
 
 describe('<TraceSummaryRow />', () => {
   it('should render timestamp and duration in correct unit', () => {
@@ -40,7 +40,9 @@ describe('<TraceSummaryRow />', () => {
       </table>,
     );
 
-    const startTimeFormat = screen.getByTestId('TraceSummaryRow-startTimeFormat');
+    const startTimeFormat = screen.getByTestId(
+      'TraceSummaryRow-startTimeFormat',
+    );
     expect(startTimeFormat).toBeDefined();
     // Don't assert on hour as the timezone will be different in CI
     expect(startTimeFormat.textContent).toMatch(

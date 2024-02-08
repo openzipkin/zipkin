@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -35,7 +35,8 @@ describe('<ServiceBadge />', () => {
   });
 
   it('should render delete button when onDelete is set', () => {
-    render(<ServiceBadge serviceName="serviceA" onDelete={()=>{}} />);
+    // eslint-disable-next-line no-empty-function
+    render(<ServiceBadge serviceName="serviceA" onDelete={() => undefined} />);
     const items = screen.getByTestId('delete-button');
     expect(items.children.length).toBe(1);
   });

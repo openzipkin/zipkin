@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,7 +17,7 @@ import {
   ThemeProvider as MuiThemeProvider,
 } from '@material-ui/core';
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';
-import React, {Suspense, useMemo} from 'react';
+import React, { Suspense, useMemo } from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter, Route } from 'react-router-dom';
 import { useTitle } from 'react-use';
@@ -34,9 +34,11 @@ import AlertSnackbar from './AlertSnackbar';
 
 const App: React.FC = () => {
   useTitle('Zipkin');
-  const baseName = useMemo(()=>{
-    return import.meta.env.DEV ? '/zipkin' : import.meta.env.BASE_PATH as string
-  },[])
+  const baseName = useMemo(() => {
+    return import.meta.env.DEV
+      ? '/zipkin'
+      : (import.meta.env.BASE_PATH as string);
+  }, []);
 
   return (
     <Suspense fallback={<CircularProgress />}>

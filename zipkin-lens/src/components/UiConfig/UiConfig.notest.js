@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,10 +13,14 @@
  */
 import { render, screen } from '@testing-library/react';
 import fetchMock from 'fetch-mock';
-import {afterEach, beforeEach, it, describe, expect} from "vitest";
+import { afterEach, beforeEach, it, describe, expect } from 'vitest';
 import React, { Suspense } from 'react';
 
-import {defaultConfig, UiConfigConsumer, UiConfig as RawUIConfig} from './UiConfig';
+import {
+  defaultConfig,
+  UiConfigConsumer,
+  UiConfig as RawUIConfig,
+} from './UiConfig';
 import { UI_CONFIG } from '../../constants/api';
 
 afterEach(() => {
@@ -29,7 +33,6 @@ beforeEach(() => {
 });
 
 const UiConfig = () => {
-
   return (
     <Suspense fallback="Suspended">
       <RawUIConfig>
