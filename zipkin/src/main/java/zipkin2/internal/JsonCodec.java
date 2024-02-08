@@ -15,7 +15,6 @@ package zipkin2.internal;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -222,7 +221,9 @@ public final class JsonCodec {
 
   static IllegalArgumentException exceptionReading(String type, Exception e) {
     String cause = e.getMessage() == null ? "Error" : e.getMessage();
-    if (cause.contains("Expected BEGIN_OBJECT") || cause.contains("malformed")) {
+    if (cause.contains("Expected BEGIN_OBJECT")
+      || cause.contains("Expected BEGIN_ARRAY")
+      || cause.contains("malformed")) {
       cause = "Malformed";
     }
     String message = format("%s reading %s from json", cause, type);
