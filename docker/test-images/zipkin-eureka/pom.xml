@@ -60,6 +60,13 @@
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
       <version>4.1.0</version>
+      <exclusions>
+        <!-- dodge spring-jcl conflict error -->
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- Get rid of log warning saying to use Caffeine -->
