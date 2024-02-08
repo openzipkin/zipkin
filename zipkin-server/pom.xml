@@ -167,7 +167,7 @@
     </dependency>
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-brave</artifactId>
+      <artifactId>armeria-brave6</artifactId>
       <version>${armeria.version}</version>
     </dependency>
     <dependency>
