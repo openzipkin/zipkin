@@ -15,7 +15,7 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/alpine
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG alpine_version=3.19.0
+ARG alpine_version=3.19.1
 
 # java_version is used during the installation process to build or download the zipkin-lens jar.
 #
