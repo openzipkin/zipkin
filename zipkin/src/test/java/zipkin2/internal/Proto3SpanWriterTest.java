@@ -13,9 +13,9 @@
  */
 package zipkin2.internal;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.internal.Proto3ZipkinFields.SPAN;
@@ -33,7 +33,7 @@ public class Proto3SpanWriterTest {
   }
 
   @Test void writeList_startsWithSpanKeyAndLengthPrefix() {
-    byte[] bytes = writer.writeList(asList(CLIENT_SPAN));
+    byte[] bytes = writer.writeList(List.of(CLIENT_SPAN));
 
     assertThat(bytes)
       .hasSize(writer.sizeInBytes(CLIENT_SPAN))
@@ -41,7 +41,7 @@ public class Proto3SpanWriterTest {
   }
 
   @Test void writeList_multiple() {
-    byte[] bytes = writer.writeList(asList(CLIENT_SPAN, CLIENT_SPAN));
+    byte[] bytes = writer.writeList(List.of(CLIENT_SPAN, CLIENT_SPAN));
 
     assertThat(bytes)
       .hasSize(writer.sizeInBytes(CLIENT_SPAN) * 2)
@@ -49,13 +49,13 @@ public class Proto3SpanWriterTest {
   }
 
   @Test void writeList_empty() {
-    assertThat(writer.writeList(asList()))
+    assertThat(writer.writeList(List.of()))
       .isEmpty();
   }
 
   @Test void writeList_offset_startsWithSpanKeyAndLengthPrefix() {
     byte[] bytes = new byte[2048];
-    writer.writeList(asList(CLIENT_SPAN, CLIENT_SPAN), bytes, 0);
+    writer.writeList(List.of(CLIENT_SPAN, CLIENT_SPAN), bytes, 0);
 
     assertThat(bytes)
       .startsWith((byte) 10, SPAN.sizeOfValue(CLIENT_SPAN));

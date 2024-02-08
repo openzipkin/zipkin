@@ -13,7 +13,6 @@
  */
 package zipkin2.collector.kafka;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -54,9 +53,9 @@ import static zipkin2.codec.SpanBytesEncoder.THRIFT;
 @Timeout(60)
 @Tag("docker")
 class ITKafkaCollector {
-  @RegisterExtension KafkaExtension kafka = new KafkaExtension();
+  @RegisterExtension static KafkaExtension kafka = new KafkaExtension();
 
-  List<Span> spans = Arrays.asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
+  List<Span> spans = List.of(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
 
   InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
   InMemoryCollectorMetrics kafkaMetrics = metrics.forTransport("kafka");

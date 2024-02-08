@@ -25,7 +25,6 @@ import zipkin2.storage.ITStorage;
 import zipkin2.storage.StorageComponent;
 import zipkin2.storage.cassandra.internal.call.InsertEntry;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.Span.Kind.SERVER;
 import static zipkin2.TestObjects.CLIENT_SPAN;
@@ -83,7 +82,7 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
     );
 
     // sanity check base case
-    withoutStrictTraceId.accept(asList(trace)).execute();
+    withoutStrictTraceId.accept(List.of(trace)).execute();
     blockWhileInFlight();
 
     assertThat(rowCountForTraceByServiceSpan(storage))

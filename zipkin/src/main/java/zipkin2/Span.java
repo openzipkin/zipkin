@@ -16,8 +16,6 @@ package zipkin2;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -598,7 +596,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       String missing = "";
       if (traceId == null) missing += " traceId";
       if (id == null) missing += " id";
-      if (!"".equals(missing)) throw new IllegalStateException("Missing :" + missing);
+      if (!missing.isEmpty()) throw new IllegalStateException("Missing :" + missing);
       if (id.equals(parentId)) { // edge case, so don't require a logger field
         Logger logger = Logger.getLogger(Span.class.getName());
         if (logger.isLoggable(FINEST)) {

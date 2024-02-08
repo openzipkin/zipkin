@@ -18,7 +18,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import zipkin2.Span;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.FRONTEND;
@@ -31,7 +30,7 @@ class StrictTraceIdTest {
   @Test void filterTraces_skipsOnNoClash() {
     Span oneOne = Span.newBuilder().traceId(1, 1).id(1).build();
     Span oneTwo = Span.newBuilder().traceId(1, 2).id(1).build();
-    List<List<Span>> traces = asList(asList(oneOne), asList(oneTwo));
+    List<List<Span>> traces = List.of(List.of(oneOne), List.of(oneTwo));
 
     assertThat(StrictTraceId.filterTraces(
       requestBuilder().spanName("11").build()
@@ -84,7 +83,7 @@ class StrictTraceIdTest {
     Span span3 =
       span1.toBuilder().traceId("1" + span1.traceId()).name("3").putTag("foo", "3").build();
 
-    return new ArrayList<>(asList(asList(span1), asList(span2), asList(span3)));
+    return new ArrayList<>(List.of(List.of(span1), List.of(span2), List.of(span3)));
   }
 
   @Test void hasClashOnLowerTraceId() {
@@ -93,11 +92,11 @@ class StrictTraceIdTest {
     Span zeroOne = Span.newBuilder().traceId(0, 1).id(1).build();
     Span oneTwo = Span.newBuilder().traceId(1, 2).id(1).build();
 
-    assertThat(StrictTraceId.hasClashOnLowerTraceId(asList(asList(oneOne), asList(oneTwo))))
+    assertThat(StrictTraceId.hasClashOnLowerTraceId(List.of(List.of(oneOne), List.of(oneTwo))))
       .isFalse();
-    assertThat(StrictTraceId.hasClashOnLowerTraceId(asList(asList(oneOne), asList(twoOne))))
+    assertThat(StrictTraceId.hasClashOnLowerTraceId(List.of(List.of(oneOne), List.of(twoOne))))
       .isTrue();
-    assertThat(StrictTraceId.hasClashOnLowerTraceId(asList(asList(oneOne), asList(zeroOne))))
+    assertThat(StrictTraceId.hasClashOnLowerTraceId(List.of(List.of(oneOne), List.of(zeroOne))))
       .isTrue();
   }
 }

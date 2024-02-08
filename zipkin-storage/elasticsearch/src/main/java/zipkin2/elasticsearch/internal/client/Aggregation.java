@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,6 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -41,7 +40,7 @@ public class Aggregation {
 
   public static Aggregation min(String field) {
     Aggregation result = new Aggregation(field);
-    result.min = Collections.singletonMap("field", field);
+    result.min = Map.of("field", field);
     return result;
   }
 
@@ -68,7 +67,7 @@ public class Aggregation {
     Map<String, String> order;
 
     void order(String agg, String direction) {
-      order = Collections.singletonMap(agg, direction);
+      order = Map.of(agg, direction);
     }
 
     public String getField() {

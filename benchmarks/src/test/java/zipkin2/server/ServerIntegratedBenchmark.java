@@ -20,7 +20,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -223,21 +222,21 @@ class ServerIntegratedBenchmark {
     WebClient prometheusClient = WebClient.of(
       "h1c://" + prometheus.getContainerIpAddress() + ":" + prometheus.getFirstMappedPort());
 
-    System.out.println("Messages received: %s".formatted(prometheusValue(
-      prometheusClient, "sum(zipkin_collector_messages_total)")));
-    System.out.println("Spans received: %s".formatted(prometheusValue(
-      prometheusClient, "sum(zipkin_collector_spans_total)")));
-    System.out.println("Spans dropped: %s".formatted(prometheusValue(
-      prometheusClient, "sum(zipkin_collector_spans_dropped_total)")));
+    System.out.printf("Messages received: %s%n", prometheusValue(
+      prometheusClient, "sum(zipkin_collector_messages_total)"));
+    System.out.printf("Spans received: %s%n", prometheusValue(
+      prometheusClient, "sum(zipkin_collector_spans_total)"));
+    System.out.printf("Spans dropped: %s%n", prometheusValue(
+      prometheusClient, "sum(zipkin_collector_spans_dropped_total)"));
 
     System.out.println("Memory quantiles:");
     printQuartiles(prometheusClient, "jvm_memory_used_bytes{area=\"heap\"}");
     printQuartiles(prometheusClient, "jvm_memory_used_bytes{area=\"nonheap\"}");
 
-    System.out.println("Total GC time (s): %s".formatted(
-      prometheusValue(prometheusClient, "sum(jvm_gc_pause_seconds_sum)")));
-    System.out.println("Number of GCs: %s".formatted(
-      prometheusValue(prometheusClient, "sum(jvm_gc_pause_seconds_count)")));
+    System.out.printf(
+        "Total GC time (s): %s%n", prometheusValue(prometheusClient, "sum(jvm_gc_pause_seconds_sum)"));
+    System.out.printf(
+        "Number of GCs: %s%n", prometheusValue(prometheusClient, "sum(jvm_gc_pause_seconds_count)"));
 
     System.out.println("POST Spans latency (s)");
     printHistogram(prometheusClient, """
@@ -331,19 +330,18 @@ class ServerIntegratedBenchmark {
   }
 
   static void printContainerMapping(GenericContainer<?> container) {
-    System.out.println(
-      "Container %s ports exposed at %s".formatted(
-      container.getDockerImageName(),
-      container.getExposedPorts().stream()
-        .map(port -> new SimpleImmutableEntry<>(port,
-          "http://" + container.getContainerIpAddress() + ":" + container.getMappedPort(port)))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
+    System.out.printf(
+        "Container %s ports exposed at %s%n", container.getDockerImageName(),
+    container.getExposedPorts().stream()
+      .map(port -> Map.entry(port,
+        "http://" + container.getContainerIpAddress() + ":" + container.getMappedPort(port)))
+      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
   static void printQuartiles(WebClient prometheus, String metric) throws Exception {
     for (double quantile : Arrays.asList(0.0, 0.25, 0.5, 0.75, 1.0)) {
       String value = prometheusValue(prometheus, "quantile(" + quantile + ", " + metric + ")");
-      System.out.println("%s[%s] = %s".formatted(metric, quantile, value));
+      System.out.printf("%s[%s] = %s%n", metric, quantile, value);
     }
   }
 
@@ -351,7 +349,7 @@ class ServerIntegratedBenchmark {
     for (double quantile : Arrays.asList(0.5, 0.9, 0.99)) {
       String value =
         prometheusValue(prometheus, "histogram_quantile(" + quantile + ", " + metric + ")");
-      System.out.println("%s[%s] = %s".formatted(metric, quantile, value));
+      System.out.printf("%s[%s] = %s%n", metric, quantile, value);
     }
   }
 

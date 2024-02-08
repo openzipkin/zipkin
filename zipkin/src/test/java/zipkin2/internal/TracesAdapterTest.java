@@ -13,11 +13,11 @@
  */
 package zipkin2.internal;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import zipkin2.TestObjects;
 import zipkin2.storage.InMemoryStorage;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TracesAdapterTest {
@@ -31,16 +31,16 @@ class TracesAdapterTest {
   @Test void getTraces_doesntReturnEmptyElements() throws Exception {
     storage.accept(TestObjects.TRACE).execute();
 
-    assertThat(adapter.getTraces(asList()).execute())
+    assertThat(adapter.getTraces(List.of()).execute())
       .isEmpty();
 
-    assertThat(adapter.getTraces(asList("1")).execute())
+    assertThat(adapter.getTraces(List.of("1")).execute())
       .isEmpty();
 
-    assertThat(adapter.getTraces(asList("1", "2")).execute())
+    assertThat(adapter.getTraces(List.of("1", "2")).execute())
       .isEmpty();
 
-    assertThat(adapter.getTraces(asList("1", TestObjects.TRACE.get(0).traceId(), "3")).execute())
+    assertThat(adapter.getTraces(List.of("1", TestObjects.TRACE.get(0).traceId(), "3")).execute())
       .containsExactly(TestObjects.TRACE);
   }
 }

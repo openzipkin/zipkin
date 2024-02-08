@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,6 @@
 package zipkin2.internal;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -31,6 +30,8 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
 @Fork(3)
@@ -39,7 +40,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @State(Scope.Thread)
 @Threads(1)
 public class WriteBufferBenchmarks {
-  static final Charset UTF_8 = Charset.forName("UTF-8");
   // Order id = d07c4daa-0fa9-4c03-90b1-e06c4edae250 doesn't exist
   static final String CHINESE_UTF8 = "订单d07c4daa-0fa9-4c03-90b1-e06c4edae250不存在";
   static final int CHINESE_UTF8_SIZE = UTF_8.encode(CHINESE_UTF8).remaining();

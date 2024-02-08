@@ -17,7 +17,6 @@ import static zipkin2.elasticsearch.ElasticsearchVersion.V5_0;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V6_0;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V7_8;
-import static zipkin2.elasticsearch.ElasticsearchVersion.V8_0;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V9_0;
 
 /** Returns version-specific index templates */
@@ -66,8 +65,7 @@ final class VersionSpecificTemplates {
   String indexProperties(ElasticsearchVersion version) {
     // 6.x _all disabled https://www.elastic.co/guide/en/elasticsearch/reference/6.7/breaking-changes-6.0.html#_the_literal__all_literal_meta_field_is_now_disabled_by_default
     // 7.x _default disallowed https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_the_literal__default__literal_mapping_is_no_longer_allowed
-    String result = ""
-      + "    \"index.number_of_shards\": " + indexShards + ",\n"
+    String result = "    \"index.number_of_shards\": " + indexShards + ",\n"
       + "    \"index.number_of_replicas\": " + indexReplicas + ",\n"
       + "    \"index.requests.cache.enable\": true";
     return result + "\n";
@@ -146,8 +144,7 @@ final class VersionSpecificTemplates {
     if (searchEnabled) {
       return result
         + ("  \"mappings\": {\n"
-        + maybeWrap(TYPE_SPAN, version, ""
-        + "    \"_source\": {\"excludes\": [\"_q\"] },\n"
+        + maybeWrap(TYPE_SPAN, version, "    \"_source\": {\"excludes\": [\"_q\"] },\n"
         + "    \"dynamic_templates\": [\n"
         + "      {\n"
         + "        \"strings\": {\n"
@@ -187,8 +184,7 @@ final class VersionSpecificTemplates {
     }
     return result
       + ("  \"mappings\": {\n"
-      + maybeWrap(TYPE_SPAN, version, ""
-      + "    \"properties\": {\n"
+      + maybeWrap(TYPE_SPAN, version, "    \"properties\": {\n"
       + "      \"traceId\": " + traceIdMapping + ",\n"
       + "      \"annotations\": { \"enabled\": false },\n"
       + "      \"tags\": { \"enabled\": false }\n"
@@ -213,8 +209,7 @@ final class VersionSpecificTemplates {
     return beginTemplate(TYPE_AUTOCOMPLETE, version)
       + "  },\n"
       + "  \"mappings\": {\n"
-      + maybeWrap(TYPE_AUTOCOMPLETE, version, ""
-      + "    \"enabled\": true,\n"
+      + maybeWrap(TYPE_AUTOCOMPLETE, version, "    \"enabled\": true,\n"
       + "    \"properties\": {\n"
       + "      \"tagKey\": " + KEYWORD + ",\n"
       + "      \"tagValue\": " + KEYWORD + "\n"

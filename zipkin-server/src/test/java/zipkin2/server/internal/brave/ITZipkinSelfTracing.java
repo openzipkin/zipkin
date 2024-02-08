@@ -15,8 +15,8 @@ package zipkin2.server.internal.brave;
 
 import com.linecorp.armeria.server.Server;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -34,7 +34,6 @@ import zipkin2.reporter.brave.AsyncZipkinSpanHandler;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.QueryRequest;
 
-import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static zipkin2.TestObjects.DAY;
@@ -77,7 +76,7 @@ class ITZipkinSelfTracing {
     List<List<Span>> traces = awaitSpans(2);
 
     assertQueryReturnsResults(QueryRequest.newBuilder()
-      .annotationQuery(singletonMap("http.path", "/api/v2/services")), traces);
+      .annotationQuery(Map.of("http.path", "/api/v2/services")), traces);
 
     assertQueryReturnsResults(QueryRequest.newBuilder().spanName("get-service-names"), traces);
   }
@@ -90,7 +89,7 @@ class ITZipkinSelfTracing {
     List<List<Span>> traces = awaitSpans(3); // test span + POST + accept-spans
 
     assertQueryReturnsResults(QueryRequest.newBuilder()
-      .annotationQuery(singletonMap("http.path", "/api/v1/spans")), traces);
+      .annotationQuery(Map.of("http.path", "/api/v1/spans")), traces);
 
     assertQueryReturnsResults(QueryRequest.newBuilder().spanName("accept-spans"), traces);
   }
@@ -103,7 +102,7 @@ class ITZipkinSelfTracing {
     List<List<Span>> traces = awaitSpans(3); // test span + POST + accept-spans
 
     assertQueryReturnsResults(QueryRequest.newBuilder()
-      .annotationQuery(singletonMap("http.path", "/api/v2/spans")), traces);
+      .annotationQuery(Map.of("http.path", "/api/v2/spans")), traces);
 
     assertQueryReturnsResults(QueryRequest.newBuilder().spanName("accept-spans"), traces);
   }
@@ -122,7 +121,7 @@ class ITZipkinSelfTracing {
   List<List<Span>> awaitSpans(int count) {
     await().untilAsserted(() -> { // wait for spans
       List<List<Span>> traces = inMemoryStorage().getTraces();
-      long received = traces.stream().flatMap(List::stream).count();
+      long received = traces.stream().mapToLong(List::size).sum();
       assertThat(inMemoryStorage().acceptedSpanCount())
         .withFailMessage("Wanted %s spans: got %s. Current traces: %s", count, received, traces)
         .isGreaterThanOrEqualTo(count);
@@ -146,7 +145,7 @@ class ITZipkinSelfTracing {
     SpanBytesEncoder encoder =
       "v1".equals(version) ? SpanBytesEncoder.JSON_V1 : SpanBytesEncoder.JSON_V2;
 
-    List<Span> testTrace = Collections.singletonList(
+    List<Span> testTrace = List.of(
       Span.newBuilder().timestamp(TODAY).traceId("1").id("2").name("test-trace").build()
     );
 

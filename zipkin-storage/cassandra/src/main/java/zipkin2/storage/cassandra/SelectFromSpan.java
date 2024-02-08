@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,7 +18,6 @@ import com.datastax.oss.driver.api.core.cql.AsyncResultSet;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -65,11 +64,9 @@ final class SelectFromSpan extends ResultSetFutureCall<AsyncResultSet> {
       // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
       Set<String> traceIds;
       if (!strictTraceId && hexTraceId.length() == 32) {
-        traceIds = new LinkedHashSet<>();
-        traceIds.add(hexTraceId);
-        traceIds.add(hexTraceId.substring(16));
+        traceIds = Set.of(hexTraceId, hexTraceId.substring(16));
       } else {
-        traceIds = Collections.singleton(hexTraceId);
+        traceIds = Set.of(hexTraceId);
       }
 
       Call<List<Span>> result =

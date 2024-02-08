@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -32,7 +33,6 @@ import static zipkin2.codec.SpanBytesEncoderTest.LOCAL_SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.NO_ANNOTATIONS_ROOT_SERVER_SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.UTF8_SPAN;
-import static zipkin2.codec.SpanBytesEncoderTest.UTF_8;
 
 class SpanBytesDecoderTest {
   Span span = SPAN;
@@ -43,7 +43,8 @@ class SpanBytesDecoderTest {
       byte[] encoded = SpanBytesEncoder.PROTO3.encodeList(TRACE);
       SpanBytesDecoder.PROTO3.decodeList(Arrays.copyOfRange(encoded, 0, 10));
     });
-    assertThat(exception.getMessage()).contains("Truncated: length 66 > bytes available 8 reading List<Span> from proto3");
+    assertThat(exception.getMessage()).contains(
+      "Truncated: length 66 > bytes available 8 reading List<Span> from proto3");
   }
 
   @Test void niceErrorOnTruncatedSpan_PROTO3() {
@@ -52,7 +53,8 @@ class SpanBytesDecoderTest {
       byte[] encoded = SpanBytesEncoder.PROTO3.encode(SPAN);
       SpanBytesDecoder.PROTO3.decodeOne(Arrays.copyOfRange(encoded, 0, 10));
     });
-    assertThat(exception.getMessage()).contains("Truncated: length 179 > bytes available 7 reading Span from proto3");
+    assertThat(exception.getMessage()).contains(
+      "Truncated: length 179 > bytes available 7 reading Span from proto3");
   }
 
   @Test void emptyListOk_JSON_V1() {
@@ -174,7 +176,8 @@ class SpanBytesDecoderTest {
 
       SpanBytesDecoder.PROTO3.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
     });
-    assertThat(exception.getMessage()).contains("Truncated: length 101 > bytes available 3 reading List<Span> from proto3");
+    assertThat(exception.getMessage()).contains(
+      "Truncated: length 101 > bytes available 3 reading List<Span> from proto3");
   }
 
   @Test void traceRoundTrip_JSON_V2() {
@@ -305,7 +308,8 @@ class SpanBytesDecoderTest {
 
       SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
     });
-    assertThat(exception.getMessage()).contains("48485A3953BB6124 should be lower-hex encoded with no prefix");
+    assertThat(exception.getMessage()).contains(
+      "48485A3953BB6124 should be lower-hex encoded with no prefix");
   }
 
   @Test void readsTraceIdHighFromTraceIdField() {
@@ -432,7 +436,8 @@ class SpanBytesDecoderTest {
 
       SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
     });
-    assertThat(exception.getMessage()).contains("Incomplete annotation at $.annotations[0].timestamp");
+    assertThat(exception.getMessage()).contains(
+      "Incomplete annotation at $.annotations[0].timestamp");
   }
 
   @Test void niceErrorOnNull_traceId() {

@@ -22,6 +22,7 @@ import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.testing.junit5.server.mock.MockWebServerExtension;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +34,6 @@ import zipkin2.Span.Kind;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.storage.SpanConsumer;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin2.TestObjects.TODAY;
@@ -53,7 +53,7 @@ class ElasticsearchSpanConsumerTest {
 
   @BeforeEach void setUp() throws Exception {
     storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri()))
-      .autocompleteKeys(asList("environment"))
+      .autocompleteKeys(List.of("environment"))
       .build();
 
     ensureIndexTemplate();
@@ -219,7 +219,7 @@ class ElasticsearchSpanConsumerTest {
     Span span =
       Span.newBuilder().traceId("20").id("20").name("get").timestamp(TODAY * 1000).build();
 
-    storage.spanConsumer().accept(asList(span)).execute();
+    storage.spanConsumer().accept(List.of(span)).execute();
 
     assertThat(server.takeRequest().request().contentUtf8()).doesNotContain("timestamp_millis");
   }
@@ -285,6 +285,6 @@ class ElasticsearchSpanConsumerTest {
   }
 
   void accept(Span... spans) throws Exception {
-    spanConsumer.accept(asList(spans)).execute();
+    spanConsumer.accept(List.of(spans)).execute();
   }
 }

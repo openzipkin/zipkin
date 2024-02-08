@@ -15,6 +15,7 @@ package zipkin2.collector.scribe;
 
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.thrift.async.AsyncMethodCallback;
@@ -35,7 +36,6 @@ import zipkin2.v1.V1Span;
 import zipkin2.v1.V1SpanConverter;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -108,7 +108,7 @@ class ScribeSpanConsumerTest {
     expectSuccess(scribe, entry);
 
     // Storage finishes after callback so wait for it.
-    await().untilAsserted(() -> assertThat(storage.getTraces()).containsExactly(asList(v2)));
+    await().untilAsserted(() -> assertThat(storage.getTraces()).containsExactly(List.of(v2)));
 
     assertThat(scribeMetrics.messages()).isEqualTo(1);
     assertThat(scribeMetrics.messagesDropped()).isZero();
@@ -140,7 +140,7 @@ class ScribeSpanConsumerTest {
 
   private void expectSuccess(ScribeSpanConsumer scribe, LogEntry entry) throws Exception {
     CaptureAsyncMethodCallback callback = new CaptureAsyncMethodCallback();
-    scribe.Log(asList(entry), callback);
+    scribe.Log(List.of(entry), callback);
     callback.latch.await(10, TimeUnit.SECONDS);
     assertThat(callback.resultCode).isEqualTo(ResultCode.OK);
   }
@@ -153,7 +153,7 @@ class ScribeSpanConsumerTest {
     entry.message = "notbase64";
 
     CaptureAsyncMethodCallback callback = new CaptureAsyncMethodCallback();
-    scribe.Log(asList(entry), callback);
+    scribe.Log(List.of(entry), callback);
     assertThat(callback.error).isInstanceOf(IllegalArgumentException.class);
 
     // Storage finishes after callback so wait for it.
@@ -176,7 +176,7 @@ class ScribeSpanConsumerTest {
     entry.message = encodedSpan;
 
     CaptureAsyncMethodCallback callback = new CaptureAsyncMethodCallback();
-    scribe.Log(asList(entry), callback);
+    scribe.Log(List.of(entry), callback);
 
     // Storage related exceptions are not propagated to the caller. Only marshalling ones are.
     assertThat(callback.error).isNull();
@@ -238,7 +238,7 @@ class ScribeSpanConsumerTest {
     expectSuccess(scribe, entry);
 
     // Storage finishes after callback so wait for it.
-    await().untilAsserted(() -> assertThat(storage.getTraces()).containsExactly(asList(v2)));
+    await().untilAsserted(() -> assertThat(storage.getTraces()).containsExactly(List.of(v2)));
 
     assertThat(scribeMetrics.messages()).isEqualTo(1);
     assertThat(scribeMetrics.messagesDropped()).isZero();

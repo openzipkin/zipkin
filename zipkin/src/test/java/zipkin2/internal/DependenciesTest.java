@@ -14,10 +14,10 @@
 package zipkin2.internal;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import zipkin2.DependencyLink;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 final class DependenciesTest {
@@ -25,7 +25,7 @@ final class DependenciesTest {
     DependencyLink ab = DependencyLink.newBuilder().parent("a").child("b").callCount(2L).build();
     DependencyLink cd = DependencyLink.newBuilder().parent("c").child("d").errorCount(2L).build();
 
-    Dependencies dependencies = Dependencies.create(1L, 2L, asList(ab, cd));
+    Dependencies dependencies = Dependencies.create(1L, 2L, List.of(ab, cd));
 
     ByteBuffer bytes = dependencies.toThrift();
     assertThat(Dependencies.fromThrift(bytes)).isEqualTo(dependencies);

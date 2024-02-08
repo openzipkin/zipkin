@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,6 @@
 package zipkin2.storage.mysql.v1;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
@@ -68,7 +67,7 @@ final class AggregateDependencies implements Function<DSLContext, List<Dependenc
     Iterator<Iterator<Span>> traces =
       new DependencyLinkV2SpanIterator.ByTraceId(cursor.iterator(), schema.hasTraceIdHigh);
 
-    if (!traces.hasNext()) return Collections.emptyList();
+    if (!traces.hasNext()) return List.of();
 
     DependencyLinker linker = new DependencyLinker();
 

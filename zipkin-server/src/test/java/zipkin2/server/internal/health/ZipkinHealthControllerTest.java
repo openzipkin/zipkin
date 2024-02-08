@@ -16,7 +16,6 @@ package zipkin2.server.internal.health;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.server.internal.health.ComponentHealth.STATUS_DOWN;
 import static zipkin2.server.internal.health.ComponentHealth.STATUS_UP;
@@ -37,7 +36,7 @@ class ZipkinHealthControllerTest {
   }
 
   @Test void writeJson_mappedByName() throws Exception {
-    List<ComponentHealth> healths = asList(
+    List<ComponentHealth> healths = List.of(
       new ComponentHealth("foo", STATUS_UP, null),
       new ComponentHealth("bar", STATUS_DOWN, "java.io.IOException: socket disconnect")
     );

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -67,7 +67,7 @@ class DynamicCredentialsFileLoader implements Runnable {
       throw new IllegalStateException("no " + name + " property in " + fileName);
     }
     value = value.trim();
-    if ("".equals(value)) {
+    if (value.isEmpty()) {
       throw new IllegalStateException("empty " + name + " property in " + fileName);
     }
     return value;

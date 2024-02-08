@@ -37,7 +37,6 @@ import zipkin2.storage.ForwardingStorageComponent;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
 import static zipkin2.TestObjects.UTF_8;
@@ -47,9 +46,9 @@ import static zipkin2.codec.SpanBytesEncoder.THRIFT;
 @Timeout(60)
 @Tag("docker")
 class ITRabbitMQCollector {
-  @RegisterExtension RabbitMQExtension rabbit = new RabbitMQExtension();
+  @RegisterExtension static RabbitMQExtension rabbit = new RabbitMQExtension();
 
-  List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
+  List<Span> spans = List.of(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
 
   InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
   InMemoryCollectorMetrics rabbitmqMetrics = metrics.forTransport("rabbitmq");

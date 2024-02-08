@@ -16,8 +16,6 @@ package zipkin2;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import zipkin2.codec.DependencyLinkBytesDecoder;
 import zipkin2.codec.DependencyLinkBytesEncoder;
@@ -104,7 +102,7 @@ public final class DependencyLink implements Serializable { // for Spark and Fli
       String missing = "";
       if (parent == null) missing += " parent";
       if (child == null) missing += " child";
-      if (!"".equals(missing)) throw new IllegalStateException("Missing :" + missing);
+      if (!missing.isEmpty()) throw new IllegalStateException("Missing :" + missing);
       return new DependencyLink(this);
     }
   }

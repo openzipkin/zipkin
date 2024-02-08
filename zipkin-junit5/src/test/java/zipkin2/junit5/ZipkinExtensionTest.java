@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,6 @@
 package zipkin2.junit5;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -29,7 +28,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin2.TestObjects.CLIENT_SPAN;
@@ -39,7 +37,7 @@ public class ZipkinExtensionTest {
 
   @RegisterExtension public ZipkinExtension zipkin = new ZipkinExtension();
 
-  List<Span> spans = Arrays.asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
+  List<Span> spans = List.of(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
   OkHttpClient client = new OkHttpClient();
 
   @Test void getTraces_storedViaPost() throws IOException {
@@ -47,7 +45,7 @@ public class ZipkinExtensionTest {
     assertPostSpansV1Success(CLIENT_SPAN);
 
     // read the traces directly
-    assertThat(zipkin.getTraces()).containsOnly(asList(CLIENT_SPAN));
+    assertThat(zipkin.getTraces()).containsOnly(List.of(CLIENT_SPAN));
   }
 
   @Test void getTraces_storedViaPostVersion2_json() throws IOException {
@@ -72,7 +70,7 @@ public class ZipkinExtensionTest {
     }
 
     // read the traces directly
-    assertThat(zipkin.getTraces()).containsOnly(asList(spans.get(0)), asList(spans.get(1)));
+    assertThat(zipkin.getTraces()).containsOnly(List.of(spans.get(0)), List.of(spans.get(1)));
   }
 
   /** The rule is here to help debugging. Even partial spans should be returned */
@@ -82,7 +80,7 @@ public class ZipkinExtensionTest {
     assertPostSpansV1Success(span);
 
     // read the traces directly
-    assertThat(zipkin.getTraces()).containsOnly(asList(span));
+    assertThat(zipkin.getTraces()).containsOnly(List.of(span));
   }
 
   /** The raw query can show affects like redundant rows in the data store. */
@@ -91,8 +89,8 @@ public class ZipkinExtensionTest {
     Span withDuration = LOTS_OF_SPANS[0];
 
     // write the span to zipkin directly
-    zipkin.storeSpans(asList(missingDuration));
-    zipkin.storeSpans(asList(withDuration));
+    zipkin.storeSpans(List.of(missingDuration));
+    zipkin.storeSpans(List.of(withDuration));
 
     assertThat(zipkin.getTrace(missingDuration.traceId())).containsExactly(missingDuration,
       withDuration);
@@ -180,7 +178,7 @@ public class ZipkinExtensionTest {
   }
 
   void assertPostSpansV1Success(Span... spans) throws IOException {
-    assertPostSpansV1Success(asList(spans));
+    assertPostSpansV1Success(List.of(spans));
   }
 
   void assertPostSpansV1Success(List<Span> spans) throws IOException {

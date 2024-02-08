@@ -13,12 +13,12 @@
  */
 package zipkin2.internal;
 
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.Span.Kind.CLIENT;
 import static zipkin2.Span.Kind.CONSUMER;
@@ -67,7 +67,7 @@ class V1ThriftSpanWriterTest {
   }
 
   @Test void writeList_startsWithListPrefix() {
-    byte[] buff = writer.writeList(asList(span));
+    byte[] buff = writer.writeList(List.of(span));
 
     assertThat(buff)
       .hasSize(5 + writer.sizeInBytes(span))
@@ -76,7 +76,7 @@ class V1ThriftSpanWriterTest {
   }
 
   @Test void writeList_startsWithListPrefix_multiple() {
-    byte[] buff = writer.writeList(asList(span, span));
+    byte[] buff = writer.writeList(List.of(span, span));
 
     assertThat(buff)
       .hasSize(5 + writer.sizeInBytes(span) * 2)
@@ -85,11 +85,11 @@ class V1ThriftSpanWriterTest {
   }
 
   @Test void writeList_empty() {
-    assertThat(writer.writeList(asList())).isEmpty();
+    assertThat(writer.writeList(List.of())).isEmpty();
   }
 
   @Test void writeList_offset_startsWithListPrefix() {
-    writer.writeList(asList(span, span), bytes, 1);
+    writer.writeList(List.of(span, span), bytes, 1);
 
     assertThat(bytes)
       .startsWith( // member type of the list and an integer with the count

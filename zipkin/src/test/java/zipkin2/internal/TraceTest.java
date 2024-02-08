@@ -14,6 +14,7 @@
 package zipkin2.internal;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,7 +23,6 @@ import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.Span.Kind;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
@@ -34,7 +34,7 @@ class TraceTest {
    * <p>See https://github.com/openzipkin/zipkin/pull/1745
    */
   @Test void backfillsMissingParentIdOnSharedSpan() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.SERVER, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, "frontend", null, false),
       // below the parent ID is null as it wasn't propagated
@@ -49,7 +49,7 @@ class TraceTest {
   }
 
   @Test void backfillsMissingSharedFlag() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.SERVER, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, "frontend", "1.2.3.4", false),
       // below the shared flag was forgotten
@@ -65,7 +65,7 @@ class TraceTest {
 
   /** Some truncate an incoming trace ID to 64-bits. */
   @Test void choosesBestTraceId() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("7180c278b62e8f6a216a2aea45d08fc9", null, "a", Kind.SERVER, "frontend", null, false),
       span("7180c278b62e8f6a216a2aea45d08fc9", "a", "b", Kind.CLIENT, "frontend", null, false),
       span("216a2aea45d08fc9", "a", "b", Kind.SERVER, "backend", null, true)
@@ -80,7 +80,7 @@ class TraceTest {
 
   /** Let's pretend people use crappy data, but only on the first hop. */
   @Test void mergesWhenMissingEndpoints() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder()
         .traceId("a")
         .id("a")
@@ -124,7 +124,7 @@ class TraceTest {
    * that two servers share the same ID (accidentally!)
    */
   @Test void doesntMergeSharedSpansOnDifferentIPs() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.SERVER, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, "frontend", null, false).toBuilder()
         .timestamp(1L).addAnnotation(3L, "brave.flush").build(),
@@ -145,7 +145,7 @@ class TraceTest {
 
   // Same as above, but the late reported data has no parent id or endpoint
   @Test void putsRandomDataOnFirstSpanWithEndpoint() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.SERVER, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, null, null, false),
       span("a", "a", "b", null, "frontend", null, false).toBuilder()
@@ -168,7 +168,7 @@ class TraceTest {
   // not a good idea to send parts of a local endpoint separately, but this helps ensure data isn't
   // accidentally partitioned in a overly fine grain
   @Test void mergesIncompleteEndpoints() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", null, "a", Kind.SERVER, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, null, "1.2.3.4", false),
@@ -184,7 +184,7 @@ class TraceTest {
   }
 
   @Test void deletesSelfReferencingParentId() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", "a", "a", Kind.SERVER, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, "frontend", null, false)
     );
@@ -197,7 +197,7 @@ class TraceTest {
 
   @Test void worksWhenMissingParentSpan() {
     String missingParentId = "a";
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       span("a", missingParentId, "b", Kind.SERVER, "backend", "1.2.3.4", false),
       span("a", missingParentId, "c", Kind.SERVER, "backend", null, false)
     );
@@ -207,7 +207,7 @@ class TraceTest {
 
   // some instrumentation don't add shared flag to servers
   @Test void cleanupComparator_ordersClientFirst() {
-    List<Span> trace = asList(
+    List<Span> trace = Arrays.asList( // to allow sorting
       span("a", "a", "b", Kind.SERVER, "backend", "1.2.3.5", false),
       span("a", "a", "b", Kind.CLIENT, "frontend", null, false)
     );

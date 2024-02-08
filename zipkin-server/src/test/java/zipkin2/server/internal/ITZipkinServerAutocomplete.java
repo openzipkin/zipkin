@@ -15,6 +15,7 @@ package zipkin2.server.internal;
 
 import com.linecorp.armeria.server.Server;
 import java.io.IOException;
+import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -26,7 +27,6 @@ import zipkin.server.ZipkinServer;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.server.internal.ITZipkinServer.url;
@@ -63,7 +63,7 @@ class ITZipkinServerAutocomplete {
       .isNull();
 
     for (int i = 0; i < 4; i++) {
-      post("/api/v2/spans", SpanBytesEncoder.JSON_V2.encodeList(asList(
+      post("/api/v2/spans", SpanBytesEncoder.JSON_V2.encodeList(List.of(
         Span.newBuilder().traceId("a").id(i + 1).timestamp(TODAY).name("whopper")
           .putTag("clnt/finagle.version", "6.45." + i).build()
       )));

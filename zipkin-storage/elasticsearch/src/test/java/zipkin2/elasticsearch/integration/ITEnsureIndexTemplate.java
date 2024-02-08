@@ -18,6 +18,7 @@ import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.RequestHeaders;
 import java.io.IOException;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
@@ -32,7 +33,6 @@ import static com.linecorp.armeria.common.HttpMethod.DELETE;
 import static com.linecorp.armeria.common.HttpMethod.GET;
 import static com.linecorp.armeria.common.HttpMethod.PUT;
 import static com.linecorp.armeria.common.MediaType.JSON_UTF_8;
-import static java.util.Arrays.asList;
 import static zipkin2.TestObjects.spanBuilder;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -67,14 +67,14 @@ abstract class ITEnsureIndexTemplate extends ITStorage<ElasticsearchStorage> {
 
       // Now, add a span, which should be indexed differently than default.
       Span span = spanBuilder(testSuffix).putTag("queryTest", "ok").build();
-      accept(asList(span));
+      accept(List.of(span));
 
       // Assert that Zipkin's templates work and source is returned
       assertGetTracesReturns(
         requestBuilder()
           .parseAnnotationQuery("queryTest=" + span.tags().get("queryTest"))
           .build(),
-        asList(span));
+        List.of(span));
     } finally {
       // Delete "catch-all" index template, so it does not interfere with any other test
       http(DELETE, catchAllIndexPath());

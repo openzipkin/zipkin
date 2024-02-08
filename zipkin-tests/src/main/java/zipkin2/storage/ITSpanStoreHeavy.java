@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,13 +13,13 @@
  */
 package zipkin2.storage;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import zipkin2.Span;
 
-import static java.util.Arrays.asList;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.TestObjects.spanBuilder;
 
@@ -55,8 +55,8 @@ public abstract class ITSpanStoreHeavy<T extends StorageComponent> extends ITSto
 
     accept(spans);
 
-    assertGetTracesReturns(requestBuilder().build(), asList(spans));
-    assertGetTraceReturns(span.traceId(), asList(spans));
+    assertGetTracesReturns(requestBuilder().build(), List.of(spans));
+    assertGetTraceReturns(span.traceId(), List.of(spans));
   }
 
   /**

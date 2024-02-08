@@ -33,7 +33,6 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
@@ -145,7 +144,7 @@ public final class BulkCallBuilder {
 
     BulkRequestSupplier(List<IndexEntry<?>> entries, boolean shouldAddType,
       RequestHeaders headers, ByteBufAllocator alloc) {
-      this.entries = Collections.unmodifiableList(entries);
+      this.entries = List.copyOf(entries);
       this.shouldAddType = shouldAddType;
       this.headers = headers;
       this.alloc = alloc;

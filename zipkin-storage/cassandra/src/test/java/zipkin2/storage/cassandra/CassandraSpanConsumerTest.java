@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  */
 package zipkin2.storage.cassandra;
 
-import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import zipkin2.Call;
 import zipkin2.Span;
@@ -21,7 +21,6 @@ import zipkin2.internal.AggregateCall;
 import zipkin2.storage.cassandra.internal.call.InsertEntry;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.tuple;
@@ -44,7 +43,7 @@ class CassandraSpanConsumerTest {
       .build();
 
   @Test void emptyInput_emptyCall() {
-    Call<Void> call = consumer.accept(Collections.emptyList());
+    Call<Void> call = consumer.accept(List.of());
     assertThat(call).hasSameClassAs(Call.create(null));
   }
 
@@ -53,7 +52,7 @@ class CassandraSpanConsumerTest {
       .traceId("77fcac3d4c5be8d2a037812820c65f28")
       .build();
 
-    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(singletonList(span));
+    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(List.of(span));
     assertThat(call.delegate())
       .filteredOn(c -> c instanceof InsertSpan)
       .extracting("input.trace_id_high", "input.trace_id")
@@ -63,7 +62,7 @@ class CassandraSpanConsumerTest {
   @Test void doesntSetTraceIdHigh_64() {
     Span span = spanWithoutAnnotationsOrTags;
 
-    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(singletonList(span));
+    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(List.of(span));
     assertThat(call.delegate())
       .filteredOn(c -> c instanceof InsertSpan)
       .extracting("input.trace_id_high", "input.trace_id")
@@ -77,7 +76,7 @@ class CassandraSpanConsumerTest {
       .traceId("77fcac3d4c5be8d2a037812820c65f28")
       .build();
 
-    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(singletonList(span));
+    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(List.of(span));
     assertThat(call.delegate())
       .filteredOn(c -> c instanceof InsertSpan)
       .extracting("input.trace_id_high", "input.trace_id")
@@ -87,7 +86,7 @@ class CassandraSpanConsumerTest {
   @Test void serviceSpanKeys() {
     Span span = spanWithoutAnnotationsOrTags;
 
-    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(singletonList(span));
+    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(List.of(span));
     assertThat(call.delegate())
       .filteredOn(c -> c instanceof InsertEntry)
       .extracting("input")
@@ -97,7 +96,7 @@ class CassandraSpanConsumerTest {
   @Test void serviceRemoteServiceKeys_addsRemoteServiceName() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().remoteEndpoint(BACKEND).build();
 
-    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(singletonList(span));
+    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(List.of(span));
     assertThat(call.delegate())
       .filteredOn(c -> c instanceof InsertEntry)
       .extracting("input")
@@ -112,7 +111,7 @@ class CassandraSpanConsumerTest {
       .localEndpoint(null)
       .remoteEndpoint(BACKEND).build();
 
-    Call<Void> call = consumer.accept(singletonList(span));
+    Call<Void> call = consumer.accept(List.of(span));
 
     assertThat(call).isInstanceOf(InsertSpan.class);
   }
@@ -120,7 +119,7 @@ class CassandraSpanConsumerTest {
   @Test void serviceSpanKeys_emptyWhenNoEndpoints() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().localEndpoint(null).build();
 
-    assertThat(consumer.accept(singletonList(span)))
+    assertThat(consumer.accept(List.of(span)))
       .isInstanceOf(ResultSetFutureCall.class);
   }
 
@@ -131,7 +130,7 @@ class CassandraSpanConsumerTest {
   @Test void traceByServiceSpan_indexesLocalServiceNameAndEmptySpanName() {
     Span span = spanWithoutAnnotationsOrTags;
 
-    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(singletonList(span));
+    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(List.of(span));
     assertThat(call.delegate())
       .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
       .extracting("input.service", "input.span")
@@ -142,7 +141,7 @@ class CassandraSpanConsumerTest {
   @Test void traceByServiceSpan_indexesDurationInMillis() {
     Span span = spanWithoutAnnotationsOrTags;
 
-    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(singletonList(span));
+    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(List.of(span));
     assertThat(call.delegate())
       .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
       .extracting("input.duration")
@@ -152,7 +151,7 @@ class CassandraSpanConsumerTest {
   @Test void traceByServiceSpan_indexesDurationMinimumZero() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().duration(12L).build();
 
-    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(singletonList(span));
+    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(List.of(span));
     assertThat(call.delegate())
       .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
       .extracting("input.duration")
@@ -162,7 +161,7 @@ class CassandraSpanConsumerTest {
   @Test void traceByServiceSpan_skipsOnNoTimestamp() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().timestamp(null).build();
 
-    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(singletonList(span));
+    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(List.of(span));
     assertThat(call.delegate())
       .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
       .extracting("input.service", "input.span")
@@ -172,7 +171,7 @@ class CassandraSpanConsumerTest {
   @Test void traceByServiceSpan_doesntIndexRemoteService() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().remoteEndpoint(BACKEND).build();
 
-    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(singletonList(span));
+    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(List.of(span));
     assertThat(call.delegate())
       .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
       .hasSize(2)
@@ -183,7 +182,7 @@ class CassandraSpanConsumerTest {
   @Test void traceByServiceSpan_appendsEmptyWhenNoName() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().name(null).build();
 
-    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(singletonList(span));
+    AggregateCall<?, Void> call = (AggregateCall<?, Void>) consumer.accept(List.of(span));
     assertThat(call.delegate())
       .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
       .extracting("input.service", "input.span")
@@ -193,7 +192,7 @@ class CassandraSpanConsumerTest {
   @Test void traceByServiceSpan_emptyWhenNoEndpoints() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().localEndpoint(null).build();
 
-    assertThat(consumer.accept(singletonList(span)))
+    assertThat(consumer.accept(List.of(span)))
       .isInstanceOf(ResultSetFutureCall.class);
   }
 
@@ -206,7 +205,7 @@ class CassandraSpanConsumerTest {
       .duration(10000L)
       .build();
 
-    assertThat(consumer.accept(singletonList(span)))
+    assertThat(consumer.accept(List.of(span)))
       .extracting("input.annotation_query")
       .satisfies(q -> assertThat(q).isNull());
   }
@@ -214,7 +213,7 @@ class CassandraSpanConsumerTest {
   @Test void doesntIndexWhenOnlyIncludesTimestamp() {
     Span span = Span.newBuilder().traceId("a").id("1").timestamp(TODAY * 1000L).build();
 
-    assertThat(consumer.accept(singletonList(span)))
+    assertThat(consumer.accept(List.of(span)))
       .isInstanceOf(ResultSetFutureCall.class);
   }
 

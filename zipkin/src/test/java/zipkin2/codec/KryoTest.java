@@ -85,7 +85,7 @@ class KryoTest {
   }
 
   /** Example test for how to use Kryo and reuse our encoders */
-  public class JsonV2SpanSerializer extends Serializer<Span> {
+  public static class JsonV2SpanSerializer extends Serializer<Span> {
     @Override public void write(Kryo kryo, Output output, Span span) {
       byte[] json = SpanBytesEncoder.JSON_V2.encode(span);
       output.writeInt(json.length);

@@ -13,13 +13,13 @@
  */
 package zipkin2.codec;
 
-import java.nio.charset.Charset;
 import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 import zipkin2.internal.Proto3SpanWriterTest;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.FRONTEND;
@@ -31,8 +31,6 @@ import static zipkin2.TestObjects.FRONTEND;
  * in {@link Proto3SpanWriterTest}.
  */
 public class SpanBytesEncoderTest {
-  public static final Charset UTF_8 = Charset.forName("UTF-8");
-
   /**
    * Similar to {@link TestObjects#CLIENT_SPAN} except with fixed timestamps to ensure easy testing
    * of json literals.

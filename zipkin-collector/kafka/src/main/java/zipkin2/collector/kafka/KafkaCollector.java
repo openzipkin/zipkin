@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -266,9 +266,10 @@ public final class KafkaCollector extends CollectorComponent {
         } catch (InterruptException e) {
           // Interrupts are normal on shutdown, intentionally swallow
         } catch (KafkaException e) {
-          if (e.getCause() instanceof ConfigException) e = (KafkaException) e.getCause();
-          LOG.error("Kafka worker exited with exception", e);
-          failure.set(CheckResult.failed(e));
+          KafkaException kafkaException = e;
+          if (kafkaException.getCause() instanceof ConfigException) kafkaException = (KafkaException) kafkaException.getCause();
+          LOG.error("Kafka worker exited with exception", kafkaException);
+          failure.set(CheckResult.failed(kafkaException));
         } catch (RuntimeException e) {
           LOG.error("Kafka worker exited with exception", e);
           failure.set(CheckResult.failed(e));

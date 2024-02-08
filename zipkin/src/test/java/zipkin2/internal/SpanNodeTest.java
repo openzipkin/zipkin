@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
@@ -61,7 +60,7 @@ class SpanNodeTest {
   /** Ensures internal deduping occurs */
   @Test void build_redundantIgnored() {
     Span.Builder builder = Span.newBuilder().traceId("a");
-    List<Span> trace = asList(builder.id("a").build(), builder.id("b").build(), builder.build());
+    List<Span> trace = List.of(builder.id("a").build(), builder.id("b").build(), builder.build());
 
     SpanNode tree = new SpanNode.Builder(logger).build(trace);
     assertThat(tree.span).isEqualTo(trace.get(0));
@@ -109,7 +108,7 @@ class SpanNodeTest {
    * Makes sure that the trace tree is constructed based on parent-child, not by parameter order.
    */
   @Test void constructsTraceTree() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId("a").id("a").build(),
       Span.newBuilder().traceId("a").parentId("a").id("b").build(),
       Span.newBuilder().traceId("a").parentId("b").id("c").build(),
@@ -120,7 +119,7 @@ class SpanNodeTest {
 
   /** Same as {@link #constructsTraceTree()}, except with shared span ID */
   @Test void constructsTraceTree_sharedId() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId("a").id("a").build(),
       Span.newBuilder().traceId("a").parentId("a").id("b").build(),
       Span.newBuilder().traceId("a").parentId("a").id("b").shared(true).build(),
@@ -130,7 +129,7 @@ class SpanNodeTest {
   }
 
   @Test void constructsTraceTree_sharedRootId() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId("a").id("a").build(),
       Span.newBuilder().traceId("a").id("a").shared(true).build(),
       Span.newBuilder().traceId("a").parentId("a").id("b").build(),
@@ -153,7 +152,7 @@ class SpanNodeTest {
   }
 
   @Test void constructsTraceTree_qualifiesChildrenOfDuplicateServerSpans() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId("a").id("a").build(),
       Span.newBuilder().traceId("a").parentId("a").id("b").build(),
       localServiceName("foo", Span.newBuilder().traceId("a").parentId("a").id("b").shared(true)),
@@ -166,7 +165,7 @@ class SpanNodeTest {
   }
 
   @Test void constructsTraceTree_qualifiesChildrenOfDuplicateServerSpans_mixedShared() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId("a").id("a").build(),
       Span.newBuilder().traceId("a").parentId("a").id("b").build(),
       localServiceName("foo", Span.newBuilder().traceId("a").parentId("b").id("c")),
@@ -210,7 +209,7 @@ class SpanNodeTest {
   }
 
   @Test void constructsTraceTree_dedupes() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId("a").id("a").build(),
       Span.newBuilder().traceId("a").id("a").build(),
       Span.newBuilder().traceId("a").id("a").build()
@@ -225,7 +224,7 @@ class SpanNodeTest {
   }
 
   @Test void constructsTraceTree_duplicateRoots() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId("a").id("a").build(),
       Span.newBuilder().traceId("a").id("b").build()
     );
@@ -240,7 +239,7 @@ class SpanNodeTest {
   }
 
   @Test void build_noChildLeftBehind() {
-    List<Span> spans = asList(
+    List<Span> spans = List.of(
       Span.newBuilder().traceId("a").id("b").name("root-0").build(),
       Span.newBuilder().traceId("a").parentId("b").id("c").name("child-0").build(),
       Span.newBuilder().traceId("a").parentId("b").id("d").name("child-1").build(),
@@ -266,7 +265,7 @@ class SpanNodeTest {
     Span s3 = Span.newBuilder().traceId("a").parentId("a").id("c").name("s3").build();
     Span s4 = Span.newBuilder().traceId("a").parentId("a").id("d").name("s4").build();
 
-    SpanNode root = new SpanNode.Builder(logger).build(asList(s2, s3, s4));
+    SpanNode root = new SpanNode.Builder(logger).build(List.of(s2, s3, s4));
 
     assertThat(root.span()).isNull();
     assertThat(root.children()).extracting(SpanNode::span)
@@ -282,7 +281,7 @@ class SpanNodeTest {
     Span s3 = Span.newBuilder().traceId("a").parentId("a").id("c").name("s3").build();
     Span s4 = Span.newBuilder().traceId("a").parentId("a").id("d").name("s4").build();
 
-    SpanNode root = new SpanNode.Builder(logger).build(asList(s2, s3, s4));
+    SpanNode root = new SpanNode.Builder(logger).build(List.of(s2, s3, s4));
 
     assertThat(root.span()).isNull();
     assertThat(root.children()).extracting(SpanNode::span)
@@ -302,7 +301,7 @@ class SpanNodeTest {
 
   // uses the same data as javascript
   @Test void build_skewedTrace() {
-    List<Span> httpTrace = asList(
+    List<Span> httpTrace = List.of(
       Span.newBuilder()
         .traceId("1e223ff1f80f1c69").parentId("74280ae0c10d8062").id("43210ae0c10d1234")
         .name("async")
@@ -342,7 +341,7 @@ class SpanNodeTest {
   }
 
   @Test void ordersChildrenByTimestamp() {
-    List<Span> trace = asList(
+    List<Span> trace = List.of(
       Span.newBuilder().traceId("a").id("1").build(),
       Span.newBuilder().traceId("a").parentId("1").id("a").name("a").timestamp(2L).build(),
       Span.newBuilder().traceId("a").parentId("1").id("b").name("b").timestamp(1L).build(),
@@ -357,7 +356,7 @@ class SpanNodeTest {
 
   @Test void build_changingIps() {
     // This trace was taken from the middle of a real broken one, IDs and timestamps changed
-    List<Span> httpTrace = asList(
+    List<Span> httpTrace = List.of(
       Span.newBuilder()
         .traceId("1").parentId("a").id("c")
         .kind(Span.Kind.SERVER)

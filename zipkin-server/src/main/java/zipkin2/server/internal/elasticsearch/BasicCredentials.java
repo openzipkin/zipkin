@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,6 @@
 package zipkin2.server.internal.elasticsearch;
 
 import java.util.Base64;
-import java.util.Optional;
 import zipkin2.internal.Nullable;
 
 import static java.nio.charset.StandardCharsets.UTF_8;

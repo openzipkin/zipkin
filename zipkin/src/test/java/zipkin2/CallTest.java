@@ -15,7 +15,6 @@ package zipkin2;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
@@ -133,7 +132,7 @@ class CallTest {
       } : () -> call.enqueue(callback));
     }
 
-    tries.stream().forEach(exec::execute);
+    tries.forEach(exec::execute);
     exec.shutdown();
     exec.awaitTermination(1, TimeUnit.SECONDS);
 
@@ -317,7 +316,7 @@ class CallTest {
 
     Call<List<String>> resolvedCall = call.handleError((error, callback) -> {
         if (error instanceof NoSuchElementException) {
-          callback.onSuccess(Collections.emptyList());
+          callback.onSuccess(List.of());
         } else {
           callback.onError(error);
         }
@@ -326,7 +325,7 @@ class CallTest {
 
     resolvedCall.enqueue(callback);
 
-    verify(callback).onSuccess(Collections.emptyList());
+    verify(callback).onSuccess(List.of());
   }
 
   static <T> Call<T> errorCall(RuntimeException error) {

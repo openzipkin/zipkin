@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,8 +15,8 @@ package zipkin2.internal;
 
 import com.squareup.wire.ProtoWriter;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import okio.ByteString;
 import org.assertj.core.data.MapEntry;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,6 @@ import zipkin2.proto3.Endpoint;
 import zipkin2.proto3.ListOfSpans;
 import zipkin2.proto3.Span;
 
-import static java.util.Collections.singletonMap;
 import static okio.ByteString.decodeHex;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.MapEntry.entry;
@@ -68,7 +67,7 @@ public class Proto3CodecInteropTest {
     .putTag("error", "此用户没有操作权限")
     .shared(true)
     .build();
-  static final List<zipkin2.Span> ZIPKIN_SPANS = Arrays.asList(ZIPKIN_SPAN, ZIPKIN_SPAN);
+  static final List<zipkin2.Span> ZIPKIN_SPANS = List.of(ZIPKIN_SPAN, ZIPKIN_SPAN);
 
   static final Span PROTO_SPAN = new Span.Builder()
     .trace_id(decodeHex(ZIPKIN_SPAN.traceId()))
@@ -87,7 +86,7 @@ public class Proto3CodecInteropTest {
       .ipv4(ByteString.of(PROFILE.ipv4Bytes()))
       .port(PROFILE.portAsInt()).build()
     )
-    .annotations(Arrays.asList(new Annotation.Builder()
+    .annotations(List.of(new Annotation.Builder()
       .timestamp(ZIPKIN_SPAN.annotations().get(0).timestamp())
       .value(ZIPKIN_SPAN.annotations().get(0).value())
       .build()))
@@ -95,7 +94,7 @@ public class Proto3CodecInteropTest {
     .shared(true)
     .build();
   ListOfSpans PROTO_SPANS = new ListOfSpans.Builder()
-    .spans(Arrays.asList(PROTO_SPAN, PROTO_SPAN)).build();
+    .spans(List.of(PROTO_SPAN, PROTO_SPAN)).build();
 
   @Test void encodeIsCompatible() throws IOException {
     okio.Buffer buffer = new okio.Buffer();
@@ -204,7 +203,7 @@ public class Proto3CodecInteropTest {
 
   @Test void tag_sizeInBytes_matchesWire() {
     MapEntry<String, String> entry = entry("clnt/finagle.version", "6.45.0");
-    Span wireSpan = new Span.Builder().tags(singletonMap(entry.key, entry.value)).build();
+    Span wireSpan = new Span.Builder().tags(Map.of(entry.key, entry.value)).build();
 
     assertThat(new TagField(TAG_KEY).sizeInBytes(entry))
       .isEqualTo(Span.ADAPTER.encodedSize(wireSpan));
@@ -216,7 +215,7 @@ public class Proto3CodecInteropTest {
     byte[] zipkinBytes = new byte[field.sizeInBytes(entry)];
     field.write(WriteBuffer.wrap(zipkinBytes, 0), entry);
 
-    Span oneField = new Span.Builder().tags(singletonMap(entry.key, entry.value)).build();
+    Span oneField = new Span.Builder().tags(Map.of(entry.key, entry.value)).build();
     assertThat(zipkinBytes)
       .containsExactly(oneField.encode());
   }
@@ -227,7 +226,7 @@ public class Proto3CodecInteropTest {
     byte[] zipkinBytes = new byte[field.sizeInBytes(entry)];
     field.write(WriteBuffer.wrap(zipkinBytes, 0), entry);
 
-    Span oneField = new Span.Builder().tags(singletonMap(entry.key, entry.value)).build();
+    Span oneField = new Span.Builder().tags(Map.of(entry.key, entry.value)).build();
     assertThat(zipkinBytes)
       .containsExactly(oneField.encode());
   }

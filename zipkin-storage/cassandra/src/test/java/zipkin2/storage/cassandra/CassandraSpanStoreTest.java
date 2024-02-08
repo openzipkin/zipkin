@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,8 +13,8 @@
  */
 package zipkin2.storage.cassandra;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import zipkin2.Call;
 import zipkin2.Span;
@@ -56,7 +56,7 @@ class CassandraSpanStoreTest {
 
   @Test void getTraces_withTagButNoServiceName() {
     Call<List<List<Span>>> call = spanStore.getTraces(
-      queryBuilder.annotationQuery(Collections.singletonMap("environment", "production")).build());
+      queryBuilder.annotationQuery(Map.of("environment", "production")).build());
 
     assertThat(call.toString())
       .doesNotContain(FlatMapServicesToInputs.class.getSimpleName()) // works against the span table

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,7 @@
 package zipkin2.collector.rabbitmq;
 
 import java.net.URI;
-import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,7 +38,7 @@ public class ZipkinRabbitMQCollectorPropertiesOverrideTest {
   public Function<RabbitMQCollector.Builder, Object> builderExtractor;
 
   public static Iterable<Object[]> data() {
-    return Arrays.asList(
+    return List.of(
         // intentionally punting on comma-separated form of a list of addresses as it doesn't fit
         // this unit test. Better to make a separate one than force-fit!
         parameters("addresses", "localhost:5671", builder -> builder.addresses[0].toString()),

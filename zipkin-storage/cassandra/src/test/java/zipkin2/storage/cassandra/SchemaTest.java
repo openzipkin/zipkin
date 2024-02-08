@@ -18,7 +18,6 @@ import com.datastax.oss.driver.api.core.Version;
 import com.datastax.oss.driver.api.core.metadata.Metadata;
 import com.datastax.oss.driver.api.core.metadata.Node;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -37,7 +36,7 @@ class SchemaTest {
     Node node = mock(Node.class);
 
     when(session.getMetadata()).thenReturn(metadata);
-    when(metadata.getNodes()).thenReturn(Collections.singletonMap(
+    when(metadata.getNodes()).thenReturn(Map.of(
       UUID.fromString("11111111-1111-1111-1111-111111111111"), node
     ));
     when(node.getCassandraVersion()).thenReturn(Version.parse("3.11.2"));
@@ -75,7 +74,7 @@ class SchemaTest {
     KeyspaceMetadata keyspaceMetadata = mock(KeyspaceMetadata.class);
 
     when(session.getMetadata()).thenReturn(metadata);
-    when(metadata.getNodes()).thenReturn(Collections.singletonMap(
+    when(metadata.getNodes()).thenReturn(Map.of(
       UUID.fromString("11111111-1111-1111-1111-111111111111"), node
     ));
     when(node.getCassandraVersion()).thenReturn(Version.parse("3.11.3"));
@@ -92,7 +91,7 @@ class SchemaTest {
     KeyspaceMetadata keyspaceMetadata = mock(KeyspaceMetadata.class);
 
     when(session.getMetadata()).thenReturn(metadata);
-    when(metadata.getNodes()).thenReturn(Collections.singletonMap(
+    when(metadata.getNodes()).thenReturn(Map.of(
       UUID.fromString("11111111-1111-1111-1111-111111111111"), node
     ));
     when(node.getCassandraVersion()).thenReturn(Version.parse("3.11.4"));
@@ -108,7 +107,7 @@ class SchemaTest {
     Node node = mock(Node.class);
 
     when(session.getMetadata()).thenReturn(metadata);
-    when(metadata.getNodes()).thenReturn(Collections.singletonMap(
+    when(metadata.getNodes()).thenReturn(Map.of(
       UUID.fromString("11111111-1111-1111-1111-111111111111"), node
     ));
     when(node.getCassandraVersion()).thenReturn(Version.parse("3.11.3"));

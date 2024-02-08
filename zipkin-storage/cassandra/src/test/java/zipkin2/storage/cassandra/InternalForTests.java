@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -23,8 +23,8 @@ import com.datastax.oss.driver.api.core.metadata.schema.TableMetadata;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.TestInfo;
@@ -41,7 +41,7 @@ class InternalForTests {
     Node node = mock(Node.class);
 
     when(session.getMetadata()).thenReturn(metadata);
-    when(metadata.getNodes()).thenReturn(Collections.singletonMap(
+    when(metadata.getNodes()).thenReturn(Map.of(
       UUID.fromString("11111111-1111-1111-1111-111111111111"), node
     ));
     when(node.getCassandraVersion()).thenReturn(Version.parse("3.11.9"));

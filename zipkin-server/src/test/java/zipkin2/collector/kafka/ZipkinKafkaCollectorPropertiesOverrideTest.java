@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  */
 package zipkin2.collector.kafka;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,7 +37,7 @@ public class ZipkinKafkaCollectorPropertiesOverrideTest {
   public Function<KafkaCollector.Builder, Object> builderExtractor;
 
   public static Iterable<Object[]> data() {
-    return Arrays.asList(
+    return List.of(
       parameters(
         "bootstrap-servers",
         "127.0.0.1:9092",

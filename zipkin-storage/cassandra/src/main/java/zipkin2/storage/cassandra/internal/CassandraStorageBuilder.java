@@ -32,7 +32,7 @@ import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.CONNEC
 public abstract class CassandraStorageBuilder<B extends CassandraStorageBuilder<B>>
   extends StorageComponent.Builder {
   protected boolean strictTraceId = true, searchEnabled = true;
-  protected Set<String> autocompleteKeys = Collections.emptySet();
+  protected Set<String> autocompleteKeys = Set.of();
   protected int autocompleteTtl = (int) TimeUnit.HOURS.toMillis(1);
   protected int autocompleteCardinality = 5 * 4000; // Ex. 5 site tags with cardinality 4000 each
 
@@ -81,7 +81,7 @@ public abstract class CassandraStorageBuilder<B extends CassandraStorageBuilder<
 
   @Override public B autocompleteKeys(List<String> keys) {
     if (keys == null) throw new NullPointerException("keys == null");
-    this.autocompleteKeys = Collections.unmodifiableSet(new LinkedHashSet<>(keys));
+    this.autocompleteKeys = Set.copyOf(keys);
     return (B) this;
   }
 

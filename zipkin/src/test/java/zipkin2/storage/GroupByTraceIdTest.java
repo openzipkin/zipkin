@@ -17,7 +17,6 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import zipkin2.Span;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class GroupByTraceIdTest {
@@ -26,26 +25,26 @@ class GroupByTraceIdTest {
   Span zeroOne = Span.newBuilder().traceId(0, 1).id(1).build();
 
   @Test void map_groupsEverythingWhenNotStrict() {
-    List<Span> spans = asList(oneOne, twoOne, zeroOne);
+    List<Span> spans = List.of(oneOne, twoOne, zeroOne);
 
     assertThat(GroupByTraceId.create(false).map(spans)).containsExactly(spans);
   }
 
   @Test void map_groupsByTraceIdHighWheStrict() {
-    List<Span> spans = asList(oneOne, twoOne, zeroOne);
+    List<Span> spans = List.of(oneOne, twoOne, zeroOne);
 
     assertThat(GroupByTraceId.create(true).map(spans))
-      .containsExactly(asList(oneOne), asList(twoOne), asList(zeroOne));
+      .containsExactly(List.of(oneOne), List.of(twoOne), List.of(zeroOne));
   }
 
   @Test void map_modifiable() {
-    List<Span> spans = asList(oneOne, twoOne, zeroOne);
+    List<Span> spans = List.of(oneOne, twoOne, zeroOne);
 
     List<List<Span>> modifiable = GroupByTraceId.create(true).map(spans);
 
     // This transform is used in cassandra v1 and filters when traces match on lower 64bits, but not
     // the higher ones.
-    assertThat(StrictTraceId.filterTraces(asList(twoOne.traceId())).map(modifiable))
-      .containsExactly(asList(twoOne));
+    assertThat(StrictTraceId.filterTraces(List.of(twoOne.traceId())).map(modifiable))
+      .containsExactly(List.of(twoOne));
   }
 }

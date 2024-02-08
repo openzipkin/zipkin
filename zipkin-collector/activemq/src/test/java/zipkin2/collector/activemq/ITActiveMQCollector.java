@@ -16,7 +16,6 @@ package zipkin2.collector.activemq;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -61,8 +60,8 @@ import static zipkin2.codec.SpanBytesEncoder.THRIFT;
 @Timeout(60)
 @Tag("docker")
 class ITActiveMQCollector {
-  @RegisterExtension ActiveMQExtension activemq = new ActiveMQExtension();
-  List<Span> spans = Arrays.asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
+  @RegisterExtension static ActiveMQExtension activemq = new ActiveMQExtension();
+  List<Span> spans = List.of(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
 
   public String testName;
 

@@ -14,14 +14,12 @@
 package zipkin2.server.internal.eureka;
 
 import com.linecorp.armeria.common.auth.BasicToken;
-import com.linecorp.armeria.server.Server;
 import com.linecorp.armeria.server.eureka.EurekaUpdatingListener;
 import com.linecorp.armeria.server.eureka.EurekaUpdatingListenerBuilder;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import zipkin2.storage.cassandra.internal.HostAndPort;
 
 /**
  * Settings for Eureka registration.

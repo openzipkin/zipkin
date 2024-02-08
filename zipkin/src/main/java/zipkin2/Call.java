@@ -61,7 +61,7 @@ public abstract class Call<V> implements Cloneable {
 
   @SuppressWarnings("unchecked")
   public static <T> Call<List<T>> emptyList() {
-    return Call.create(Collections.<T>emptyList());
+    return Call.create(Collections.emptyList());
   }
 
   public interface Mapper<V1, V2> {
