@@ -140,7 +140,7 @@ abstract class BaseITZipkinEureka {
     static final int EUREKA_PORT = 8761;
 
     EurekaContainer(Map<String, String> env) {
-      super(parse("ghcr.io/openzipkin/zipkin-eureka:3.0.5"));
+      super(parse("ghcr.io/openzipkin/zipkin-eureka:3.0.6"));
       withEnv(env);
       withExposedPorts(EUREKA_PORT);
       waitStrategy = Wait.forHealthcheck();

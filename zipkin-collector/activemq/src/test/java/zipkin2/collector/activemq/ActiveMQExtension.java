@@ -63,7 +63,7 @@ class ActiveMQExtension implements BeforeAllCallback, AfterAllCallback {
   // mostly waiting for https://github.com/testcontainers/testcontainers-java/issues/3537
   static final class ActiveMQContainer extends GenericContainer<ActiveMQContainer> {
     ActiveMQContainer() {
-      super(parse("ghcr.io/openzipkin/zipkin-activemq:3.0.5"));
+      super(parse("ghcr.io/openzipkin/zipkin-activemq:3.0.6"));
       withExposedPorts(ACTIVEMQ_PORT);
       waitStrategy = Wait.forListeningPorts(ACTIVEMQ_PORT);
       withStartupTimeout(Duration.ofSeconds(60));
