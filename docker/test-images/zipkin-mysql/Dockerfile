@@ -36,8 +36,8 @@ COPY --from=scratch /docker-bin/* /usr/local/bin/
 HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthcheck"]
 ENTRYPOINT ["start-mysql"]
 
-# Use latest from https://pkgs.alpinelinux.org/packages?name=mysql
-ARG mysql_version=10.11.6-r0
+# Use latest from https://pkgs.alpinelinux.org/packages?name=mysql (without the -r[0-9])
+ARG mysql_version=10.11.6
 LABEL mysql-version=$mysql_version
 ENV MYSQL_VERSION=$mysql_version
 
