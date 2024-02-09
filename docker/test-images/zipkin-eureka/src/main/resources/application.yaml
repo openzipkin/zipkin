@@ -22,6 +22,9 @@ eureka:
     registryFetchIntervalSeconds: 1
   server:
     useReadOnlyResponseCache: false
+    # We could set myUrl to avoid this server thinking it is also an
+    # unavailable replica. However, the effect of doing so is worse.
+    # See https://github.com/spring-cloud/spring-cloud-netflix/issues/4251
 server:
   port: 8761
 spring:
