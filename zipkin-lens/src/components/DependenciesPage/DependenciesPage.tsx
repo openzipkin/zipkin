@@ -25,11 +25,9 @@ import {
 } from '@material-ui/core';
 import { KeyboardDateTimePicker } from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
-import { History, Location } from 'history';
 import moment from 'moment';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { withRouter, RouteComponentProps } from 'react-router-dom';
 import {
   clearDependencies,
   loadDependencies,
@@ -39,6 +37,7 @@ import { clearAlert, setAlert } from '../App/slice';
 import ExplainBox from '../common/ExplainBox';
 import { LoadingIndicator } from '../common/LoadingIndicator';
 import DependenciesGraph from './DependenciesGraph';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -55,20 +54,21 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-interface DependenciesPageProps extends RouteComponentProps {}
+const useTimeRange = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
 
-const useTimeRange = (history: History, location: Location) => {
   const setTimeRange = useCallback(
     (timeRange: { startTime: moment.Moment; endTime: moment.Moment }) => {
       const ps = new URLSearchParams(location.search);
       ps.set('startTime', timeRange.startTime.valueOf().toString());
       ps.set('endTime', timeRange.endTime.valueOf().toString());
-      history.push({
+      navigate({
         pathname: location.pathname,
         search: ps.toString(),
       });
     },
-    [history, location.pathname, location.search],
+    [location.pathname, location.search, navigate],
   );
 
   const timeRange = useMemo(() => {
@@ -112,17 +112,14 @@ const useFetchDependencies = (timeRange: {
   }, [dispatch, timeRange.endTime, timeRange.startTime]);
 };
 
-const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
-  history,
-  location,
-}) => {
+const DependenciesPageImpl = () => {
   const classes = useStyles();
   const { _ } = useLingui();
   const dispatch = useDispatch();
 
   // tempTimeRange manages a time range which is inputted in the form.
   // On the other hand, timeRange is a time range obtained from the URL search params.
-  const { timeRange, setTimeRange } = useTimeRange(history, location);
+  const { timeRange, setTimeRange } = useTimeRange();
   const [tempTimeRange, setTempTimeRange] = useState({
     startTime: timeRange.startTime
       ? timeRange.startTime
@@ -243,4 +240,4 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
   );
 };
 
-export default withRouter(DependenciesPageImpl);
+export default DependenciesPageImpl;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 import { faSquare, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -27,10 +26,10 @@ import {
   makeStyles,
 } from '@material-ui/core';
 import React, { useCallback } from 'react';
-import { withRouter, RouteComponentProps } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Edge } from './types';
 import { selectServiceColor } from '../../constants/color';
+import { useNavigate } from 'react-router-dom';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -62,7 +61,7 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-interface NodeDetailDataProps extends RouteComponentProps {
+interface NodeDetailDataProps {
   serviceName: string;
   targetEdges: Edge[];
   sourceEdges: Edge[];
@@ -72,18 +71,18 @@ const NodeDetailDataImpl: React.FC<NodeDetailDataProps> = ({
   serviceName,
   targetEdges,
   sourceEdges,
-  history,
 }) => {
   const classes = useStyles();
+  const navigate = useNavigate();
 
   const handleSearchTracesButtonClick = useCallback(() => {
     const params = new URLSearchParams();
     params.set('serviceName', serviceName);
-    history.push({
+    navigate({
       pathname: '/',
       search: params.toString(),
     });
-  }, [serviceName, history]);
+  }, [serviceName, navigate]);
 
   const shownDataList = [] as {
     title: string;
@@ -200,4 +199,4 @@ const NodeDetailDataImpl: React.FC<NodeDetailDataProps> = ({
   );
 };
 
-export default withRouter(NodeDetailDataImpl);
+export default NodeDetailDataImpl;

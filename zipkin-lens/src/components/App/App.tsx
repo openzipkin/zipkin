@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 import MomentUtils from '@date-io/moment';
 import { I18nProvider } from '@lingui/react';
 import {
@@ -21,7 +20,7 @@ import {
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import React, { Suspense } from 'react';
 import { Provider } from 'react-redux';
-import { BrowserRouter, Route } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { useTitle } from 'react-use';
 import { ThemeProvider } from 'styled-components';
 
@@ -51,21 +50,25 @@ const App: React.FC = () => {
                     <AlertSnackbar />
                     <I18nProvider i18n={i18n}>
                       <BrowserRouter basename={BASE_PATH}>
-                        <Layout>
-                          <Route exact path="/" component={DiscoverPage} />
-                          {config.dependency.enabled && (
+                        <Routes>
+                          <Route element={<Layout />}>
+                            <Route path="/" element={<DiscoverPage />} />
+                            {config.dependency.enabled && (
+                              <Route
+                                path="/dependency"
+                                element={<DependenciesPage />}
+                              />
+                            )}
                             <Route
-                              exact
-                              path="/dependency"
-                              component={DependenciesPage}
+                              path="/traces/:traceId"
+                              element={<TracePage />}
                             />
-                          )}
-                          <Route
-                            exact
-                            path={['/traces/:traceId', '/traceViewer']}
-                            component={TracePage}
-                          />
-                        </Layout>
+                            <Route
+                              path="/traceViewer"
+                              element={<TracePage />}
+                            />
+                          </Route>
+                        </Routes>
                       </BrowserRouter>
                     </I18nProvider>
                   </Provider>
