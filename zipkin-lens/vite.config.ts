@@ -22,6 +22,7 @@ export default defineConfig({
   },
   define: {
     'import.meta.env.BASE_PATH': JSON.stringify(process.env.BASE_PATH),
+    'import.meta.env.API_BASE': JSON.stringify(process.env.API_BASE),
   },
   resolve: {
     alias: {
