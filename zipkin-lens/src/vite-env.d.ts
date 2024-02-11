@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,4 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-/// <reference types="react-scripts" />
-
-// This file imports type definitions set up by react-scripts, for example the ability to
-// import image files into the bundle.
+/// <reference types="vite/client" />

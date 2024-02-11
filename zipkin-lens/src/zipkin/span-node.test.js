@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { describe, it, expect } from 'vitest';
 import { SpanNode, SpanNodeBuilder } from './span-node';
 import { clean } from './span-cleaner';
 

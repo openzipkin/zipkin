@@ -11,11 +11,12 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { Trans } from '@lingui/macro';
+
 import { Button, makeStyles, Menu, MenuItem } from '@material-ui/core';
 import { Menu as MenuIcon } from '@material-ui/icons';
 import React, { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
+import { Trans, useTranslation } from 'react-i18next';
 import * as api from '../../../constants/api';
 import AdjustedTrace from '../../../models/AdjustedTrace';
 import Span from '../../../models/Span';
@@ -40,6 +41,7 @@ export const HeaderMenu = ({ trace, rawTrace }: HeaderMenuProps) => {
   const config = useUiConfig();
   const dispatch = useDispatch();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const { t } = useTranslation();
 
   const logsUrl = config.logsUrl
     ? config.logsUrl.replace(/{traceId}/g, trace.traceId)
@@ -158,7 +160,7 @@ export const HeaderMenu = ({ trace, rawTrace }: HeaderMenuProps) => {
       >
         {traceJsonUrl && (
           <MenuItem onClick={handleDownloadJsonButtonClick}>
-            <Trans>Download JSON</Trans>
+            <Trans t={t}>Download JSON</Trans>
           </MenuItem>
         )}
         {logsUrl && (
@@ -169,12 +171,12 @@ export const HeaderMenu = ({ trace, rawTrace }: HeaderMenuProps) => {
             target="_blank"
             rel="noopener"
           >
-            <Trans>View Logs</Trans>
+            <Trans t={t}>View Logs</Trans>
           </MenuItem>
         )}
         {archivePostUrl && (
           <MenuItem onClick={handleArchiveButtonClick}>
-            <Trans>Archive Trace</Trans>
+            <Trans t={t}>Archive Trace</Trans>
           </MenuItem>
         )}
       </Menu>

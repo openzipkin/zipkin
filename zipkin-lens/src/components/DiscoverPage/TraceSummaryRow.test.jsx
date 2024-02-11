@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,8 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { describe, it, expect } from 'vitest';
 import React from 'react';
-
 import TraceSummaryRow from './TraceSummaryRow';
 import render from '../../test/util/render-with-default-settings';
 import { screen } from '@testing-library/react';
@@ -40,16 +40,18 @@ describe('<TraceSummaryRow />', () => {
       </table>,
     );
 
-    const startTimeFormat = screen.queryByTestId(
+    const startTimeFormat = screen.getByTestId(
       'TraceSummaryRow-startTimeFormat',
     );
-    expect(startTimeFormat).toBeInTheDocument();
+    expect(startTimeFormat).toBeDefined();
     // Don't assert on hour as the timezone will be different in CI
-    expect(startTimeFormat).toHaveTextContent(/10\/2[34] [0-9][0-9]:52:55:237/);
+    expect(startTimeFormat.textContent).toMatch(
+      /10\/2[34] [0-9][0-9]:52:55:237/,
+    );
     // Intentionally not asserting the relative time from now as it would drift tests
 
-    const duration = screen.queryByTestId('TraceSummaryRow-duration');
-    expect(duration).toBeInTheDocument();
-    expect(duration).toHaveTextContent('131.848ms');
+    const duration = screen.getByTestId('TraceSummaryRow-duration');
+    expect(duration).toBeDefined();
+    expect(duration.textContent).toBe('131.848ms');
   });
 });

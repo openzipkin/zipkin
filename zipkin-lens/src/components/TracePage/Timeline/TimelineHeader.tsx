@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2022 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 import {
   Box,
   Button,
@@ -71,7 +70,7 @@ type TimelineHeaderProps = {
   isMiniTimelineOpen: boolean;
   toggleIsMiniTimelineOpen: () => void;
   selectedSpan: AdjustedSpan;
-  rerootedSpanId?: string;
+  rerootedSpanId: string | undefined;
   setRerootedSpanId: (value: string | undefined) => void;
   absoluteListWidth: number;
   setClosedSpanIdMap: (value: { [spanId: string]: boolean }) => void;

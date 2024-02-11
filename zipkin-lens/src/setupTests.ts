@@ -14,6 +14,8 @@
 
 import '@testing-library/jest-dom';
 import fetchMock from 'fetch-mock';
+
+import { beforeAll, beforeEach, vi, afterAll } from 'vitest';
 import { UI_CONFIG } from './constants/api';
 
 // Mock out UI Config fetch with an empty config as a baseline, tests can remock as needed.
@@ -26,10 +28,9 @@ const { location } = window;
 const { language } = window.navigator;
 
 beforeAll(() => {
-  delete window.location;
   window.location = {
     ...location,
-    reload: jest.fn(),
+    reload: vi.fn(),
   } as any; // Only partial mock so don't enforce full type.
 });
 

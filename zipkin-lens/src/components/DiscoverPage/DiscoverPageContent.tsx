@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,12 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 /* eslint-disable no-shadow */
 
 import { faHistory, faSync, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Trans } from '@lingui/macro';
 import {
   Box,
   Button,
@@ -37,6 +35,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
+import { Trans, useTranslation } from 'react-i18next';
 import Criterion, { newCriterion } from './Criterion';
 import LookbackMenu from './LookbackMenu';
 import SearchBar from './SearchBar';
@@ -397,13 +396,10 @@ const useTraceSummaryOpenState = (traceSummaries: TraceSummary[]) => {
 
   const expandAll = useCallback(() => {
     setTraceSummaryOpenMap(
-      traceSummaries.reduce(
-        (acc, cur) => {
-          acc[cur.traceId] = true;
-          return acc;
-        },
-        {} as { [key: string]: boolean },
-      ),
+      traceSummaries.reduce((acc, cur) => {
+        acc[cur.traceId] = true;
+        return acc;
+      }, {} as { [key: string]: boolean }),
     );
   }, [traceSummaries]);
 
@@ -456,7 +452,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
   const { setQueryParams, criteria, lookback, limit } =
     useQueryParams(autocompleteKeys);
   useFetchTraces(autocompleteKeys, criteria, lookback, limit);
-
+  const { t } = useTranslation();
   // Temporary search criteria.
   const [tempCriteria, setTempCriteria] = useState(criteria);
   const { defaultLookback, queryLimit } = useUiConfig();
@@ -566,9 +562,9 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
     content = (
       <ExplainBox
         icon={faSearch}
-        headerText={<Trans>Search Traces</Trans>}
+        headerText={<Trans t={t}>Search Traces</Trans>}
         text={
-          <Trans>
+          <Trans t={t}>
             Please select criteria in the search bar. Then, click the search
             button.
           </Trans>
@@ -604,7 +600,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
             />
           </Box>
           <SearchButton onClick={searchTraces}>
-            <Trans>Run Query</Trans>
+            <Trans t={t}>Run Query</Trans>
           </SearchButton>
           <SettingsButton
             onClick={handleSettingsButtonClick}
@@ -649,7 +645,7 @@ const DiscoverPageContent: React.FC<DiscoverPageContentProps> = ({
           <Box className={classes.resultHeader}>
             <Typography variant="body1">
               {filteredTraceSummaries.length === 1 ? (
-                <Trans>1 Result</Trans>
+                <Trans t={t}>1 Result</Trans>
               ) : (
                 <Trans>{filteredTraceSummaries.length} Results</Trans>
               )}

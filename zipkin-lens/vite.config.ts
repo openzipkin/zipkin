@@ -11,17 +11,29 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { createProxyMiddleware } from 'http-proxy-middleware';
+/// <reference types="vitest" />
 
-const API_BASE = process.env.API_BASE || 'http://localhost:9411';
-
-// Default create-react-app proxy only proxies AJAX requests by looking at Accept headers. We want
-// to proxy any request though, mainly to support the Download JSON button.
-const proxy = createProxyMiddleware(['**/api/**', '**/config.json'], {
-  target: API_BASE,
-  changeOrigin: true,
-});
-
-export default (app) => {
-  app.use('/', proxy);
-};
+import {defineConfig} from 'vite'
+import * as path from "path";
+// https://vitejs.dev/config/
+export default defineConfig({
+  server: {
+    port: 3000
+  },
+  define: {
+    'import.meta.env.BASE_PATH': JSON.stringify(process.env.BASE_PATH),
+    'import.meta.env.API_BASE': JSON.stringify(process.env.API_BASE),
+  },
+  resolve: {
+    alias: {
+      src: path.resolve('src/'),
+    },
+  },
+  test: {
+    environment: 'happy-dom'
+  },
+  base:"/zipkin/",
+  build:{
+    outDir: 'build'
+  },
+})

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2021 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,15 +11,12 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
-/* eslint-disable no-shadow */
-
-import { Trans } from '@lingui/macro';
 import { Box, CircularProgress, Typography } from '@material-ui/core';
 import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'redux-thunk';
 
+import { Trans, useTranslation } from 'react-i18next';
 import DiscoverPageContent from './DiscoverPageContent';
 import { useUiConfig } from '../UiConfig';
 import { loadAutocompleteKeys } from '../../slices/autocompleteKeysSlice';
@@ -42,20 +39,20 @@ const DiscoverPageImpl: React.FC<DiscoverPageImplProps> = ({
   loadServices,
 }) => {
   const config = useUiConfig();
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadAutocompleteKeys();
     loadServices();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!config.searchEnabled) {
     return (
       <Typography variant="body1">
-        <Trans>
+        <Trans t={t}>
           Searching has been disabled via the searchEnabled property. You can
           still view specific traces of which you know the trace id by entering
-          it in the "Trace ID..." textbox on the top-right.
+          it in the &quot;Trace ID...&quot; textbox on the top-right.
         </Trans>
       </Typography>
     );

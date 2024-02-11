@@ -17,8 +17,6 @@ import {
   faQuestionCircle,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { msg } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
 import {
   AppBar as MuiAppBar,
   Box,
@@ -32,6 +30,7 @@ import {
 import React from 'react';
 import styled from 'styled-components';
 
+import { useTranslation } from 'react-i18next';
 import HeaderMenuItem from './HeaderMenuItem';
 import LanguageSelector from './LanguageSelector';
 import TraceIdSearch from './TraceIdSearch';
@@ -41,7 +40,7 @@ import { darkTheme } from '../../constants/color';
 import logoSrc from '../../img/zipkin-logo.png';
 
 const Layout: React.FC = ({ children }) => {
-  const { _ } = useLingui();
+  const { t } = useTranslation();
   const config = useUiConfig();
 
   return (
@@ -63,20 +62,20 @@ const Layout: React.FC = ({ children }) => {
                 justifyContent="center"
                 alignItems="center"
               >
-                <Logo alt={_(msg`Zipkin`)} />
+                <Logo alt={t(`Zipkin`).toString()} />
               </Box>
               <Title>
                 <strong>Zipkin</strong>
               </Title>
               <Box display="flex" ml={3}>
                 <HeaderMenuItem
-                  title={_(msg`Find a trace`)}
+                  title={t(`Find a trace`)}
                   path="/"
                   icon={faSearch}
                 />
                 {config.dependency.enabled && (
                   <HeaderMenuItem
-                    title={_(msg`Dependencies`)}
+                    title={t(`Dependencies`)}
                     path="/dependency"
                     icon={faProjectDiagram}
                   />
@@ -92,7 +91,7 @@ const Layout: React.FC = ({ children }) => {
                 <TraceIdSearch />
                 {config.supportUrl && (
                   <Box ml={1}>
-                    <Tooltip title={_(msg`Support`)}>
+                    <Tooltip title={t(`Support`).toString()}>
                       <MuiIconButton href={config.supportUrl}>
                         <FontAwesomeIcon icon={faQuestionCircle} />
                       </MuiIconButton>

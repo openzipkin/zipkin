@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,11 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 import { faProjectDiagram, faSync } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Trans, msg } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
 import {
   Box,
   Button,
@@ -25,11 +22,11 @@ import {
 } from '@material-ui/core';
 import { KeyboardDateTimePicker } from '@material-ui/pickers';
 import { MaterialUiPickersDate } from '@material-ui/pickers/typings/date';
-import { History, Location } from 'history';
 import moment from 'moment';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { withRouter, RouteComponentProps } from 'react-router-dom';
+import { Trans, useTranslation } from 'react-i18next';
 import {
   clearDependencies,
   loadDependencies,
@@ -55,9 +52,9 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-interface DependenciesPageProps extends RouteComponentProps {}
+type DependenciesPageProps = RouteComponentProps;
 
-const useTimeRange = (history: History, location: Location) => {
+const useTimeRange = (history: any, location: any) => {
   const setTimeRange = useCallback(
     (timeRange: { startTime: moment.Moment; endTime: moment.Moment }) => {
       const ps = new URLSearchParams(location.search);
@@ -117,7 +114,7 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
   location,
 }) => {
   const classes = useStyles();
-  const { _ } = useLingui();
+  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   // tempTimeRange manages a time range which is inputted in the form.
@@ -185,9 +182,9 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
     content = (
       <ExplainBox
         icon={faProjectDiagram}
-        headerText={<Trans>Search Dependencies</Trans>}
+        headerText={<Trans t={t}>Search Dependencies</Trans>}
         text={
-          <Trans>
+          <Trans t={t}>
             Please select the start and end time. Then, click the search button.
           </Trans>
         }
@@ -206,7 +203,7 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
         <Box display="flex" justifyContent="center" alignItems="center">
           <Box display="flex" mr={0.5} alignItems="center">
             <KeyboardDateTimePicker
-              label={_(msg`Start Time`)}
+              label={t(`Start Time`)}
               inputVariant="outlined"
               value={tempTimeRange.startTime}
               onChange={handleStartTimeChange}
@@ -216,7 +213,7 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
             />
             -
             <KeyboardDateTimePicker
-              label={_(msg`End Time`)}
+              label={t(`End Time`)}
               inputVariant="outlined"
               value={tempTimeRange.endTime}
               onChange={handleEndTimeChange}
@@ -232,7 +229,7 @@ const DependenciesPageImpl: React.FC<DependenciesPageProps> = ({
             data-testid="search-button"
             startIcon={<FontAwesomeIcon icon={faSync} />}
           >
-            <Trans>Run Query</Trans>
+            <Trans t={t}>Run Query</Trans>
           </Button>
         </Box>
       </Box>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,17 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-const extractBasePath = () => {
-  const base = document.getElementsByTagName('base');
-  if (base.length === 0) {
-    return '/zipkin';
-  }
-  return base[0].getAttribute('href').replace(/\/+$/, '');
-};
-
-export const BASE_PATH = extractBasePath();
-
-export const ZIPKIN_API = `${BASE_PATH}/api/v2`;
+export const BASE_PATH = import.meta.env.BASE_PATH;
+export const ZIPKIN_API = `${import.meta.env.API_BASE}/api/v2`;
 export const UI_CONFIG = `${BASE_PATH}/config.json`;
 export const SERVICES = `${ZIPKIN_API}/services`;
 export const REMOTE_SERVICES = `${ZIPKIN_API}/remoteServices`;

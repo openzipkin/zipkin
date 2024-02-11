@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,9 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
-import { msg } from '@lingui/macro';
-import { useLingui } from '@lingui/react';
 import {
   makeStyles,
   Table,
@@ -22,6 +19,7 @@ import {
   TableRow,
 } from '@material-ui/core';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { AdjustedAnnotation } from '../../../models/AdjustedTrace';
 import { formatTimestamp } from '../../../util/timestamp';
 
@@ -52,7 +50,7 @@ type AnnotationTableProps = {
 
 export const AnnotationTable = ({ annotations }: AnnotationTableProps) => {
   const classes = useStyles();
-  const { _ } = useLingui();
+  const { t } = useTranslation();
 
   return (
     <Table size="small" className={classes.table}>
@@ -70,11 +68,11 @@ export const AnnotationTable = ({ annotations }: AnnotationTableProps) => {
                 <TableBody>
                   {[
                     {
-                      label: _(msg`Start Time`),
+                      label: t(`Start Time`),
                       value: formatTimestamp(annotation.timestamp),
                     },
                     { label: 'Value', value: annotation.value },
-                    { label: _(msg`Address`), value: annotation.endpoint },
+                    { label: t(`Address`), value: annotation.endpoint },
                   ].map(({ label, value }) => (
                     <TableRow key={label} className={classes.tableRow}>
                       <TableCell className={classes.labelCell}>

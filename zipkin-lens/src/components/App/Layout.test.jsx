@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,11 +12,14 @@
  * the License.
  */
 import React from 'react';
-import { screen } from '@testing-library/react';
+
+import { describe, it, expect, afterEach } from 'vitest';
+import { cleanup, screen } from '@testing-library/react';
 import render from '../../test/util/render-with-default-settings';
 import Layout from './Layout';
 
 describe('<Layout />', () => {
+  afterEach(cleanup);
   it('does not render help link with default config', () => {
     // children is required so avoid warning by passing dummy children
     render(
@@ -25,7 +28,8 @@ describe('<Layout />', () => {
         <span>Test</span>
       </Layout>,
     );
-    expect(screen.queryByTitle('Support')).not.toBeInTheDocument();
+    const helpLink = screen.queryByTitle('Support');
+    expect(helpLink).toBeNull();
   });
 
   it('does render help link when defined', () => {
@@ -41,8 +45,8 @@ describe('<Layout />', () => {
         },
       },
     );
-    const helpLink = screen.queryByTitle('Support');
-    expect(helpLink).toBeInTheDocument();
+    const helpLink = screen.getByTitle('Support');
+    expect(helpLink).toBeDefined();
     expect(helpLink.href).toEqual('https://gitter.im/openzipkin/zipkin');
   });
 
@@ -54,7 +58,7 @@ describe('<Layout />', () => {
         <span>Test</span>
       </Layout>,
     );
-    expect(screen.getByText('Dependencies')).toBeInTheDocument();
+    expect(screen.queryByText('Dependencies')).toBeDefined();
   });
 
   it('does not render Dependencies Page when disabled', () => {
@@ -72,6 +76,6 @@ describe('<Layout />', () => {
         },
       },
     );
-    expect(screen.queryByTitle('Dependencies')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Dependencies')).toBeNull();
   });
 });

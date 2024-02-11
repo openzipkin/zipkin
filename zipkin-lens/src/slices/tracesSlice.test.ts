@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
+import { describe, it, expect, afterEach } from 'vitest';
 import configureStore from 'redux-mock-store';
 import thunk from 'redux-thunk';
 import fetchMock from 'fetch-mock';
@@ -20,12 +20,11 @@ import { loadTrace, searchTraces, TracesState } from './tracesSlice';
 import * as api from '../constants/api';
 import TraceSummary from '../models/TraceSummary';
 import Span from '../models/Span';
-import AdjustedTrace from '../models/AdjustedTrace';
-
-const {
+import {
   treeCorrectedForClockSkew,
-  detailedTraceSummary: buildDetailedTraceSummary,
-} = require('../zipkin');
+  detailedTraceSummary as buildDetailedTraceSummary,
+} from '../zipkin';
+import AdjustedTrace from '../models/AdjustedTrace';
 
 const frontend = {
   serviceName: 'frontend',
@@ -100,7 +99,9 @@ const httpTrace: Span[] = [
 
 describe('tracesSlice', () => {
   describe('searchTraces', () => {
-    afterEach(() => fetchMock.reset());
+    afterEach(() => {
+      fetchMock.reset();
+    });
 
     it('should return the existing state, if the search criteria have not been changed', () => {
       const mockStore = configureStore([thunk]);
@@ -214,8 +215,9 @@ describe('tracesSlice', () => {
       const mockStore = configureStore([thunk]);
 
       const skewCorrectedTrace = treeCorrectedForClockSkew(httpTrace);
-      const adjustedTrace: AdjustedTrace =
-        buildDetailedTraceSummary(skewCorrectedTrace);
+      const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(
+        skewCorrectedTrace,
+      ) as unknown as AdjustedTrace;
 
       const initialState: { traces: TracesState } = {
         traces: {
@@ -254,8 +256,9 @@ describe('tracesSlice', () => {
       const mockStore = configureStore([thunk]);
 
       const skewCorrectedTrace = treeCorrectedForClockSkew(httpTrace);
-      const adjustedTrace: AdjustedTrace =
-        buildDetailedTraceSummary(skewCorrectedTrace);
+      const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(
+        skewCorrectedTrace,
+      ) as any;
 
       const initialState: { traces: TracesState } = {
         traces: {
@@ -294,8 +297,9 @@ describe('tracesSlice', () => {
       const mockStore = configureStore([thunk]);
 
       const skewCorrectedTrace = treeCorrectedForClockSkew(httpTrace);
-      const adjustedTrace: AdjustedTrace =
-        buildDetailedTraceSummary(skewCorrectedTrace);
+      const adjustedTrace: AdjustedTrace = buildDetailedTraceSummary(
+        skewCorrectedTrace,
+      ) as any;
 
       const initialState: { traces: TracesState } = {
         traces: {

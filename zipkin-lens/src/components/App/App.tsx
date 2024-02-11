@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,15 +11,13 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 import MomentUtils from '@date-io/moment';
-import { I18nProvider } from '@lingui/react';
 import {
   CircularProgress,
   ThemeProvider as MuiThemeProvider,
 } from '@material-ui/core';
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';
-import React, { Suspense } from 'react';
+import React, { Suspense, useMemo } from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter, Route } from 'react-router-dom';
 import { useTitle } from 'react-use';
@@ -32,12 +30,15 @@ import TracePage from '../TracePage';
 import { UiConfig, UiConfigConsumer } from '../UiConfig';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../constants/color';
-import { i18n } from '../../util/locale';
-import { BASE_PATH } from '../../constants/api';
 import AlertSnackbar from './AlertSnackbar';
 
 const App: React.FC = () => {
   useTitle('Zipkin');
+  const baseName = useMemo(() => {
+    return import.meta.env.DEV
+      ? '/zipkin'
+      : (import.meta.env.BASE_PATH as string);
+  }, []);
 
   return (
     <Suspense fallback={<CircularProgress />}>
@@ -49,25 +50,23 @@ const App: React.FC = () => {
                 {(config) => (
                   <Provider store={configureStore(config)}>
                     <AlertSnackbar />
-                    <I18nProvider i18n={i18n}>
-                      <BrowserRouter basename={BASE_PATH}>
-                        <Layout>
-                          <Route exact path="/" component={DiscoverPage} />
-                          {config.dependency.enabled && (
-                            <Route
-                              exact
-                              path="/dependency"
-                              component={DependenciesPage}
-                            />
-                          )}
+                    <BrowserRouter basename={baseName}>
+                      <Layout>
+                        <Route exact path="/" component={DiscoverPage} />
+                        {config.dependency.enabled && (
                           <Route
                             exact
-                            path={['/traces/:traceId', '/traceViewer']}
-                            component={TracePage}
+                            path="/dependency"
+                            component={DependenciesPage}
                           />
-                        </Layout>
-                      </BrowserRouter>
-                    </I18nProvider>
+                        )}
+                        <Route
+                          exact
+                          path={['/traces/:traceId', '/traceViewer']}
+                          component={TracePage}
+                        />
+                      </Layout>
+                    </BrowserRouter>
                   </Provider>
                 )}
               </UiConfigConsumer>

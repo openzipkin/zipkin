@@ -11,13 +11,11 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { useLingui } from '@lingui/react';
 import { Button, Menu, MenuItem } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import TranslateIcon from '@material-ui/icons/Translate';
 import React, { useCallback } from 'react';
-
-import { setLocale } from '../../util/locale';
+import i18n from 'i18next';
 
 // We want to display all the languages in native language, not current locale, so hard-code the
 // strings here instead of using internationalization.
@@ -37,15 +35,14 @@ export const LANGUAGES = [
     name: 'Français',
   },
   {
-    locale: 'zh-cn',
+    locale: 'zh_cn',
     name: '中文 (简体)',
   },
 ];
 
 const LanguageSelector = () => {
-  const { i18n } = useLingui();
-
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [currentLocale, setLocale] = React.useState(i18n.language);
 
   const handleButtonClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -59,8 +56,6 @@ const LanguageSelector = () => {
     setAnchorEl(null);
   }, []);
 
-  const currentLocale = i18n.locale;
-
   const handleMenuItemClick = useCallback(
     (event: React.MouseEvent<HTMLLIElement>) => {
       setAnchorEl(null);
@@ -71,8 +66,8 @@ const LanguageSelector = () => {
       if (locale === currentLocale) {
         return;
       }
+      i18n.changeLanguage(locale);
       setLocale(locale);
-      i18n.activate(locale);
     },
     [currentLocale, i18n],
   );
