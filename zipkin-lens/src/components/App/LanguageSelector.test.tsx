@@ -39,7 +39,7 @@ describe('<LanguageSelector />', () => {
     const changeLanguageButton = screen.getByTestId('change-language-button');
     expect(changeLanguageButton).toBeDefined();
     i18n.language;
-    expect(i18n.language).toEqual('en-US');
+    expect(i18n.language).toEqual('en');
   });
 
   it('displays all languages', async () => {
@@ -48,7 +48,7 @@ describe('<LanguageSelector />', () => {
     expect(screen.getAllByTestId('language-list-item-es')).toBeDefined();
     expect(screen.getAllByTestId('language-list-item-fr')).toBeDefined();
     expect(screen.getAllByTestId('language-list-item-zh_cn')).toBeDefined();
-    expect(i18n.language).toEqual('en-US');
+    expect(i18n.language).toEqual('en');
   });
 
   it('language select changes locale and refreshes', async () => {

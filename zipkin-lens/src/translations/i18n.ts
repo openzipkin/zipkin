@@ -1,30 +1,36 @@
 import i18n from 'i18next'
 import {initReactI18next} from "react-i18next";
 import LanguageDetector from 'i18next-browser-languagedetector'
-import {messages as messages_fr} from './fr/messages'
-import {messages as messages_es} from './es/messages'
+import messages_fr from './fr/translations.json'
+import messages_es from './es/translations.json'
+import messages_zh from './zh-cn/translations.json'
+import messages_en from './en/translations.json'
 
-import {messages as messages_zh} from './zh-cn/messages'
-
+export const FALLBACK_LOCALE = 'en';
 
 const resources = {
   es: {
-    translation: messages_fr
-  },
-  fr:{
     translation: messages_es
   },
+  fr:{
+    translation: messages_fr
+  },
   zh_cn: {
-    translation:messages_zh
+    translation: messages_zh
+  },
+  en:{
+    translation: messages_en
   }
 }
 
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
+  .use(LanguageDetector)
   .init(
     {
-      resources
+      resources,
+      fallbackLng: FALLBACK_LOCALE,
+      debug: true,
     }
   )
 
