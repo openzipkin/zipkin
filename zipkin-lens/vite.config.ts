@@ -15,25 +15,57 @@
 
 import {defineConfig} from 'vite'
 import * as path from "path";
-// https://vitejs.dev/config/
-export default defineConfig({
-  server: {
-    port: 3000
-  },
-  define: {
-    'import.meta.env.BASE_PATH': JSON.stringify(process.env.BASE_PATH),
-    'import.meta.env.API_BASE': JSON.stringify(process.env.API_BASE),
-  },
-  resolve: {
-    alias: {
-      src: path.resolve('src/'),
+
+// baseUrl is the default path to lookup assets.
+const baseUrl = process.env.BASE_URL || '/zipkin';
+// basePath is the default path to get dynamic resources from zipkin.
+const basePath = process.env.BASE_PATH || baseUrl;
+
+const zipkinProxyConfig = {
+  target: process.env.API_BASE || 'http://localhost:9411',
+  changeOrigin: true,
+};
+
+export default defineConfig(() => {
+  // https://vitejs.dev/config/
+  return {
+    server: {
+      port: 3000,
+      proxy: {
+        '/zipkin/api/v2': zipkinProxyConfig,
+        '/zipkin/config.json': zipkinProxyConfig,
+      },
     },
-  },
-  test: {
-    environment: 'happy-dom'
-  },
-  base:"/zipkin/",
-  build:{
-    outDir: 'build'
-  },
+    resolve: {
+      alias: {
+        src: path.resolve('src/'),
+      },
+    },
+    test: {
+      environment: 'happy-dom'
+    },
+    plugins: [
+      {
+        name: 'Replace head.base.href with BASE_PATH variable',
+        transformIndexHtml: html => html.replace('href="/zipkin"', `href="${basePath}"`)
+      },
+    ],
+    base: baseUrl,
+    build: {
+      outDir: 'build',
+      // use the same path patterns as the original react-scripts lens build
+      assetsDir: "static",
+      rollupOptions: {
+        output: {
+          assetFileNames({name}) {
+            if (name?.includes('.css')) return 'static/css/[name].[hash].css'
+            if (name?.includes('.png')) return 'static/media/[name].[hash].png'
+            return 'static/[name].[hash][extname]'
+          },
+          chunkFileNames: `static/js/[name].[hash].js`,
+          entryFileNames: `static/js/[name].[hash].js`,
+        },
+      },
+    },
+  }
 })
