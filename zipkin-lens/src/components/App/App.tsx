@@ -37,7 +37,7 @@ const App: React.FC = () => {
   const baseName = useMemo(() => {
     return import.meta.env.DEV
       ? '/zipkin'
-      : (import.meta.env.BASE_PATH as string);
+      : (import.meta.env.BASE_URL as string);
   }, []);
 
   return (

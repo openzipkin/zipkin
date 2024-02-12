@@ -34,6 +34,18 @@ To get a coverage report as well, run `npm test -- --coverage`.
 Builds the app for production to the `build` folder.<br />
 It correctly bundles React in production mode and optimizes the build for the best performance.
 
+## Build tips
+
+### Use the production node version
+
+The production UI is built with Maven. To use the same version, issue this command:
+
+```bash
+nvm use $(../mvnw help:evaluate -Dexpression=node.version -q -DforceStdout)
+```
+
+Now, it is less likely a pull request will fail when `npm test` succeeds locally.
+
 ## Localization
 
 We use [LinguiJS](https://lingui.js.org/) for localization of the UI. Translations for strings are

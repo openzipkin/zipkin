@@ -533,6 +533,7 @@
             <exclude>**/.idea/**</exclude>
             <exclude>**/node_modules/**</exclude>
             <exclude>**/build/**</exclude>
+            <exclude>**/dist/**</exclude>
             <exclude>**/coverage/**</exclude>
             <exclude>**/.babelrc</exclude>
             <exclude>**/.bowerrc</exclude>
