@@ -15,7 +15,7 @@ import { Button, Menu, MenuItem } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import TranslateIcon from '@material-ui/icons/Translate';
 import React, { useCallback } from 'react';
-import {useTranslation} from "react-i18next";
+import { useTranslation } from 'react-i18next';
 
 // We want to display all the languages in native language, not current locale, so hard-code the
 // strings here instead of using internationalization.
@@ -42,7 +42,7 @@ export const LANGUAGES = [
 
 const LanguageSelector = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const {i18n}  = useTranslation()
+  const { i18n } = useTranslation();
 
   const handleButtonClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -67,7 +67,7 @@ const LanguageSelector = () => {
         return;
       }
 
-      i18n.changeLanguage(locale)
+      i18n.changeLanguage(locale);
     },
     [i18n.language, i18n],
   );
