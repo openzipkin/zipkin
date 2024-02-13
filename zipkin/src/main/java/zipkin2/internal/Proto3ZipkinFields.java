@@ -60,8 +60,8 @@ final class Proto3ZipkinFields {
     @Override int sizeOfValue(Endpoint value) {
       int result = 0;
       result += SERVICE_NAME.sizeInBytes(value.serviceName());
-      result += IPV4.sizeInBytes(value.ipv4Bytes());
-      result += IPV6.sizeInBytes(value.ipv6Bytes());
+      if (value.ipv4Bytes() != null) result += 6; // tag + size of 4 + 4 bytes
+      if (value.ipv6Bytes() != null) result += 18; // tag + size of 16 + 16 bytes
       result += PORT.sizeInBytes(value.portAsInt());
       return result;
     }
