@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -62,23 +62,43 @@ public class CodecBenchmarks {
   static final byte[] tenClientSpansJsonV2 = SpanBytesEncoder.JSON_V2.encodeList(tenClientSpans);
 
   @Benchmark
-  public Span readClientSpan_JSON_V1() {
+  public Span decodeClientSpan_JSON_V1() {
     return SpanBytesDecoder.JSON_V1.decodeOne(clientSpanJsonV1);
   }
 
   @Benchmark
-  public Span readClientSpan_JSON_V2() {
+  public Span decodeClientSpan_JSON_V2() {
     return SpanBytesDecoder.JSON_V2.decodeOne(clientSpanJsonV2);
   }
 
   @Benchmark
-  public Span readClientSpan_PROTO3() {
+  public Span decodeClientSpan_PROTO3() {
     return SpanBytesDecoder.PROTO3.decodeOne(clientSpanProto3);
   }
 
   @Benchmark
-  public Span readClientSpan_THRIFT() {
+  public Span decodeClientSpan_THRIFT() {
     return SpanBytesDecoder.THRIFT.decodeOne(clientSpanThrift);
+  }
+
+  @Benchmark
+  public int sizeInBytesClientSpan_JSON_V2() {
+    return SpanBytesEncoder.JSON_V2.sizeInBytes(clientSpan);
+  }
+
+  @Benchmark
+  public int sizeInBytesClientSpan_JSON_V1() {
+    return SpanBytesEncoder.JSON_V1.sizeInBytes(clientSpan);
+  }
+
+  @Benchmark
+  public int sizeInBytesClientSpan_PROTO3() {
+    return SpanBytesEncoder.PROTO3.sizeInBytes(clientSpan);
+  }
+
+  @Benchmark
+  public int sizeInBytesClientSpan_THRIFT() {
+    return SpanBytesEncoder.THRIFT.sizeInBytes(clientSpan);
   }
 
   @Benchmark
@@ -102,7 +122,7 @@ public class CodecBenchmarks {
   }
 
   @Benchmark
-  public List<Span> readTenClientSpans_JSON_V2() {
+  public List<Span> decodeTenClientSpans_JSON_V2() {
     return SpanBytesDecoder.JSON_V2.decodeList(tenClientSpansJsonV2);
   }
 
@@ -118,22 +138,22 @@ public class CodecBenchmarks {
   static final byte[] chineseSpanThrift = SpanBytesEncoder.THRIFT.encode(chineseSpan);
 
   @Benchmark
-  public Span readChineseSpan_JSON_V1() {
+  public Span decodeChineseSpan_JSON_V1() {
     return SpanBytesDecoder.JSON_V1.decodeOne(chineseSpanJsonV1);
   }
 
   @Benchmark
-  public Span readChineseSpan_JSON_V2() {
+  public Span decodeChineseSpan_JSON_V2() {
     return SpanBytesDecoder.JSON_V2.decodeOne(chineseSpanJsonV2);
   }
 
   @Benchmark
-  public Span readChineseSpan_PROTO3() {
+  public Span decodeChineseSpan_PROTO3() {
     return SpanBytesDecoder.PROTO3.decodeOne(chineseSpanProto3);
   }
 
   @Benchmark
-  public Span readChineseSpan_THRIFT() {
+  public Span decodeChineseSpan_THRIFT() {
     return SpanBytesDecoder.THRIFT.decodeOne(chineseSpanThrift);
   }
 
@@ -160,8 +180,8 @@ public class CodecBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
-      .include(".*" + CodecBenchmarks.class.getSimpleName() +".*read.*Span_.*")
       .addProfiler("gc")
+      .include(".*" + CodecBenchmarks.class.getSimpleName())
       .build();
 
     new Runner(opt).run();
