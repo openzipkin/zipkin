@@ -30,10 +30,6 @@ i18n
       resources,
       fallbackLng: 'en',
       debug: true,
-      detection: {
-        order: ['navigator', 'htmlTag', 'path', 'subdomain'],
-        caches: ['localStorage'],
-      },
     }
   )
 

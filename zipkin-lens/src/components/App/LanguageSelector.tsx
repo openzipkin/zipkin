@@ -14,7 +14,7 @@
 import { Button, Menu, MenuItem } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import TranslateIcon from '@material-ui/icons/Translate';
-import React, {useCallback, useEffect} from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // We want to display all the languages in native language, not current locale, so hard-code the
@@ -72,15 +72,14 @@ const LanguageSelector = () => {
     [i18n],
   );
 
-
   useEffect(() => {
+    console.log('Browser locale', i18n.language);
     if (LANGUAGES.find((lang) => lang.locale === i18n.language)) {
       i18n.changeLanguage(i18n.language);
     } else {
       i18n.changeLanguage(i18n.options.fallbackLng as string); // fallback to default language if the selected language is not supported
     }
   }, []);
-
 
   return (
     <>
