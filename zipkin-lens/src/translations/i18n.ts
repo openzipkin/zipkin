@@ -23,11 +23,17 @@ const resources = {
 }
 
 i18n
-  .use(LanguageDetector)
   .use(initReactI18next)
+  .use(LanguageDetector)
   .init(
     {
-      resources
+      resources,
+      fallbackLng: 'en',
+      debug: true,
+      detection: {
+        order: ['navigator', 'htmlTag', 'path', 'subdomain'],
+        caches: ['localStorage'],
+      },
     }
   )
 

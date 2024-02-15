@@ -14,7 +14,7 @@
 import { Button, Menu, MenuItem } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import TranslateIcon from '@material-ui/icons/Translate';
-import React, { useCallback } from 'react';
+import React, {useCallback, useEffect} from 'react';
 import { useTranslation } from 'react-i18next';
 
 // We want to display all the languages in native language, not current locale, so hard-code the
@@ -69,8 +69,18 @@ const LanguageSelector = () => {
 
       i18n.changeLanguage(locale);
     },
-    [i18n.language, i18n],
+    [i18n],
   );
+
+
+  useEffect(() => {
+    if (LANGUAGES.find((lang) => lang.locale === i18n.language)) {
+      i18n.changeLanguage(i18n.language);
+    } else {
+      i18n.changeLanguage(i18n.options.fallbackLng as string); // fallback to default language if the selected language is not supported
+    }
+  }, []);
+
 
   return (
     <>
@@ -92,6 +102,7 @@ const LanguageSelector = () => {
           <MenuItem
             key={lang.locale}
             onClick={handleMenuItemClick}
+            selected={lang.locale === i18n.language}
             data-locale={lang.locale}
             data-testid={`language-list-item-${lang.locale}`}
           >
