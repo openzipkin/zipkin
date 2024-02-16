@@ -12,12 +12,14 @@
  * the License.
  */
 import { render, screen } from '@testing-library/react';
-import fetchMock from 'fetch-mock';
 import { afterEach, it, describe, expect, vi } from 'vitest';
 import React, { Suspense } from 'react';
 
+import { UI_CONFIG } from '../../constants/api';
+import { defaultConfig } from './constants';
+
 afterEach(() => {
-  fetchMock.restore();
+  vi.restoreAllMocks();
   vi.resetModules();
 });
 
@@ -35,39 +37,32 @@ const renderUiConfig = async () => {
 };
 
 describe('<UiConfig />', () => {
-  it('fetches config and suspends', async () => {
-    const configPromise = new Promise(() => undefined);
-    const { UI_CONFIG } = await import('../../constants/api');
-    fetchMock.once(UI_CONFIG, configPromise, { overwriteRoutes: true });
+  it('fetches config, suspends until response, renders after response', async () => {
+    const config = { defaultLookback: 100 };
+    Object.keys(defaultConfig).forEach((key) => {
+      config[key] = config[key] || defaultConfig[key];
+    });
+    const configJson = JSON.stringify(config);
+
+    let resolve;
+    const configPromise = new Promise((r) => {
+      resolve = r;
+      return undefined;
+    });
+    const fetchSpy = vi
+      .spyOn(global, 'fetch')
+      .mockImplementationOnce(() => configPromise);
 
     await renderUiConfig();
     expect(screen.getAllByText('Suspended')).length(1);
 
-    fetchMock.called(UI_CONFIG);
-  });
+    expect(fetchSpy).toHaveBeenCalledWith(UI_CONFIG);
 
-  it('provides config when resolved', (context) => async () => {
-    const config = { defaultLookback: 100 };
-    const { defaultConfig } = await import('./UiConfig');
-    Object.keys(defaultConfig).forEach((key) => {
-      config[key] = config[key] || defaultConfig[key];
-    });
-    const { UI_CONFIG } = await import('../../constants/api');
-    fetchMock.once(UI_CONFIG, config, { overwriteRoutes: true });
-
-    // TODO: adrian needs help, as this broke when porting to vitest
-    context.skip();
-
-    const { rerender } = await renderUiConfig();
-    expect(screen.getAllByText('Suspended')).length(1);
-
+    resolve(new Response(configJson));
     // We need to get off the processing loop to allow the promise to complete and resolve the
     // config.
     await new Promise((resolve) => setTimeout(resolve, 1));
 
-    rerender(); // was rerender(<UiConfig />);
-    expect(screen.getByText(JSON.stringify(config))).toBeInTheDocument();
-
-    fetchMock.called(UI_CONFIG);
+    expect(screen.getByText(JSON.stringify(config))).toBeDefined();
   });
 });

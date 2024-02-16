@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,8 @@ import React, { useContext } from 'react';
 import { UI_CONFIG } from '../../constants/api';
 import fetchResource from '../../util/fetch-resource';
 
+import { defaultConfig } from './constants';
+
 const ConfigContext = React.createContext();
 
 const configResource = fetchResource(
@@ -25,18 +27,6 @@ const configResource = fetchResource(
 
 const propTypes = {
   children: PropTypes.element.isRequired,
-};
-
-export const defaultConfig = {
-  environment: '',
-  queryLimit: 10,
-  defaultLookback: 15 * 60 * 1000, // 15 minutes
-  searchEnabled: true,
-  dependency: {
-    lowErrorRate: 0.5, // 50% of calls in error turns line yellow
-    highErrorRate: 0.75, // 75% of calls in error turns line red
-    enabled: true,
-  },
 };
 
 export const UiConfig = ({ children }) => {
