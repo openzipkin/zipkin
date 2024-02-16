@@ -79,7 +79,7 @@ const LanguageSelector = () => {
     } else {
       i18n.changeLanguage(FALLBACK_LOCALE); // fallback to default language if the selected language is not supported
     }
-  }, []);
+  }, [i18n]);
 
   return (
     <>
