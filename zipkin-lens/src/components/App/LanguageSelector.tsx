@@ -14,8 +14,9 @@
 import { Button, Menu, MenuItem } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import TranslateIcon from '@material-ui/icons/Translate';
-import React, { useCallback } from 'react';
-import i18n from 'i18next';
+import React, { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { FALLBACK_LOCALE } from '../../translations/i18n';
 
 // We want to display all the languages in native language, not current locale, so hard-code the
 // strings here instead of using internationalization.
@@ -42,7 +43,7 @@ export const LANGUAGES = [
 
 const LanguageSelector = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [currentLocale, setLocale] = React.useState(i18n.language);
+  const { i18n } = useTranslation();
 
   const handleButtonClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -63,14 +64,22 @@ const LanguageSelector = () => {
       if (!locale) {
         return;
       }
-      if (locale === currentLocale) {
+      if (locale === i18n.language) {
         return;
       }
+
       i18n.changeLanguage(locale);
-      setLocale(locale);
     },
-    [currentLocale, i18n],
+    [i18n],
   );
+
+  useEffect(() => {
+    if (LANGUAGES.find((lang) => lang.locale === i18n.language)) {
+      i18n.changeLanguage(i18n.language);
+    } else {
+      i18n.changeLanguage(FALLBACK_LOCALE); // fallback to default language if the selected language is not supported
+    }
+  }, [i18n]);
 
   return (
     <>
@@ -80,7 +89,7 @@ const LanguageSelector = () => {
         endIcon={<ExpandMoreIcon />}
         data-testid="change-language-button"
       >
-        {LANGUAGES.find((lang) => lang.locale === currentLocale)?.name}
+        {LANGUAGES.find((lang) => lang.locale === i18n.language)?.name}
       </Button>
       <Menu
         anchorEl={anchorEl}
@@ -92,6 +101,7 @@ const LanguageSelector = () => {
           <MenuItem
             key={lang.locale}
             onClick={handleMenuItemClick}
+            selected={lang.locale === i18n.language}
             data-locale={lang.locale}
             data-testid={`language-list-item-${lang.locale}`}
           >
