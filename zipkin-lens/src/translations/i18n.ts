@@ -30,7 +30,6 @@ i18n
     {
       resources,
       fallbackLng: FALLBACK_LOCALE,
-      debug: true,
     }
   )
 
