@@ -74,7 +74,6 @@ const LanguageSelector = () => {
   );
 
   useEffect(() => {
-    console.log('Browser locale', i18n.language);
     if (LANGUAGES.find((lang) => lang.locale === i18n.language)) {
       i18n.changeLanguage(i18n.language);
     } else {
