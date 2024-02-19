@@ -75,12 +75,12 @@ need to debug the page (they will only work with the local dev server, not a pro
 
 ### React Developer Tools
 
-Chrome: https://chrome.google.com/webstore/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi
+Chrome: https://chromewebstore.google.com/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi
 Firefox: https://addons.mozilla.org/en-US/firefox/addon/react-devtools/
 
 ### Redux DevTools
 
-Chrome: https://chrome.google.com/webstore/detail/redux-devtools/lmhkpmbekcpmknklioeibfkpmmfibljd
+Chrome: https://chromewebstore.google.com/detail/redux-devtools/lmhkpmbekcpmknklioeibfkpmmfibljd
 Firefox: https://addons.mozilla.org/en-US/firefox/addon/reduxdevtools/
 
 ## Running behind a reverse proxy

@@ -1,6 +1,9 @@
 {
   "ignorePatterns": [
     {
+      "pattern": "https://chromewebstore.google.com/detail/*"
+    },
+    {
       "pattern": "https://stackoverflow.com/questions/tagged/spring-boot"
     },
     {
