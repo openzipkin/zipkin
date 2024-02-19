@@ -131,11 +131,12 @@ Here are the top-level configuration of Zipkin:
 * `QUERY_PORT`: Listen port for the HTTP API and web UI; Defaults to 9411
 * `QUERY_ENABLED`: `false` disables the HTTP read endpoints under '/api/v2'. This also disables the
 UI, as it relies on the API. If your only goal is to restrict search, use `SEARCH_ENABLED` instead.
-Defaults to true
+If your only goal is to disable the UI, use `UI_ENABLED` instead. Defaults to true
 * `SEARCH_ENABLED`: `false` disables searching in the query API and any indexing or post-processing
 in the collector to support search. This does not disable the entire UI, as trace by ID and
 dependency queries still operate. Disable this when you use another service (such as logs) to find
 trace IDs. Defaults to true
+* `UI_ENABLED`: `false` disables the web UI, mounted at '/zipkin'. Defaults to true
 * `QUERY_TIMEOUT`: Sets the hard timeout for query requests. Accepts any duration string (e.g., 100ms).
 A value of 0 will disable the timeout completely. Defaults to 11s.
 * `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
@@ -166,7 +167,8 @@ mention this because configuration of Spring implies vast responsibility and our
 conserved for Zipkin related tasks.
 
 ## UI
-Zipkin has a web UI, automatically included in the exec jar, and is hosted by default on port 9411.
+Zipkin has a web UI, automatically included in the exec jar, and is hosted by default on port 9411
+under the path '/zipkin'. This is enabled unless `UI_ENABLED` or `QUERY_ENABLED` are set to false.
 
 When the UI loads, it reads default configuration from the `/config.json` endpoint.
 

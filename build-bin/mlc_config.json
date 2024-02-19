@@ -1,6 +1,12 @@
 {
   "ignorePatterns": [
     {
+      "pattern": "https://chromewebstore.google.com/detail/*"
+    },
+    {
+      "pattern": "https://stackoverflow.com/questions/tagged/spring-boot"
+    },
+    {
       "pattern": "https://oss.sonatype.org/content/repositories/snapshots"
     },
     {
