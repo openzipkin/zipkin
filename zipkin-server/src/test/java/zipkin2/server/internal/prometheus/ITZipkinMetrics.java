@@ -144,7 +144,14 @@ class ITZipkinMetrics {
     String metrics = getAsString("/metrics");
 
     assertThat(readJson(metrics)).containsOnlyKeys(
-      "gauge.zipkin_collector.message_spans.http"
+      "gauge.zipkin_collector.message_spans.grpc"
+      , "gauge.zipkin_collector.message_bytes.grpc"
+      , "counter.zipkin_collector.messages.grpc"
+      , "counter.zipkin_collector.bytes.grpc"
+      , "counter.zipkin_collector.spans.grpc"
+      , "counter.zipkin_collector.messages_dropped.grpc"
+      , "counter.zipkin_collector.spans_dropped.grpc"
+      , "gauge.zipkin_collector.message_spans.http"
       , "gauge.zipkin_collector.message_bytes.http"
       , "counter.zipkin_collector.messages.http"
       , "counter.zipkin_collector.bytes.http"

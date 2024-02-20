@@ -111,7 +111,8 @@ exposition [text format version 0.0.4](https://prometheus.io/docs/instrumenting/
 
 ### Collector
 
-Collector metrics are broken down by transport. The following are exported to the "/metrics" endpoint:
+Collector metrics are broken down by transport, where the defaults are "http" and "grpc". The
+following are exported to the "/metrics" endpoint:
 
 | Metric                                               | Description                                                                           |
 |------------------------------------------------------|---------------------------------------------------------------------------------------|
