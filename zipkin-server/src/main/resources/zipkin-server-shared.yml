@@ -26,11 +26,11 @@ zipkin:
       # Optional password to connect to the broker
       password: ${ACTIVEMQ_PASSWORD:}
     http:
-      # Set to false to disable creation of spans via HTTP collector API
+      # Set false to disable creation of spans via HTTP collector API
       enabled: ${COLLECTOR_HTTP_ENABLED:${HTTP_COLLECTOR_ENABLED:true}}
     grpc:
-      # Set to true to enable the GRPC collector
-      enabled: ${COLLECTOR_GRPC_ENABLED:false}
+      # Set false to disable the GRPC collector
+      enabled: ${COLLECTOR_GRPC_ENABLED:true}
     kafka:
       enabled: ${COLLECTOR_KAFKA_ENABLED:true}
       # Kafka bootstrap broker list, comma-separated host:port values. Setting this activates the

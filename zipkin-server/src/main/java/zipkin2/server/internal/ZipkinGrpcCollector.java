@@ -30,7 +30,7 @@ import zipkin2.collector.CollectorSampler;
 import zipkin2.storage.StorageComponent;
 
 /** Collector for receiving spans on a gRPC endpoint. */
-@ConditionalOnProperty(name = "zipkin.collector.grpc.enabled") // disabled by default
+@ConditionalOnProperty(name = "zipkin.collector.grpc.enabled", matchIfMissing = true)
 final class ZipkinGrpcCollector {
 
   @Bean ArmeriaServerConfigurator grpcCollectorConfigurator(StorageComponent storage,
@@ -56,7 +56,8 @@ final class ZipkinGrpcCollector {
       this.metrics = metrics;
     }
 
-    @Override protected CompletionStage<ByteBuf> handleMessage(ServiceRequestContext ctx, ByteBuf bytes) {
+    @Override
+    protected CompletionStage<ByteBuf> handleMessage(ServiceRequestContext ctx, ByteBuf bytes) {
       metrics.incrementMessages();
       metrics.incrementBytes(bytes.readableBytes());
 
