@@ -104,7 +104,7 @@ class ITZipkinGrpcCollector {
         assertThat(responseBody.exhausted()).isTrue(); // We expect a single response
 
         // Now, verify the Length-Prefixed-Message
-        assertThat(compressedFlag).isEqualTo(0); // server didn't compress
+        assertThat(compressedFlag).isZero(); // server didn't compress
         assertThat(messageLength).isZero(); // there are no fields in ReportResponse
       }
     }
