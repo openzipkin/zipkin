@@ -32,7 +32,6 @@ import zipkin2.TestObjects;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.proto3.ListOfSpans;
-import zipkin2.proto3.ReportResponse;
 import zipkin2.storage.InMemoryStorage;
 
 import static okhttp3.Protocol.H2_PRIOR_KNOWLEDGE;
@@ -98,12 +97,15 @@ class ITZipkinGrpcCollector {
       try (Response response = client.newCall(request).execute();
            BufferedSource responseBody = response.body().source()) {
 
-        assertThat((int) responseBody.readByte()).isEqualTo(0); // uncompressed
-        long encodedLength = responseBody.readInt() & 0xffffffffL;
-        assertThat(encodedLength).isEqualTo(encodedMessage.size());
+        // We expect this is a valid gRPC over HTTP2 response (Length-Prefixed-Message).
+        // See https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#responses
+        byte compressedFlag = responseBody.readByte();
+        long messageLength = responseBody.readInt() & 0xffffffffL;
+        assertThat(responseBody.exhausted()).isTrue(); // We expect a single response
 
-        // There are no fields to verify, so just verify that it decodes!
-        assertThat(ReportResponse.ADAPTER.decode(responseBody)).isNotNull();
+        // Now, verify the Length-Prefixed-Message
+        assertThat(compressedFlag).isEqualTo(0); // server didn't compress
+        assertThat(messageLength).isZero(); // there are no fields in ReportResponse
       }
     }
   }
