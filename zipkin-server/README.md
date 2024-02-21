@@ -111,7 +111,8 @@ exposition [text format version 0.0.4](https://prometheus.io/docs/instrumenting/
 
 ### Collector
 
-Collector metrics are broken down by transport. The following are exported to the "/metrics" endpoint:
+Collector metrics are broken down by transport, where the defaults are "http" and "grpc". The
+following are exported to the "/metrics" endpoint:
 
 | Metric                                               | Description                                                                           |
 |------------------------------------------------------|---------------------------------------------------------------------------------------|
@@ -378,7 +379,9 @@ As this feature is experimental, it is not recommended to run this in production
 ## Collector
 
 ### HTTP Collector
-The HTTP collector is enabled by default. It accepts spans via `POST /api/v1/spans` and `POST /api/v2/spans`.
+The HTTP collector is enabled by default. It accepts spans via `POST /api/v1/spans` and
+`POST /api/v2/spans`, on the `${QUERY_PORT}` which defaults to 9411.
+
 The HTTP collector supports the following configuration:
 
 | Property                        | Environment Variable     | Description                                              |
@@ -494,17 +497,18 @@ Example usage:
 $ RABBIT_ADDRESSES=localhost java -jar zipkin.jar
 ```
 
-### gRPC Collector (Experimental)
-You can enable a gRPC span collector endpoint by setting `COLLECTOR_GRPC_ENABLED=true`. The
-`zipkin.proto3.SpanService/Report` endpoint will run on the same port as normal HTTP (9411).
+### gRPC Collector
 
-Example usage:
+The gRPC collector is enabled by default. It accepts spans via `zipkin.proto3.SpanService/Report`,
+on the `${QUERY_PORT}` which defaults to 9411.
 
-```bash
-$ COLLECTOR_GRPC_ENABLED=true java -jar zipkin.jar
-```
+The gRPC collector supports the following configuration:
 
-As this service is experimental, it is not recommended to run this in production environments.
+| Variable                 | Description                                            |
+|--------------------------|--------------------------------------------------------|
+| `COLLECTOR_GRPC_ENABLED` | `false` disables the gRPC service. Defaults to `true`. |
+
+The proto definition is here: https://github.com/openzipkin/zipkin-api/blob/master/zipkin.proto
 
 ## Service Registration
 

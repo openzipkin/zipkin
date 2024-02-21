@@ -32,7 +32,6 @@ import zipkin2.TestObjects;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.proto3.ListOfSpans;
-import zipkin2.proto3.ReportResponse;
 import zipkin2.storage.InMemoryStorage;
 
 import static okhttp3.Protocol.H2_PRIOR_KNOWLEDGE;
@@ -48,7 +47,6 @@ import static zipkin2.server.internal.ITZipkinServer.url;
     "server.port=0",
     "spring.config.name=zipkin-server",
     "spring.main.banner-mode=off",
-    "zipkin.collector.grpc.enabled=true"
   }
 )
 class ITZipkinGrpcCollector {
@@ -61,17 +59,17 @@ class ITZipkinGrpcCollector {
 
   OkHttpClient client = new OkHttpClient.Builder().protocols(List.of(H2_PRIOR_KNOWLEDGE)).build();
 
-  ListOfSpans request;
+  ListOfSpans grpcRequest;
 
   @BeforeEach void sanityCheckCodecCompatible() throws IOException {
-    request = ListOfSpans.ADAPTER.decode(SpanBytesEncoder.PROTO3.encodeList(TestObjects.TRACE));
+    grpcRequest = ListOfSpans.ADAPTER.decode(SpanBytesEncoder.PROTO3.encodeList(TestObjects.TRACE));
 
-    assertThat(SpanBytesDecoder.PROTO3.decodeList(request.encode()))
+    assertThat(SpanBytesDecoder.PROTO3.decodeList(grpcRequest.encode()))
       .containsExactlyElementsOf(TestObjects.TRACE); // sanity check codec compatible
   }
 
   @Test void report_trace() throws IOException {
-    callReport(request); // Result is effectively void
+    callReport(grpcRequest); // Result is effectively void
 
     awaitSpans();
 
@@ -80,30 +78,36 @@ class ITZipkinGrpcCollector {
   }
 
   @Test void report_emptyIsOk() throws IOException {
-
     callReport(new ListOfSpans.Builder().build());
   }
 
-  ReportResponse callReport(ListOfSpans spans) throws IOException {
-    Buffer requestBody = new Buffer();
-    requestBody.writeByte(0 /* compressedFlag */);
-    Buffer encodedMessage = new Buffer();
-    ListOfSpans.ADAPTER.encode(encodedMessage, spans);
-    requestBody.writeInt((int) encodedMessage.size());
-    requestBody.writeAll(encodedMessage);
+  void callReport(ListOfSpans spans) throws IOException {
+    try (Buffer requestBody = new Buffer(); Buffer encodedMessage = new Buffer()) {
+      requestBody.writeByte(0 /* compressedFlag */);
 
-    Response response = client.newCall(new Request.Builder()
-      .url(url(server, "/zipkin.proto3.SpanService/Report"))
-      .addHeader("te", "trailers")
-      .post(RequestBody.create(requestBody.snapshot(), MediaType.get("application/grpc")))
-      .build())
-      .execute();
+      ListOfSpans.ADAPTER.encode(encodedMessage, spans);
+      requestBody.writeInt((int) encodedMessage.size());
+      requestBody.writeAll(encodedMessage);
 
-    BufferedSource responseBody = response.body().source();
-    assertThat((int) responseBody.readByte()).isEqualTo(0); // uncompressed
-    long encodedLength = responseBody.readInt() & 0xffffffffL;
+      Request request = new Request.Builder()
+        .url(url(server, "/zipkin.proto3.SpanService/Report"))
+        .addHeader("te", "trailers")
+        .post(RequestBody.create(requestBody.snapshot(), MediaType.get("application/grpc")))
+        .build();
+      try (Response response = client.newCall(request).execute();
+           BufferedSource responseBody = response.body().source()) {
 
-    return ReportResponse.ADAPTER.decode(responseBody);
+        // We expect this is a valid gRPC over HTTP2 response (Length-Prefixed-Message).
+        // See https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md#responses
+        byte compressedFlag = responseBody.readByte();
+        long messageLength = responseBody.readInt() & 0xffffffffL;
+        assertThat(responseBody.exhausted()).isTrue(); // We expect a single response
+
+        // Now, verify the Length-Prefixed-Message
+        assertThat(compressedFlag).isZero(); // server didn't compress
+        assertThat(messageLength).isZero(); // there are no fields in ReportResponse
+      }
+    }
   }
 
   void awaitSpans() {
