@@ -55,7 +55,6 @@ import static org.testcontainers.utility.DockerImageName.parse;
   properties = {
     "server.port=0",
     "spring.config.name=zipkin-server",
-    "spring.main.banner-mode=off",
     "zipkin.storage.type=", // cheat and test empty storage type
     "zipkin.collector.http.enabled=false",
     "zipkin.query.enabled=false",

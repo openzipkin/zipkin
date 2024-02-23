@@ -40,7 +40,6 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   properties = {
     "server.port=0",
     "spring.config.name=zipkin-server",
-    "spring.main.banner-mode=off",
     "zipkin.ui.base-path=/foozipkin",
     "server.compression.enabled=true",
     "server.compression.min-response-size=128"

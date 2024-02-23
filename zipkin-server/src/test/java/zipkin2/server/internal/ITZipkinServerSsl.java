@@ -40,7 +40,6 @@ import static zipkin2.server.internal.elasticsearch.Access.configureSsl;
   properties = {
     "server.port=0",
     "spring.config.name=zipkin-server",
-    "spring.main.banner-mode=off",
     // TODO: use normal spring.server properties after https://github.com/line/armeria/issues/1834
     "armeria.ssl.enabled=true",
     "armeria.ssl.key-store=classpath:keystore.p12",

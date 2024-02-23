@@ -44,7 +44,6 @@ import static org.mockito.Mockito.when;
   properties = {
     "server.port=0",
     "spring.config.name=zipkin-server",
-    "spring.main.banner-mode=off",
     "zipkin.query.timeout=1ms"
   }
 )

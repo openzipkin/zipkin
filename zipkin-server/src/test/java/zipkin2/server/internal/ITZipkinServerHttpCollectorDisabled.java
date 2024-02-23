@@ -37,7 +37,6 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   properties = {
     "server.port=0",
     "spring.config.name=zipkin-server",
-    "spring.main.banner-mode=off",
     "zipkin.storage.type=", // cheat and test empty storage type
     "zipkin.collector.http.enabled=false"
   })

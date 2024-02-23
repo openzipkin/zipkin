@@ -32,7 +32,6 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   properties = {
     "server.port=0",
     "spring.config.name=zipkin-server",
-    "spring.main.banner-mode=off",
     "zipkin.storage.type=elasticsearch",
     "zipkin.storage.elasticsearch.hosts=127.0.0.1:9999"
   }
