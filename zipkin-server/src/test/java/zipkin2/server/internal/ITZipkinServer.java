@@ -47,7 +47,6 @@ import static zipkin2.TestObjects.UTF_8;
   properties = {
     "server.port=0",
     "spring.config.name=zipkin-server",
-    "spring.main.banner-mode=off",
   }
 )
 public class ITZipkinServer {

@@ -53,7 +53,6 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   properties = {
     "server.port=0",
     "spring.config.name=zipkin-server",
-    "spring.main.banner-mode=off",
   }
 )
 // Clearing the prometheus registry also clears the metrics themselves, not just the values, so we

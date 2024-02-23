@@ -1,6 +1,5 @@
 spring:
   main:
-    banner-mode: off
     web-application-type: none
 
 # We are using Armeria instead of Tomcat. Have it inherit the default configuration from Spring

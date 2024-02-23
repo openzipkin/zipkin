@@ -50,7 +50,6 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   properties = {
     "server.port=0",
     "spring.config.name=zipkin-server",
-    "spring.main.banner-mode=off",
     "zipkin.self-tracing.enabled=true",
     "zipkin.self-tracing.message-timeout=100ms",
     "zipkin.self-tracing.traces-per-second=100"
