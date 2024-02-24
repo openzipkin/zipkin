@@ -13,15 +13,15 @@
  */
 package zipkin2.collector;
 
-import java.util.List;
+import com.github.valfirst.slf4jtest.TestLoggerFactoryExtension;
 import java.util.concurrent.RejectedExecutionException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.org.lidalia.slf4jext.Level;
-import uk.org.lidalia.slf4jtest.TestLogger;
-import uk.org.lidalia.slf4jtest.TestLoggerFactory;
+import org.slf4j.event.Level;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
@@ -29,6 +29,8 @@ import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
+import static com.github.valfirst.slf4jtest.TestLoggerFactory.getLoggingEvents;
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -40,15 +42,15 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.TRACE;
 import static zipkin2.TestObjects.UTF_8;
 
-public class CollectorTest {
+@ExtendWith(TestLoggerFactoryExtension.class)
+class CollectorTest {
   InMemoryStorage storage = InMemoryStorage.newBuilder().build();
   Callback<Void> callback = mock(Callback.class);
   CollectorMetrics metrics = mock(CollectorMetrics.class);
   Collector collector;
-  private TestLogger testLogger = TestLoggerFactory.getTestLogger("");
+  Logger testLogger = LoggerFactory.getLogger(CollectorTest.class);
 
   @BeforeEach void setup() {
-    testLogger.clearAll();
     collector = spy(
       new Collector.Builder(testLogger).metrics(metrics).storage(storage).build());
     when(collector.idString(CLIENT_SPAN)).thenReturn("1"); // to make expectations easier to read
@@ -68,7 +70,7 @@ public class CollectorTest {
     collector.accept(TRACE, callback);
 
     verify(callback).onSuccess(null);
-    assertThat(testLogger.getLoggingEvents()).isEmpty();
+    assertThat(getLoggingEvents()).isEmpty();
     verify(metrics).incrementSpans(4);
     verify(metrics).incrementSpansDropped(4);
     assertThat(storage.getTraces()).isEmpty();
@@ -88,7 +90,7 @@ public class CollectorTest {
     verify(collector).acceptSpans(bytes, SpanBytesDecoder.JSON_V2, callback);
 
     verify(callback).onSuccess(null);
-    assertThat(testLogger.getLoggingEvents()).isEmpty();
+    assertThat(getLoggingEvents()).isEmpty();
     verify(metrics).incrementSpans(4);
     assertThat(storage.getTraces()).containsOnly(TRACE);
   }
@@ -145,7 +147,7 @@ public class CollectorTest {
     verify(collector).acceptSpans(bytes, SpanBytesDecoder.JSON_V1, callback);
 
     verify(callback).onSuccess(null);
-    assertThat(testLogger.getLoggingEvents()).isEmpty();
+    assertThat(getLoggingEvents()).isEmpty();
     assertThat(storage.getTraces()).isEmpty();
   }
 
@@ -153,7 +155,7 @@ public class CollectorTest {
     Span span2 = CLIENT_SPAN.toBuilder().id("3").build();
     when(collector.idString(span2)).thenReturn("3");
 
-    assertThat(collector.new StoreSpans(List.of(CLIENT_SPAN, span2)))
+    assertThat(collector.new StoreSpans(asList(CLIENT_SPAN, span2)))
       .hasToString("StoreSpans([1, 3])");
   }
 
@@ -250,7 +252,7 @@ public class CollectorTest {
   }
 
   private void assertDebugLogIs(String message) {
-    assertThat(testLogger.getLoggingEvents())
+    assertThat(getLoggingEvents())
       .hasSize(1)
       .filteredOn(event -> event.getLevel().equals(Level.DEBUG))
       .extracting(event -> unprefixIdString(event.getMessage()))
