@@ -35,7 +35,7 @@ WORKDIR /install
 # Use latest 7.x version from https://www.elastic.co/downloads/past-releases#elasticsearch-no-jdk
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG elasticsearch7_version=7.17.17
+ARG elasticsearch7_version=7.17.18
 
 # Download only the OSS distribution (lacks X-Pack)
 RUN \
@@ -50,7 +50,7 @@ COPY --from=scratch /config/ ./config/
 # production -jre base layer used by zipkin and zipkin-slim.
 FROM ghcr.io/openzipkin/java:${java_version} as zipkin-elasticsearch7
 LABEL org.opencontainers.image.description="Elasticsearch distribution on OpenJDK and Alpine Linux"
-ARG elasticsearch7_version=7.17.16
+ARG elasticsearch7_version=7.17.18
 LABEL elasticsearch-version=$elasticsearch7_version
 
 # The full license is also included in the image at /elasticsearch/LICENSE.txt.

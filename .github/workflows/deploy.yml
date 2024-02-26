@@ -31,13 +31,13 @@ jobs:
           distribution: 'zulu'  # zulu as it supports a wide version range
           java-version: '17'  # earliest LTS supported by Spring Boot 3
       - name: Cache local Maven repository
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-jdk-17-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-jdk-17-maven-
       - name: Cache NPM Packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.npm
           # yamllint disable-line rule:line-length

@@ -105,6 +105,15 @@ abstract class BaseITZipkinEureka {
     // Make sure the vip address does not include the port!
     assertThat(readString(json, "$.application.instance[0].vipAddress"))
       .isEqualTo("localhost");
+
+    // Make sure URLs are fully resolved. Notably, the status page URL defaults to the /info
+    // endpoint, as that's the one chosen in spring-cloud-netflix.
+    assertThat(readString(json, "$.application.instance[0].homePageUrl"))
+      .isEqualTo("http://localhost:" + zipkinPort + "/zipkin");
+    assertThat(readString(json, "$.application.instance[0].statusPageUrl"))
+      .isEqualTo("http://localhost:" + zipkinPort + "/info");
+    assertThat(readString(json, "$.application.instance[0].healthCheckUrl"))
+      .isEqualTo("http://localhost:" + zipkinPort + "health");
   }
 
   @Test @Order(2) void deregistersOnClose() {

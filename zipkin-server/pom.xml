@@ -36,8 +36,8 @@
 
     <!-- Sometimes we need to override Armeria's Brave version -->
     <brave.version>6.0.0</brave.version>
-    <zipkin-reporter.version>3.2.1</zipkin-reporter.version>
-    <log4j.version>2.21.1</log4j.version>
+    <zipkin-reporter.version>3.3.0</zipkin-reporter.version>
+    <log4j.version>2.23.0</log4j.version>
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
 
@@ -133,12 +133,12 @@
 
     <!-- More efficient, gRPC ready server with brave tracing built-in -->
     <dependency>
-      <groupId>${armeria.groupId}</groupId>
+      <groupId>com.linecorp.armeria</groupId>
       <artifactId>armeria-spring-boot3-autoconfigure</artifactId>
       <version>${armeria.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>${armeria.groupId}</groupId>
+          <groupId>com.linecorp.armeria</groupId>
           <artifactId>armeria-logback</artifactId>
         </exclusion>
         <exclusion>
@@ -153,12 +153,12 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>${armeria.groupId}</groupId>
+      <groupId>com.linecorp.armeria</groupId>
       <artifactId>armeria-brave6</artifactId>
       <version>${armeria.version}</version>
     </dependency>
     <dependency>
-      <groupId>${armeria.groupId}</groupId>
+      <groupId>com.linecorp.armeria</groupId>
       <artifactId>armeria-grpc-protocol</artifactId>
       <version>${armeria.version}</version>
     </dependency>
@@ -202,7 +202,7 @@
 
     <!-- Eureka service discovery -->
     <dependency>
-      <groupId>${armeria.groupId}</groupId>
+      <groupId>com.linecorp.armeria</groupId>
       <artifactId>armeria-eureka</artifactId>
       <version>${armeria.version}</version>
     </dependency>
@@ -216,7 +216,7 @@
     <dependency>
       <groupId>com.netflix.concurrency-limits</groupId>
       <artifactId>concurrency-limits-core</artifactId>
-      <version>0.4.0</version>
+      <version>0.4.1</version>
     </dependency>
     <dependency>
       <groupId>io.micrometer</groupId>
@@ -398,7 +398,7 @@
     </dependency>
 
     <dependency>
-      <groupId>${armeria.groupId}</groupId>
+      <groupId>com.linecorp.armeria</groupId>
       <artifactId>armeria-junit5</artifactId>
       <version>${armeria.version}</version>
       <scope>test</scope>
@@ -490,7 +490,7 @@
       <dependencies>
         <!-- /actuator endpoints -->
         <dependency>
-          <groupId>${armeria.groupId}</groupId>
+          <groupId>com.linecorp.armeria</groupId>
           <artifactId>armeria-spring-boot3-actuator-autoconfigure</artifactId>
           <version>${armeria.version}</version>
           <optional>true</optional>
@@ -631,7 +631,7 @@
               <excludes>
                 <!-- Actuator -->
                 <dependency>
-                  <groupId>${armeria.groupId}</groupId>
+                  <groupId>com.linecorp.armeria</groupId>
                   <artifactId>armeria-spring-boot3-actuator-autoconfigure</artifactId>
                 </dependency>
                 <dependency>
@@ -716,7 +716,7 @@
                   <artifactId>zipkin-collector-scribe</artifactId>
                 </dependency>
                 <exclude>
-                  <groupId>${armeria.groupId}</groupId>
+                  <groupId>com.linecorp.armeria</groupId>
                   <artifactId>armeria-thrift0.18</artifactId>
                 </exclude>
               </excludes>
