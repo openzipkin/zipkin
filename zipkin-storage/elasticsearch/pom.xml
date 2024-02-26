@@ -35,7 +35,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>${armeria.groupId}</groupId>
+      <groupId>com.linecorp.armeria</groupId>
       <artifactId>armeria</artifactId>
       <version>${armeria.version}</version>
     </dependency>
@@ -60,7 +60,7 @@
     </dependency>
 
     <dependency>
-      <groupId>${armeria.groupId}</groupId>
+      <groupId>com.linecorp.armeria</groupId>
       <artifactId>armeria-junit5</artifactId>
       <version>${armeria.version}</version>
       <scope>test</scope>

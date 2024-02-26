@@ -44,14 +44,14 @@ jobs:
           distribution: 'zulu'  # zulu as it supports a wide version range
           java-version: ${{ matrix.java_version }}
       - name: Cache local Maven repository
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           # yamllint disable-line rule:line-length
           key: ${{ runner.os }}-jdk-${{ matrix.java_version }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-jdk-${{ matrix.java_version }}-maven-
       - name: Cache NPM Packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.npm
           # yamllint disable-line rule:line-length
@@ -86,7 +86,7 @@ jobs:
           distribution: 'zulu'  # zulu as it supports a wide version range
           java-version: '21'  # Most recent LTS
       - name: Cache local Maven repository
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           # yamllint disable-line rule:line-length

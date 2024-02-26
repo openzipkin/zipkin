@@ -106,16 +106,13 @@ class ZipkinEurekaDiscoveryProperties implements Serializable { // for Spark job
 
   EurekaUpdatingListenerBuilder toBuilder() {
     EurekaUpdatingListenerBuilder result = EurekaUpdatingListener.builder(serviceUrl)
-      .healthCheckUrlPath("/health");
+      .homePageUrlPath("/zipkin")
+      .healthCheckUrlPath("/health")
+      .statusPageUrlPath("/info");
     if (auth != null) result.auth(auth);
     if (appName != null) result.appName(appName);
     if (instanceId != null) result.instanceId(instanceId);
-    if (hostname != null) {
-      result.hostname(hostname);
-      // Armeria defaults the vipAddress incorrectly to include the port. This is redundant with
-      // the server port, so override it until we have a PR to fix that.
-      result.vipAddress(hostname);
-    }
+    if (hostname != null) result.hostname(hostname);
     return result;
   }
 

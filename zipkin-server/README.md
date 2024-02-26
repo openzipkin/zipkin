@@ -523,7 +523,7 @@ a valid v2 endpoint of the [Eureka REST API](https://github.com/Netflix/eureka/w
 | `DISCOVERY_EUREKA_ENABLED` | N/A            | `false` disables Eureka registration. Defaults to `true`.               |
 | `EUREKA_SERVICE_URL`       | N/A            | v2 endpoint of Eureka, e.g. `https://eureka-prod/eureka/v2`. No default |
 | `EUREKA_APP_NAME`          | .app           | The application this instance registers to. Defaults to `zipkin`        |
-| `EUREKA_HOSTNAME`          | .hostName      | The instance `hostName` and `vipAddress`. Defaults to detect.           |
+| `EUREKA_HOSTNAME`          | .hostName      | The instance `hostName`. Defaults to detect.                            |
 | `EUREKA_INSTANCE_ID`       | .instanceId    | Defaults to `${EUREKA_HOSTNAME}:${EUREKA_APP_NAME}:${QUERY_PORT}`.      |
 
 Example usage:
