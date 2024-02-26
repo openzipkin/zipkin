@@ -113,7 +113,7 @@ abstract class BaseITZipkinEureka {
     assertThat(readString(json, "$.application.instance[0].statusPageUrl"))
       .isEqualTo("http://localhost:" + zipkinPort + "/info");
     assertThat(readString(json, "$.application.instance[0].healthCheckUrl"))
-      .isEqualTo("http://localhost:" + zipkinPort + "health");
+      .isEqualTo("http://localhost:" + zipkinPort + "/health");
   }
 
   @Test @Order(2) void deregistersOnClose() {
