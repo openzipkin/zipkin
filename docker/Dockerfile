@@ -46,10 +46,18 @@ ENV RELEASE_FROM_MAVEN_BUILD=$release_from_maven_build
 ARG version=master
 ENV VERSION=$version
 ENV MAVEN_PROJECT_BASEDIR=/code
-RUN /code/build-bin/maven/maven_build_or_unjar io.zipkin zipkin-server ${VERSION} exec && \
+ARG TARGETARCH
+RUN test "${TARGETARCH}" != "" && \
+    /code/build-bin/maven/maven_build_or_unjar io.zipkin zipkin-server ${VERSION} exec && \
     mv zipkin-server zipkin && \
     /code/build-bin/maven/maven_build_or_unjar io.zipkin zipkin-server ${VERSION} slim && \
-    mv zipkin-server zipkin-slim
+    mv zipkin-server zipkin-slim && \
+    # Copy tcnative deps to slim: 1.1MB more libs when pared to current platform.
+    cp zipkin/BOOT-INF/lib/*tcnative*.jar zipkin-slim/BOOT-INF/lib/ && \
+    # Remove any unused platform-specific jars. This results in none for s390x or non-linux.
+    rm */BOOT-INF/lib/*windows* */BOOT-INF/lib/*osx* && \
+    if [ "${TARGETARCH}" != "amd64" ]; then rm */BOOT-INF/lib/*x86*; fi && \
+    if [ "${TARGETARCH}" != "arm64" ]; then rm */BOOT-INF/lib/*a64* */BOOT-INF/lib/*aarch*; fi
 
 # Almost everything is common between the slim and normal build
 FROM ghcr.io/openzipkin/java:${java_version}-jre as base-server
