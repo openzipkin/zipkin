@@ -105,13 +105,17 @@ jobs:
       - name: docker/README.md - openzipkin/zipkin
         run: |
           build-bin/docker/docker_build openzipkin/zipkin:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin:test
+          build-bin/docker/docker_test_image openzipkin/zipkin:test &&
+          docker run --rm --entrypoint=/bin/sh openzipkin/zipkin:test \
+            -c 'cd BOOT-INF/lib && du -sk *aarch* *x86* *a64*'
         env:
           RELEASE_FROM_MAVEN_BUILD: true
       - name: docker/README.md - openzipkin/zipkin-slim
         run: |
           build-bin/docker/docker_build openzipkin/zipkin-slim:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-slim:test
+          build-bin/docker/docker_test_image openzipkin/zipkin-slim:test &&
+          docker run --rm --entrypoint=/bin/sh openzipkin/zipkin-slim:test \
+            -c 'cd BOOT-INF/lib && du -sk *aarch* *x86* *a64*'
         env:
           DOCKER_TARGET: zipkin-slim
           RELEASE_FROM_MAVEN_BUILD: true
