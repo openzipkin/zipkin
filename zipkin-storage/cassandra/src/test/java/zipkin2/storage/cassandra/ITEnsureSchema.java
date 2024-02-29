@@ -53,6 +53,13 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
   abstract CqlSession session();
 
   @Test void installsKeyspaceWhenMissing() {
+    Schema.ensureExists(storage.keyspace, true, session());
+
+    KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
+    assertThat(metadata).isNotNull();
+  }
+
+  @Test void installsKeyspaceWhenMissing_searchDisabled() {
     Schema.ensureExists(storage.keyspace, false, session());
 
     KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();

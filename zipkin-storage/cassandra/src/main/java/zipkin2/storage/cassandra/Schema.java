@@ -101,6 +101,7 @@ final class Schema {
       }
     }
     if (version == null) throw new RuntimeException("No nodes in the cluster");
+    LOG.info("Detected Cassandra version {}", version);
     return version;
   }
 
