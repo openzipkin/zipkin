@@ -17,7 +17,7 @@ import {defineConfig} from 'vite'
 import * as path from "path";
 
 // baseUrl is the default path to lookup assets.
-const baseUrl = process.env.BASE_URL || '/zipkin';
+const baseUrl = process.env.BASE_URL || './';
 // basePath is the default path to get dynamic resources from zipkin.
 const basePath = process.env.BASE_PATH || baseUrl;
 
