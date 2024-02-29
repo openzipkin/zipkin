@@ -251,6 +251,8 @@ logging:
     com.datastax.oss.driver.internal.core.DefaultMavenCoordinates: 'WARN'
     # We exclude Geo codec and Graph extensions to keep size down
     com.datastax.oss.driver.internal.core.context.InternalDriverContext: 'WARN'
+    # Avoid logs about adding handlers
+    com.datastax.oss.driver.internal.core.cql.CqlPrepareAsyncProcessor: 'WARN'
     # Use of native clocks in Cassandra is not insightful
     com.datastax.oss.driver.internal.core.time.Clock: 'WARN'
     # Unless it's serious we don't want to know

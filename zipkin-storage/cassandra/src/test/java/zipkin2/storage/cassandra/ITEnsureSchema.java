@@ -5,6 +5,7 @@
 package zipkin2.storage.cassandra;
 
 import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.Version;
 import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -44,14 +45,14 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
   abstract CqlSession session();
 
   @Test void installsKeyspaceWhenMissing() {
-    Schema.ensureExists(storage.keyspace, true, session());
+    Schema.ensureExists(session(), storage.keyspace, true);
 
     KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
     assertThat(metadata).isNotNull();
   }
 
   @Test void installsKeyspaceWhenMissing_searchDisabled() {
-    Schema.ensureExists(storage.keyspace, false, session());
+    Schema.ensureExists(session(), storage.keyspace, false);
 
     KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
     assertThat(metadata).isNotNull();
@@ -61,7 +62,7 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
     session().execute("CREATE KEYSPACE " + storage.keyspace
       + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};");
 
-    Schema.ensureExists(storage.keyspace, false, session());
+    Schema.ensureExists(session(), storage.keyspace, false);
 
     KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
     assertThat(metadata.getTable(TABLE_SPAN)).isNotNull();
@@ -77,7 +78,7 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
     session().execute("CREATE KEYSPACE " + storage.keyspace
       + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};");
 
-    Schema.ensureExists(storage.keyspace, true, session());
+    Schema.ensureExists(session(), storage.keyspace, true);
 
     KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
 
@@ -88,21 +89,25 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
   }
 
   @Test void upgradesOldSchema_autocomplete() {
-    Schema.applyCqlFile(storage.keyspace, session(), "/zipkin2-schema.cql");
-    Schema.applyCqlFile(storage.keyspace, session(), "/zipkin2-schema-indexes-original.cql");
+    Version version = Schema.ensureVersion(session().getMetadata());
+    Schema.applyCqlFile(version, storage.keyspace, session(), "/zipkin2-schema.cql");
+    Schema.applyCqlFile(version, storage.keyspace, session(),
+      "/zipkin2-schema-indexes-original.cql");
 
-    Schema.ensureExists(storage.keyspace, true, session());
+    Schema.ensureExists(session(), storage.keyspace, true);
 
     KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
     assertThat(Schema.hasUpgrade1_autocompleteTags(metadata)).isTrue();
   }
 
   @Test void upgradesOldSchema_remoteService() {
-    Schema.applyCqlFile(storage.keyspace, session(), "/zipkin2-schema.cql");
-    Schema.applyCqlFile(storage.keyspace, session(), "/zipkin2-schema-indexes-original.cql");
-    Schema.applyCqlFile(storage.keyspace, session(), "/zipkin2-schema-upgrade-1.cql");
+    Version version = Schema.ensureVersion(session().getMetadata());
+    Schema.applyCqlFile(version, storage.keyspace, session(), "/zipkin2-schema.cql");
+    Schema.applyCqlFile(version, storage.keyspace, session(),
+      "/zipkin2-schema-indexes-original.cql");
+    Schema.applyCqlFile(version, storage.keyspace, session(), "/zipkin2-schema-upgrade-1.cql");
 
-    Schema.ensureExists(storage.keyspace, true, session());
+    Schema.ensureExists(session(), storage.keyspace, true);
 
     KeyspaceMetadata metadata = session().getMetadata().getKeyspace(storage.keyspace).get();
     assertThat(Schema.hasUpgrade2_remoteService(metadata)).isTrue();
@@ -110,9 +115,11 @@ abstract class ITEnsureSchema extends ITStorage<CassandraStorage> {
 
   /** This tests we don't accidentally rely on new indexes such as autocomplete tags */
   @Test void worksWithOldSchema(TestInfo testInfo) throws Exception {
+    Version version = Schema.ensureVersion(session().getMetadata());
     String testSuffix = testSuffix(testInfo);
-    Schema.applyCqlFile(storage.keyspace, session(), "/zipkin2-schema.cql");
-    Schema.applyCqlFile(storage.keyspace, session(), "/zipkin2-schema-indexes-original.cql");
+    Schema.applyCqlFile(version, storage.keyspace, session(), "/zipkin2-schema.cql");
+    Schema.applyCqlFile(version, storage.keyspace, session(),
+      "/zipkin2-schema-indexes-original.cql");
 
     // Ensure the storage component is functional before proceeding
     CheckResult check = storage.check();

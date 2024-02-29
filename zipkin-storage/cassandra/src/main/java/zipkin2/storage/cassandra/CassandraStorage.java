@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import zipkin2.Call;
 import zipkin2.CheckResult;
+import zipkin2.internal.ClosedComponentException;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.ServiceAndSpanNames;
@@ -19,7 +20,6 @@ import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
 import zipkin2.storage.Traces;
-import zipkin2.storage.cassandra.internal.CassandraStorageBuilder;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 /**
@@ -47,8 +47,6 @@ public final class CassandraStorage extends StorageComponent {
   }
 
   public static final class Builder extends CassandraStorageBuilder<Builder> {
-    SessionFactory sessionFactory = SessionFactory.DEFAULT;
-
     Builder() {
       super(Schema.DEFAULT_KEYSPACE);
     }
@@ -70,22 +68,8 @@ public final class CassandraStorage extends StorageComponent {
       return super.ensureSchema(ensureSchema);
     }
 
-    /** Override to control how sessions are created. */
-    public Builder sessionFactory(SessionFactory sessionFactory) {
-      if (sessionFactory == null) throw new NullPointerException("sessionFactory == null");
-      this.sessionFactory = sessionFactory;
-      return this;
-    }
-
     @Override public CassandraStorage build() {
-      AuthProvider authProvider = null;
-      if (username != null) {
-        authProvider = new ProgrammaticPlainTextAuthProvider(username, password);
-      }
-      return new CassandraStorage(strictTraceId, searchEnabled, autocompleteKeys, autocompleteTtl,
-        autocompleteCardinality, contactPoints, localDc, poolingOptions(), authProvider, useSsl,
-        sslHostnameValidation, sessionFactory, keyspace, ensureSchema, maxTraceCols,
-        indexFetchMultiplier);
+      return new CassandraStorage(this);
     }
   }
 
@@ -99,39 +83,36 @@ public final class CassandraStorage extends StorageComponent {
   final boolean useSsl;
   final boolean sslHostnameValidation;
   final String keyspace;
-  final boolean ensureSchema;
-
   final int maxTraceCols, indexFetchMultiplier;
 
   final LazySession session;
 
-  CassandraStorage(boolean strictTraceId, boolean searchEnabled, Set<String> autocompleteKeys,
-    int autocompleteTtl, int autocompleteCardinality, String contactPoints, String localDc,
-    Map<DriverOption, Integer> poolingOptions, AuthProvider authProvider, boolean useSsl,
-    boolean sslHostnameValidation, SessionFactory sessionFactory, String keyspace,
-    boolean ensureSchema, int maxTraceCols, int indexFetchMultiplier) {
+  CassandraStorage(CassandraStorageBuilder<?> builder) {
     // Assign generic configuration for all storage components
-    this.strictTraceId = strictTraceId;
-    this.searchEnabled = searchEnabled;
-    this.autocompleteKeys = autocompleteKeys;
-    this.autocompleteTtl = autocompleteTtl;
-    this.autocompleteCardinality = autocompleteCardinality;
+    this.strictTraceId = builder.strictTraceId;
+    this.searchEnabled = builder.searchEnabled;
+    this.autocompleteKeys = builder.autocompleteKeys;
+    this.autocompleteTtl = builder.autocompleteTtl;
+    this.autocompleteCardinality = builder.autocompleteCardinality;
 
     // Assign configuration used to create a session
-    this.contactPoints = contactPoints;
-    this.localDc = localDc;
-    this.poolingOptions = poolingOptions;
-    this.authProvider = authProvider;
-    this.useSsl = useSsl;
-    this.sslHostnameValidation = sslHostnameValidation;
-    this.ensureSchema = ensureSchema;
-    this.keyspace = keyspace;
+    this.contactPoints = builder.contactPoints;
+    this.localDc = builder.localDc;
+    this.poolingOptions = builder.poolingOptions();
+    if (builder.username != null) {
+      this.authProvider = new ProgrammaticPlainTextAuthProvider(builder.username, builder.password);
+    } else {
+      this.authProvider = null;
+    }
+    this.useSsl = builder.useSsl;
+    this.sslHostnameValidation = builder.sslHostnameValidation;
+    this.keyspace = builder.keyspace;
 
     // Assign configuration used to control queries
-    this.maxTraceCols = maxTraceCols;
-    this.indexFetchMultiplier = indexFetchMultiplier;
+    this.maxTraceCols = builder.maxTraceCols;
+    this.indexFetchMultiplier = builder.indexFetchMultiplier;
 
-    this.session = new LazySession(sessionFactory, this);
+    this.session = new LazySession(this, builder.sessionFactory, builder.ensureSchema);
   }
 
   /** close is typically called from a different thread */
@@ -202,7 +183,7 @@ public final class CassandraStorage extends StorageComponent {
   }
 
   @Override public CheckResult check() {
-    if (closeCalled) throw new IllegalStateException("closed");
+    if (closeCalled) throw new ClosedComponentException();
     try {
       session.healthCheck();
     } catch (Throwable e) {

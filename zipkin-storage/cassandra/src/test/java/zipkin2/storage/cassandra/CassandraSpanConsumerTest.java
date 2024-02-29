@@ -4,8 +4,13 @@
  */
 package zipkin2.storage.cassandra;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.internal.AggregateCall;
@@ -18,10 +23,16 @@ import static org.assertj.core.api.Assertions.tuple;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.FRONTEND;
 import static zipkin2.TestObjects.TODAY;
-import static zipkin2.storage.cassandra.InternalForTests.mockSession;
 
+@ExtendWith(MockitoExtension.class)
 class CassandraSpanConsumerTest {
-  CassandraSpanConsumer consumer = spanConsumer(CassandraStorage.newBuilder());
+  @Mock CqlSession session;
+  Schema.Metadata metadata = new Schema.Metadata(true, true);
+  CassandraSpanConsumer consumer;
+
+  @BeforeEach void setup() {
+    consumer = spanConsumer(CassandraStorage.newBuilder());
+  }
 
   Span spanWithoutAnnotationsOrTags =
     Span.newBuilder()
@@ -208,7 +219,9 @@ class CassandraSpanConsumerTest {
       .isInstanceOf(ResultSetFutureCall.class);
   }
 
-  static CassandraSpanConsumer spanConsumer(CassandraStorage.Builder builder) {
-    return new CassandraSpanConsumer(builder.sessionFactory(storage -> mockSession()).build());
+  CassandraSpanConsumer spanConsumer(CassandraStorage.Builder builder) {
+    return new CassandraSpanConsumer(session, metadata, builder.strictTraceId,
+      builder.searchEnabled, builder.autocompleteKeys, builder.autocompleteTtl,
+      builder.autocompleteCardinality);
   }
 }

@@ -2,17 +2,17 @@
  * Copyright The OpenZipkin Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package zipkin2.storage.cassandra.internal;
+package zipkin2.storage.cassandra;
 
+import com.datastax.oss.driver.api.core.CqlSession;
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption;
 import com.datastax.oss.driver.api.core.config.DriverOption;
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
@@ -20,25 +20,27 @@ import zipkin2.storage.StorageComponent;
 import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.CONNECTION_MAX_REQUESTS;
 import static com.datastax.oss.driver.api.core.config.DefaultDriverOption.CONNECTION_POOL_LOCAL_SIZE;
 
-public abstract class CassandraStorageBuilder<B extends CassandraStorageBuilder<B>>
+abstract class CassandraStorageBuilder<B extends CassandraStorageBuilder<B>>
   extends StorageComponent.Builder {
-  protected boolean strictTraceId = true, searchEnabled = true;
-  protected Set<String> autocompleteKeys = Set.of();
-  protected int autocompleteTtl = (int) TimeUnit.HOURS.toMillis(1);
-  protected int autocompleteCardinality = 5 * 4000; // Ex. 5 site tags with cardinality 4000 each
 
-  protected String contactPoints = "localhost";
+  CassandraStorage.SessionFactory sessionFactory = CassandraStorage.SessionFactory.DEFAULT;
+  boolean strictTraceId = true, searchEnabled = true;
+  Set<String> autocompleteKeys = Set.of();
+  int autocompleteTtl = (int) TimeUnit.HOURS.toMillis(1);
+  int autocompleteCardinality = 5 * 4000; // Ex. 5 site tags with cardinality 4000 each
+
+  String contactPoints = "localhost";
   // Driver v4 requires this, so take a guess! When we are wrong, the user can override anyway
-  protected String localDc = "datacenter1";
-  @Nullable protected String username, password;
-  protected boolean useSsl = false;
-  protected boolean sslHostnameValidation = true;
+  String localDc = "datacenter1";
+  @Nullable String username, password;
+  boolean useSsl = false;
+  boolean sslHostnameValidation = true;
 
-  protected String keyspace;
-  protected boolean ensureSchema = true;
+  String keyspace;
+  BiFunction<CassandraStorage, CqlSession, Schema.Metadata> ensureSchema = Schema::ensure;
 
-  protected int maxTraceCols = 100_000;
-  protected int indexFetchMultiplier = 3;
+  int maxTraceCols = 100_000;
+  int indexFetchMultiplier = 3;
 
   // Zipkin collectors can create out a lot of async requests in bursts, so we
   // increase some properties beyond the norm.
@@ -49,14 +51,14 @@ public abstract class CassandraStorageBuilder<B extends CassandraStorageBuilder<
   // Ported from java-driver v3 PoolingOptions.setMaxQueueSize(40960)
   final int maxRequestsPerConnection = 40960 / poolLocalSize;
 
-  protected Map<DriverOption, Integer> poolingOptions() {
+  Map<DriverOption, Integer> poolingOptions() {
     Map<DriverOption, Integer> result = new LinkedHashMap<>();
     result.put(CONNECTION_POOL_LOCAL_SIZE, poolLocalSize);
     result.put(CONNECTION_MAX_REQUESTS, maxRequestsPerConnection);
     return result;
   }
 
-  protected CassandraStorageBuilder(String defaultKeyspace) {
+  CassandraStorageBuilder(String defaultKeyspace) {
     keyspace = defaultKeyspace;
   }
 
@@ -148,8 +150,19 @@ public abstract class CassandraStorageBuilder<B extends CassandraStorageBuilder<
     return (B) this;
   }
 
+  /** Override to control how sessions are created. */
+  public B sessionFactory(CassandraStorage.SessionFactory sessionFactory) {
+    if (sessionFactory == null) throw new NullPointerException("sessionFactory == null");
+    this.sessionFactory = sessionFactory;
+    return (B) this;
+  }
+
   public B ensureSchema(boolean ensureSchema) {
-    this.ensureSchema = ensureSchema;
+    if (ensureSchema) {
+      this.ensureSchema = Schema::ensure;
+    } else {
+      this.ensureSchema = Schema::validate;
+    }
     return (B) this;
   }
 
