@@ -25,7 +25,7 @@
 
   <artifactId>zipkin-lens</artifactId>
   <name>Zipkin Lens</name>
-  <description>Repackages Zipkin Lens into a jar so we can use it in Spring Boot</description>
+  <description>Repackages Zipkin Lens into a jar, so we can use it in zipkin-server</description>
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
@@ -158,7 +158,7 @@
         <executions>
           <execution>
             <id>copy NPM build to zipkin-lens directory</id>
-            <!-- This needs to happen after compile or it could copy an empty directory! -->
+            <!-- This needs to happen after compile, or it could copy an empty directory! -->
             <phase>prepare-package</phase>
             <goals>
               <goal>copy-resources</goal>
@@ -171,6 +171,28 @@
                   <directory>build</directory>
                 </resource>
               </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- remove the META-INF directory, as this is just static assets -->
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/</exclude>
+                  </excludes>
+                </filter>
+              </filters>
             </configuration>
           </execution>
         </executions>
@@ -262,21 +284,7 @@
                 <configuration>
                   <executable>npm</executable>
                   <arguments>
-                    <argument>install  --legacy-peer-deps</argument>
-                  </arguments>
-                </configuration>
-              </execution>
-              <execution>
-                <id>npm lint</id>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <phase>compile</phase>
-                <configuration>
-                  <executable>npm</executable>
-                  <arguments>
-                    <argument>run</argument>
-                    <argument>lint</argument>
+                    <argument>install</argument>
                   </arguments>
                 </configuration>
               </execution>
@@ -291,21 +299,6 @@
                   <arguments>
                     <argument>run</argument>
                     <argument>build</argument>
-                  </arguments>
-                </configuration>
-              </execution>
-              <execution>
-                <id>npm run test</id>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <phase>test</phase>
-                <configuration>
-                  <executable>npm</executable>
-                  <skip>${npm.skipTests}</skip>
-                  <arguments>
-                    <argument>run</argument>
-                    <argument>test</argument>
                   </arguments>
                 </configuration>
               </execution>

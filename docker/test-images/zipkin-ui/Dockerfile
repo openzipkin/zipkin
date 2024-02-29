@@ -32,9 +32,8 @@ FROM scratch as scratch
 COPY build-bin/ /build-bin/
 COPY build-bin/docker/docker-healthcheck /docker-bin/
 COPY docker/test-images/zipkin-ui/start-nginx /docker-bin/
-COPY pom.xml /code/
-COPY zipkin-lens/ /code/zipkin-lens/
 COPY docker/test-images/zipkin-ui/nginx.conf /conf.d/zipkin.conf.template
+COPY . /code/
 
 # This version is only used during the install process. Try to be consistent as it reduces layers,
 # which reduces downloads.
@@ -55,8 +54,9 @@ ENV RELEASE_FROM_MAVEN_BUILD=$release_from_maven_build
 # Version of the artifact to unjar. Ex. "2.4.5" or "2.4.5-SNAPSHOT" "master" to use the pom version.
 ARG version=master
 ENV VERSION=$version
-ENV MAVEN_PROJECT_BASEDIR=/code/zipkin-lens
-RUN /build-bin/maven/maven_build_or_unjar io.zipkin zipkin-lens ${VERSION}
+ENV MAVEN_PROJECT_BASEDIR=/code
+RUN if [ "${RELEASE_FROM_MAVEN_BUILD}" == "false" ]; then /build-bin/maybe_install_npm; fi; \
+    /build-bin/maven/maven_build_or_unjar io.zipkin zipkin-lens ${VERSION}
 
 FROM ghcr.io/openzipkin/alpine:$alpine_version as zipkin-ui
 LABEL org.opencontainers.image.description="NGINX on Alpine Linux hosting the Zipkin UI with Zipkin API proxy_pass"
@@ -73,7 +73,7 @@ HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthche
 ENTRYPOINT ["start-nginx"]
 
 # Add content and setup NGINX
-COPY --from=install /install/zipkin-lens/ /var/www/html/zipkin/
+COPY --from=install /install/zipkin-lens/* /var/www/html/zipkin/
 COPY --from=scratch /conf.d/ /etc/nginx/conf.d/
 RUN apk add --update --no-cache nginx=~${nginx_version} && \
     mkdir -p /var/tmp/nginx && chown -R nginx:nginx /var/tmp/nginx
