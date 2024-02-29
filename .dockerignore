@@ -2,6 +2,7 @@
 **
 
 # Scripts that run within Docker
+!build-bin/maybe_install_npm
 !build-bin/maven/maven_build
 !build-bin/maven/maven_build_or_unjar
 !build-bin/maven/maven_opts
@@ -48,11 +49,22 @@
 !zipkin-collector/kafka/src/main/**
 !zipkin-collector/rabbitmq/src/main/**
 !zipkin-collector/scribe/src/main/**
-!zipkin-junit/src/main/**
+!zipkin-junit5/src/main/**
 !zipkin-storage/src/main/**
 !zipkin-storage/cassandra/src/main/**
 !zipkin-storage/mysql-v1/src/main/**
 !zipkin-storage/elasticsearch/src/main/**
 !zipkin-server/src/main/**
 !zipkin-tests/src/main/**
+!zipkin-lens/javadoc/**
+!zipkin-lens/public/**
+!zipkin-lens/src/**
+!zipkin-lens/.linguirc
+!zipkin-lens/.npmrc
+!zipkin-lens/index.html
+!zipkin-lens/package-lock.json
+!zipkin-lens/package.json
+!zipkin-lens/pom.xml
+!zipkin-lens/tsconfig.json
+!zipkin-lens/vite.config.ts
 !**/pom.xml

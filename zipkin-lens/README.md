@@ -2,7 +2,7 @@
 
 Zipkin-lens is the UI for [Zipkin](https://github.com/openzipkin/zipkin). It is a modern replacement of the [classic](https://github.com/openzipkin-attic/zipkin-classic) UI which has proved its merit since the beginning of the Zipkin project.
 
-Here are a couple example screen shots:
+Here are a couple example screenshots:
 
 <img width="1920" alt="Search Screen" src="https://user-images.githubusercontent.com/64215/49579677-4602de00-f990-11e8-81b7-dd782ce91227.png">
 <img width="1920" alt="Trace Detail Screen" src="https://user-images.githubusercontent.com/64215/49579684-4d29ec00-f990-11e8-8799-5c53a503413e.png">
@@ -35,6 +35,13 @@ Builds the app for production to the `build` folder.<br />
 It correctly bundles React in production mode and optimizes the build for the best performance.
 
 ## Build tips
+
+### Maven build
+
+This project is not published to NPM, rather Maven, as the primary consumer is [zipkin-server](../zipkin-server).
+`../mvnw clean install` installs and builds via NPM. The resulting assets, such as index.html, are
+placed into the "zipkin-lens" directory of zipkin-lens.jar. This is published on release as
+[io.zipkin:zipkin-lens](https://central.sonatype.com/search?q=io.zipkin%3Azipkin-lens).
 
 ### Use the production node version
 
@@ -101,8 +108,13 @@ ProxyPassReverse "/proxy/foo/myzipkin"  "http://localhost:9411/zipkin/"
 For the reverse proxy configuration to work, Zipkin needs to be started with the `zipkin.ui.basepath`
 parameter pointing to the proxy path:
 
-```
+```bash
 java -jar zipkin.jar --zipkin.ui.basepath=/proxy/foo/myzipkin
+```
+
+or via docker
+```bash
+docker run -e ZIPKIN_UI_BASEPATH=/proxy/foo/myzipkin -p 9411:9411 openzipkin/zipkin
 ```
 
 ## Authentication / Authorization
