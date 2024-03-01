@@ -44,12 +44,6 @@ export default defineConfig(() => {
     test: {
       environment: 'happy-dom'
     },
-    plugins: [
-      {
-        name: 'Replace head.base.href with BASE_PATH variable',
-        transformIndexHtml: html => html.replace('href="/zipkin"', `href="${basePath}"`)
-      },
-    ],
     base: baseUrl,
     build: {
       outDir: 'build',
@@ -57,7 +51,9 @@ export default defineConfig(() => {
       assetsDir: "static",
       rollupOptions: {
         output: {
-          assetFileNames({name}) {
+          assetFileNames({name}: {
+            name: string
+          }) {
             if (name?.includes('.css')) return 'static/css/[name].[hash].css'
             if (name?.includes('.png')) return 'static/media/[name].[hash].png'
             return 'static/[name].[hash][extname]'
