@@ -176,7 +176,7 @@ public class ZipkinUiConfiguration {
       // careful with this matcher.
       return content.replaceAll(
         "/zipkin/", baseTagValue
-      );
+      ).replaceAll( "<base href=[^>]+>", "<base href=\"" + baseTagValue + "\">");
     }
   }
 }
