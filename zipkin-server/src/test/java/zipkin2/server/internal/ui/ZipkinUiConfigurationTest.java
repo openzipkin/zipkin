@@ -154,7 +154,7 @@ class ZipkinUiConfigurationTest {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
 
     assertThat(serveIndex().contentUtf8()).isEqualTo("""
-      <!-- simplified version of /zipkin-lens/index.html -->
+      <!-- simplified version of /foo/bar-lens/index.html -->
       <html>
         <head>
           <base href="/foo/bar/">

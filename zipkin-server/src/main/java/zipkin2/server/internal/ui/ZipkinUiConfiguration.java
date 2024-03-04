@@ -172,8 +172,8 @@ public class ZipkinUiConfiguration {
       if (DEFAULT_BASEPATH.equals(basePath)) return content;
 
       // Rebase any href inside index.html to the indicated value
-      String baseTagValue = "/".equals(basePath) ? "/" : basePath + "/";
-      return content.replaceAll("/zipkin/", baseTagValue);
+      String baseTagValue = "/".equals(basePath) ? "/" : basePath;
+      return content.replaceAll(DEFAULT_BASEPATH, baseTagValue);
     }
   }
 }
