@@ -154,7 +154,7 @@ class ZipkinUiConfigurationTest {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
 
     assertThat(serveIndex().contentUtf8()).isEqualTo("""
-      <!-- simplified version of /foo/bar-lens/index.html -->
+      <!-- simplified version of /zipkin-lens/index.html -->
       <html>
         <head>
           <base href="/foo/bar/">
@@ -178,8 +178,19 @@ class ZipkinUiConfigurationTest {
   @Test void canOverrideProperty_specialCaseRoot() {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/");
 
-    assertThat(serveIndex().contentUtf8())
-      .contains("<base href=\"/\">");
+    assertThat(serveIndex().contentUtf8()).isEqualTo("""
+      <!-- simplified version of /zipkin-lens/index.html -->
+      <html>
+        <head>
+          <base href="/">
+          <link rel="icon" href="/favicon.ico">
+          <script type="module" crossorigin="" src="/static/js/index.js"></script>
+          <link rel="stylesheet" href="/static/css/index.css">
+        </head>
+        <body>zipkin-lens</body>
+      </html>
+      """
+    );
   }
 
   AggregatedHttpResponse serveIndex(Cookie... cookies) {

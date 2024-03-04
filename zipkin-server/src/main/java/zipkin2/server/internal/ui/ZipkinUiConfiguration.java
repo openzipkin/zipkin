@@ -171,9 +171,9 @@ public class ZipkinUiConfiguration {
       String content = StreamUtils.copyToString(stream, UTF_8);
       if (DEFAULT_BASEPATH.equals(basePath)) return content;
 
-      // Rebase any href inside index.html to the indicated value
-      String baseTagValue = "/".equals(basePath) ? "/" : basePath;
-      return content.replaceAll(DEFAULT_BASEPATH, baseTagValue);
+      // Rebase any href or src in index.html that starts with DEFAULT_BASEPATH
+      String baseTagValue = "/".equals(basePath) ? "" : basePath;
+      return content.replaceAll("=\"" + DEFAULT_BASEPATH, "=\"" + baseTagValue);
     }
   }
 }
