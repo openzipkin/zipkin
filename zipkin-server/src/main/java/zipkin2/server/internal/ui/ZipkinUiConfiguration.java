@@ -171,12 +171,9 @@ public class ZipkinUiConfiguration {
       String content = StreamUtils.copyToString(stream, UTF_8);
       if (DEFAULT_BASEPATH.equals(basePath)) return content;
 
+      // Rebase any href inside index.html to the indicated value
       String baseTagValue = "/".equals(basePath) ? "/" : basePath + "/";
-      // html-webpack-plugin seems to strip out quotes from the base tag when compiling so be
-      // careful with this matcher.
-      return content.replaceAll(
-        "/zipkin/", baseTagValue
-      ).replaceAll( "<base href=[^>]+>", "<base href=\"" + baseTagValue + "\">");
+      return content.replaceAll("/zipkin/", baseTagValue);
     }
   }
 }
