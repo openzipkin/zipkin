@@ -18,7 +18,6 @@ import * as path from "path";
 
 // baseUrl is the default path to lookup assets.
 const baseUrl = process.env.BASE_URL || '/zipkin';
-// basePath is the default path to get dynamic resources from zipkin.
 
 const zipkinProxyConfig = {
   target: process.env.API_BASE || 'http://localhost:9411',
