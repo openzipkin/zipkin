@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2023 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -153,8 +153,19 @@ class ZipkinUiConfigurationTest {
   @Test void canOverrideProperty_basePath() {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
 
-    assertThat(serveIndex().contentUtf8())
-      .contains("<base href=\"/foo/bar/\">");
+    assertThat(serveIndex().contentUtf8()).isEqualTo("""
+      <!-- simplified version of /zipkin-lens/index.html -->
+      <html>
+        <head>
+          <base href="/foo/bar/">
+          <link rel="icon" href="/foo/bar/favicon.ico">
+          <script type="module" crossorigin="" src="/foo/bar/static/js/index.js"></script>
+          <link rel="stylesheet" href="/foo/bar/static/css/index.css">
+        </head>
+        <body>zipkin-lens</body>
+      </html>
+      """
+    );
   }
 
   @Test void lensCookieOverridesIndex() {
@@ -167,8 +178,19 @@ class ZipkinUiConfigurationTest {
   @Test void canOverrideProperty_specialCaseRoot() {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/");
 
-    assertThat(serveIndex().contentUtf8())
-      .contains("<base href=\"/\">");
+    assertThat(serveIndex().contentUtf8()).isEqualTo("""
+      <!-- simplified version of /zipkin-lens/index.html -->
+      <html>
+        <head>
+          <base href="/">
+          <link rel="icon" href="/favicon.ico">
+          <script type="module" crossorigin="" src="/static/js/index.js"></script>
+          <link rel="stylesheet" href="/static/css/index.css">
+        </head>
+        <body>zipkin-lens</body>
+      </html>
+      """
+    );
   }
 
   AggregatedHttpResponse serveIndex(Cookie... cookies) {

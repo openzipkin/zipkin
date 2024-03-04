@@ -13,20 +13,18 @@
  */
 /// <reference types="vitest" />
 
-import {defineConfig} from 'vite'
+import {defineConfig, UserConfig} from 'vite'
 import * as path from "path";
 
 // baseUrl is the default path to lookup assets.
 const baseUrl = process.env.BASE_URL || '/zipkin';
-// basePath is the default path to get dynamic resources from zipkin.
-const basePath = process.env.BASE_PATH || baseUrl;
 
 const zipkinProxyConfig = {
   target: process.env.API_BASE || 'http://localhost:9411',
   changeOrigin: true,
 };
 
-export default defineConfig(() => {
+export default defineConfig(():UserConfig => {
   // https://vitejs.dev/config/
   return {
     server: {
@@ -41,15 +39,10 @@ export default defineConfig(() => {
         src: path.resolve('src/'),
       },
     },
+    // @ts-ignore
     test: {
       environment: 'happy-dom'
     },
-    plugins: [
-      {
-        name: 'Replace head.base.href with BASE_PATH variable',
-        transformIndexHtml: html => html.replace('href="/zipkin"', `href="${basePath}"`)
-      },
-    ],
     base: baseUrl,
     build: {
       outDir: 'build',
@@ -57,7 +50,7 @@ export default defineConfig(() => {
       assetsDir: "static",
       rollupOptions: {
         output: {
-          assetFileNames({name}) {
+          assetFileNames({name}):string {
             if (name?.includes('.css')) return 'static/css/[name].[hash].css'
             if (name?.includes('.png')) return 'static/media/[name].[hash].png'
             return 'static/[name].[hash][extname]'
