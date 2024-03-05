@@ -36,8 +36,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # full git history for license check
       - name: Setup java
         uses: actions/setup-java@v4
         with:
@@ -78,8 +76,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1  # -Dlicense.skip=true, so we don't need a full clone
       - name: Setup java
         uses: actions/setup-java@v4
         with:
