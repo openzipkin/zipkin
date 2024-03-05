@@ -18,7 +18,6 @@ jobs:
           # Prevent use of implicit GitHub Actions read-only GITHUB_TOKEN
           # because maven-release-plugin pushes commits to master.
           token: ${{ secrets.GH_TOKEN }}
-          fetch-depth: 1  # license check is skipped, so we don't need history
       - name: Setup java
         uses: actions/setup-java@v4
         with:

@@ -14,8 +14,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1  # only needed to get the sha label
       # Don't attempt to cache Docker. Sensitive information can be stolen
       # via forks, and login session ends up in ~/.docker. This is ok because
       # we publish DOCKER_PARENT_IMAGE to ghcr.io, hence local to the runner.

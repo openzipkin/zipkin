@@ -115,8 +115,7 @@ jobs:
 Test builds and runs any tests of the project, including integration tests. CI providers should be
 configured to run tests on pull requests or pushes to the master branch, notably when the tag is
 blank. Tests should not run on documentation-only commits. Tests must not depend on authenticated
-resources, as running tests can leak credentials. Git checkouts should include the full history so
-that license headers or other git analysis can take place.
+resources, as running tests can leak credentials.
 
  * [configure_test](configure_test) - Sets up build environment for tests.
  * [test](test) - Builds and runs tests for this project.
@@ -155,8 +154,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # full git history for license check
       - name: Test
         run: |
           build-bin/configure_test
