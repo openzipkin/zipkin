@@ -324,7 +324,7 @@ class ServerIntegratedBenchmark {
       .withNetworkAliases("zipkin")
       .withExposedPorts(9411)
       .withEnv(env)
-      .waitingFor(Wait.forHealthcheck());
+      .waitingFor(Wait.forHttp("/health"));
     containers.add(zipkin);
     return zipkin;
   }
