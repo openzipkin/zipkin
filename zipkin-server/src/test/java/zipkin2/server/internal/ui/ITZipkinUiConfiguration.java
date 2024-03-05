@@ -21,7 +21,7 @@ import com.linecorp.armeria.common.RequestHeaders;
 import com.linecorp.armeria.server.Server;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.stream.Stream;
+import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -83,7 +83,7 @@ class ITZipkinUiConfiguration {
 
     client = new OkHttpClient.Builder().followRedirects(true).build();
 
-    Stream.of("/zipkin", "/").forEach(path -> {
+    List.of("/zipkin", "/").forEach(path -> {
       try {
         assertThat(get(path).body().string()).isEqualTo(index);
       } catch (IOException e) {
@@ -94,7 +94,7 @@ class ITZipkinUiConfiguration {
 
   /** Browsers honor conditional requests such as eTag. Let's make sure the server does */
   @Test void conditionalRequests() {
-    Stream.of("/zipkin/config.json", "/zipkin/index.html", "/zipkin/test.txt").forEach(path -> {
+    List.of("/zipkin/config.json", "/zipkin/index.html", "/zipkin/test.txt").forEach(path -> {
       try {
         String etag = get(path).header("etag");
         assertThat(conditionalGet(path, etag).code())
@@ -124,10 +124,10 @@ class ITZipkinUiConfiguration {
       <!-- simplified version of /zipkin-lens/index.html -->
       <html>
         <head>
-          <base href="/foozipkin/">
-          <link rel="icon" href="/foozipkin/favicon.ico">
-          <script type="module" crossorigin="" src="/foozipkin/static/js/index.js"></script>
-          <link rel="stylesheet" href="/foozipkin/static/css/index.css">
+          <base href="/foozipkin">
+          <link rel="icon" href="./favicon.ico">
+          <script type="module" crossorigin="" src="./static/js/index.js"></script>
+          <link rel="stylesheet" href="./static/css/index.css">
         </head>
         <body>zipkin-lens</body>
       </html>

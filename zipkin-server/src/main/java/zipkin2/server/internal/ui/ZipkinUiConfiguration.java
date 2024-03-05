@@ -171,9 +171,11 @@ public class ZipkinUiConfiguration {
       String content = StreamUtils.copyToString(stream, UTF_8);
       if (DEFAULT_BASEPATH.equals(basePath)) return content;
 
-      // Rebase any href or src in index.html that starts with DEFAULT_BASEPATH
-      String baseTagValue = "/".equals(basePath) ? "" : basePath;
-      return content.replaceAll("=\"" + DEFAULT_BASEPATH, "=\"" + baseTagValue);
+      // relativize any href or src in index.html
+      // TODO: see if vite config can make these relative by default!
+      return content.replace("=\"" + DEFAULT_BASEPATH, "=\".")
+        // set the base href, used in js, to absolute
+        .replace("<base href=\".", "<base href=\"" + basePath);
     }
   }
 }
