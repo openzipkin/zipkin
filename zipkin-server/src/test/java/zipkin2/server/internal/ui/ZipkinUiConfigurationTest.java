@@ -157,10 +157,10 @@ class ZipkinUiConfigurationTest {
       <!-- simplified version of /zipkin-lens/index.html -->
       <html>
         <head>
-          <base href="/foo/bar/">
-          <link rel="icon" href="/foo/bar/favicon.ico">
-          <script type="module" crossorigin="" src="/foo/bar/static/js/index.js"></script>
-          <link rel="stylesheet" href="/foo/bar/static/css/index.css">
+          <base href="/foo/bar">
+          <link rel="icon" href="./favicon.ico">
+          <script type="module" crossorigin="" src="./static/js/index.js"></script>
+          <link rel="stylesheet" href="./static/css/index.css">
         </head>
         <body>zipkin-lens</body>
       </html>
@@ -175,7 +175,7 @@ class ZipkinUiConfigurationTest {
       .contains("zipkin-lens");
   }
 
-  @Test void canOverrideProperty_specialCaseRoot() {
+  @Test void canOverrideProperty_root() {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/");
 
     assertThat(serveIndex().contentUtf8()).isEqualTo("""
@@ -183,9 +183,9 @@ class ZipkinUiConfigurationTest {
       <html>
         <head>
           <base href="/">
-          <link rel="icon" href="/favicon.ico">
-          <script type="module" crossorigin="" src="/static/js/index.js"></script>
-          <link rel="stylesheet" href="/static/css/index.css">
+          <link rel="icon" href="./favicon.ico">
+          <script type="module" crossorigin="" src="./static/js/index.js"></script>
+          <link rel="stylesheet" href="./static/css/index.css">
         </head>
         <body>zipkin-lens</body>
       </html>
