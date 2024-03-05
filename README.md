@@ -1,7 +1,7 @@
 # zipkin
 
 [![Gitter chat](http://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin)
-[![Build Status](https://github.com/openzipkin/zipkin/workflows/test/badge.svg)](https://github.com/openzipkin/zipkin/actions?query=workflow%3Atest)
+[![Build Status](https://github.com/openzipkin/zipkin/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/openzipkin/zipkin/actions?query=workflow%3Atest+branch%3Amaster)
 [![Maven Central](https://img.shields.io/maven-central/v/io.zipkin/zipkin-server.svg)](https://search.maven.org/search?q=g:io.zipkin%20AND%20a:zipkin-server)
 
 [Zipkin](https://zipkin.io) is a distributed tracing system. It helps gather
