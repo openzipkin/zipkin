@@ -28,7 +28,6 @@ import TraceIdSearch from './TraceIdSearch';
 import TraceJsonUploader from './TraceJsonUploader';
 import { useUiConfig } from '../UiConfig';
 import { darkTheme } from '../../constants/color';
-import logoSrc from '../../img/zipkin-logo.png';
 
 const Layout: React.FC = ({ children }) => {
   const { t } = useTranslation();
@@ -116,7 +115,7 @@ const Toolbar = styled(MuiToolbar)`
 `;
 
 const Logo = styled.img.attrs({
-  src: logoSrc,
+  src: './static/media/zipkin-logo.png',
 })`
   width: 42px;
   height: 42px;

@@ -150,7 +150,7 @@ Afterward, you can view traces that went through the backend via http://localhos
 
 ## UI
 
-The docker-compose configuration can be extended to host the [UI](../test-images/zipkin-ui/README.md) on port 80
+The docker-compose configuration can be extended to [host the UI](../test-images/zipkin-ui/README.md) on port 80
 using the `docker-compose-ui.yml` file. That file employs
 [docker-compose overrides](https://docs.docker.com/compose/extends/#multiple-compose-files)
 to add an NGINX container and relevant settings.
@@ -165,7 +165,6 @@ This container doubles as a skeleton for creating proxy configuration around
 Zipkin like authentication, dealing with CORS with zipkin-js apps, or
 terminating SSL.
 
-
 If you want to run the zipkin-ui standalone against a remote zipkin server, you
 need to set `ZIPKIN_BASE_URL` accordingly:
 
@@ -174,6 +173,22 @@ $ docker run -d -p 80:80 \
   -e ZIPKIN_BASE_URL=http://myfavoritezipkin:9411 \
   openzipkin/zipkin-ui
 ```
+
+## UI Proxy
+
+The docker-compose configuration can be extended to [proxy the UI](../test-images/zipkin-uiproxy/README.md) on port 80
+using the `docker-compose-uiproxy.yml` file. That file employs
+[docker-compose overrides](https://docs.docker.com/compose/extends/#multiple-compose-files) to add an NGINX container and relevant settings.
+
+To start the NGINX configuration, run:
+
+```bash
+$ docker-compose -f docker-compose.yml -f docker-compose-uiproxy.yml up
+```
+
+This container helps verify the `ZIPKIN_UI_BASEPATH` variable by setting it to
+"/admin/zipkin". This means when the compose configuration is up, you can
+access Zipkin UI at http://localhost/admin/zipkin/
 
 ## Prometheus
 

@@ -1,0 +1,33 @@
+#
+# Copyright The OpenZipkin Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# This file uses the version 2 docker-compose file format, described here:
+# https://docs.docker.com/compose/compose-file/#version-2
+#
+# It extends the default configuration from docker-compose.yml, hosting the
+# ui on port 80 using NGINX
+
+version: '2.4'
+
+services:
+  zipkin-uiproxy:
+    image: ghcr.io/openzipkin/zipkin-uiproxy:${TAG:-latest}
+    container_name: zipkin-uiproxy
+    environment:
+      # This allows hitting the UI on the host by http://localhost/admin/zipkin
+      - ZIPKIN_UI_BASEPATH=/admin/zipkin
+    ports:
+      - 80:80
+    depends_on:
+      zipkin:
+        condition: service_healthy
+
+  zipkin:
+    extends:
+      file: docker-compose.yml
+      service: zipkin
+    environment:
+      # This must match what's set in zipkin-uiproxy
+      - ZIPKIN_UI_BASEPATH=/admin/zipkin

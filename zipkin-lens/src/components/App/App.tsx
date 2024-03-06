@@ -22,13 +22,12 @@ import { UiConfig, UiConfigConsumer } from '../UiConfig';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../constants/color';
 import AlertSnackbar from './AlertSnackbar';
+import { BASE_PATH } from '../../constants/api';
 
 const App: React.FC = () => {
   useTitle('Zipkin');
   const baseName = useMemo(() => {
-    return import.meta.env.DEV
-      ? '/zipkin'
-      : (import.meta.env.BASE_URL as string);
+    return import.meta.env.DEV ? '/zipkin' : BASE_PATH;
   }, []);
 
   return (

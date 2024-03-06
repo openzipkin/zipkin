@@ -39,6 +39,8 @@ export default defineConfig(():UserConfig => {
       outDir: 'build',
       // use the same path patterns as the original react-scripts lens build
       assetsDir: "static",
+      // uncomment to build with sourcemap, for troubleshooting zipkin-server
+      // sourcemap: true,
       rollupOptions: {
         output: {
           assetFileNames({name}):string {

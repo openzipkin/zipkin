@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-sed "s~proxy_pass http://localhost:9411~proxy_pass ${ZIPKIN_BASE_URL}~g" \
+sed -e "s~proxy_pass http://localhost:9411~proxy_pass ${ZIPKIN_BASE_URL}~g" \
+ -e "s~location /zipkin~location ${ZIPKIN_UI_BASEPATH}~g" \
  /etc/nginx/conf.d/zipkin.conf.template > /etc/nginx/nginx.conf
 
 echo Starting NGINX

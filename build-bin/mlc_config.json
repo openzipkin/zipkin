@@ -16,6 +16,12 @@
       "pattern": "http://localhost:9411/zipkin"
     },
     {
+      "pattern": "http://localhost/admin/zipkin/"
+    },
+    {
+      "pattern": "http://zipkin:9411"
+    },
+    {
       "pattern": "http://localhost:9411/zipkin?serviceName=backend"
     },
     {
