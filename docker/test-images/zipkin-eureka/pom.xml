@@ -33,6 +33,7 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <!-- CVE fix versions -->
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
@@ -42,6 +43,11 @@
         <groupId>com.thoughtworks.xstream</groupId>
         <artifactId>xstream</artifactId>
         <version>1.4.20</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>4.5.14</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
