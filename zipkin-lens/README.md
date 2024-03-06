@@ -92,29 +92,29 @@ Firefox: https://addons.mozilla.org/en-US/firefox/addon/reduxdevtools/
 
 ## Running behind a reverse proxy
 Since version `2.20`, Zipkin Lens supports running under an arbitrary context root. As a result,
-it can be proxied under a different path than `/zipkin/` such as `/proxy/foo/myzipkin/`.
+it can be proxied under a different path than `/zipkin` such as `/admin/zipkin`.
 
-As an example, here is the configuration for Apache HTTPD acting as a reverse proxy
+As an example, here is the configuration for Apache HTTP Server acting as a reverse proxy
 for a Zipkin instance running on the same host:
 
 ```
 LoadModule proxy_module lib/httpd/modules/mod_proxy.so
 LoadModule proxy_http_module lib/httpd/modules/mod_proxy_http.so
 
-ProxyPass "/proxy/foo/myzipkin"  "http://localhost:9411/zipkin/"
-ProxyPassReverse "/proxy/foo/myzipkin"  "http://localhost:9411/zipkin/"
+ProxyPass "/admin/zipkin"  "http://localhost:9411/zipkin"
+ProxyPassReverse "/admin/zipkin"  "http://localhost:9411/zipkin"
 ```
 
 For the reverse proxy configuration to work, Zipkin needs to be started with the `zipkin.ui.basepath`
 parameter pointing to the proxy path:
 
 ```bash
-java -jar zipkin.jar --zipkin.ui.basepath=/proxy/foo/myzipkin
+java -jar zipkin.jar --zipkin.ui.basepath=/admin/zipkin
 ```
 
 or via docker
 ```bash
-docker run -e ZIPKIN_UI_BASEPATH=/proxy/foo/myzipkin -p 9411:9411 openzipkin/zipkin
+docker run -e ZIPKIN_UI_BASEPATH=/admin/zipkin -p 9411:9411 openzipkin/zipkin
 ```
 
 ## Authentication / Authorization

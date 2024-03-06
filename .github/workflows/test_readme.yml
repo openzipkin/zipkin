@@ -117,20 +117,32 @@ jobs:
           RELEASE_FROM_MAVEN_BUILD: true
       - name: docker/test-images/zipkin-ui/README.md
         run: |
-          build-bin/docker/docker_build openzipkin/zipkin-ui:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-ui:test
+          build-bin/docker/docker_build ${DOCKER_TAG} &&
+          build-bin/docker/docker_test_image ${DOCKER_TAG}
         env:
+          DOCKER_TAG: openzipkin/zipkin-ui:test
           DOCKER_FILE: docker/test-images/zipkin-ui/Dockerfile
           RELEASE_FROM_MAVEN_BUILD: true
+      - name: docker/test-images/zipkin-uiproxy/README.md
+        run: |
+          build-bin/docker/docker_build ${DOCKER_TAG} &&
+          build-bin/docker/docker_test_image ${DOCKER_TAG}
+        env:
+          DOCKER_TAG: openzipkin/zipkin-uiproxy:test
+          DOCKER_FILE: docker/test-images/zipkin-uiproxy/Dockerfile
       - name: docker/test-images/zipkin-activemq/README.md
         run: |
-          build-bin/docker/docker_build openzipkin/zipkin-activemq:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-activemq:test
+          build-bin/docker/docker_build ${DOCKER_TAG} &&
+          build-bin/docker/docker_test_image ${DOCKER_TAG}
+        env:
+          DOCKER_TAG: openzipkin/zipkin-activemq:test
+          DOCKER_FILE: docker/test-images/zipkin-activemq/Dockerfile
       - name: docker/test-images/zipkin-cassandra/README.md
         run: |
-          build-bin/docker/docker_build openzipkin/zipkin-cassandra:test &&
-          build-bin/docker/docker_test_image openzipkin/zipkin-cassandra:test
+          build-bin/docker/docker_build ${DOCKER_TAG} &&
+          build-bin/docker/docker_test_image ${DOCKER_TAG}
         env:
+          DOCKER_TAG: openzipkin/zipkin-cassandra:test
           DOCKER_FILE: docker/test-images/zipkin-cassandra/Dockerfile
       - name: docker/test-images/zipkin-elasticsearch7/README.md
         run: |

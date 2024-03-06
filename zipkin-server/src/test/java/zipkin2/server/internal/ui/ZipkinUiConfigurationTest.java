@@ -142,13 +142,13 @@ class ZipkinUiConfigurationTest {
   }
 
   @Test void canOverrideProperty_basePath() {
-    context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
+    context = createContextWithOverridenProperty("zipkin.ui.basepath:/admin/zipkin");
 
     assertThat(serveIndex().contentUtf8()).isEqualTo("""
       <!-- simplified version of /zipkin-lens/index.html -->
       <html>
         <head>
-          <base href="/foo/bar">
+          <base href="/admin/zipkin/">
           <link rel="icon" href="./favicon.ico">
           <script type="module" crossorigin="" src="./static/js/index.js"></script>
           <link rel="stylesheet" href="./static/css/index.css">

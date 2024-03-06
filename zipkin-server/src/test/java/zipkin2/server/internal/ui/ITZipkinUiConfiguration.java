@@ -31,7 +31,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   properties = {
     "server.port=0",
     "spring.config.name=zipkin-server",
-    "zipkin.ui.base-path=/foozipkin",
+    "zipkin.ui.base-path=/admin/zipkin",
     "server.compression.enabled=true",
     "server.compression.min-response-size=128"
   })
@@ -115,7 +115,7 @@ class ITZipkinUiConfiguration {
       <!-- simplified version of /zipkin-lens/index.html -->
       <html>
         <head>
-          <base href="/foozipkin">
+          <base href="/admin/zipkin/">
           <link rel="icon" href="./favicon.ico">
           <script type="module" crossorigin="" src="./static/js/index.js"></script>
           <link rel="stylesheet" href="./static/css/index.css">

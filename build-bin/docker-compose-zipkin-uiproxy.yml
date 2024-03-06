@@ -1,0 +1,25 @@
+#
+# Copyright The OpenZipkin Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# uses 2.4 so we can use condition: service_healthy
+version: "2.4"
+
+services:
+  zipkin:
+    # Use last build of Zipkin instead of adding a matrix build dependency
+    image: ghcr.io/openzipkin/zipkin-slim:master
+    container_name: zipkin
+    environment:
+      ZIPKIN_UI_BASEPATH: /admin/zipkin
+  # Use fixed service and container name 'sut; so our test script can copy/pasta
+  sut:
+    # This is the image just built. It is not in a remote repository.
+    image: openzipkin/zipkin-ui:test
+    container_name: sut
+    environment:
+      ZIPKIN_UI_BASEPATH: /admin/zipkin
+    depends_on:
+      zipkin:
+        condition: service_healthy
