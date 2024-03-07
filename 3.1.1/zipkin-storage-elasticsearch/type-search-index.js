@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"zipkin2.elasticsearch","l":"ElasticsearchStorage.Builder"},{"p":"zipkin2.elasticsearch","l":"ElasticsearchStorage"},{"p":"zipkin2.elasticsearch","l":"ElasticsearchVersion"},{"p":"zipkin2.elasticsearch","l":"ElasticsearchStorage.LazyHttpClient"}];updateSearchResults();
