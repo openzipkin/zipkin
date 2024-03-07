@@ -21,25 +21,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class SchemaTest {
-  @Test void ensureKeyspaceMetadata_failsWhenVersionLessThan3_11_3() {
-    CqlSession session = mock(CqlSession.class);
+  @Test void ensureVersion_failsWhenVersionLessThan3_11_3() {
     Metadata metadata = mock(Metadata.class);
     Node node = mock(Node.class);
 
-    when(session.getMetadata()).thenReturn(metadata);
     when(metadata.getNodes()).thenReturn(Map.of(
       UUID.fromString("11111111-1111-1111-1111-111111111111"), node
     ));
     when(node.getCassandraVersion()).thenReturn(Version.parse("3.11.2"));
 
-    assertThatThrownBy(() -> Schema.ensureKeyspaceMetadata(session, "zipkin2"))
+    assertThatThrownBy(() -> Schema.ensureVersion(metadata))
       .isInstanceOf(RuntimeException.class)
       .hasMessage(
         "Node 11111111-1111-1111-1111-111111111111 is running Cassandra 3.11.2, but minimum version is 3.11.3");
   }
 
-  @Test void ensureKeyspaceMetadata_failsWhenOneVersionLessThan3_11_3() {
-    CqlSession session = mock(CqlSession.class);
+  @Test void ensureVersion_failsWhenOneVersionLessThan3_11_3() {
     Metadata metadata = mock(Metadata.class);
     Node node1 = mock(Node.class);
     Node node2 = mock(Node.class);
@@ -47,61 +44,58 @@ class SchemaTest {
     nodes.put(UUID.fromString("11111111-1111-1111-1111-111111111111"), node1);
     nodes.put(UUID.fromString("22222222-2222-2222-2222-222222222222"), node2);
 
-    when(session.getMetadata()).thenReturn(metadata);
     when(metadata.getNodes()).thenReturn(nodes);
     when(node1.getCassandraVersion()).thenReturn(Version.parse("3.11.3"));
     when(node2.getCassandraVersion()).thenReturn(Version.parse("3.11.2"));
 
-    assertThatThrownBy(() -> Schema.ensureKeyspaceMetadata(session, "zipkin2"))
+    assertThatThrownBy(() -> Schema.ensureVersion(metadata))
       .isInstanceOf(RuntimeException.class)
       .hasMessage(
         "Node 22222222-2222-2222-2222-222222222222 is running Cassandra 3.11.2, but minimum version is 3.11.3");
   }
 
-  @Test void ensureKeyspaceMetadata_passesWhenVersion3_11_3AndKeyspaceMetadataIsNotNull() {
-    CqlSession session = mock(CqlSession.class);
+  @Test void ensureVersion_passesWhenVersion3_11_3() {
     Metadata metadata = mock(Metadata.class);
     Node node = mock(Node.class);
-    KeyspaceMetadata keyspaceMetadata = mock(KeyspaceMetadata.class);
 
-    when(session.getMetadata()).thenReturn(metadata);
     when(metadata.getNodes()).thenReturn(Map.of(
       UUID.fromString("11111111-1111-1111-1111-111111111111"), node
     ));
     when(node.getCassandraVersion()).thenReturn(Version.parse("3.11.3"));
-    when(metadata.getKeyspace("zipkin2")).thenReturn(Optional.of(keyspaceMetadata));
 
-    assertThat(Schema.ensureKeyspaceMetadata(session, "zipkin2"))
-      .isSameAs(keyspaceMetadata);
+    assertThat(Schema.ensureVersion(metadata))
+      .isEqualTo(Version.parse("3.11.3"));
   }
 
-  @Test void ensureKeyspaceMetadata_passesWhenVersion3_11_4AndKeyspaceMetadataIsNotNull() {
-    CqlSession session = mock(CqlSession.class);
+  @Test void ensureVersion_passesWhenVersion3_11_4() {
     Metadata metadata = mock(Metadata.class);
     Node node = mock(Node.class);
-    KeyspaceMetadata keyspaceMetadata = mock(KeyspaceMetadata.class);
 
-    when(session.getMetadata()).thenReturn(metadata);
     when(metadata.getNodes()).thenReturn(Map.of(
       UUID.fromString("11111111-1111-1111-1111-111111111111"), node
     ));
     when(node.getCassandraVersion()).thenReturn(Version.parse("3.11.4"));
+
+    assertThat(Schema.ensureVersion(metadata))
+      .isEqualTo(Version.parse("3.11.4"));
+  }
+
+  @Test void ensureKeyspaceMetadata() {
+    CqlSession session = mock(CqlSession.class);
+    Metadata metadata = mock(Metadata.class);
+    when(session.getMetadata()).thenReturn(metadata);
+    KeyspaceMetadata keyspaceMetadata = mock(KeyspaceMetadata.class);
     when(metadata.getKeyspace("zipkin2")).thenReturn(Optional.of(keyspaceMetadata));
 
     assertThat(Schema.ensureKeyspaceMetadata(session, "zipkin2"))
       .isSameAs(keyspaceMetadata);
   }
 
-  @Test void ensureKeyspaceMetadata_failsWhenKeyspaceMetadataIsNotNull() {
+  @Test void ensureKeyspaceMetadata_failsWhenKeyspaceMetadataIsNull() {
     CqlSession session = mock(CqlSession.class);
     Metadata metadata = mock(Metadata.class);
-    Node node = mock(Node.class);
 
     when(session.getMetadata()).thenReturn(metadata);
-    when(metadata.getNodes()).thenReturn(Map.of(
-      UUID.fromString("11111111-1111-1111-1111-111111111111"), node
-    ));
-    when(node.getCassandraVersion()).thenReturn(Version.parse("3.11.3"));
 
     assertThatThrownBy(() -> Schema.ensureKeyspaceMetadata(session, "zipkin2"))
       .isInstanceOf(RuntimeException.class)

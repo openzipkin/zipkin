@@ -51,13 +51,19 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
   @Nullable final SelectTraceIdsFromServiceRemoteService.Factory traceIdsFromServiceRemoteService;
 
   CassandraSpanStore(CassandraStorage storage) {
-    CqlSession session = storage.session();
-    Schema.Metadata metadata = storage.metadata();
-    int maxTraceCols = storage.maxTraceCols;
-    indexFetchMultiplier = storage.indexFetchMultiplier;
-    boolean strictTraceId = storage.strictTraceId;
-    searchEnabled = storage.searchEnabled;
+    this(storage.session(),
+      storage.metadata(),
+      Schema.ensureKeyspaceMetadata(storage.session(), storage.keyspace),
+      storage.maxTraceCols,
+      storage.indexFetchMultiplier,
+      storage.strictTraceId,
+      storage.searchEnabled);
+  }
 
+  CassandraSpanStore(CqlSession session, Schema.Metadata metadata, KeyspaceMetadata keyspace,
+    int maxTraceCols, int indexFetchMultiplier, boolean strictTraceId, boolean searchEnabled) {
+    this.indexFetchMultiplier = indexFetchMultiplier;
+    this.searchEnabled = searchEnabled;
     spans = new SelectFromSpan.Factory(session, strictTraceId, maxTraceCols);
     dependencies = new SelectDependencies.Factory(session);
 
@@ -72,8 +78,7 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
       return;
     }
 
-    KeyspaceMetadata md = Schema.ensureKeyspaceMetadata(session, storage.keyspace);
-    indexTtl = KeyspaceMetadataUtil.getDefaultTtl(md, TABLE_TRACE_BY_SERVICE_SPAN);
+    indexTtl = KeyspaceMetadataUtil.getDefaultTtl(keyspace, TABLE_TRACE_BY_SERVICE_SPAN);
     serviceNames = new SelectServiceNames.Factory(session).create();
     if (metadata.hasRemoteService) {
       remoteServiceNames = new SelectRemoteServiceNames.Factory(session);

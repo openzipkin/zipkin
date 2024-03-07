@@ -2,7 +2,7 @@
  * Copyright The OpenZipkin Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-package zipkin2.storage.cassandra.internal;
+package zipkin2.storage.cassandra;
 
 import java.util.List;
 import java.util.function.Function;

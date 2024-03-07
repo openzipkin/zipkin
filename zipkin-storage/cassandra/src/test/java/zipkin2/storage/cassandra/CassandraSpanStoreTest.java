@@ -4,9 +4,16 @@
  */
 package zipkin2.storage.cassandra;
 
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.metadata.schema.KeyspaceMetadata;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.storage.QueryRequest;
@@ -15,13 +22,21 @@ import zipkin2.storage.cassandra.SelectTraceIdsFromServiceSpan.Factory.FlatMapSe
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
-import static zipkin2.storage.cassandra.InternalForTests.mockSession;
 
 // TODO: tests use toString because the call composition chain is complex (includes flat mapping)
 // This could be made a little less complex if we scrub out map=>map to a list of transformations,
 // or possibly special-casing common transformations.
+@ExtendWith(MockitoExtension.class)
 class CassandraSpanStoreTest {
-  CassandraSpanStore spanStore = spanStore(CassandraStorage.newBuilder());
+  @Mock CqlSession session;
+  Schema.Metadata metadata = new Schema.Metadata(true, true);
+  @Mock KeyspaceMetadata keyspace;
+  CassandraSpanStore spanStore;
+
+  @BeforeEach void setup() {
+    spanStore = spanStore(CassandraStorage.newBuilder().ensureSchema(false));
+  }
+
   QueryRequest.Builder queryBuilder = QueryRequest.newBuilder().endTs(TODAY).lookback(DAY).limit(5);
 
   @Test void timestampRange_withIndexTtlProvidedAvoidsOverflow() {
@@ -113,7 +128,8 @@ class CassandraSpanStoreTest {
     assertThat(spanStore.getSpanNames("icecream")).hasToString("ConstantCall{value=[]}");
   }
 
-  static CassandraSpanStore spanStore(CassandraStorage.Builder builder) {
-    return new CassandraSpanStore(builder.sessionFactory(storage -> mockSession()).build());
+  CassandraSpanStore spanStore(CassandraStorage.Builder builder) {
+    return new CassandraSpanStore(session, metadata, keyspace, builder.maxTraceCols,
+      builder.indexFetchMultiplier, builder.strictTraceId, builder.searchEnabled);
   }
 }

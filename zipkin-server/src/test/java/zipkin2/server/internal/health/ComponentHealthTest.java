@@ -20,8 +20,7 @@ class ComponentHealthTest {
       }
     });
 
-    assertThat(health.error)
-      .isEqualTo("java.io.IOException: socket disconnect");
+    assertThat(health.error).isEqualTo("IOException: socket disconnect");
   }
 
   @Test void doesntAddNullMessageToDetails() {
@@ -31,7 +30,6 @@ class ComponentHealthTest {
       }
     });
 
-    assertThat(health.error)
-      .isEqualTo("com.linecorp.armeria.common.ClosedSessionException");
+    assertThat(health.error).isEqualTo("ClosedSessionException");
   }
 }

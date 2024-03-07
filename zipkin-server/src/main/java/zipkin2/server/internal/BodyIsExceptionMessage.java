@@ -11,6 +11,7 @@ import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.annotation.ExceptionHandlerFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import zipkin2.internal.ClosedComponentException;
 
 import static com.linecorp.armeria.common.HttpStatus.BAD_REQUEST;
 import static com.linecorp.armeria.common.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -29,7 +30,10 @@ final class BodyIsExceptionMessage implements ExceptionHandlerFunction {
     if (cause instanceof IllegalArgumentException) {
       return HttpResponse.of(BAD_REQUEST, ANY_TEXT_TYPE, message);
     } else {
-      LOGGER.warn("Unexpected error handling request.", cause);
+      // Don't fill logs with exceptions about closed components.
+      if (!(cause instanceof ClosedComponentException)) {
+        LOGGER.warn("Unexpected error handling {} {}", req.method(), req.path());
+      }
 
       return HttpResponse.of(INTERNAL_SERVER_ERROR, ANY_TEXT_TYPE, message);
     }
