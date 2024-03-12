@@ -166,7 +166,7 @@ public final class SpanNode {
       }
 
       // At this point, we have the most reliable parent-child relationships and can allocate spans
-      // corresponding the the best place in the trace tree.
+      // corresponding the best place in the trace tree.
       for (Map.Entry<Object, Object> entry : spanToParent.entrySet()) {
         SpanNode child = keyToNode.get(entry.getKey());
         SpanNode parent = keyToNode.get(entry.getValue());

@@ -260,7 +260,7 @@ export class SpanNodeBuilder {
     }
 
     // At this point, we have the most reliable parent-child relationships and can allocate spans
-    // corresponding the the best place in the trace tree.
+    // corresponding the best place in the trace tree.
     Object.keys(this._spanToParent).forEach((key) => {
       const child = this._keyToNode[key];
       const parent = this._keyToNode[this._spanToParent[key]];
