@@ -32,7 +32,7 @@ export function formatEndpoint(endpoint) {
 }
 
 /*
- * Derived means not annotated directly. Ex 'Server Start' reflects the the timestamp of a
+ * Derived means not annotated directly. Ex 'Server Start' reflects the timestamp of a
  * kind=SERVER span. 'Server Finish' is timestamp+duration of the same.
  */
 function toAnnotationRow(a, localFormatted, isDerived = false) {
