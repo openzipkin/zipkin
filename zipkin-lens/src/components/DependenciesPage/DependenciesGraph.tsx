@@ -19,6 +19,7 @@ import Dependencies from '../../models/Dependencies';
 import NodeDetailData from './NodeDetailData';
 import { Edge } from './types';
 import VizceralWrapper from './VizceralWrapper';
+import {getTheme} from "../../util/theme";
 
 // These filter functions use any type because they are passed directly to untyped JS code.
 const filterConnections = (object: any, value: any) => {
@@ -95,7 +96,10 @@ const DependenciesGraph: React.FC<DependenciesGraphProps> = ({
   const vizStyle = {
     colorText: theme.palette.primary.contrastText,
     colorTextDisabled: theme.palette.primary.contrastText,
-    colorConnectionLine: theme.palette.grey[800],
+    colorConnectionLine:
+      getTheme() === 'dark'
+        ? theme.palette.grey['A700']
+        : theme.palette.grey[800],
     colorTraffic: {
       normal: theme.palette.primary.dark,
       warning: theme.palette.secondary.dark,
