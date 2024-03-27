@@ -87,6 +87,19 @@ export const THEME = [
           main: '#f50024',
           contrastText: '#ffffff',
         },
+        background: {
+          paper: '#424242',
+        },
+        grey: {
+          /*
+             Note: Gray colors with shades 50 and 100 are initially used as background colors
+             in certain sections. However, due to the specific theme requirements,
+             these are overridden with darker shades for better visual compatibility
+             and theme coherence.
+          */
+          50: '#4c4c4c',
+          100: '#424242',
+        },
       },
     }),
   },
