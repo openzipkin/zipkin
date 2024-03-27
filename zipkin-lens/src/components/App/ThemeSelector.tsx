@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2024 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,7 +17,7 @@ import PaletteIcon from '@material-ui/icons/Palette';
 import React, { useCallback } from 'react';
 import { THEME } from '../../constants/color';
 
-import { getTheme, setTheme } from '../../util/locale';
+import { getTheme, setTheme } from '../../util/theme';
 
 // We want to display all the languages in native language, not current locale, so hard-code the
 // strings here instead of using internationalization.

@@ -9,7 +9,7 @@ import classNames from 'classnames';
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
-import {getTheme} from "../../util/locale";
+import { getTheme } from "../../util/theme";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({

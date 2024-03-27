@@ -4,7 +4,7 @@
  */
 import { createTheme } from '@material-ui/core/styles';
 import * as colors from '@material-ui/core/colors';
-import { getTheme } from '../util/locale';
+import { getTheme } from '../util/theme';
 
 export const primaryColor = '#6a9fb5';
 export const errorColor = '#f44336';

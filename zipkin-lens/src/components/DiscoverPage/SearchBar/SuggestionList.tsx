@@ -5,7 +5,7 @@
 import { CircularProgress } from '@material-ui/core';
 import React, { useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import {getTheme} from "../../../util/locale";
+import { getTheme } from "../../../util/theme";
 
 const Root = styled.div<{ isLoading: boolean }>`
   position: absolute;
