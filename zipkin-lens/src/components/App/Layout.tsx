@@ -24,7 +24,7 @@ import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import HeaderMenuItem from './HeaderMenuItem';
 import LanguageSelector from './LanguageSelector';
-import ThemeSelector from './ThemeSelector'
+import ThemeSelector from './ThemeSelector';
 import TraceIdSearch from './TraceIdSearch';
 import TraceJsonUploader from './TraceJsonUploader';
 import { useUiConfig } from '../UiConfig';
