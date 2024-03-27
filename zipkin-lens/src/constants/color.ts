@@ -11,9 +11,9 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import {createMuiTheme} from '@material-ui/core/styles';
+import { createMuiTheme } from '@material-ui/core/styles';
 import * as colors from '@material-ui/core/colors';
-import {getTheme} from '../util/locale';
+import { getTheme } from '../util/locale';
 
 export const primaryColor = '#6a9fb5';
 export const errorColor = '#f44336';
@@ -95,6 +95,19 @@ export const THEME = [
         error: {
           main: '#f50024',
           contrastText: '#ffffff',
+        },
+        background: {
+          paper: '#424242',
+        },
+        grey: {
+          /*
+             Note: Gray colors with shades 50 and 100 are initially used as background colors
+             in certain sections. However, due to the specific theme requirements,
+             these are overridden with darker shades for better visual compatibility
+             and theme coherence.
+          */
+          50: '#4c4c4c',
+          100: '#424242',
         },
       },
     }),
@@ -189,7 +202,6 @@ export const allColors = [
   colors.grey,
   colors.blueGrey,
 ];
-
 
 /* eslint no-bitwise: ["error", { "allow": ["<<", "|="] }] */
 const generateHash = (str: string) => {

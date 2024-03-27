@@ -15,6 +15,7 @@
 import { CircularProgress } from '@material-ui/core';
 import React, { useEffect, useRef } from 'react';
 import styled from 'styled-components';
+import {getTheme} from "../../../util/locale";
 
 const Root = styled.div<{ isLoading: boolean }>`
   position: absolute;
@@ -55,7 +56,10 @@ const ListItem = styled.li<{ isFocused: boolean }>`
     `5px solid ${isFocused ? theme.palette.primary.main : 'rgba(0, 0, 0, 0)'}`};
   cursor: pointer;
   &:hover {
-    background-color: ${({ theme }) => theme.palette.grey[300]};
+    background-color: ${({ theme }) =>
+      getTheme() === 'dark'
+        ? theme.palette.grey[600]
+        : theme.palette.grey[300]};
   }
 `;
 
