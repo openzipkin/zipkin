@@ -19,7 +19,7 @@ import Dependencies from '../../models/Dependencies';
 import NodeDetailData from './NodeDetailData';
 import { Edge } from './types';
 import VizceralWrapper from './VizceralWrapper';
-import {getTheme} from "../../util/theme";
+import { getTheme } from '../../util/theme';
 
 // These filter functions use any type because they are passed directly to untyped JS code.
 const filterConnections = (object: any, value: any) => {

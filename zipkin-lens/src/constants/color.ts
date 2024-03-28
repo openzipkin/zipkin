@@ -229,7 +229,6 @@ export const selectServiceTheme = (serviceName: string) => {
     }),
   );
   return themePalette[hash % selectedServicePalette.length];
-
 };
 
 export const selectServiceColor = (serviceName: string) =>
