@@ -6,8 +6,9 @@ import { createTheme } from '@material-ui/core/styles';
 import * as colors from '@material-ui/core/colors';
 import { getTheme } from '../util/theme';
 
-export const primaryColor = '#6a9fb5';
-export const errorColor = '#f44336';
+export const primaryColor = '#005B8A';
+export const secondaryColor = '#c8001d';
+export const errorColor = '#c8001d';
 
 export const THEME = [
   {
@@ -17,6 +18,9 @@ export const THEME = [
         primary: {
           main: primaryColor,
           contrastText: '#fff',
+        },
+        secondary: {
+          main: secondaryColor,
         },
         error: {
           main: errorColor,
@@ -99,38 +103,6 @@ export const THEME = [
           */
           50: '#4c4c4c',
           100: '#424242',
-        },
-      },
-    }),
-  },
-  {
-    name: 'highcontrast',
-    label: 'High Contrast',
-    servicePalette: [
-      '#0000FF',
-      '#008000',
-      '#ADD8E6',
-      '#FFFF00',
-      '#FFB6C1',
-      '#8A2BE2',
-      '#00CED1',
-      '#006400',
-      '#FFA500',
-      '#808080',
-    ],
-    theme: createTheme({
-      palette: {
-        type: 'light',
-        primary: {
-          main: '#005B8A',
-          contrastText: '#fff',
-        },
-        secondary: {
-          main: '#c8001d',
-        },
-        error: {
-          main: '#c8001d',
-          contrastText: '#ffffff',
         },
       },
     }),
