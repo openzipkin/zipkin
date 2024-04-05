@@ -76,9 +76,11 @@ const Layout: React.FC = ({ children }) => {
             <ThemeProvider theme={darkTheme}>
               <Box display="flex" alignItems="center">
                 <LanguageSelector />
-                <ThemeSelector />
                 <Box mr={2} ml={2}>
                   <TraceJsonUploader />
+                </Box>
+                <Box pl={2} mr={2} borderLeft={1} borderColor={'#FFF'}>
+                  <ThemeSelector />
                 </Box>
                 <TraceIdSearch />
                 {config.supportUrl && (
