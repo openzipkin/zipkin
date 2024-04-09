@@ -88,10 +88,10 @@ const Layout: React.FC = ({ children }) => {
                     </Tooltip>
                   </Box>
                 )}
-                <Box pl={2} ml={2} borderLeft={1} borderColor={'#FFF'}>
+                <Box pl={2} ml={2} mr={2} borderLeft={1} borderColor={'#FFF'}>
                   <LanguageSelector />
-                  <ThemeSelector />
                 </Box>
+                <ThemeSelector />
               </Box>
             </ThemeProvider>
           </Box>
