@@ -38,8 +38,9 @@ public class MetricsBenchmarks {
   private MeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
   private InMemoryCollectorMetrics inMemoryCollectorMetrics = new InMemoryCollectorMetrics()
     .forTransport("jmh");
-  private MicrometerCollectorMetrics micrometerCollectorMetrics = new MicrometerCollectorMetrics(registry)
-    .forTransport("jmh");
+  private MicrometerCollectorMetrics micrometerCollectorMetrics =
+    new MicrometerCollectorMetrics(registry)
+      .forTransport("jmh");
 
   @Benchmark
   public int incrementBytes_longSpans_inMemory() {

@@ -236,5 +236,4 @@ public final class MoshiSpanDecoder {
         throw new UnsupportedOperationException();
       }
     }.nullSafe();
-
 }

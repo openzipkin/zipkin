@@ -84,15 +84,17 @@
     <okhttp.version>4.12.0</okhttp.version>
     <kryo.version>5.6.0</kryo.version>
     <!-- Only used for proto interop testing; wire-maven-plugin is usually behind latest. -->
-    <wire.version>4.9.7</wire.version>
+    <wire.version>4.9.9</wire.version>
     <gson.version>2.10.1</gson.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
     <license.skip>${skipTests}</license.skip>
 
+    <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
     <go-offline-maven-plugin.version>1.2.8</go-offline-maven-plugin.version>
     <!-- TODO: cleanup any redundant ignores now also in the 4.0 release (once final) -->
     <license-maven-plugin.version>4.3</license-maven-plugin.version>
+    <maven-assembly-plugin.version>3.6.0</maven-assembly-plugin.version>
     <maven-bundle-plugin.version>5.1.9</maven-bundle-plugin.version>
     <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
     <!-- Use same version as https://github.com/openzipkin/docker-java -->

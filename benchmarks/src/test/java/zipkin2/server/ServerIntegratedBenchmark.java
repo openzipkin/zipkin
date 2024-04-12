@@ -225,9 +225,10 @@ class ServerIntegratedBenchmark {
     printQuartiles(prometheusClient, "jvm_memory_used_bytes{area=\"nonheap\"}");
 
     System.out.printf(
-        "Total GC time (s): %s%n", prometheusValue(prometheusClient, "sum(jvm_gc_pause_seconds_sum)"));
+      "Total GC time (s): %s%n",
+      prometheusValue(prometheusClient, "sum(jvm_gc_pause_seconds_sum)"));
     System.out.printf(
-        "Number of GCs: %s%n", prometheusValue(prometheusClient, "sum(jvm_gc_pause_seconds_count)"));
+      "Number of GCs: %s%n", prometheusValue(prometheusClient, "sum(jvm_gc_pause_seconds_count)"));
 
     System.out.println("POST Spans latency (s)");
     printHistogram(prometheusClient, """
@@ -322,11 +323,11 @@ class ServerIntegratedBenchmark {
 
   static void printContainerMapping(GenericContainer<?> container) {
     System.out.printf(
-        "Container %s ports exposed at %s%n", container.getDockerImageName(),
-    container.getExposedPorts().stream()
-      .map(port -> Map.entry(port,
-        "http://" + container.getContainerIpAddress() + ":" + container.getMappedPort(port)))
-      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+      "Container %s ports exposed at %s%n", container.getDockerImageName(),
+      container.getExposedPorts().stream()
+        .map(port -> Map.entry(port,
+          "http://" + container.getContainerIpAddress() + ":" + container.getMappedPort(port)))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
   static void printQuartiles(WebClient prometheus, String metric) throws Exception {
