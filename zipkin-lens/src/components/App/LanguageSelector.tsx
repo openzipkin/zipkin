@@ -17,18 +17,22 @@ export const LANGUAGES = [
   {
     locale: 'en',
     name: 'English',
+    iso6391: 'EN',
   },
   {
     locale: 'es',
     name: 'Español',
+    iso6391: 'ES',
   },
   {
     locale: 'fr',
     name: 'Français',
+    iso6391: 'FR',
   },
   {
     locale: 'zh_cn',
     name: '中文 (简体)',
+    iso6391: 'ZH',
   },
 ];
 
@@ -80,7 +84,7 @@ const LanguageSelector = () => {
         endIcon={<ExpandMoreIcon />}
         data-testid="change-language-button"
       >
-        {LANGUAGES.find((lang) => lang.locale === i18n.language)?.name}
+        {LANGUAGES.find((lang) => lang.locale === i18n.language)?.iso6391}
       </Button>
       <Menu
         anchorEl={anchorEl}

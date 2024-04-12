@@ -13,7 +13,7 @@
   "Please select criteria in the search bar. Then, click the search button.": "请在搜索栏中选择条件， 然后点击按钮进行查找",
   "Please select the start and end time. Then, click the search button.": "请选择起始时间和终止时间， 然后点击按钮进行查找",
   "Root": "Root",
-  "Run Query": "",
+  "Run Query": "运行查询",
   "Search Dependencies": "查询依赖",
   "Search Traces": "查询trace链路",
   "Searching has been disabled via the searchEnabled property. You can still view specific traces of which you know the trace id by entering it in the \"Trace ID...\" textbox on the top-right.": "已通过searchEnabled属性禁用搜索，通过在右上角的 \"Trace ID...\"文本框中输入trace id，您仍然可以查看已知trace id的跟踪信息",

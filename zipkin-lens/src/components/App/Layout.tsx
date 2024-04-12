@@ -24,6 +24,7 @@ import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import HeaderMenuItem from './HeaderMenuItem';
 import LanguageSelector from './LanguageSelector';
+import ThemeSelector from './ThemeSelector';
 import TraceIdSearch from './TraceIdSearch';
 import TraceJsonUploader from './TraceJsonUploader';
 import { useUiConfig } from '../UiConfig';
@@ -74,7 +75,6 @@ const Layout: React.FC = ({ children }) => {
             </Box>
             <ThemeProvider theme={darkTheme}>
               <Box display="flex" alignItems="center">
-                <LanguageSelector />
                 <Box mr={2} ml={2}>
                   <TraceJsonUploader />
                 </Box>
@@ -88,6 +88,10 @@ const Layout: React.FC = ({ children }) => {
                     </Tooltip>
                   </Box>
                 )}
+                <Box pl={2} ml={2} mr={2} borderLeft={1} borderColor={'#FFF'}>
+                  <LanguageSelector />
+                </Box>
+                <ThemeSelector />
               </Box>
             </ThemeProvider>
           </Box>

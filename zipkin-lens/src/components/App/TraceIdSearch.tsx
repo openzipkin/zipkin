@@ -2,7 +2,7 @@
  * Copyright The OpenZipkin Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-import { TextField } from '@material-ui/core';
+import { makeStyles, TextField } from '@material-ui/core';
 import React, { useCallback, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -31,8 +31,25 @@ const TraceIdSearch: React.FC = () => {
     [history, traceId],
   );
 
+  const useStyles = makeStyles({
+    traceIdSearch: {
+      // Questo selettore cambia il colore del bordo al passaggio del mouse
+      '&:hover fieldset': {
+        borderColor: '#FFF !important',
+      },
+      '& .Mui-focused fieldset': {
+        borderColor: '#FFF !important',
+      },
+      '& label.Mui-focused': {
+        color: '#FFF !important',
+      },
+    },
+  });
+  const classes = useStyles();
+
   return (
     <TextField
+      className={classes.traceIdSearch}
       label="Search by trace ID"
       value={traceId}
       onChange={handleChange}
