@@ -5,15 +5,13 @@
     SPDX-License-Identifier: Apache-2.0
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>3.1.2-SNAPSHOT</version>
+    <version>3.2.0</version>
   </parent>
 
   <artifactId>benchmarks</artifactId>
@@ -254,7 +252,7 @@
               <!-- instead of javac-with-errorprone -->
               <compilerId>javac</compilerId>
               <!-- scrub errorprone compiler args -->
-              <compilerArgs/>
+              <compilerArgs />
             </configuration>
           </execution>
           <execution>
@@ -267,7 +265,7 @@
               <!-- instead of javac-with-errorprone -->
               <compilerId>javac</compilerId>
               <!-- scrub errorprone compiler args -->
-              <compilerArgs/>
+              <compilerArgs />
               <annotationProcessorPaths>
                 <path>
                   <groupId>org.openjdk.jmh</groupId>
