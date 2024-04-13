@@ -74,7 +74,7 @@ class RabbitMQExtension implements BeforeAllCallback, AfterAllCallback {
   // mostly waiting for https://github.com/testcontainers/testcontainers-java/issues/3537
   static final class RabbitMQContainer extends GenericContainer<RabbitMQContainer> {
     RabbitMQContainer() {
-      super(parse("ghcr.io/openzipkin/zipkin-rabbitmq:3.1.0"));
+      super(parse("ghcr.io/openzipkin/zipkin-rabbitmq:3.1.1"));
       withExposedPorts(RABBIT_PORT);
       waitStrategy = Wait.forLogMessage(".*Server startup complete.*", 1);
       withStartupTimeout(Duration.ofSeconds(60));

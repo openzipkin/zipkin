@@ -26,7 +26,7 @@ WORKDIR /install
 # Use latest 8.x version from https://www.elastic.co/downloads/past-releases#elasticsearch
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG elasticsearch8_version=8.12.2
+ARG elasticsearch8_version=8.13.2
 
 # Download only the OSS distribution (lacks X-Pack)
 RUN \
@@ -41,7 +41,7 @@ COPY --from=scratch /config/ ./config/
 # production -jre base layer used by zipkin and zipkin-slim.
 FROM ghcr.io/openzipkin/java:${java_version} as zipkin-elasticsearch8
 LABEL org.opencontainers.image.description="Elasticsearch distribution on OpenJDK and Alpine Linux"
-ARG elasticsearch8_version=8.12.2
+ARG elasticsearch8_version=8.13.2
 LABEL elasticsearch-version=$elasticsearch8_version
 
 # The full license is also included in the image at /elasticsearch/LICENSE.txt.

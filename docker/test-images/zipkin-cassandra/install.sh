@@ -47,7 +47,7 @@ cat > pom.xml <<-'EOF'
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>5.13.0</version>
+      <version>5.14.0</version>
     </dependency>
     <!-- log4j not logback -->
     <dependency>
@@ -170,7 +170,7 @@ is_cassandra_alive() {
 is_cassandra_alive || exit 1
 
 echo "*** Installing cqlsh"
-apk add --update --no-cache python3 py3-pip
+apk add --update --no-cache python3
 # Installing cqlsh requires cffi package. Normally this doesn't need
 # to be compiled, but something isn't right with aarch64 when installing
 # cqlsh it needs to build cffi. To unblock support for aarch64, adding
@@ -180,6 +180,7 @@ apk add --update --no-cache gcc python3-dev musl-dev libffi-dev
 # PEP 668 protects against mixing system and pip packages. Setup virtual env to avoid this.
 python3 -m venv .venv
 . .venv/bin/activate
+python3 -m ensurepip --upgrade
 pip install -Iq cqlsh
 cql() {
   cqlsh "$@" 127.0.0.1 ${temp_native_transport_port}
