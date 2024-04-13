@@ -5,7 +5,9 @@
     SPDX-License-Identifier: Apache-2.0
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -50,12 +52,42 @@
     </dependencies>
   </dependencyManagement>
 
+  <!-- All dependencies are marked test, because benchmarks are a form of test.
+       This module is skipped on -DskipTests, ensuring it isn't deployed. -->
   <dependencies>
+    <!-- These are main deps as wire-maven-plugin isn't designed for tests -->
+    <dependency>
+      <groupId>com.squareup.wire</groupId>
+      <artifactId>wire-runtime-jvm</artifactId>
+      <version>${wire.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin.proto3</groupId>
+      <artifactId>zipkin-proto3</artifactId>
+      <version>${zipkin-proto3.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.openjdk.jmh</groupId>
+      <artifactId>jmh-core</artifactId>
+      <version>${jmh.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- IntelliJ doesn't know to use annotation processing on tests without this -->
+    <dependency>
+      <groupId>org.openjdk.jmh</groupId>
+      <artifactId>jmh-generator-annprocess</artifactId>
+      <version>${jmh.version}</version>
+      <scope>test</scope>
+    </dependency>
     <!-- for codec benchmarks -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>${gson.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.squareup.moshi</groupId>
@@ -68,52 +100,57 @@
           <artifactId>okio</artifactId>
         </exclusion>
       </exclusions>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>com.esotericsoftware</groupId>
       <artifactId>kryo</artifactId>
       <version>${kryo.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.openjdk.jmh</groupId>
-      <artifactId>jmh-core</artifactId>
-      <version>${jmh.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.openjdk.jmh</groupId>
-      <artifactId>jmh-generator-annprocess</artifactId>
-      <version>${jmh.version}</version>
-      <scope>provided</scope>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
       <version>3.25.3</version>
+      <scope>test</scope>
     </dependency>
 
+    <!-- Ensure server benchmarks run with a consistent logger -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-server</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-log4j2</artifactId>
+        </exclusion>
+      </exclusions>
+      <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jul-to-slf4j</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-storage-elasticsearch</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.squareup.wire</groupId>
-      <artifactId>wire-runtime-jvm</artifactId>
-      <version>${wire.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.zipkin.proto3</groupId>
-      <artifactId>zipkin-proto3</artifactId>
-      <version>${zipkin-proto3.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}.zipkin2</groupId>
@@ -133,6 +170,7 @@
           <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cassandra</groupId>
@@ -211,31 +249,32 @@
   </dependencies>
 
   <build>
+    <!-- use assembly instead of shade, as it naturally works for test-jar -->
     <plugins>
       <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>de.m3y.maven</groupId>
-        <artifactId>wire-maven-plugin</artifactId>
-      </plugin>
-
-      <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>${maven-assembly-plugin.version}</version>
+        <configuration>
+          <descriptors>
+            <descriptor>src/test/assembly/test-jar.xml</descriptor>
+          </descriptors>
+        </configuration>
         <executions>
           <execution>
+            <id>make-assembly</id>
             <phase>package</phase>
             <goals>
-              <goal>shade</goal>
+              <goal>single</goal>
             </goals>
             <configuration>
+              <attach>true</attach>
               <finalName>benchmarks</finalName>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+              <appendAssemblyId>false</appendAssemblyId>
+              <archive>
+                <manifest>
                   <mainClass>org.openjdk.jmh.Main</mainClass>
-                </transformer>
-              </transformers>
-              <createDependencyReducedPom>false</createDependencyReducedPom>
+                </manifest>
+              </archive>
             </configuration>
           </execution>
         </executions>
@@ -253,10 +292,40 @@
               <!-- instead of javac-with-errorprone -->
               <compilerId>javac</compilerId>
               <!-- scrub errorprone compiler args -->
-              <compilerArgs />
+              <compilerArgs/>
+            </configuration>
+          </execution>
+          <execution>
+            <id>test-compile</id>
+            <phase>test-compile</phase>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+            <configuration combine.self="override">
+              <!-- instead of javac-with-errorprone -->
+              <compilerId>javac</compilerId>
+              <!-- scrub errorprone compiler args -->
+              <compilerArgs/>
+              <annotationProcessorPaths>
+                <path>
+                  <groupId>org.openjdk.jmh</groupId>
+                  <artifactId>jmh-generator-annprocess</artifactId>
+                  <version>${jmh.version}</version>
+                </path>
+              </annotationProcessorPaths>
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>de.m3y.maven</groupId>
+        <artifactId>wire-maven-plugin</artifactId>
+        <configuration>
+          <generatedSourceDirectory>${generated-proto.directory}</generatedSourceDirectory>
+        </configuration>
       </plugin>
     </plugins>
   </build>

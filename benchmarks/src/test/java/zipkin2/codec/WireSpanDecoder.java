@@ -284,7 +284,7 @@ public class WireSpanDecoder {
 
     char[] result = RecyclableBuffers.shortStringBuffer();
 
-    for (int i = 0; i < bytes.size(); i ++) {
+    for (int i = 0; i < bytes.size(); i++) {
       byte b = bytes.getByte(i);
       result[2 * i] = HEX_DIGITS[(b >> 4) & 0xf];
       result[2 * i + 1] = HEX_DIGITS[b & 0xf];
