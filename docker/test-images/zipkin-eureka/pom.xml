@@ -49,6 +49,11 @@
         <artifactId>httpclient</artifactId>
         <version>4.5.14</version>
       </dependency>
+      <dependency>
+        <groupId>software.amazon.ion</groupId>
+        <artifactId>ion-java</artifactId>
+        <version>1.5.1</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
