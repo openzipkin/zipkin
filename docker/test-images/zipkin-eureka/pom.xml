@@ -49,11 +49,6 @@
         <artifactId>httpclient</artifactId>
         <version>4.5.14</version>
       </dependency>
-      <dependency>
-        <groupId>software.amazon.ion</groupId>
-        <artifactId>ion-java</artifactId>
-        <version>1.5.1</version>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -68,7 +63,17 @@
           <groupId>commons-logging</groupId>
           <artifactId>commons-logging</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>software.amazon.ion</groupId>
+          <artifactId>ion-java</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <!-- dodge CVE -->
+    <dependency>
+      <groupId>com.amazon.ion</groupId>
+      <artifactId>ion-java</artifactId>
+      <version>1.11.4</version>
     </dependency>
 
     <!-- Get rid of log warning saying to use Caffeine -->

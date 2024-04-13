@@ -25,7 +25,7 @@
     <!-- Update occasionally based on LTS, but don't overrun what's in Alpine:
          https://nodejs.org/en/download/
          https://pkgs.alpinelinux.org/packages?name=nodejs&branch=edge -->
-    <node.version>20.11.1</node.version>
+    <node.version>20.12.1</node.version>
     <exec-maven-plugin.version>3.2.0</exec-maven-plugin.version>
     <frontend-maven-plugin.version>1.15.0</frontend-maven-plugin.version>
     <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
