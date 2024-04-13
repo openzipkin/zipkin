@@ -208,44 +208,6 @@
       <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
-
-    <!-- overrides from zipkin-server project are not picked up here so redefine -->
-    <!-- temporary until netty-4.1.108.Final -->
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-tcnative-boringssl-static</artifactId>
-      <version>2.0.63.Final</version>
-      <classifier>linux-x86_64</classifier>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-tcnative-boringssl-static</artifactId>
-      <version>2.0.63.Final</version>
-      <classifier>linux-aarch_64</classifier>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-tcnative-boringssl-static</artifactId>
-      <version>2.0.63.Final</version>
-      <classifier>osx-x86_64</classifier>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-tcnative-boringssl-static</artifactId>
-      <version>2.0.63.Final</version>
-      <classifier>osx-aarch_64</classifier>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-tcnative-boringssl-static</artifactId>
-      <version>2.0.63.Final</version>
-      <classifier>windows-x86_64</classifier>
-      <scope>runtime</scope>
-    </dependency>
   </dependencies>
 
   <build>
