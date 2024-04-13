@@ -16,7 +16,7 @@ services:
   prometheus:
     # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     # Use latest from https://quay.io/repository/prometheus/prometheus?tab=tags
-    image: quay.io/prometheus/prometheus:v2.48.0
+    image: quay.io/prometheus/prometheus:v2.51.2
     container_name: prometheus
     ports:
       - 9090:9090
@@ -29,7 +29,7 @@ services:
   grafana:
     # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     # Use latest from https://quay.io/repository/app-sre/grafana?tab=tags
-    image: quay.io/giantswarm/grafana:7.5.4
+    image: quay.io/giantswarm/grafana:7.5.9
     container_name: grafana
     ports:
       - 3000:3000
@@ -43,7 +43,7 @@ services:
     # This is an arbitrary small image that has curl installed
     # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     # Use latest from https://quay.io/repository/quay.io/rackspace/curl?tab=tags
-    image: quay.io/cilium/alpine-curl:v1.8.0
+    image: quay.io/cilium/alpine-curl:v1.9.0
     container_name: setup_grafana_datasource
     depends_on:
       - grafana

@@ -23,7 +23,7 @@ FROM ghcr.io/openzipkin/java:${java_version} as install
 WORKDIR /install
 
 # Use latest version from https://activemq.apache.org/components/classic/download/
-ARG activemq_version=6.0.1
+ARG activemq_version=6.1.1
 
 # Download the distribution
 RUN \
@@ -37,7 +37,7 @@ https://archive.apache.org/dist/activemq/${activemq_version}/apache-activemq-${a
 # which isn't in our JRE.
 FROM ghcr.io/openzipkin/java:${java_version} as zipkin-activemq
 LABEL org.opencontainers.image.description="ActiveMQ Classic on OpenJDK and Alpine Linux"
-ARG activemq_version=6.0.1
+ARG activemq_version=6.1.1
 LABEL activemq-version=$activemq_version
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
