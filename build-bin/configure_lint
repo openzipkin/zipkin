@@ -1,7 +1,8 @@
 #!/bin/sh -ue
 
 # Attempt to install markdown-link-check if absent
-markdown-link-check -V || npm install -g markdown-link-check
+# TODO: unpin version following tcort/markdown-link-check#304
+markdown-link-check -V || npm install -g markdown-link-check@3.11.2
 
 # Attempt to install yamllint if absent
 yamllint || pip install --user yamllint
