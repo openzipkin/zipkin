@@ -136,11 +136,6 @@
           <groupId>javax.validation</groupId>
           <artifactId>validation-api</artifactId>
         </exclusion>
-        <!-- temporary until netty-4.1.108.Final -->
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-tcnative-boringssl-static</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
