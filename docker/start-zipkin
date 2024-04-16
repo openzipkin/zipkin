@@ -13,20 +13,20 @@ STORAGE_TYPE=${STORAGE_TYPE:-mem}
 export HEALTHCHECK_PORT=${QUERY_PORT:-9411}
 
 if [ "${STORAGE_TYPE}" = "mem" ]; then
-  # When using in-memory provider, allocate 128m, most of which for trace storage
-  JAVA_OPTS=${JAVA_OPTS:-"-Xms128m -Xmx128m -XX:+ExitOnOutOfMemoryError"}
+  # When using in-memory provider, allocate 160m, most of which for trace storage
+  JAVA_OPTS=${JAVA_OPTS:-"-Xms160m -Xmx160m -XX:+ExitOnOutOfMemoryError"}
 fi
 
 # MODULE_OPTS is not set in the zipkin-slim dist, so use it to detect if this is a slim build
 if [ -z "${MODULE_OPTS+x}" ]; then
   # Allocate less memory when using the slim build
-  JAVA_OPTS=${JAVA_OPTS:-"-Xms32m -Xmx32m -XX:+ExitOnOutOfMemoryError"}
+  JAVA_OPTS=${JAVA_OPTS:-"-Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError"}
 
   # Use main class directly if there are no modules, as it measured 14% faster from JVM running to
   # available verses PropertiesLauncher when using Zipkin was based on Spring Boot 2.1
   exec java ${JAVA_OPTS} -cp '.:BOOT-INF/lib/*:BOOT-INF/classes' zipkin.server.ZipkinServer "$@"
 else
-  JAVA_OPTS=${JAVA_OPTS:-"-Xms64m -Xmx64m -XX:+ExitOnOutOfMemoryError"}
+  JAVA_OPTS=${JAVA_OPTS:-"-Xms96m -Xmx96m -XX:+ExitOnOutOfMemoryError"}
 
   # Disable Log4j2 JMX extensions when running the full build
   exec java ${MODULE_OPTS} ${JAVA_OPTS} -cp . \
