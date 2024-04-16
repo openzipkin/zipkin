@@ -27,13 +27,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Supplier;
+
+import zipkin2.elasticsearch.BaseVersion;
 import zipkin2.elasticsearch.ElasticsearchStorage;
-import zipkin2.elasticsearch.ElasticsearchVersion;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.elasticsearch.internal.client.HttpCall.BodyConverter;
 
 import static zipkin2.Call.propagateIfFatal;
-import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
 import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
 import static zipkin2.elasticsearch.internal.client.HttpCall.maybeRootCauseReason;
 
@@ -79,9 +79,9 @@ public final class BulkCallBuilder {
   // Mutated for each call to index
   final List<IndexEntry<?>> entries = new ArrayList<>();
 
-  public BulkCallBuilder(ElasticsearchStorage es, ElasticsearchVersion version, String tag) {
+  public BulkCallBuilder(ElasticsearchStorage es, BaseVersion version, String tag) {
     this.tag = tag;
-    shouldAddType = version.compareTo(V7_0) < 0;
+    shouldAddType = version.supportsTypes();
     http = Internal.instance.http(es);
     pipeline = es.pipeline();
     waitForRefresh = es.flushOnWrites();

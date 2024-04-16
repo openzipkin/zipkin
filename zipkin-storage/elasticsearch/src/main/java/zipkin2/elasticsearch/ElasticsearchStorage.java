@@ -36,9 +36,6 @@ import zipkin2.storage.StorageComponent;
 import zipkin2.storage.Traces;
 
 import static com.linecorp.armeria.common.HttpMethod.GET;
-import static zipkin2.elasticsearch.ElasticsearchVersion.V6_7;
-import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
-import static zipkin2.elasticsearch.ElasticsearchVersion.V7_8;
 import static zipkin2.elasticsearch.EnsureIndexTemplate.ensureIndexTemplate;
 import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_AUTOCOMPLETE;
 import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_DEPENDENCY;
@@ -240,17 +237,17 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     return new ElasticsearchSpanConsumer(this);
   }
 
-  /** Returns the Elasticsearch version of the connected cluster. Internal use only */
-  @Memoized public ElasticsearchVersion version() {
+  /** Returns the Elasticsearch / OpenSearch version of the connected cluster. Internal use only */
+  @Memoized public BaseVersion version() {
     try {
-      return ElasticsearchVersion.get(http());
+      return BaseVersion.get(http());
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
   }
 
   char indexTypeDelimiter() {
-    return VersionSpecificTemplates.indexTypeDelimiter(version());
+    return VersionSpecificTemplates.forVersion(version()).indexTypeDelimiter();
   }
 
   /** This is an internal blocking call, only used in tests. */
@@ -337,35 +334,20 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     }
   }
 
-  IndexTemplates versionSpecificTemplates(ElasticsearchVersion version) {
-    return new VersionSpecificTemplates(
+  IndexTemplates versionSpecificTemplates(BaseVersion version) {
+    return VersionSpecificTemplates.forVersion(version).get(
       indexNameFormatter().index(),
       indexReplicas(),
       indexShards(),
       searchEnabled(),
       strictTraceId(),
       templatePriority()
-    ).get(version);
+    );
   }
 
   String buildUrl(IndexTemplates templates, String type) {
     String indexPrefix = indexNameFormatter().index() + templates.indexTypeDelimiter();
-
-    if (version().compareTo(V7_8) >= 0 && templatePriority() != null) {
-      return "/_index_template/" + indexPrefix + type + "_template";
-    }
-    if (version().compareTo(V6_7) >= 0 && version().compareTo(V7_0) < 0) {
-      // because deprecation warning on 6 to prepare for 7:
-      //
-      // [types removal] The parameter include_type_name should be explicitly specified in get
-      // template requests to prepare for 7.0. In 7.0 include_type_name will default to 'false',
-      // which means responses will omit the type name in mapping definitions.
-      //
-      // The parameter include_type_name was added in 6.7. Using this with ES older than
-      // 6.7 will result in unrecognized parameter: [include_type_name].
-      return "/_template/" + indexPrefix + type + "_template?include_type_name=true";
-    }
-    return "/_template/" + indexPrefix + type + "_template";
+    return VersionSpecificTemplates.forVersion(version()).indexTemplatesUrl(indexPrefix, type, templatePriority());
   }
 
   @Override public final String toString() {

@@ -29,7 +29,7 @@ abstract class ITElasticsearchStorage {
 
   static final Logger LOGGER = LoggerFactory.getLogger(ITElasticsearchStorage.class);
 
-  abstract ElasticsearchExtension elasticsearch();
+  abstract ElasticsearchBaseExtension elasticsearch();
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<ElasticsearchStorage> {
