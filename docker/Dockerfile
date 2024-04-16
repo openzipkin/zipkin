@@ -39,6 +39,7 @@ ENV VERSION=$version
 ENV MAVEN_PROJECT_BASEDIR=/code
 ARG TARGETARCH
 RUN test "${TARGETARCH}" != "" && \
+    if [ "${RELEASE_FROM_MAVEN_BUILD}" == "false" ]; then /code/build-bin/maybe_install_npm; fi; \
     /code/build-bin/maven/maven_build_or_unjar io.zipkin zipkin-server ${VERSION} exec && \
     mv zipkin-server zipkin && \
     /code/build-bin/maven/maven_build_or_unjar io.zipkin zipkin-server ${VERSION} slim && \
