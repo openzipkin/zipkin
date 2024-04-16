@@ -23,7 +23,7 @@ on:  # yamllint disable-line rule:truthy
 
 jobs:
   lint:
-    name: Lint
+    name: lint
     runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
     # skip commits made by the release plugin
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"

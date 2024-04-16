@@ -2,6 +2,12 @@
 
 This repo uses semantic versions. Please keep this in mind when choosing version numbers.
 
+1. **Verify all dependencies are up-to-date**
+
+   Before you start a release, make sure all dependencies are up-to-date, or are documented why not.
+   Pay special attention to the [security workflow](.github/workflows/security.yml), which should
+   run clean.
+
 1. **Alert others you are releasing**
 
    There should be no commits made to master while the release is in progress (about 10 minutes). Before you start

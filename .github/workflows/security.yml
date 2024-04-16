@@ -1,0 +1,56 @@
+---
+name: security
+
+# We don't scan documentation-only commits.
+on:  # yamllint disable-line rule:truthy
+  push:  # non-tagged pushes to master
+    branches:
+      - master
+    tags-ignore:
+      - '*'
+    paths-ignore:
+      - '**/*.md'
+      - './build-bin/*lint'
+      - ./build-bin/mlc_config.json
+  pull_request:  # pull requests targeted at the master branch.
+    branches:
+      - master
+    paths-ignore:
+      - '**/*.md'
+      - './build-bin/*lint'
+      - ./build-bin/mlc_config.json
+
+jobs:
+  security:
+    name: security
+    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
+    # skip commits made by the release plugin
+    if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        name: Cache Trivy Database
+        with:
+          path: .trivy
+          key: ${{ runner.os }}-trivy
+          restore-keys: ${{ runner.os }}-trivy
+      - name: Run Trivy vulnerability and secret scanner
+        uses: aquasecurity/trivy-action@master
+        id: trivy
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'  # scan the entire repository
+          scanners: vuln,secret
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          output: trivy-report.md
+          cache-dir: .trivy
+      - name: Set Summary
+        shell: bash
+        if: ${{ failure() && steps.trivy.conclusion == 'failure' }}
+        # Add the Trivy report to the summary
+        #
+        # Note: This will cause a workflow error if trivy-report.md > the step
+        # limit 1MiB. If this was due to too many CVEs, consider fixing them ;)
+        run: cat trivy-report.md >> $GITHUB_STEP_SUMMARY
