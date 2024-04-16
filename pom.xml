@@ -10,7 +10,7 @@
 
   <groupId>io.zipkin</groupId>
   <artifactId>zipkin-parent</artifactId>
-  <version>3.2.2-SNAPSHOT</version>
+  <version>3.3.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -30,12 +30,12 @@
     <project.build.outputEncoding>UTF-8</project.build.outputEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <!-- With two exceptions, main code is Java 11
-         * zipkin core Jar is Java 1.8
-         * zipkin-server is 17, as that's the floor of Spring Boot 3. -->
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-    <maven.compiler.release>11</maven.compiler.release>
+    <!-- Except for zipkin core Jar (Java 1.8), everything is 17, as that's
+         the minimum of Spring Boot 3, required for recent JOOQ and works with
+         zipkin-dependencies (Spark 3.4+). -->
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
     <maven.compiler.testSource>17</maven.compiler.testSource>
     <maven.compiler.testTarget>17</maven.compiler.testTarget>
     <maven.compiler.testRelease>17</maven.compiler.testRelease>

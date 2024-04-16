@@ -1,5 +1,5 @@
 # zipkin-server
-Zipkin Server is a Java 11+ service, packaged as an executable jar.
+Zipkin Server is a Java 17+ service, packaged as an executable jar.
 
 Span storage and collectors are [configurable](#configuration). By default, storage is in-memory,
 the HTTP collector (POST /api/v2/spans endpoint) is enabled, and the server listens on port 9411.

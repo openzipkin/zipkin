@@ -57,11 +57,13 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall<AsyncResultSet> {
 
     Factory(CqlSession session) {
       this.session = session;
-      String querySuffix = "annotation_query LIKE ?"
-        + " AND ts_uuid>=?"
-        + " AND ts_uuid<=?"
-        + " LIMIT ?"
-        + " ALLOW FILTERING";
+      String querySuffix = """
+        annotation_query LIKE ?\
+         AND ts_uuid>=?\
+         AND ts_uuid<=?\
+         LIMIT ?\
+         ALLOW FILTERING\
+        """;
       this.withAnnotationQuery = session.prepare("SELECT trace_id,ts"
         + " FROM " + TABLE_SPAN
         + " WHERE " + querySuffix);

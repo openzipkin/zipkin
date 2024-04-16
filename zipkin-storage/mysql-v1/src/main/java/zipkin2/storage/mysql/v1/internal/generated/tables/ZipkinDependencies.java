@@ -5,12 +5,18 @@ package zipkin2.storage.mysql.v1.internal.generated.tables;
 
 
 import java.time.LocalDate;
+import java.util.Collection;
 
+import org.jooq.Condition;
 import org.jooq.Field;
-import org.jooq.ForeignKey;
 import org.jooq.Name;
+import org.jooq.PlainSQL;
+import org.jooq.QueryPart;
 import org.jooq.Record;
+import org.jooq.SQL;
 import org.jooq.Schema;
+import org.jooq.Select;
+import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -70,11 +76,11 @@ public class ZipkinDependencies extends TableImpl<Record> {
     public final TableField<Record, Long> ERROR_COUNT = createField(DSL.name("error_count"), SQLDataType.BIGINT, this, "");
 
     private ZipkinDependencies(Name alias, Table<Record> aliased) {
-        this(alias, aliased, null);
+        this(alias, aliased, (Field<?>[]) null, null);
     }
 
-    private ZipkinDependencies(Name alias, Table<Record> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    private ZipkinDependencies(Name alias, Table<Record> aliased, Field<?>[] parameters, Condition where) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -98,10 +104,6 @@ public class ZipkinDependencies extends TableImpl<Record> {
         this(DSL.name("zipkin_dependencies"), null);
     }
 
-    public <O extends Record> ZipkinDependencies(Table<O> child, ForeignKey<O, Record> key) {
-        super(child, key, ZIPKIN_DEPENDENCIES);
-    }
-
     @Override
     public Schema getSchema() {
         return aliased() ? null : Zipkin.ZIPKIN;
@@ -122,6 +124,11 @@ public class ZipkinDependencies extends TableImpl<Record> {
         return new ZipkinDependencies(alias, this);
     }
 
+    @Override
+    public ZipkinDependencies as(Table<?> alias) {
+        return new ZipkinDependencies(alias.getQualifiedName(), this);
+    }
+
     /**
      * Rename this table
      */
@@ -136,5 +143,97 @@ public class ZipkinDependencies extends TableImpl<Record> {
     @Override
     public ZipkinDependencies rename(Name name) {
         return new ZipkinDependencies(name, null);
+    }
+
+    /**
+     * Rename this table
+     */
+    @Override
+    public ZipkinDependencies rename(Table<?> name) {
+        return new ZipkinDependencies(name.getQualifiedName(), null);
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinDependencies where(Condition condition) {
+        return new ZipkinDependencies(getQualifiedName(), aliased() ? this : null, null, condition);
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinDependencies where(Collection<? extends Condition> conditions) {
+        return where(DSL.and(conditions));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinDependencies where(Condition... conditions) {
+        return where(DSL.and(conditions));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinDependencies where(Field<Boolean> condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public ZipkinDependencies where(SQL condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public ZipkinDependencies where(@Stringly.SQL String condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public ZipkinDependencies where(@Stringly.SQL String condition, Object... binds) {
+        return where(DSL.condition(condition, binds));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public ZipkinDependencies where(@Stringly.SQL String condition, QueryPart... parts) {
+        return where(DSL.condition(condition, parts));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinDependencies whereExists(Select<?> select) {
+        return where(DSL.exists(select));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinDependencies whereNotExists(Select<?> select) {
+        return where(DSL.notExists(select));
     }
 }

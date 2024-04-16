@@ -232,8 +232,8 @@ public class LogEntry implements org.apache.thrift.TBase<LogEntry, LogEntry._Fie
   public boolean equals(java.lang.Object that) {
     if (that == null)
       return false;
-    if (that instanceof LogEntry)
-      return this.equals((LogEntry)that);
+    if (that instanceof LogEntry entry)
+      return this.equals(entry);
     return false;
   }
 

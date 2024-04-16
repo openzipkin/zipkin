@@ -5,14 +5,20 @@ package zipkin2.storage.mysql.v1.internal.generated.tables;
 
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
+import org.jooq.Condition;
 import org.jooq.Field;
-import org.jooq.ForeignKey;
 import org.jooq.Index;
 import org.jooq.Name;
+import org.jooq.PlainSQL;
+import org.jooq.QueryPart;
 import org.jooq.Record;
+import org.jooq.SQL;
 import org.jooq.Schema;
+import org.jooq.Select;
+import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -114,11 +120,11 @@ public class ZipkinAnnotations extends TableImpl<Record> {
     public final TableField<Record, String> ENDPOINT_SERVICE_NAME = createField(DSL.name("endpoint_service_name"), SQLDataType.VARCHAR(255), this, "Null when Binary/Annotation.endpoint is null");
 
     private ZipkinAnnotations(Name alias, Table<Record> aliased) {
-        this(alias, aliased, null);
+        this(alias, aliased, (Field<?>[]) null, null);
     }
 
-    private ZipkinAnnotations(Name alias, Table<Record> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    private ZipkinAnnotations(Name alias, Table<Record> aliased, Field<?>[] parameters, Condition where) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -142,10 +148,6 @@ public class ZipkinAnnotations extends TableImpl<Record> {
         this(DSL.name("zipkin_annotations"), null);
     }
 
-    public <O extends Record> ZipkinAnnotations(Table<O> child, ForeignKey<O, Record> key) {
-        super(child, key, ZIPKIN_ANNOTATIONS);
-    }
-
     @Override
     public Schema getSchema() {
         return aliased() ? null : Zipkin.ZIPKIN;
@@ -153,12 +155,12 @@ public class ZipkinAnnotations extends TableImpl<Record> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.ZIPKIN_ANNOTATIONS_A_KEY, Indexes.ZIPKIN_ANNOTATIONS_A_KEY_2, Indexes.ZIPKIN_ANNOTATIONS_A_TYPE, Indexes.ZIPKIN_ANNOTATIONS_A_TYPE_2, Indexes.ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME, Indexes.ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME_2, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_2, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_2, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_3, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_5, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_6);
+        return Arrays.asList(Indexes.ZIPKIN_ANNOTATIONS_A_KEY, Indexes.ZIPKIN_ANNOTATIONS_A_KEY_2, Indexes.ZIPKIN_ANNOTATIONS_A_KEY_3, Indexes.ZIPKIN_ANNOTATIONS_A_KEY_4, Indexes.ZIPKIN_ANNOTATIONS_A_TYPE, Indexes.ZIPKIN_ANNOTATIONS_A_TYPE_2, Indexes.ZIPKIN_ANNOTATIONS_A_TYPE_3, Indexes.ZIPKIN_ANNOTATIONS_A_TYPE_4, Indexes.ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME, Indexes.ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME_2, Indexes.ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME_3, Indexes.ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME_4, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_2, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_3, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_4, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_11, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_12, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_2, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_3, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_5, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_6, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_8, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_9);
     }
 
     @Override
     public List<UniqueKey<Record>> getUniqueKeys() {
-        return Arrays.asList(Keys.KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH, Keys.KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_4);
+        return Arrays.asList(Keys.KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH, Keys.KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_10, Keys.KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_4, Keys.KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_7);
     }
 
     @Override
@@ -169,6 +171,11 @@ public class ZipkinAnnotations extends TableImpl<Record> {
     @Override
     public ZipkinAnnotations as(Name alias) {
         return new ZipkinAnnotations(alias, this);
+    }
+
+    @Override
+    public ZipkinAnnotations as(Table<?> alias) {
+        return new ZipkinAnnotations(alias.getQualifiedName(), this);
     }
 
     /**
@@ -185,5 +192,97 @@ public class ZipkinAnnotations extends TableImpl<Record> {
     @Override
     public ZipkinAnnotations rename(Name name) {
         return new ZipkinAnnotations(name, null);
+    }
+
+    /**
+     * Rename this table
+     */
+    @Override
+    public ZipkinAnnotations rename(Table<?> name) {
+        return new ZipkinAnnotations(name.getQualifiedName(), null);
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinAnnotations where(Condition condition) {
+        return new ZipkinAnnotations(getQualifiedName(), aliased() ? this : null, null, condition);
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinAnnotations where(Collection<? extends Condition> conditions) {
+        return where(DSL.and(conditions));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinAnnotations where(Condition... conditions) {
+        return where(DSL.and(conditions));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinAnnotations where(Field<Boolean> condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public ZipkinAnnotations where(SQL condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public ZipkinAnnotations where(@Stringly.SQL String condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public ZipkinAnnotations where(@Stringly.SQL String condition, Object... binds) {
+        return where(DSL.condition(condition, binds));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public ZipkinAnnotations where(@Stringly.SQL String condition, QueryPart... parts) {
+        return where(DSL.condition(condition, parts));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinAnnotations whereExists(Select<?> select) {
+        return where(DSL.exists(select));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinAnnotations whereNotExists(Select<?> select) {
+        return where(DSL.notExists(select));
     }
 }

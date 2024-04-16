@@ -207,10 +207,10 @@ public class Scribe {
               _LOGGER.error("TTransportException inside handler", e);
               fb.close();
               return;
-            } else if (e instanceof org.apache.thrift.TApplicationException) {
+            } else if (e instanceof org.apache.thrift.TApplicationException exception) {
               _LOGGER.error("TApplicationException inside handler", e);
               msgType = org.apache.thrift.protocol.TMessageType.EXCEPTION;
-              msg = (org.apache.thrift.TApplicationException)e;
+              msg = exception;
             } else {
               _LOGGER.error("Exception inside handler", e);
               msgType = org.apache.thrift.protocol.TMessageType.EXCEPTION;
@@ -431,8 +431,8 @@ public class Scribe {
     public boolean equals(java.lang.Object that) {
       if (that == null)
         return false;
-      if (that instanceof Log_args)
-        return this.equals((Log_args)that);
+      if (that instanceof Log_args log_args)
+        return this.equals(log_args);
       return false;
     }
 
@@ -848,8 +848,8 @@ public class Scribe {
     public boolean equals(java.lang.Object that) {
       if (that == null)
         return false;
-      if (that instanceof Log_result)
-        return this.equals((Log_result)that);
+      if (that instanceof Log_result log_result)
+        return this.equals(log_result);
       return false;
     }
 

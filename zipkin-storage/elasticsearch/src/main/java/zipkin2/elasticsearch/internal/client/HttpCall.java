@@ -122,8 +122,10 @@ public final class HttpCall<V> extends Call.Base<V> {
     // TODO: testme
     for (EventExecutor eventLoop : httpClient.options().factory().eventLoopGroup()) {
       if (eventLoop.inEventLoop()) {
-        throw new RuntimeException("Attempting to make a blocking request from an event loop. "
-          + "Either use doEnqueue() or run this in a separate thread.");
+        throw new RuntimeException("""
+          Attempting to make a blocking request from an event loop. \
+          Either use doEnqueue() or run this in a separate thread.\
+          """);
       }
     }
     final AggregatedHttpResponse response;

@@ -89,7 +89,7 @@ final class Schema {
   }
 
   static void logAndThrow(String messageFormat, Object... args) {
-    String message = String.format(messageFormat, args);
+    String message = messageFormat.formatted(args);
     // Ensure we can look at logs to see the problem. Otherwise, it may only
     // be visible in API error responses, such as /health or /api/v2/traces.
     LOG.error(message);
@@ -124,8 +124,8 @@ final class Schema {
     KeyspaceMetadata keyspaceMetadata = session.getMetadata().getKeyspace(keyspace).orElse(null);
     if (keyspaceMetadata == null) {
       throw new IllegalStateException(
-        String.format(
-          "Cannot read keyspace metadata for keyspace: %s and cluster: %s",
+        
+          "Cannot read keyspace metadata for keyspace: %s and cluster: %s".formatted(
           keyspace, session.getMetadata().getClusterName()));
     }
     return keyspaceMetadata;
@@ -137,8 +137,8 @@ final class Schema {
       version = entry.getValue().getCassandraVersion();
       if (version == null) throw new RuntimeException("node had no version: " + entry.getValue());
       if (Version.parse("3.11.3").compareTo(version) > 0) {
-        throw new RuntimeException(String.format(
-          "Node %s is running Cassandra %s, but minimum version is 3.11.3",
+        throw new RuntimeException(
+          "Node %s is running Cassandra %s, but minimum version is 3.11.3".formatted(
           entry.getKey(), entry.getValue().getCassandraVersion()));
       }
     }
@@ -194,7 +194,7 @@ final class Schema {
         session.execute(cmd);
       } catch (InvalidQueryException e) {
         // Add context so it is obvious which line was wrong
-        String message = String.format("Failed to execute [%s]: %s", cmd, e.getMessage());
+        String message = "Failed to execute [%s]: %s".formatted(cmd, e.getMessage());
         // Ensure we can look at logs to see the problem. Otherwise, it may only
         // be visible in API error responses, such as /health or /api/v2/traces.
         LOG.error(message);

@@ -95,11 +95,11 @@ public abstract class ResultSetFutureCall<V> extends Call.Base<V>
           interrupted = true;
         } catch (ExecutionException e) {
           Throwable cause = e.getCause();
-          if (cause instanceof DriverException) {
-            throw ((DriverException) cause).copy();
+          if (cause instanceof DriverException exception) {
+            throw exception.copy();
           }
-          if (cause instanceof RuntimeException) throw (RuntimeException) cause;
-          if (cause instanceof Error) throw (Error) cause;
+          if (cause instanceof RuntimeException exception) throw exception;
+          if (cause instanceof Error error) throw error;
           throw new DriverExecutionException(cause);
         }
       }
