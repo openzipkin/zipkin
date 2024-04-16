@@ -57,7 +57,7 @@ final class ScribeSpanConsumer implements Scribe.AsyncIface {
       }
 
       @Override public void onError(Throwable t) {
-        Exception error = t instanceof Exception ? (Exception) t : new RuntimeException(t);
+        Exception error = t instanceof Exception e ? e : new RuntimeException(t);
         resultHandler.onError(error);
       }
     // Collectors may not be asynchronous so switch to blocking executor here.

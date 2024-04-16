@@ -105,8 +105,8 @@ public final class ActiveMQCollector extends CollectorComponent {
 
   static RuntimeException uncheckedException(String prefix, JMSException e) {
     Exception cause = e.getLinkedException();
-    if (cause instanceof IOException) {
-      return new UncheckedIOException(prefix + message(cause), (IOException) cause);
+    if (cause instanceof IOException exception) {
+      return new UncheckedIOException(prefix + message(cause), exception);
     }
     return new RuntimeException(prefix + message(e), e);
   }

@@ -17,9 +17,11 @@ import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans.ZIP
 final class HasRemoteServiceName {
   static final Logger LOG = Logger.getLogger(HasRemoteServiceName.class.getName());
   static final String MESSAGE =
-    "zipkin_spans.remote_service_name doesn't exist, so queries for remote service names will return empty.\n"
-      + "Execute: ALTER TABLE zipkin_spans ADD `remote_service_name` VARCHAR(255);\n"
-      + "ALTER TABLE zipkin_spans ADD INDEX `remote_service_name`;";
+    """
+    zipkin_spans.remote_service_name doesn't exist, so queries for remote service names will return empty.
+    Execute: ALTER TABLE zipkin_spans ADD `remote_service_name` VARCHAR(255);
+    ALTER TABLE zipkin_spans ADD INDEX `remote_service_name`;\
+    """;
 
   static boolean test(DataSource datasource, DSLContexts context) {
     try (Connection conn = datasource.getConnection()) {

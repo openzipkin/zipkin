@@ -25,8 +25,10 @@ final class HasIpv6 {
     } catch (DataAccessException e) {
       if (e.sqlState().equals("42S22")) {
         LOG.warning(
-            "zipkin_annotations.ipv6 doesn't exist, so Endpoint.ipv6 is not supported. "
-                + "Execute: alter table zipkin_annotations add `endpoint_ipv6` BINARY(16)");
+            """
+            zipkin_annotations.ipv6 doesn't exist, so Endpoint.ipv6 is not supported. \
+            Execute: alter table zipkin_annotations add `endpoint_ipv6` BINARY(16)\
+            """);
         return false;
       }
       problemReading(e);

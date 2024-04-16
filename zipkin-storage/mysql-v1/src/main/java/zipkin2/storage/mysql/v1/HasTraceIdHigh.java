@@ -17,15 +17,17 @@ import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans.ZIP
 final class HasTraceIdHigh {
   static final Logger LOG = Logger.getLogger(HasTraceIdHigh.class.getName());
   static final String MESSAGE =
-      "zipkin_spans.trace_id_high doesn't exist, so 128-bit trace ids are not supported. "
-          + "Execute: ALTER TABLE zipkin_spans ADD `trace_id_high` BIGINT NOT NULL DEFAULT 0;\n"
-          + "ALTER TABLE zipkin_annotations ADD `trace_id_high` BIGINT NOT NULL DEFAULT 0;\n"
-          + "ALTER TABLE zipkin_spans"
-          + "   DROP INDEX trace_id,\n"
-          + "   ADD UNIQUE KEY(`trace_id_high`, `trace_id`, `id`);\n"
-          + "ALTER TABLE zipkin_annotations\n"
-          + "   DROP INDEX trace_id,\n"
-          + "   ADD UNIQUE KEY(`trace_id_high`, `trace_id`, `span_id`, `a_key`, `a_timestamp`);";
+      """
+      zipkin_spans.trace_id_high doesn't exist, so 128-bit trace ids are not supported. \
+      Execute: ALTER TABLE zipkin_spans ADD `trace_id_high` BIGINT NOT NULL DEFAULT 0;
+      ALTER TABLE zipkin_annotations ADD `trace_id_high` BIGINT NOT NULL DEFAULT 0;
+      ALTER TABLE zipkin_spans\
+         DROP INDEX trace_id,
+         ADD UNIQUE KEY(`trace_id_high`, `trace_id`, `id`);
+      ALTER TABLE zipkin_annotations
+         DROP INDEX trace_id,
+         ADD UNIQUE KEY(`trace_id_high`, `trace_id`, `span_id`, `a_key`, `a_timestamp`);\
+      """;
 
   static boolean test(DataSource datasource, DSLContexts context) {
     try (Connection conn = datasource.getConnection()) {

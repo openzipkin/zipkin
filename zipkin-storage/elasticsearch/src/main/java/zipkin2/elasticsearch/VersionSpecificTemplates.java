@@ -111,23 +111,25 @@ final class VersionSpecificTemplates {
       // in a transition, and keep trace ID length transitions as short time as possible.
       traceIdMapping =
         "{ \"type\": \"text\", \"fielddata\": \"true\", \"analyzer\": \"traceId_analyzer\" }";
-      result += (",\n"
-        + "    \"analysis\": {\n"
-        + "      \"analyzer\": {\n"
-        + "        \"traceId_analyzer\": {\n"
-        + "          \"type\": \"custom\",\n"
-        + "          \"tokenizer\": \"keyword\",\n"
-        + "          \"filter\": \"traceId_filter\"\n"
-        + "        }\n"
-        + "      },\n"
-        + "      \"filter\": {\n"
-        + "        \"traceId_filter\": {\n"
-        + "          \"type\": \"pattern_capture\",\n"
-        + "          \"patterns\": [\"([0-9a-f]{1,16})$\"],\n"
-        + "          \"preserve_original\": true\n"
-        + "        }\n"
-        + "      }\n"
-        + "    }\n");
+      result += ("""
+        ,
+            "analysis": {
+              "analyzer": {
+                "traceId_analyzer": {
+                  "type": "custom",
+                  "tokenizer": "keyword",
+                  "filter": "traceId_filter"
+                }
+              },
+              "filter": {
+                "traceId_filter": {
+                  "type": "pattern_capture",
+                  "patterns": ["([0-9a-f]{1,16})$"],
+                  "preserve_original": true
+                }
+              }
+            }
+        """);
     }
 
     result += "  },\n";

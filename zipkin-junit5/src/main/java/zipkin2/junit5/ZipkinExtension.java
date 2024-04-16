@@ -64,7 +64,7 @@ public final class ZipkinExtension implements BeforeEachCallback, AfterEachCallb
 
   /** Use this to connect. The zipkin v1 interface will be under "/api/v1" */
   public String httpUrl() {
-    return String.format("http://%s:%s", server.getHostName(), server.getPort());
+    return "http://%s:%s".formatted(server.getHostName(), server.getPort());
   }
 
   /** Use this to see how many requests you've sent to any zipkin http endpoint. */

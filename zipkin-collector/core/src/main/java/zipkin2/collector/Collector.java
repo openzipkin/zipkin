@@ -19,7 +19,6 @@ import zipkin2.codec.BytesDecoder;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.storage.StorageComponent;
 
-import static java.lang.String.format;
 import static zipkin2.Call.propagateIfFatal;
 
 /**
@@ -265,7 +264,7 @@ public class Collector { // not final for mock
       logger.debug(error, e);
     } else { // otherwise, beautify the message
       String message =
-        format("%s due to %s(%s)", defaultLogMessage.get(), e.getClass().getSimpleName(), error);
+        "%s due to %s(%s)".formatted(defaultLogMessage.get(), e.getClass().getSimpleName(), error);
       logger.debug(message, e);
     }
   }

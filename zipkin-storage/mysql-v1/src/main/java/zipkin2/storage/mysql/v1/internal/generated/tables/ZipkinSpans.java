@@ -5,14 +5,20 @@ package zipkin2.storage.mysql.v1.internal.generated.tables;
 
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
+import org.jooq.Condition;
 import org.jooq.Field;
-import org.jooq.ForeignKey;
 import org.jooq.Index;
 import org.jooq.Name;
+import org.jooq.PlainSQL;
+import org.jooq.QueryPart;
 import org.jooq.Record;
+import org.jooq.SQL;
 import org.jooq.Schema;
+import org.jooq.Select;
+import org.jooq.Stringly;
 import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableOptions;
@@ -96,11 +102,11 @@ public class ZipkinSpans extends TableImpl<Record> {
     public final TableField<Record, Long> DURATION = createField(DSL.name("duration"), SQLDataType.BIGINT, this, "Span.duration(): micros used for minDuration and maxDuration query");
 
     private ZipkinSpans(Name alias, Table<Record> aliased) {
-        this(alias, aliased, null);
+        this(alias, aliased, (Field<?>[]) null, null);
     }
 
-    private ZipkinSpans(Name alias, Table<Record> aliased, Field<?>[] parameters) {
-        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table());
+    private ZipkinSpans(Name alias, Table<Record> aliased, Field<?>[] parameters, Condition where) {
+        super(alias, null, aliased, parameters, DSL.comment(""), TableOptions.table(), where);
     }
 
     /**
@@ -124,10 +130,6 @@ public class ZipkinSpans extends TableImpl<Record> {
         this(DSL.name("zipkin_spans"), null);
     }
 
-    public <O extends Record> ZipkinSpans(Table<O> child, ForeignKey<O, Record> key) {
-        super(child, key, ZIPKIN_SPANS);
-    }
-
     @Override
     public Schema getSchema() {
         return aliased() ? null : Zipkin.ZIPKIN;
@@ -135,7 +137,7 @@ public class ZipkinSpans extends TableImpl<Record> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.ZIPKIN_SPANS_NAME, Indexes.ZIPKIN_SPANS_NAME_2, Indexes.ZIPKIN_SPANS_REMOTE_SERVICE_NAME, Indexes.ZIPKIN_SPANS_REMOTE_SERVICE_NAME_2, Indexes.ZIPKIN_SPANS_START_TS, Indexes.ZIPKIN_SPANS_START_TS_2, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH_2);
+        return Arrays.asList(Indexes.ZIPKIN_SPANS_NAME, Indexes.ZIPKIN_SPANS_NAME_2, Indexes.ZIPKIN_SPANS_NAME_3, Indexes.ZIPKIN_SPANS_NAME_4, Indexes.ZIPKIN_SPANS_REMOTE_SERVICE_NAME, Indexes.ZIPKIN_SPANS_REMOTE_SERVICE_NAME_2, Indexes.ZIPKIN_SPANS_REMOTE_SERVICE_NAME_3, Indexes.ZIPKIN_SPANS_REMOTE_SERVICE_NAME_4, Indexes.ZIPKIN_SPANS_START_TS, Indexes.ZIPKIN_SPANS_START_TS_2, Indexes.ZIPKIN_SPANS_START_TS_3, Indexes.ZIPKIN_SPANS_START_TS_4, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH_2, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH_3, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH_4);
     }
 
     @Override
@@ -153,6 +155,11 @@ public class ZipkinSpans extends TableImpl<Record> {
         return new ZipkinSpans(alias, this);
     }
 
+    @Override
+    public ZipkinSpans as(Table<?> alias) {
+        return new ZipkinSpans(alias.getQualifiedName(), this);
+    }
+
     /**
      * Rename this table
      */
@@ -167,5 +174,97 @@ public class ZipkinSpans extends TableImpl<Record> {
     @Override
     public ZipkinSpans rename(Name name) {
         return new ZipkinSpans(name, null);
+    }
+
+    /**
+     * Rename this table
+     */
+    @Override
+    public ZipkinSpans rename(Table<?> name) {
+        return new ZipkinSpans(name.getQualifiedName(), null);
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinSpans where(Condition condition) {
+        return new ZipkinSpans(getQualifiedName(), aliased() ? this : null, null, condition);
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinSpans where(Collection<? extends Condition> conditions) {
+        return where(DSL.and(conditions));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinSpans where(Condition... conditions) {
+        return where(DSL.and(conditions));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinSpans where(Field<Boolean> condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public ZipkinSpans where(SQL condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public ZipkinSpans where(@Stringly.SQL String condition) {
+        return where(DSL.condition(condition));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public ZipkinSpans where(@Stringly.SQL String condition, Object... binds) {
+        return where(DSL.condition(condition, binds));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    @PlainSQL
+    public ZipkinSpans where(@Stringly.SQL String condition, QueryPart... parts) {
+        return where(DSL.condition(condition, parts));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinSpans whereExists(Select<?> select) {
+        return where(DSL.exists(select));
+    }
+
+    /**
+     * Create an inline derived table from this table
+     */
+    @Override
+    public ZipkinSpans whereNotExists(Select<?> select) {
+        return where(DSL.notExists(select));
     }
 }

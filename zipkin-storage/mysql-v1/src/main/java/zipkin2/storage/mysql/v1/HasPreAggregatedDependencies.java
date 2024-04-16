@@ -29,8 +29,10 @@ final class HasPreAggregatedDependencies {
     } catch (DataAccessException e) {
       if (e.sqlState().equals("42S02")) {
         LOG.warning(
-            "zipkin_dependencies doesn't exist, so pre-aggregated dependencies are not "
-                + "supported. Execute mysql.sql located in this jar to add the table");
+            """
+            zipkin_dependencies doesn't exist, so pre-aggregated dependencies are not \
+            supported. Execute mysql.sql located in this jar to add the table\
+            """);
         return false;
       }
       problemReading(e);

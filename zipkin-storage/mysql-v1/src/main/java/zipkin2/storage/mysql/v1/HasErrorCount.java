@@ -25,8 +25,10 @@ final class HasErrorCount {
     } catch (DataAccessException e) {
       if (e.sqlState().equals("42S22")) {
         LOG.warning(
-            "zipkin_dependencies.error_count doesn't exist, so DependencyLink.errorCount is not supported. "
-                + "Execute: alter table zipkin_dependencies add `error_count` BIGINT");
+            """
+            zipkin_dependencies.error_count doesn't exist, so DependencyLink.errorCount is not supported. \
+            Execute: alter table zipkin_dependencies add `error_count` BIGINT\
+            """);
         return false;
       }
       problemReading(e);

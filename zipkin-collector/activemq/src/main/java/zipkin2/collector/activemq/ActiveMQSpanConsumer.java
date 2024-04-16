@@ -88,12 +88,11 @@ final class ActiveMQSpanConsumer implements TransportListener, MessageListener, 
     metrics.incrementMessages();
     byte[] serialized; // TODO: consider how to reuse buffers here
     try {
-      if (message instanceof BytesMessage) {
-        BytesMessage bytesMessage = (BytesMessage) message;
+      if (message instanceof BytesMessage bytesMessage) {
         serialized = new byte[(int) bytesMessage.getBodyLength()];
         bytesMessage.readBytes(serialized);
-      } else if (message instanceof TextMessage) {
-        String text = ((TextMessage) message).getText();
+      } else if (message instanceof TextMessage textMessage) {
+        String text = textMessage.getText();
         serialized = text.getBytes(UTF_8);
       } else {
         metrics.incrementMessagesDropped();

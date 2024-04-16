@@ -112,7 +112,7 @@ does not use this library. So, [brave](https://github.com/openzipkin/brave) stil
 ## Storage Component
 Zipkin includes a [StorageComponent](zipkin/src/main/java/zipkin2/storage/StorageComponent.java), used to store and query spans and
 dependency links. This is used by the server and those making collectors, or span reporters.
-For this reason, storage components have minimal dependencies, though require Java 11+.
+For this reason, storage components have minimal dependencies, though require Java 17+.
 
 Ex.
 ```java

@@ -111,7 +111,7 @@ public abstract class IndexNameFormatter {
         current.set(Calendar.DAY_OF_YEAR, current.getActualMaximum(Calendar.DAY_OF_YEAR));
         if (current.compareTo(end) <= 0) {
           indices.add(
-              String.format("%s-%s%c*", prefix, current.get(Calendar.YEAR), dateSeparator()));
+            "%s-%s%c*".formatted(prefix, current.get(Calendar.YEAR), dateSeparator()));
           current.add(DAY_OF_MONTH, 1); // rollover to next year
           continue;
         } else {
@@ -156,8 +156,8 @@ public abstract class IndexNameFormatter {
   }
 
   String formatIndexPattern(String format, GregorianCalendar current, String prefix) {
-    return String.format(
-      format,
+    return 
+      format.formatted(
       prefix,
       current.get(Calendar.YEAR),
       dateSeparator(),
