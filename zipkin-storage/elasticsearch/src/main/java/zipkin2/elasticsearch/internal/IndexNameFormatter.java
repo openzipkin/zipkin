@@ -156,8 +156,7 @@ public abstract class IndexNameFormatter {
   }
 
   String formatIndexPattern(String format, GregorianCalendar current, String prefix) {
-    return 
-      format.formatted(
+    return format.formatted(
       prefix,
       current.get(Calendar.YEAR),
       dateSeparator(),
