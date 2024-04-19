@@ -24,6 +24,9 @@
 !docker/test-images/zipkin-elasticsearch8/config/
 !docker/test-images/zipkin-elasticsearch8/start-elasticsearch
 
+!docker/test-images/zipkin-opensearch2/config/
+!docker/test-images/zipkin-opensearch2/start-opensearch
+
 !docker/test-images/zipkin-eureka/src/
 !docker/test-images/zipkin-eureka/pom.xml
 !docker/test-images/zipkin-eureka/start-eureka

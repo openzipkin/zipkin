@@ -18,6 +18,7 @@ base layer `openzipkin/zipkin`, and setting up schema where relevant.
 * [ghcr.io/openzipkin/zipkin-cassandra](test-images/zipkin-cassandra/README.md) - runs Cassandra initialized with Zipkin's schema
 * [ghcr.io/openzipkin/zipkin-elasticsearch7](test-images/zipkin-elasticsearch7/README.md) - runs Elasticsearch 7.x
 * [ghcr.io/openzipkin/zipkin-elasticsearch8](test-images/zipkin-elasticsearch8/README.md) - runs Elasticsearch 8.x
+* [ghcr.io/openzipkin/zipkin-opensearch2](test-images/zipkin-opensearch2/README.md) - runs OpenSearch 2.x
 * [ghcr.io/openzipkin/zipkin-eureka](test-images/zipkin-eureka/README.md) - runs Eureka
 * [ghcr.io/openzipkin/zipkin-kafka](test-images/zipkin-kafka/README.md) - runs both Kafka+ZooKeeper
 * [ghcr.io/openzipkin/zipkin-mysql](test-images/zipkin-mysql/README.md) - runs MySQL initialized with Zipkin's schema

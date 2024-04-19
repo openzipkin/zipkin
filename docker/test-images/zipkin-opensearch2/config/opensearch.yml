@@ -1,0 +1,21 @@
+#
+# Copyright The OpenZipkin Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+cluster.name: "docker-cluster"
+network.host: 0.0.0.0
+node.name: zipkin-opensearch
+
+# Enable development mode and disable bootstrap checks
+# See https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+discovery.type: single-node
+# Avoid deprecation errors: as of 2.x the only accepted value is true.
+cluster.routing.allocation.disk.watermark.enable_for_single_data_node: true
+
+# This is a test image, so we are not afraid to delete all indices. Avoids:
+#   Wildcard expressions or all indices are not allowed
+action.destructive_requires_name: false
+
+# Disable security
+plugins.security.disabled: true
