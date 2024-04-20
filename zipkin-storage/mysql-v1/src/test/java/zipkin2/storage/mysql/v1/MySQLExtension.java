@@ -103,7 +103,7 @@ class MySQLExtension implements BeforeAllCallback, AfterAllCallback {
   // mostly waiting for https://github.com/testcontainers/testcontainers-java/issues/3537
   static final class MySQLContainer extends GenericContainer<MySQLContainer> {
     MySQLContainer() {
-      super(parse("ghcr.io/openzipkin/zipkin-mysql:3.1.1"));
+      super(parse("ghcr.io/openzipkin/zipkin-mysql:3.3.0"));
       addExposedPort(3306);
       waitStrategy = Wait.forHealthcheck();
       withLogConsumer(new Slf4jLogConsumer(LOGGER));
