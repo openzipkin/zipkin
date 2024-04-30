@@ -14,8 +14,8 @@ set -eu
 export HEALTHCHECK_PORT=9200
 export HEALTHCHECK_PATH=/_cluster/health
 
-# Set tmp folder
-OPENSEARCH_TMPDIR=`java -cp 'classes:lib/*' org.opensearch.tools.launchers.TempDirectory`
+# Use the 'java.io.tmp' dir and precreate the 'opensearch' folder there
+export OPENSEARCH_TMPDIR=`java -cp 'classes:lib/*' org.opensearch.tools.launchers.TempDirectory`
 
 # The JVM options parser produces the final JVM options to start OpenSearch.
 # It does this by incorporating JVM options in the following way:
@@ -24,7 +24,7 @@ OPENSEARCH_TMPDIR=`java -cp 'classes:lib/*' org.opensearch.tools.launchers.TempD
 #   - second, JVM options are read from jvm.options and jvm.options.d/*.options
 #   - third, JVM options from OPENSEARCH_JAVA_OPTS are applied
 #   - fourth, ergonomic JVM options are applied
-OPENSEARCH_JAVA_OPTS=`export OPENSEARCH_TMPDIR; java -cp 'classes:lib/*' org.opensearch.tools.launchers.JvmOptionsParser "$PWD/config"`
+OPENSEARCH_JAVA_OPTS=`java -cp 'classes:lib/*' org.opensearch.tools.launchers.JvmOptionsParser "$PWD/config"`
 
 # -cp 'classes:lib/*' allows layers to patch the image without packaging or overwriting jars
 # We allow security manager (via flag to prevent JRE 21 crash) as OpenSearch.main needs it.
