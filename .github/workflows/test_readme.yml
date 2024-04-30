@@ -158,6 +158,13 @@ jobs:
         env:
           DOCKER_TAG: openzipkin/zipkin-elasticsearch8:test
           DOCKER_FILE: docker/test-images/zipkin-elasticsearch8/Dockerfile
+      - name: docker/test-images/zipkin-opensearch2/README.md
+        run: |
+          build-bin/docker/docker_build ${DOCKER_TAG} &&
+          build-bin/docker/docker_test_image ${DOCKER_TAG}
+        env:
+          DOCKER_TAG: openzipkin/zipkin-opensearch2:test
+          DOCKER_FILE: docker/test-images/zipkin-opensearch2/Dockerfile
       - name: docker/test-images/zipkin-eureka/README.md
         run: |
           build-bin/docker/docker_build openzipkin/zipkin-eureka:test &&

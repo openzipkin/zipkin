@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+# Copyright The OpenZipkin Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# ENTRYPOINT script that starts OpenSearch
+#
+# This intentionally locates config using the current working directory, in order to consolidate
+# Dockerfile instructions to WORKDIR
+set -eu
+
+# Configure the Docker HEALTHCHECK
+export HEALTHCHECK_PORT=9200
+export HEALTHCHECK_PATH=/_cluster/health
+
+# Use the 'java.io.tmp' dir and precreate the 'opensearch' folder there
+export OPENSEARCH_TMPDIR=`java -cp 'classes:lib/*' org.opensearch.tools.launchers.TempDirectory`
+
+# The JVM options parser produces the final JVM options to start OpenSearch.
+# It does this by incorporating JVM options in the following way:
+#   - first, system JVM options are applied (these are hardcoded options in the
+#     parser)
+#   - second, JVM options are read from jvm.options and jvm.options.d/*.options
+#   - third, JVM options from OPENSEARCH_JAVA_OPTS are applied
+#   - fourth, ergonomic JVM options are applied
+OPENSEARCH_JAVA_OPTS=`java -cp 'classes:lib/*' org.opensearch.tools.launchers.JvmOptionsParser "$PWD/config"`
+
+# -cp 'classes:lib/*' allows layers to patch the image without packaging or overwriting jars
+# We allow security manager (via flag to prevent JRE 21 crash) as OpenSearch.main needs it.
+exec java -cp 'classes:lib/*' ${OPENSEARCH_JAVA_OPTS} \
+  -Djava.security.manager=allow \
+  -Djava.io.tmpdir=/tmp \
+  -Dlog4j2.disable.jmx=true \
+  -Dopensearch.path.home=$PWD \
+  -Dopensearch.path.conf=$PWD/config \
+  -Dopensearch.distribution.type=docker \
+  -Dopensearch.bundled_jdk=false \
+  org.opensearch.bootstrap.OpenSearch "$@"
