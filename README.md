@@ -149,7 +149,8 @@ Note: This store requires a [job to aggregate](https://github.com/openzipkin/zip
 
 ### Elasticsearch
 The [Elasticsearch](zipkin-server#elasticsearch-storage) component uses
-Elasticsearch 5+ features, but is tested against Elasticsearch 7-8.x.
+Elasticsearch 5+ features, but is tested against Elasticsearch 7-8.x and
+OpenSearch 2.x.
 
 It stores spans as Zipkin v2 json so that integration with other tools is
 straightforward. To help with scale, this uses a combination of custom

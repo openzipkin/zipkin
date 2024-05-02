@@ -15,7 +15,7 @@
   </parent>
 
   <artifactId>zipkin-storage-elasticsearch</artifactId>
-  <name>Storage: Elasticsearch (V2)</name>
+  <name>Storage: Elasticsearch / OpenSearch (V2)</name>
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
