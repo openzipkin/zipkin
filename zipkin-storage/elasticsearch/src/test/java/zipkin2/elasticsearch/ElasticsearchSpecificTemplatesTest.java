@@ -14,7 +14,7 @@ import static zipkin2.elasticsearch.ElasticsearchVersion.V5_0;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V7_8;
 
-class VersionSpecificTemplatesTest {
+class ElasticsearchSpecificTemplatesTest {
   static final ElasticsearchVersion V2_4 = new ElasticsearchVersion(2, 4);
   static final ElasticsearchVersion V6_7 = new ElasticsearchVersion(6, 7);
   static final ElasticsearchVersion V7_9 = new ElasticsearchVersion(7, 9);
@@ -242,5 +242,35 @@ class VersionSpecificTemplatesTest {
     IndexTemplates template = storage.versionSpecificTemplates(V6_7);
 
     assertThat(template.span()).contains("analysis");
+  }
+  
+  @Test void indexTemplatesUrl_6x() {
+    assertThat(VersionSpecificTemplates.forVersion(V6_7).indexTemplatesUrl("idx", "_doc", null))
+      .isEqualTo("/_template/idx_doc_template?include_type_name=true");
+  }
+
+  @Test void indexTemplatesUrl_6x_withPriority() {
+    assertThat(VersionSpecificTemplates.forVersion(V6_7).indexTemplatesUrl("idx", "_doc", 1))
+      .isEqualTo("/_template/idx_doc_template?include_type_name=true");
+  }
+
+  @Test void indexTemplatesUrl_78() {
+    assertThat(VersionSpecificTemplates.forVersion(V7_8).indexTemplatesUrl("idx", "_doc", null))
+      .isEqualTo("/_template/idx_doc_template");
+  }
+
+  @Test void indexTemplatesUrl_78_withPriority() {
+    assertThat(VersionSpecificTemplates.forVersion(V7_8).indexTemplatesUrl("idx", "_doc", 1))
+      .isEqualTo("/_index_template/idx_doc_template");
+  }
+  
+  @Test void indexTemplatesUrl_79() {
+    assertThat(VersionSpecificTemplates.forVersion(V7_9).indexTemplatesUrl("idx", "_doc", null))
+      .isEqualTo("/_template/idx_doc_template");
+  }
+
+  @Test void indexTemplatesUrl_79_withPriority() {
+    assertThat(VersionSpecificTemplates.forVersion(V7_9).indexTemplatesUrl("idx", "_doc", 1))
+      .isEqualTo("/_index_template/idx_doc_template");
   }
 }
