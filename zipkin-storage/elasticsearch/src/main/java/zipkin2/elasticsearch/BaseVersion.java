@@ -56,7 +56,7 @@ public abstract class BaseVersion {
       AggregatedHttpRequest getNode = AggregatedHttpRequest.of(HttpMethod.GET, "/");
       BaseVersion version = callFactory.newCall(getNode, this, "get-node").execute();
       if (version == null) {
-        throw new IllegalArgumentException("No content reading Elasticsearch version");
+        throw new IllegalArgumentException("No content reading Elasticsearch/OpenSearch version");
       }
       return version;
     }
