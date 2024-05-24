@@ -277,7 +277,7 @@ class ServerIntegratedBenchmark {
 
     final GenericContainer<?> zipkin;
     if (RELEASE_VERSION == null) {
-      zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/java:21.0.2_p13"));
+      zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/java:21.0.3_p9"));
       List<String> classpath = new ArrayList<>();
       for (String item : System.getProperty("java.class.path").split(File.pathSeparator)) {
         Path path = Paths.get(item);
