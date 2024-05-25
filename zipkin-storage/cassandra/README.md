@@ -21,7 +21,7 @@ If you want to see requests and latency, set the logging category
 "com.datastax.oss.driver.internal.core.tracker.RequestLogger" to DEBUG.
 TRACE includes query values.
 
-See [Request Logger](https://docs.datastax.com/en/developer/java-driver/4.9/manual/core/request_tracker/#request-logger) for more details.
+See [Request Logger](https://github.com/apache/cassandra-java-driver/tree/4.x/manual/core/request_tracker#request-logger) for more details.
 
 ## Testing
 This module conditionally runs integration tests against a local Cassandra instance.
