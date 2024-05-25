@@ -179,6 +179,8 @@ apk add --update --no-cache python3=~${python3_version}
 # cqlsh it needs to build cffi. To unblock support for aarch64, adding
 # the following are necessary for compiling cffi. If pip someday changes and
 # doesn't compile cffi on aarch64 then we can remove these dependencies.
+# libev is required when using python 3.12
+# TODO: remove git when https://github.com/jeffwidman/cqlsh/pull/37 is released
 apk add --update --no-cache gcc python3-dev=~${python3_version} musl-dev libffi-dev libev libev-dev git
 # PEP 668 protects against mixing system and pip packages. Setup virtual env to avoid this.
 python3 -m venv .venv
