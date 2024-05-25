@@ -11,7 +11,7 @@
   <parent>
     <groupId>io.zipkin.zipkin2</groupId>
     <artifactId>zipkin-collector-parent</artifactId>
-    <version>3.3.1</version>
+    <version>3.3.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-collector</artifactId>
