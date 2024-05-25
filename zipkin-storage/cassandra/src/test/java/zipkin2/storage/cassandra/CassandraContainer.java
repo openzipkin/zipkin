@@ -33,7 +33,7 @@ class CassandraContainer extends GenericContainer<CassandraContainer> {
   CqlSession globalSession;
 
   CassandraContainer() {
-    super(parse("ghcr.io/openzipkin/zipkin-cassandra:3.3.0"));
+    super(parse("ghcr.io/openzipkin/zipkin-cassandra:3.3.1"));
     addExposedPort(9042);
     waitStrategy = Wait.forHealthcheck();
     withLogConsumer(new Slf4jLogConsumer(LOGGER));
