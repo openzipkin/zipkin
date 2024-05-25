@@ -3,7 +3,7 @@
 This is a plugin to the Elasticsearch storage component, which uses
 HTTP by way of [Armeria](https://github.com/line/armeria) and
 [Jackson](https://github.com/FasterXML/jackson). This uses Elasticsearch 5+
-features, but is tested against Elasticsearch 7-8.x.
+features, but is tested against Elasticsearch 7-8.x and OpenSearch 2.x.
 
 ## Multiple hosts
 Most users will supply a DNS name that's mapped to multiple A or AAAA
@@ -26,9 +26,9 @@ with one difference described below. We add a "timestamp_millis" field
 to aid in integration with other tools.
 
 ### Timestamps
-Zipkin's timestamps are in epoch microseconds, which is not a supported date type in Elasticsearch.
+Zipkin's timestamps are in epoch microseconds, which is not a supported date type in Elasticsearch / OpenSearch.
 In consideration of tools like like Kibana, this component adds "timestamp_millis" when writing
-spans. This is mapped to the Elasticsearch date type, so can be used to any date-based queries.
+spans. This is mapped to the Elasticsearch / OpenSearch date type, so can be used to any date-based queries.
 
 ## Indexes
 Spans are stored into daily indices, for example spans with a timestamp
@@ -68,8 +68,9 @@ $ curl -s 'localhost:9200/zipkin*span-2017-08-11/_search?q=_q:error=500'
 
 The reason for special casing is around dotted name constraints. Tags
 are stored as a dictionary. Some keys include inconsistent number of dots
-(ex "error" and "error.message"). Elasticsearch cannot index these as it
-inteprets them as fields, and dots in fields imply an object path.
+(ex "error" and "error.message"). Elasticsearch / OpenSearch cannot index
+these as it inteprets them as fields, and dots in fields imply an object 
+path.
 
 ### Trace Identifiers
 Unless `ElasticsearchStorage.Builder.strictTraceId` is set to false,
@@ -122,9 +123,9 @@ be written, nor analyzed.
 
 ### Composable Index Template
 Elasticsearch 7.8 introduces [composable templates](https://www.elastic.co/guide/en/elasticsearch/reference/current/index-templates.html) and
-deprecates [legacy/v1 templates](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-templates-v1.html) used in version prior.
-Merging of multiple templates with matching index patterns is no longer allowed, and Elasticsearch will return error on PUT of the second template
-with matching index pattern and priority. Templates with matching index patterns are required to have different priorities, and Elasticsearch will
+deprecates [legacy/v1 templates](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-templates-v1.html) used in version prior (fully supported by OpenSearch).
+Merging of multiple templates with matching index patterns is no longer allowed, and Elasticsearch / OpenSearch will return error on PUT of the second template
+with matching index pattern and priority. Templates with matching index patterns are required to have different priorities, and Elasticsearch / OpenSearch will
 only use the template with the highest priority. This also means that [secondary template](https://gist.github.com/codefromthecrypt/1af1259102e7a2da1b3c9103565165d7)
 is no longer achievable.
 
@@ -133,7 +134,15 @@ providing `ES_TEMPLATE_PRIORITY` environment variable.
 
 ## Customizing the ingest pipeline
 
+### Elasticsearch
+
 You can setup an [ingest pipeline](https://www.elastic.co/guide/en/elasticsearch/reference/master/pipeline.html) to perform custom processing.
+
+### OpenSearch
+
+You can setup an [ingest pipeline](https://opensearch.org/docs/latest/ingest-pipelines/) to perform custom processing.
+
+### Setting up ingest pipeline
 
 Here's an example, which you'd setup prior to configuring Zipkin to use
 it via `ElasticsearchStorage.Builder.pipeline`
@@ -162,7 +171,12 @@ to reduce load. This is implemented by
 [DelayLimiter](../../zipkin/src/main/java/zipkin2/internal/DelayLimiter.java)
 
 ## Data retention
-Zipkin-server does not handle retention management of the trace data. Use the tools recommended by ElasticSearch to manage data retention, or your cluster
-will grow indefinitely!
+Zipkin-server does not handle retention management of the trace data. Use the tools recommended by to manage data retention, or your cluster will grow indefinitely!
+
+### Elasticsearch
  * [Curator](https://www.elastic.co/guide/en/elasticsearch/client/curator/current/index.html)
  * [Index Lifecycle Management](https://www.elastic.co/guide/en/elasticsearch/reference/7.3/index-lifecycle-management.html)
+
+### OpenSearch
+ * [Curator](https://github.com/flant/curator-opensearch)
+ * [Index Lifecycle Management](https://opensearch.org/docs/latest/im-plugin/ism/index/)

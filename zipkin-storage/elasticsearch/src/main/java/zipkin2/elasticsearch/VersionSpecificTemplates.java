@@ -4,17 +4,13 @@
  */
 package zipkin2.elasticsearch;
 
-import static zipkin2.elasticsearch.ElasticsearchVersion.V5_0;
-import static zipkin2.elasticsearch.ElasticsearchVersion.V6_0;
-import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
-import static zipkin2.elasticsearch.ElasticsearchVersion.V7_8;
-import static zipkin2.elasticsearch.ElasticsearchVersion.V9_0;
+import zipkin2.internal.Nullable;
 
 /** Returns version-specific index templates */
 // TODO: make a main class that spits out the index template using ENV variables for the server,
 // a parameter for the version, and a parameter for the index type. Ex.
 // java -cp zipkin-storage-elasticsearch.jar zipkin2.elasticsearch.VersionSpecificTemplates 6.7 span
-final class VersionSpecificTemplates {
+abstract class VersionSpecificTemplates<V extends BaseVersion> {
   /** Maximum character length constraint of most names, IP literals and IDs. */
   static final int SHORT_STRING_LENGTH = 256;
   static final String TYPE_AUTOCOMPLETE = "autocomplete";
@@ -42,18 +38,7 @@ final class VersionSpecificTemplates {
     this.templatePriority = templatePriority;
   }
 
-  String indexPattern(String type, ElasticsearchVersion version) {
-    return '"'
-      + (version.compareTo(V6_0) < 0 ? "template" : "index_patterns")
-      + "\": \""
-      + indexPrefix
-      + indexTypeDelimiter(version)
-      + type
-      + "-*"
-      + "\"";
-  }
-
-  String indexProperties(ElasticsearchVersion version) {
+  String indexProperties(V version) {
     // 6.x _all disabled https://www.elastic.co/guide/en/elasticsearch/reference/6.7/breaking-changes-6.0.html#_the_literal__all_literal_meta_field_is_now_disabled_by_default
     // 7.x _default disallowed https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_the_literal__default__literal_mapping_is_no_longer_allowed
     String result = "    \"index.number_of_shards\": " + indexShards + ",\n"
@@ -62,7 +47,7 @@ final class VersionSpecificTemplates {
     return result + "\n";
   }
 
-  String indexTemplate(ElasticsearchVersion version) {
+  String indexTemplate(V version) {
     if (useComposableTemplate(version)) {
       return "\"template\": {\n";
     }
@@ -70,7 +55,7 @@ final class VersionSpecificTemplates {
     return "";
   }
 
-  String indexTemplateClosing(ElasticsearchVersion version) {
+  String indexTemplateClosing(V version) {
     if (useComposableTemplate(version)) {
       return "},\n";
     }
@@ -78,7 +63,7 @@ final class VersionSpecificTemplates {
     return "";
   }
 
-  String templatePriority(ElasticsearchVersion version) {
+  String templatePriority(V version) {
     if (useComposableTemplate(version)) {
       return "\"priority\": " + templatePriority + "\n";
     }
@@ -86,7 +71,7 @@ final class VersionSpecificTemplates {
     return "";
   }
 
-  String beginTemplate(String type, ElasticsearchVersion version) {
+  String beginTemplate(String type, V version) {
     return "{\n"
       + "  " + indexPattern(type, version) + ",\n"
       + indexTemplate(version)
@@ -94,14 +79,14 @@ final class VersionSpecificTemplates {
       + indexProperties(version);
   }
 
-  String endTemplate(ElasticsearchVersion version) {
+  String endTemplate(V version) {
     return indexTemplateClosing(version)
       + templatePriority(version)
       + "}";
   }
 
   /** Templatized due to version differences. Only fields used in search are declared */
-  String spanIndexTemplate(ElasticsearchVersion version) {
+  String spanIndexTemplate(V version) {
     String result = beginTemplate(TYPE_SPAN, version);
 
     String traceIdMapping = KEYWORD;
@@ -187,7 +172,7 @@ final class VersionSpecificTemplates {
   }
 
   /** Templatized due to version differences. Only fields used in search are declared */
-  String dependencyTemplate(ElasticsearchVersion version) {
+  String dependencyTemplate(V version) {
     return beginTemplate(TYPE_DEPENDENCY, version)
       + "  },\n"
       + "  \"mappings\": {\n"
@@ -198,7 +183,7 @@ final class VersionSpecificTemplates {
 
   // The key filed of a autocompleteKeys is intentionally names as tagKey since it clashes with the
   // BodyConverters KEY
-  String autocompleteTemplate(ElasticsearchVersion version) {
+  String autocompleteTemplate(V version) {
     return beginTemplate(TYPE_AUTOCOMPLETE, version)
       + "  },\n"
       + "  \"mappings\": {\n"
@@ -211,40 +196,84 @@ final class VersionSpecificTemplates {
       + endTemplate(version);
   }
 
-  IndexTemplates get(ElasticsearchVersion version) {
-    if (version.compareTo(V5_0) < 0 || version.compareTo(V9_0) >= 0) {
-      throw new IllegalArgumentException(
-        "Elasticsearch versions 5-8.x are supported, was: " + version);
-    }
-    return IndexTemplates.newBuilder()
-      .version(version)
-      .indexTypeDelimiter(indexTypeDelimiter(version))
-      .span(spanIndexTemplate(version))
-      .dependency(dependencyTemplate(version))
-      .autocomplete(autocompleteTemplate(version))
-      .build();
-  }
+  /**
+   * Returns index pattern
+   * @param type type 
+   * @param version distribution version
+   * @return index pattern
+   */
+  abstract String indexPattern(String type, V version);
 
-  boolean useComposableTemplate(ElasticsearchVersion version) {
-    return (version.compareTo(V7_8) >= 0 && templatePriority != null);
+  /**
+   * Returns index templates
+   * @param version distribution version
+   * @return index templates
+   */
+  abstract IndexTemplates get(V version);
+
+  /**
+   * Should composable templates be used or not
+   * @param version distribution version
+   * @return {@code true} if composable templates should be used,
+   * {@code false} otherwise
+   */
+  abstract boolean useComposableTemplate(V version);
+
+  /**
+   * Wraps the JSON payload if needed
+   * @param type type
+   * @param version distribution version
+   * @param json JSON payload
+   * @return wrapped JSON payload if needed
+   */
+  abstract String maybeWrap(String type, V version, String json);
+ 
+  /**
+   * Returns distribution specific templates (index templates URL, index 
+   * type delimiter, {@link IndexTemplates});
+   */
+  abstract static class DistributionSpecificTemplates {
+    /**
+     * Returns distribution specific index templates URL
+     * @param indexPrefix index prefix
+     * @param type type
+     * @param templatePriority index template priority
+     * @return index templates URL 
+     */
+    abstract String indexTemplatesUrl(String indexPrefix, String type, @Nullable Integer templatePriority); 
+
+    /**
+     * Returns distribution specific index type delimiter
+     * @return index type delimiter
+     */
+    abstract char indexTypeDelimiter();
+
+    /**
+     * Returns distribution specific index templates
+     * @param indexPrefix index prefix
+     * @param indexReplicas number of replicas
+     * @param indexShards number of shards
+     * @param searchEnabled search is enabled or disabled
+     * @param strictTraceId strict trace ID
+     * @param templatePriority index template priority
+     * @return index templates
+     */
+    abstract IndexTemplates get(String indexPrefix, int indexReplicas, int indexShards,
+      boolean searchEnabled, boolean strictTraceId, Integer templatePriority);
   }
 
   /**
-   * This returns a delimiter based on what's supported by the Elasticsearch version.
-   *
-   * <p>Starting in Elasticsearch 7.x, colons are no longer allowed in index names. This logic will
-   * make sure the pattern in our index template doesn't use them either.
-   *
-   * <p>See https://github.com/openzipkin/zipkin/issues/2219
+   * Creates a new {@link DistributionSpecificTemplates} instance based on the distribution
+   * @param version distribution version
+   * @return {@link OpensearchSpecificTemplates} or {@link ElasticsearchSpecificTemplates} instance
    */
-  static char indexTypeDelimiter(ElasticsearchVersion version) {
-    return version.compareTo(V7_0) < 0 ? ':' : '-';
-  }
-
-  static String maybeWrap(String type, ElasticsearchVersion version, String json) {
-    // ES 7.x defaults include_type_name to false https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_literal_include_type_name_literal_now_defaults_to_literal_false_literal
-    if (version.compareTo(V7_0) >= 0) return json;
-    return "    \"" + type + "\": {\n  " + json.replace("\n", "\n  ") + "  }\n";
+  static DistributionSpecificTemplates forVersion(BaseVersion version) {
+    if (version instanceof ElasticsearchVersion) {
+      return new ElasticsearchSpecificTemplates.DistributionTemplate((ElasticsearchVersion) version);
+    } else if (version instanceof OpensearchVersion) {
+      return new OpensearchSpecificTemplates.DistributionTemplate((OpensearchVersion) version);
+    } else {
+      throw new IllegalArgumentException("The distribution version is not supported: " + version);
+    }
   }
 }
-

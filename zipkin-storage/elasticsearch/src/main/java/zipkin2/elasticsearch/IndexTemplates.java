@@ -12,7 +12,7 @@ abstract class IndexTemplates {
     return new AutoValue_IndexTemplates.Builder();
   }
 
-  abstract ElasticsearchVersion version();
+  abstract BaseVersion version();
 
   abstract char indexTypeDelimiter();
 
@@ -24,7 +24,7 @@ abstract class IndexTemplates {
 
   @AutoValue.Builder
   interface Builder {
-    Builder version(ElasticsearchVersion version);
+    Builder version(BaseVersion version);
 
     Builder indexTypeDelimiter(char indexTypeDelimiter);
 

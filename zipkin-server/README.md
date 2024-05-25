@@ -251,7 +251,8 @@ $ STORAGE_TYPE=cassandra3 java -jar zipkin.jar \
 
 ### Elasticsearch Storage
 Zipkin's [Elasticsearch storage component](../zipkin-storage/elasticsearch)
-supports versions 7-8.x and applies when `STORAGE_TYPE` is set to `elasticsearch`
+supports versions Elasticsearch 7-8.x and OpenSearch 2.x and applies when
+`STORAGE_TYPE` is set to `elasticsearch`
 
 The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
 
@@ -259,7 +260,7 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                   Defaults to "http://localhost:9200".
     * `ES_PIPELINE`: Indicates the ingest pipeline used before spans are indexed. No default.
     * `ES_TIMEOUT`: Controls the connect, read and write socket timeouts (in milliseconds) for
-                    Elasticsearch API. Defaults to 10000 (10 seconds)
+                    Elasticsearch / OpenSearch API. Defaults to 10000 (10 seconds)
     * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to zipkin.
     * `ES_DATE_SEPARATOR`: The date separator to use when generating daily index names. Defaults to '-'.
     * `ES_INDEX_SHARDS`: The number of shards to split the index into. Each shard and its replicas
@@ -278,9 +279,9 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                              you set this to false, you choose to troubleshoot your own data or
                              migration problems as opposed to relying on the community for this.
                              Defaults to true.
-    * `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch basic authentication, which defaults to empty string.
+    * `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch / OpenSearch basic authentication, which defaults to empty string.
                                        Use when X-Pack security (formerly Shield) is in place.
-    * `ES_CREDENTIALS_FILE`: The location of a file containing Elasticsearch basic authentication
+    * `ES_CREDENTIALS_FILE`: The location of a file containing Elasticsearch / OpenSearch basic authentication
                              credentials, as properties. The username property is
                              `zipkin.storage.elasticsearch.username`, password `zipkin.storage.elasticsearch.password`.
                              This file is reloaded periodically, using `ES_CREDENTIALS_REFRESH_INTERVAL`
@@ -289,7 +290,7 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
     * `ES_CREDENTIALS_REFRESH_INTERVAL`: Credentials refresh interval in seconds, which defaults to
                                          1 second. This is the maximum amount of time spans will drop due to stale
                                          credentials. Any errors reading the credentials file occur in logs at this rate.
-    * `ES_HTTP_LOGGING`: When set, controls the volume of HTTP logging of the Elasticsearch API.
+    * `ES_HTTP_LOGGING`: When set, controls the volume of HTTP logging of the Elasticsearch / OpenSearch API.
                          Options are BASIC, HEADERS, BODY
     * `ES_SSL_NO_VERIFY`: When true, disables the verification of server's key certificate chain.
                           This is not appropriate for production. Defaults to false.
@@ -303,13 +304,13 @@ To connect normally:
 $ STORAGE_TYPE=elasticsearch ES_HOSTS=http://myhost:9200 java -jar zipkin.jar
 ```
 
-To log Elasticsearch API requests:
+To log Elasticsearch / OpenSearch API requests:
 ```bash
 $ STORAGE_TYPE=elasticsearch ES_HTTP_LOGGING=BASIC java -jar zipkin.jar
 ```
 
 #### Using a custom Key Store or Trust Store (SSL)
-If your Elasticsearch endpoint customized SSL configuration (for example self-signed) certificates,
+If your Elasticsearch / OpenSearch endpoint customized SSL configuration (for example self-signed) certificates,
 you can use any of the following [subset of JSSE properties](https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#T6) to connect.
 
  * javax.net.ssl.keyStore
@@ -326,13 +327,13 @@ $ STORAGE_TYPE=elasticsearch java $JAVA_OPTS -jar zipkin.jar
 ```
 
 Under the scenes, these map to properties prefixed `zipkin.storage.elasticsearch.ssl.`, which affect
-the Armeria client used to connect to Elasticsearch.
+the Armeria client used to connect to Elasticsearch / OpenSearch.
 
 The above properties allow the most common SSL setup to work out of box. If you need more
 customization, please make a comment in [this issue](https://github.com/openzipkin/zipkin/issues/2774).
 
 #### Automatic Index Creation
-Zipkin will automatically create new indices as needed. Elasticsearch by default [allows](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html#index-creation) automatic creation of said indices, though your local install may have been configured to disallow it. You can verify this in the cluster settings: `action.auto_create_index: false`.
+Zipkin will automatically create new indices as needed. Elasticsearch / OpenSearch by default [allows](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html#index-creation) automatic creation of said indices, though your local install may have been configured to disallow it. You can verify this in the cluster settings: `action.auto_create_index: false`.
 
 ### Legacy (v1) storage components
 The following components are no longer encouraged, but exist to help aid

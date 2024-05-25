@@ -11,11 +11,11 @@
   <parent>
     <groupId>io.zipkin.zipkin2</groupId>
     <artifactId>zipkin-storage-parent</artifactId>
-    <version>3.3.2-SNAPSHOT</version>
+    <version>3.4.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-storage-elasticsearch</artifactId>
-  <name>Storage: Elasticsearch (V2)</name>
+  <name>Storage: Elasticsearch / OpenSearch (V2)</name>
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>

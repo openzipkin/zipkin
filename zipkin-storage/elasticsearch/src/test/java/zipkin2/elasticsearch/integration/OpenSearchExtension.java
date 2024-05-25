@@ -12,17 +12,17 @@ import org.testcontainers.containers.wait.strategy.Wait;
 
 import static org.testcontainers.utility.DockerImageName.parse;
 
-class ElasticsearchExtension extends ElasticsearchBaseExtension {
-  static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchExtension.class);
+class OpenSearchExtension extends ElasticsearchBaseExtension {
+  static final Logger LOGGER = LoggerFactory.getLogger(OpenSearchExtension.class);
 
-  ElasticsearchExtension(int majorVersion) {
-    super(new ElasticsearchContainer(majorVersion));
+  OpenSearchExtension(int majorVersion) {
+    super(new OpenSearchContainer(majorVersion));
   }
 
   // mostly waiting for https://github.com/testcontainers/testcontainers-java/issues/3537
-  static final class ElasticsearchContainer extends GenericContainer<ElasticsearchContainer> {
-    ElasticsearchContainer(int majorVersion) {
-      super(parse("ghcr.io/openzipkin/zipkin-elasticsearch" + majorVersion + ":3.3.0"));
+  static final class OpenSearchContainer extends GenericContainer<OpenSearchContainer> {
+      OpenSearchContainer(int majorVersion) {
+      super(parse("ghcr.io/openzipkin/zipkin-opensearch" + majorVersion + ":3.3.0"));
       addExposedPort(9200);
       waitStrategy = Wait.forHealthcheck();
       withLogConsumer(new Slf4jLogConsumer(LOGGER));

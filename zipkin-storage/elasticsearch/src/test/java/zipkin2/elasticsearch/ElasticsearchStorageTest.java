@@ -134,7 +134,7 @@ class ElasticsearchStorageTest {
     CheckResult result = storage.check();
     assertThat(result.ok()).isFalse();
     assertThat(result.error().getMessage())
-      .isEqualTo("No content reading Elasticsearch version");
+      .isEqualTo("No content reading Elasticsearch/OpenSearch version");
   }
 
   // makes sure we don't NPE
@@ -146,7 +146,7 @@ class ElasticsearchStorageTest {
     CheckResult result = storage.check();
     assertThat(result.ok()).isFalse();
     assertThat(result.error().getMessage())
-      .isEqualTo("No content reading Elasticsearch version");
+      .isEqualTo("No content reading Elasticsearch/OpenSearch version");
   }
 
   // TODO: when Armeria's mock server supports it, add a test for IOException
