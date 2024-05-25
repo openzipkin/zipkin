@@ -184,6 +184,7 @@ apk add --update --no-cache gcc python3-dev=~${python3_version} musl-dev libffi-
 python3 -m venv .venv
 . .venv/bin/activate
 python3 -m ensurepip --upgrade
+# TODO: just cqlsh when https://github.com/jeffwidman/cqlsh/pull/37 is released
 pip install -Iq git+https://github.com/jeffwidman/cqlsh@master
 cql() {
   cqlsh "$@" 127.0.0.1 ${temp_native_transport_port}
