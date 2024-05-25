@@ -172,19 +172,19 @@ is_cassandra_alive || exit 1
 echo "*** Installing cqlsh"
 # cqlsh 4.x is not compatible with Python 3.12 by default.
 # See https://issues.apache.org/jira/browse/CASSANDRA-19206
-python3_version=3.11
+python3_version=3.12.3-r1
 apk add --update --no-cache python3=~${python3_version}
 # Installing cqlsh requires cffi package. Normally this doesn't need
 # to be compiled, but something isn't right with aarch64 when installing
 # cqlsh it needs to build cffi. To unblock support for aarch64, adding
 # the following are necessary for compiling cffi. If pip someday changes and
 # doesn't compile cffi on aarch64 then we can remove these dependencies.
-apk add --update --no-cache gcc python3-dev=~${python3_version} musl-dev libffi-dev
+apk add --update --no-cache gcc python3-dev=~${python3_version} musl-dev libffi-dev libev libev-dev git
 # PEP 668 protects against mixing system and pip packages. Setup virtual env to avoid this.
 python3 -m venv .venv
 . .venv/bin/activate
 python3 -m ensurepip --upgrade
-pip install -Iq cqlsh
+pip install -Iq git+https://github.com/jeffwidman/cqlsh@master
 cql() {
   cqlsh "$@" 127.0.0.1 ${temp_native_transport_port}
 }
