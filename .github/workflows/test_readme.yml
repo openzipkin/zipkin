@@ -28,6 +28,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     # skip commits made by the release plugin
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
+    timeout-minutes: 5
     strategy:
       matrix:
         include:  # Not ubuntu as already tested as a part of the docker job
@@ -43,18 +44,13 @@ jobs:
         with:
           distribution: 'zulu'  # zulu as it supports a wide version range
           java-version: '21'  # Most recent LTS
+          cache: 'maven'
       - name: Cache NPM Packages
         uses: actions/cache@v4
         with:
           path: ~/.npm
           # yamllint disable-line rule:line-length
           key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
-      - name: Cache local Maven repository
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-jdk-21-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-jdk-21-maven-
       - name: Execute Server Build  # command from zipkin-server/README.md
         run: ./mvnw --also-make -pl zipkin-server clean package
         env:
@@ -64,6 +60,7 @@ jobs:
     runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
     # skip commits made by the release plugin
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
+    timeout-minutes: 10
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -79,6 +76,7 @@ jobs:
         with:
           distribution: 'zulu'  # zulu as it supports a wide version range
           java-version: '21'  # Most recent LTS
+          cache: 'maven'
       # Don't attempt to cache Docker. Sensitive information can be stolen
       # via forks, and login session ends up in ~/.docker. This is ok because
       # we publish DOCKER_PARENT_IMAGE to ghcr.io, hence local to the runner.
@@ -88,12 +86,6 @@ jobs:
           path: ~/.npm
           # yamllint disable-line rule:line-length
           key: ${{ runner.os }}-npm-packages-${{ hashFiles('zipkin-lens/package-lock.json') }}
-      - name: Cache local Maven repository
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-jdk-21-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-jdk-21-maven-
       - name: Build zipkin-server  # redundant, but needed for docker/README.md
         run: ./mvnw --also-make -pl zipkin-server clean package
         env:
