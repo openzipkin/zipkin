@@ -19,7 +19,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <kafka.version>3.7.0</kafka.version>
+    <kafka.version>3.8.0</kafka.version>
   </properties>
 
   <dependencies>
