@@ -4,10 +4,10 @@
 #
 
 # Use latest from https://hub.docker.com/_/rabbitmq/tags?page=1&name=alpine
-ARG rabbitmq_version=3.13.2
+ARG rabbitmq_version=3.13.6
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
-# docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
+# docker compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
 # COPY --from= works around the issue.
 FROM scratch as scratch
 

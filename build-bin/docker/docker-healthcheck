@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# HEALTHCHECK for use in `docker ps`, `docker-compose ps`, or a readiness probe in k8s.
+# HEALTHCHECK for use in `docker ps`, `docker compose ps`, or a readiness probe in k8s.
 #
 # The following variables are read from ENV in the Dockerfile or env readable from pid 1.
 # * HEALTHCHECK_KIND - must be "http" or "tcp". Defaults to "http"

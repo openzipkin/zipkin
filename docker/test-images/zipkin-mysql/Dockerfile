@@ -6,10 +6,10 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/alpine
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG alpine_version=3.20.0
+ARG alpine_version=3.20.2
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
-# docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
+# docker compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
 # COPY --from= works around the issue.
 FROM scratch as scratch
 
@@ -28,7 +28,7 @@ HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthche
 ENTRYPOINT ["start-mysql"]
 
 # Use latest from https://pkgs.alpinelinux.org/packages?name=mysql (without the -r[0-9])
-ARG mysql_version=10.11.8
+ARG mysql_version=11.4.2
 LABEL mysql-version=$mysql_version
 ENV MYSQL_VERSION=$mysql_version
 

@@ -58,7 +58,7 @@ fi
 
 if ! test -f ${artifact_id}.jar && [ ${is_release} = "true" ]; then
   mvn_get="mvn -q --batch-mode -Denforcer.fail=false \
-  org.apache.maven.plugins:maven-dependency-plugin:3.6.1:get \
+  org.apache.maven.plugins:maven-dependency-plugin:3.7.1:get \
   -Dtransitive=false -DgroupId=${group_id} -DartifactId=${artifact_id} -Dversion=${version}"
 
   if [ -n "${classifier}" ]; then

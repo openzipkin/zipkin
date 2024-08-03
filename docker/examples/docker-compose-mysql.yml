@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# This file uses the version 2 docker-compose file format, described here:
+# This file uses the version 2 docker compose file format, described here:
 # https://docs.docker.com/compose/compose-file/#version-2
 #
 # This runs the zipkin and zipkin-mysql containers, using docker-compose's

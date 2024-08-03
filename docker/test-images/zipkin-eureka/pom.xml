@@ -29,7 +29,7 @@
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
-        <version>3.2.6</version>
+        <version>3.3.2</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -37,7 +37,7 @@
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>33.1.0-jre</version>
+        <version>33.2.1-jre</version>
       </dependency>
       <dependency>
         <groupId>com.thoughtworks.xstream</groupId>
@@ -56,7 +56,7 @@
     <dependency>
       <groupId>org.springframework.cloud</groupId>
       <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
-      <version>4.1.1</version>
+      <version>4.1.3</version>
       <exclusions>
         <!-- dodge spring-jcl conflict error -->
         <exclusion>
@@ -73,7 +73,7 @@
     <dependency>
       <groupId>com.amazon.ion</groupId>
       <artifactId>ion-java</artifactId>
-      <version>1.11.4</version>
+      <version>1.11.9</version>
     </dependency>
 
     <!-- Get rid of log warning saying to use Caffeine -->
