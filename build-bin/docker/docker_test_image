@@ -11,16 +11,16 @@
 
 set -ue
 
-# export this variable so that docker-compose can use it
+# export this variable so that docker compose can use it
 export DOCKER_IMAGE=${1?full docker_tag is required. Ex openzipkin/zipkin:test}
-# The two options are to run a single container of the image, or docker-compose which includes it.
+# The two options are to run a single container of the image, or docker compose which includes it.
 docker_compose_file=${2:-build-bin/docker-compose-$(echo ${DOCKER_IMAGE}| sed 's~.*/\(.*\):.*~\1~g').yml}
 docker_container=${3:-sut}
 
 # First try to run the intended containers.
 health_rc=0
 if test -f "${docker_compose_file}"; then
-  docker-compose -f "${docker_compose_file}" up --remove-orphans -d --quiet-pull || health_rc=1
+  docker compose -f "${docker_compose_file}" up --remove-orphans -d --quiet-pull || health_rc=1
 else
   docker run --name ${docker_container} -d ${DOCKER_IMAGE} || health_rc=1
 fi
@@ -30,13 +30,13 @@ fi
 if [ "${health_rc}" = "1" ] || ! build-bin/docker/docker_block_on_health ${docker_container}; then
   >&2 echo "*** Failed waiting for health of ${docker_container}"
 
-  # Sadly, we can't `docker-compose inspect`. This means we may not see the inspect output of the
-  # container that failed in docker-compose until this is revised to work around compose/issues/4155
+  # Sadly, we can't `docker compose inspect`. This means we may not see the inspect output of the
+  # container that failed in docker compose until this is revised to work around compose/issues/4155
   docker inspect --format='{{json .State.Health.Log}}' ${docker_container} || true
 
   # Log any containers output to console before we remove them.
   if test -f "${docker_compose_file}"; then
-    docker-compose -f "${docker_compose_file}" logs
+    docker compose -f "${docker_compose_file}" logs
   else
     docker logs ${docker_container} || true
   fi
@@ -45,7 +45,7 @@ fi
 
 # Clean up any containers, so that we can run this again without conflict.
 if test -f "${docker_compose_file}"; then
-  docker-compose -f "${docker_compose_file}" down
+  docker compose -f "${docker_compose_file}" down
 else
   docker kill ${docker_container} && docker rm ${docker_container}
 fi

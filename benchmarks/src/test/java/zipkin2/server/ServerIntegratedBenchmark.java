@@ -81,7 +81,7 @@ class ServerIntegratedBenchmark {
 
   @Test void elasticsearch() throws Exception {
     GenericContainer<?> elasticsearch =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch7:3.3.1"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch7:3.4.0"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("elasticsearch")
         .withLabel("name", "elasticsearch")
@@ -95,7 +95,7 @@ class ServerIntegratedBenchmark {
 
   @Test void cassandra3() throws Exception {
     GenericContainer<?> cassandra =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-cassandra:3.3.1"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-cassandra:3.4.0"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("cassandra")
         .withLabel("name", "cassandra")
@@ -109,7 +109,7 @@ class ServerIntegratedBenchmark {
 
   @Test void mysql() throws Exception {
     GenericContainer<?> mysql =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:3.3.1"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:3.4.0"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("mysql")
         .withLabel("name", "mysql")
@@ -147,7 +147,7 @@ class ServerIntegratedBenchmark {
     // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     // Use same version as in docker/examples/docker-compose-prometheus.yml
     GenericContainer<?> prometheus =
-      new GenericContainer<>(parse("quay.io/prometheus/prometheus:v2.51.2"))
+      new GenericContainer<>(parse("quay.io/prometheus/prometheus:v2.53.1"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("prometheus")
         .withExposedPorts(9090)
@@ -157,7 +157,7 @@ class ServerIntegratedBenchmark {
 
     // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     // Use same version as in docker/examples/docker-compose-prometheus.yml
-    GenericContainer<?> grafana = new GenericContainer<>(parse("quay.io/giantswarm/grafana:7.5.9"))
+    GenericContainer<?> grafana = new GenericContainer<>(parse("quay.io/giantswarm/grafana:7.5.12"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("grafana")
       .withExposedPorts(3000)
@@ -169,7 +169,7 @@ class ServerIntegratedBenchmark {
     // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     // Use same version as in docker/examples/docker-compose-prometheus.yml
     GenericContainer<?> grafanaDashboards =
-      new GenericContainer<>(parse("quay.io/cilium/alpine-curl:v1.9.0"))
+      new GenericContainer<>(parse("quay.io/cilium/alpine-curl:v1.10.0"))
         .withNetwork(Network.SHARED)
         .withWorkingDirectory("/tmp")
         .withLogConsumer(new Slf4jLogConsumer(LOG))
@@ -277,7 +277,7 @@ class ServerIntegratedBenchmark {
 
     final GenericContainer<?> zipkin;
     if (RELEASE_VERSION == null) {
-      zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/java:21.0.3_p9"));
+      zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/java:21.0.4_p7"));
       List<String> classpath = new ArrayList<>();
       for (String item : System.getProperty("java.class.path").split(File.pathSeparator)) {
         Path path = Paths.get(item);

@@ -2,15 +2,15 @@
 
 This project is configured to run docker containers using
 [docker-compose](https://docs.docker.com/compose/). Note that the default
-configuration requires docker-compose 1.6.0+ and docker-engine 1.10.0+.
+configuration requires docker compose 1.6.0+ and docker-engine 1.10.0+.
 
-To start the default docker-compose configuration, run:
+To start the default docker compose configuration, run:
 
 ```bash
 # To use the last released version of zipkin
-$ docker-compose up
+$ docker compose up
 # To use the last built version of zipkin
-$ TAG=master docker-compose up
+$ TAG=master docker compose up
 ```
 
 View the web UI at $(docker ip):9411. Traces are stored in memory.
@@ -26,7 +26,7 @@ own containers.
 
 To add ActiveMQ configuration, run:
 ```bash
-$ docker-compose -f docker-compose-activemq.yml up
+$ docker compose -f docker-compose-activemq.yml up
 ```
 
 Then configure the [ActiveMQ sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/activemq-client/src/main/java/zipkin2/reporter/activemq/ActiveMQSender.java)
@@ -41,7 +41,7 @@ You can store traces in [Cassandra](../test-images/zipkin-cassandra/README.md) i
 To start the Cassandra-backed configuration, run:
 
 ```bash
-$ docker-compose -f docker-compose-cassandra.yml up
+$ docker compose -f docker-compose-cassandra.yml up
 ```
 
 The `zipkin-dependencies` container is a scheduled task that runs every hour.
@@ -49,7 +49,7 @@ If you want to see the dependency graph before then, you can run it manually
 in another terminal like so:
 
 ```bash
-$ docker-compose -f docker-compose-cassandra.yml run --rm --no-deps --entrypoint start-zipkin-dependencies dependencies
+$ docker compose -f docker-compose-cassandra.yml run --rm --no-deps --entrypoint start-zipkin-dependencies dependencies
 ```
 
 ## Elasticsearch
@@ -61,7 +61,7 @@ using the `docker-compose-elasticsearch.yml` file. This configuration starts `zi
 To start the Elasticsearch-backed configuration, run:
 
 ```bash
-$ docker-compose -f docker-compose-elasticsearch.yml up
+$ docker compose -f docker-compose-elasticsearch.yml up
 ```
 
 The `zipkin-dependencies` container is a scheduled task that runs every hour.
@@ -69,7 +69,7 @@ If you want to see the dependency graph before then, you can run it manually
 in another terminal like so:
 
 ```bash
-$ docker-compose -f docker-compose-elasticsearch.yml run --rm --no-deps --entrypoint start-zipkin-dependencies dependencies
+$ docker compose -f docker-compose-elasticsearch.yml run --rm --no-deps --entrypoint start-zipkin-dependencies dependencies
 ```
 
 ## Kafka
@@ -80,7 +80,7 @@ own containers.
 
 To add Kafka configuration, run:
 ```bash
-$ docker-compose -f docker-compose-kafka.yml up
+$ docker compose -f docker-compose-kafka.yml up
 ```
 
 Then configure the [Kafka sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/kafka/src/main/java/zipkin2/reporter/kafka/KafkaSender.java) using a `bootstrapServers` value of `host.docker.internal:9092` if your application is inside the same docker network or `localhost:19092` if not, but running on the same host.
@@ -101,7 +101,7 @@ You can store traces in [MySQL](../test-images/zipkin-mysql/README.md) instead o
 To start the MySQL-backed configuration, run:
 
 ```bash
-$ docker-compose -f docker-compose-mysql.yml up
+$ docker compose -f docker-compose-mysql.yml up
 ```
 
 ## RabbitMQ
@@ -112,7 +112,7 @@ own containers.
 
 To add RabbitMQ configuration, run:
 ```bash
-$ docker-compose -f docker-compose-rabbitmq.yml up
+$ docker compose -f docker-compose-rabbitmq.yml up
 ```
 
 Then configure the [RabbitMQ sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/amqp-client/src/main/java/zipkin2/reporter/amqp/RabbitMQSender.java)
@@ -129,18 +129,18 @@ discover zipkin's endpoint from `eureka` and use it to send spans.
 
 To try this out, run:
 ```bash
-$ docker-compose -f docker-compose.yml -f docker-compose-eureka.yml up
+$ docker compose -f docker-compose.yml -f docker-compose-eureka.yml up
 ```
 
 ## Example
 
-The docker-compose configuration can be extended to host an [example application](https://github.com/openzipkin/brave-example)
-using the `docker-compose-example.yml` file. That file employs [docker-compose overrides](https://docs.docker.com/compose/extends/#multiple-compose-files)
+The docker compose configuration can be extended to host an [example application](https://github.com/openzipkin/brave-example)
+using the `docker-compose-example.yml` file. That file employs [docker compose overrides](https://docs.docker.com/compose/extends/#multiple-compose-files)
 to add a "frontend" and "backend" service.
 
 To add the example configuration, run:
 ```bash
-$ docker-compose -f docker-compose.yml -f docker-compose-example.yml up
+$ docker compose -f docker-compose.yml -f docker-compose-example.yml up
 ```
 
 Once the services start, open http://localhost:8081/
@@ -150,15 +150,15 @@ Afterward, you can view traces that went through the backend via http://localhos
 
 ## UI
 
-The docker-compose configuration can be extended to [host the UI](../test-images/zipkin-ui/README.md) on port 80
+The docker compose configuration can be extended to [host the UI](../test-images/zipkin-ui/README.md) on port 80
 using the `docker-compose-ui.yml` file. That file employs
-[docker-compose overrides](https://docs.docker.com/compose/extends/#multiple-compose-files)
+[docker compose overrides](https://docs.docker.com/compose/extends/#multiple-compose-files)
 to add an NGINX container and relevant settings.
 
 To start the NGINX configuration, run:
 
 ```bash
-$ docker-compose -f docker-compose.yml -f docker-compose-ui.yml up
+$ docker compose -f docker-compose.yml -f docker-compose-ui.yml up
 ```
 
 This container doubles as a skeleton for creating proxy configuration around
@@ -176,14 +176,14 @@ $ docker run -d -p 80:80 \
 
 ## UI Proxy
 
-The docker-compose configuration can be extended to [proxy the UI](../test-images/zipkin-uiproxy/README.md) on port 80
+The docker compose configuration can be extended to [proxy the UI](../test-images/zipkin-uiproxy/README.md) on port 80
 using the `docker-compose-uiproxy.yml` file. That file employs
-[docker-compose overrides](https://docs.docker.com/compose/extends/#multiple-compose-files) to add an NGINX container and relevant settings.
+[docker compose overrides](https://docs.docker.com/compose/extends/#multiple-compose-files) to add an NGINX container and relevant settings.
 
 To start the NGINX configuration, run:
 
 ```bash
-$ docker-compose -f docker-compose.yml -f docker-compose-uiproxy.yml up
+$ docker compose -f docker-compose.yml -f docker-compose-uiproxy.yml up
 ```
 
 This container helps verify the `ZIPKIN_UI_BASEPATH` variable by setting it to

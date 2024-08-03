@@ -60,7 +60,7 @@ cat > pom.xml <<-'EOF'
 EOF
 mvn -q --batch-mode -DoutputDirectory=lib \
     -Dcassandra.version=${CASSANDRA_VERSION} \
-    org.apache.maven.plugins:maven-dependency-plugin:3.6.1:copy-dependencies
+    org.apache.maven.plugins:maven-dependency-plugin:3.7.1:copy-dependencies
 rm pom.xml
 
 # Make sure you use relative paths in references like this, so that installation
