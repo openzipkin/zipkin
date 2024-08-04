@@ -1,0 +1,1 @@
+typeSearchIndex = [{"p":"zipkin2.collector.activemq","l":"ActiveMQCollector"},{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"zipkin2.collector.activemq","l":"ActiveMQCollector.Builder"}];updateSearchResults();
