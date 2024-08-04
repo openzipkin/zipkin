@@ -23,7 +23,7 @@ on:  # yamllint disable-line rule:truthy
 jobs:
   test:
     name: test (JDK ${{ matrix.java_version }})
-    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
+    runs-on: ubuntu-24.04  # newest available distribution, aka noble
     # skip commits made by the release plugin
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
     strategy:
@@ -60,7 +60,7 @@ jobs:
           build-bin/test -DexcludedGroups=docker ${{ matrix.maven_args }}
 
   test_docker:
-    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
+    runs-on: ubuntu-24.04  # newest available distribution, aka noble
     # skip commits made by the release plugin
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
     strategy:

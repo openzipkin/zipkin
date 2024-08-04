@@ -33,7 +33,7 @@ jobs:
       matrix:
         include:  # Not ubuntu as already tested as a part of the docker job
           - name: macos
-            os: macos-13
+            os: macos-14
           - name: windows
             os: windows-2022
     steps:
@@ -57,7 +57,7 @@ jobs:
           MAVEN_CONFIG: '-T1C -q --batch-mode -DskipTests'
 
   docker:
-    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
+    runs-on: ubuntu-24.04  # newest available distribution, aka noble
     # skip commits made by the release plugin
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
     timeout-minutes: 10
