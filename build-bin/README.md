@@ -98,7 +98,7 @@ on:  # yamllint disable-line rule:truthy
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
+    runs-on: ubuntu-24.04  # newest available distribution, aka noble
     # skip commits made by the release plugin
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
     steps:
@@ -195,7 +195,7 @@ on:  # yamllint disable-line rule:truthy
 
 jobs:
   deploy:
-    runs-on: ubuntu-22.04  # newest available distribution, aka jellyfish
+    runs-on: ubuntu-24.04  # newest available distribution, aka noble
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
