@@ -4,4 +4,4 @@
 markdown-link-check -V || npm install -g markdown-link-check
 
 # Attempt to install yamllint if absent
-yamllint || pip install --user yamllint
+yamllint -v || pip install --user yamllint
