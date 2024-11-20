@@ -47,9 +47,9 @@
     <zipkin-proto3.version>1.0.0</zipkin-proto3.version>
 
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>1.30.1</armeria.version>
+    <armeria.version>1.31.0</armeria.version>
     <!-- Match Armeria version to avoid conflicts including running tests in the IDE -->
-    <netty.version>4.1.114.Final</netty.version>
+    <netty.version>4.1.115.Final</netty.version>
 
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
     <jackson.version>2.17.2</jackson.version>
