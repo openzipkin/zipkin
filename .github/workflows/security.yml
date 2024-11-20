@@ -23,7 +23,7 @@ on:  # yamllint disable-line rule:truthy
 jobs:
   security:
     name: security
-    runs-on: ubuntu-24.04  # newest available distribution, aka noble
+    runs-on: ubuntu-24.04  # newest available distribution, aka numbat
     # skip commits made by the release plugin
     if: "!contains(github.event.head_commit.message, 'maven-release-plugin')"
     steps:
@@ -38,6 +38,9 @@ jobs:
       - name: Run Trivy vulnerability and secret scanner
         uses: aquasecurity/trivy-action@master
         id: trivy
+        env:  # See https://github.com/aquasecurity/trivy/discussions/7668
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
+          TRIVY_JAVA_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-java-db
         with:
           scan-type: 'fs'
           scan-ref: '.'  # scan the entire repository
