@@ -54,7 +54,7 @@
     "events": "^3.3.0",
     "fetch-mock": "^9.11.0",
     "history": "^4.10.1",
-    "http-proxy-middleware": "^1.0.3",
+    "http-proxy-middleware": "^2.0.7",
     "i18next": "^23.8.2",
     "i18next-browser-languagedetector": "^7.2.0",
     "lodash": "^4.17.20",

@@ -47,7 +47,7 @@ cat > pom.xml <<-'EOF'
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>5.14.0</version>
+      <version>5.15.0</version>
     </dependency>
     <!-- log4j not logback -->
     <dependency>
@@ -60,7 +60,7 @@ cat > pom.xml <<-'EOF'
 EOF
 mvn -q --batch-mode -DoutputDirectory=lib \
     -Dcassandra.version=${CASSANDRA_VERSION} \
-    org.apache.maven.plugins:maven-dependency-plugin:3.7.1:copy-dependencies
+    org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy-dependencies
 rm pom.xml
 
 # Make sure you use relative paths in references like this, so that installation

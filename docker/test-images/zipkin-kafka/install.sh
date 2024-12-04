@@ -43,7 +43,7 @@ cat > pom.xml <<-'EOF'
 EOF
 mvn -q --batch-mode -DoutputDirectory=lib \
     -Dscala.version=${SCALA_VERSION} -Dkafka.version=${KAFKA_VERSION} \
-    org.apache.maven.plugins:maven-dependency-plugin:3.7.1:copy-dependencies
+    org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy-dependencies
 rm pom.xml
 
 # Make sure you use relative paths in references like this, so that installation

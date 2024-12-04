@@ -47,9 +47,9 @@
     <zipkin-proto3.version>1.0.0</zipkin-proto3.version>
 
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>1.30.1</armeria.version>
+    <armeria.version>1.31.0</armeria.version>
     <!-- Match Armeria version to avoid conflicts including running tests in the IDE -->
-    <netty.version>4.1.114.Final</netty.version>
+    <netty.version>4.1.115.Final</netty.version>
 
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
     <jackson.version>2.17.2</jackson.version>
@@ -61,8 +61,8 @@
     <javax-annotation-api.version>1.3.2</javax-annotation-api.version>
 
     <!-- update together -->
-    <spring-boot.version>3.3.4</spring-boot.version>
-    <spring.version>6.1.13</spring.version>
+    <spring-boot.version>3.3.6</spring-boot.version>
+    <spring.version>6.1.15</spring.version>
 
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
@@ -98,11 +98,11 @@
     <maven-bundle-plugin.version>5.1.9</maven-bundle-plugin.version>
     <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
     <!-- Use same version as https://github.com/openzipkin/docker-java -->
-    <maven-dependency-plugin.version>3.7.1</maven-dependency-plugin.version>
+    <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
     <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
     <!-- Use same version as https://github.com/openzipkin/docker-java -->
-    <maven-help-plugin.version>3.4.1</maven-help-plugin.version>
+    <maven-help-plugin.version>3.5.1</maven-help-plugin.version>
     <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
     <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
     <maven-jar-plugin.version>3.4.1</maven-jar-plugin.version>
