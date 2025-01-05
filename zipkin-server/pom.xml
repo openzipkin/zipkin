@@ -11,7 +11,7 @@
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>3.4.4-SNAPSHOT</version>
+    <version>3.5.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-server</artifactId>
@@ -27,7 +27,7 @@
 
     <!-- Sometimes we need to override Armeria's Brave version -->
     <brave.version>6.0.3</brave.version>
-    <zipkin-reporter.version>3.4.0</zipkin-reporter.version>
+    <zipkin-reporter.version>3.4.3</zipkin-reporter.version>
     <log4j.version>2.23.1</log4j.version>
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
