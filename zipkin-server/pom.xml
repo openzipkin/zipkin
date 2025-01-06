@@ -27,7 +27,7 @@
 
     <!-- Sometimes we need to override Armeria's Brave version -->
     <brave.version>6.0.3</brave.version>
-    <zipkin-reporter.version>3.4.0</zipkin-reporter.version>
+    <zipkin-reporter.version>3.4.3</zipkin-reporter.version>
     <log4j.version>2.23.1</log4j.version>
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
