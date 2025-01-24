@@ -24,7 +24,7 @@ aggregate behavior including error paths or calls to deprecated services.
 Application’s need to be “instrumented” to report trace data to Zipkin. This
 usually means configuration of a [tracer or instrumentation library](https://zipkin.io/pages/tracers_instrumentation.html). The most
 popular ways to report data to Zipkin are via http or Kafka, though many other
-options exist, such as Apache ActiveMQ, gRPC and RabbitMQ. The data served to
+options exist, such as Apache ActiveMQ, gRPC, RabbitMQ and Apache Pulsar. The data served to
 the UI is stored in-memory, or persistently with a supported backend such as
 Apache Cassandra or Elasticsearch.
 

@@ -55,6 +55,7 @@
 !zipkin-collector/kafka/src/main/**
 !zipkin-collector/rabbitmq/src/main/**
 !zipkin-collector/scribe/src/main/**
+!zipkin-collector/pulsar/src/main/**
 !zipkin-junit5/src/main/**
 !zipkin-storage/src/main/**
 !zipkin-storage/cassandra/src/main/**

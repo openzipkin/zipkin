@@ -118,6 +118,18 @@ $ docker compose -f docker-compose-rabbitmq.yml up
 Then configure the [RabbitMQ sender](https://github.com/openzipkin/zipkin-reporter-java/blob/master/amqp-client/src/main/java/zipkin2/reporter/amqp/RabbitMQSender.java)
 using a `host` value of `localhost` or a non-local hostname if in docker.
 
+
+## Pulsar
+
+You can collect traces from [Pulsar](../test-images/zipkin-pulsar/README.md) in addition to HTTP, using the
+`docker-compose-pulsar.yml` file. This configuration starts `zipkin` and `zipkin-pulsar` in their
+own containers.
+
+To add Pulsar configuration, run:
+```bash
+$ docker compose -f docker-compose-pulsar.yml up
+```
+
 ## Eureka
 
 You can register Zipkin for service discovery in [Eureka](../test-images/zipkin-eureka/README.md)
