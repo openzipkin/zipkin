@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class LazyPulsarInit {
+class LazyPulsarInit {
 
   private final Collector collector;
   private final CollectorMetrics metrics;
@@ -33,7 +33,7 @@ public class LazyPulsarInit {
     this.consumerProps = builder.consumerProps;
   }
 
-  public void init() {
+  void init() {
     if (result == null) {
       synchronized (this) {
         if (result == null) {
@@ -52,6 +52,7 @@ public class LazyPulsarInit {
           .connectionTimeout(12, TimeUnit.SECONDS)
           .build();
     } catch (Exception e) {
+      failure.set(CheckResult.failed(e));
       throw new RuntimeException("Pulsar client create failed" + e.getMessage(), e);
     }
 
@@ -67,12 +68,12 @@ public class LazyPulsarInit {
       } catch (PulsarClientException ex) {
         // Nobody cares me.
       }
+      failure.set(CheckResult.failed(e));
       throw new RuntimeException("Pulsar unable to subscribe the topic(" + topic + "), please check the pulsar service.", e);
     }
-
   }
 
-  public void close() throws PulsarClientException {
+  void close() throws PulsarClientException {
     PulsarClient maybe = result;
     if (maybe != null) result.close();
   }

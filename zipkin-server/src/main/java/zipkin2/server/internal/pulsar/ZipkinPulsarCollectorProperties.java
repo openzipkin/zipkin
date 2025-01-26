@@ -12,7 +12,7 @@ import java.util.Map;
 
 /** Properties for configuring and building a {@link PulsarCollector}. */
 @ConfigurationProperties("zipkin.collector.pulsar")
-public class ZipkinPulsarCollectorProperties {
+class ZipkinPulsarCollectorProperties {
 
   /** The service URL for the Pulsar service. */
   private String serviceUrl;

@@ -34,6 +34,7 @@ public class PulsarSpanConsumer implements Closeable {
   private final PulsarClient client;
   private final Collector collector;
   private final CollectorMetrics metrics;
+  private Consumer<byte[]> consumer;
 
   public PulsarSpanConsumer(String topic, Map<String, Object> consumerProps, PulsarClient client, Collector collector, CollectorMetrics metrics) {
     this.topic = topic;
@@ -44,7 +45,7 @@ public class PulsarSpanConsumer implements Closeable {
   }
 
   public void startConsumer() throws PulsarClientException {
-    client.newConsumer()
+    consumer = client.newConsumer()
         .topic(topic)
         .subscriptionType(SubscriptionType.Shared)
         .loadConf(consumerProps)
@@ -54,18 +55,19 @@ public class PulsarSpanConsumer implements Closeable {
 
   @Override public void close() {
     try {
-      client.close();
+      if (consumer != null) {
+        consumer.close();
+      }
     } catch (PulsarClientException e) {
-      LOG.error("Failed to close Pulsar client", e);
+      LOG.error("Failed to close Pulsar Consumer client", e);
     }
   }
 
   record ZipkinMessageListener<T>(Collector collector, CollectorMetrics metrics) implements MessageListener<T> {
 
     @Override public void received(Consumer<T> consumer, Message<T> msg) {
-      final byte[] serialized;
       try {
-        serialized = msg.getData();
+        final byte[] serialized = msg.getData();
         metrics.incrementMessages();
         metrics.incrementBytes(serialized.length);
 
@@ -75,7 +77,7 @@ public class PulsarSpanConsumer implements Closeable {
         consumer.acknowledgeAsync(msg);
       } catch (Throwable th) {
         metrics.incrementMessagesDropped();
-        LOG.error("Pulsar failed to process the message.", th);
+        LOG.error("Pulsar Span Consumer failed to process the message.", th);
         consumer.negativeAcknowledge(msg);
       }
     }

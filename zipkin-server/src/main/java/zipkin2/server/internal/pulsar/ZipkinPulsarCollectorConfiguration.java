@@ -4,7 +4,9 @@
  */
 package zipkin2.server.internal.pulsar;
 
+import org.springframework.boot.autoconfigure.condition.AllNestedConditions;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
@@ -16,9 +18,11 @@ import zipkin2.collector.CollectorSampler;
 import zipkin2.collector.pulsar.PulsarCollector;
 import zipkin2.storage.StorageComponent;
 
+import static io.micrometer.common.util.StringUtils.isEmpty;
+
 /** Auto-configuration for {@link PulsarCollector}. */
 @ConditionalOnClass(PulsarCollector.class)
-@Conditional(ZipkinPulsarCollectorConfiguration.PulsarServiceUrlSet.class)
+@Conditional(ZipkinPulsarCollectorConfiguration.PulsarConditions.class)
 @EnableConfigurationProperties(ZipkinPulsarCollectorProperties.class)
 public class ZipkinPulsarCollectorConfiguration {
 
@@ -43,20 +47,23 @@ public class ZipkinPulsarCollectorConfiguration {
    * service-url: ${PULSAR_SERVICE_URL:}
    * }</pre>
    */
-  static final class PulsarServiceUrlSet implements Condition {
-    @Override
-    public boolean matches(ConditionContext context, AnnotatedTypeMetadata a) {
-      return !isEmpty(
-          context.getEnvironment().getProperty("zipkin.collector.pulsar.service-url")) &&
-          notFalse(context.getEnvironment().getProperty("zipkin.collector.pulsar.enabled"));
+  static final class PulsarConditions extends AllNestedConditions {
+
+    PulsarConditions() {
+      super(ConfigurationPhase.REGISTER_BEAN);
     }
 
-    private static boolean isEmpty(String s) {
-      return s == null || s.isEmpty();
+    @ConditionalOnProperty(prefix = "zipkin.collector.pulsar", name = "enabled",
+        havingValue = "true", matchIfMissing = true)
+    private static final class PulsarEnabledCondition {
     }
 
-    private static boolean notFalse(String s) {
-      return s == null || !s.equals("false");
+    @Conditional(PulsarServiceUrlCondition.class)
+    private static final class PulsarServiceUrlCondition implements Condition {
+      @Override public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+        String serviceUrl = context.getEnvironment().getProperty("zipkin.collector.pulsar.service-url");
+        return !isEmpty(serviceUrl);
+      }
     }
   }
 }
