@@ -9,6 +9,7 @@ import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.MessageListener;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
+import org.apache.pulsar.client.api.SubscriptionInitialPosition;
 import org.apache.pulsar.client.api.SubscriptionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +49,9 @@ public class PulsarSpanConsumer implements Closeable {
     consumer = client.newConsumer()
         .topic(topic)
         .subscriptionType(SubscriptionType.Shared)
-        .loadConf(consumerProps)
+        .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
         .messageListener(new ZipkinMessageListener<>(collector, metrics))
+        .loadConf(consumerProps)
         .subscribe();
   }
 
@@ -60,7 +62,7 @@ public class PulsarSpanConsumer implements Closeable {
         consumer = null;
       }
     } catch (PulsarClientException e) {
-      LOG.error("Failed to close Pulsar Consumer client", e);
+      LOG.error("Failed to close Pulsar Consumer client.", e);
     }
   }
 

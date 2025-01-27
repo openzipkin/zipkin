@@ -7,6 +7,12 @@ version 4.x or later, and the default subscription type is `Shared`, in Shared s
 multiple consumers can attach to the same subscription and messages are delivered 
 in a round-robin distribution across consumers.
 
+This collector is implemented as a Pulsar consumer supporting Pulsar brokers running version 4.x or later. 
+The default `subscriptionType` is `Shared`, which allows multiple consumers to attach to the same subscription, 
+with messages delivered in a round-robin distribution across consumers, the default `subscriptionInitialPosition`
+is `Earliest`, you can modify the consumer settings as needed through the `consumerProps` parameter.
+Also, the client settings can also be modified through the `clientProps` parameter.
+
 For information about running this collector as a module in Zipkin server, see
 the [Zipkin Server README](../../zipkin-server/README.md#pulsar-collector).
 

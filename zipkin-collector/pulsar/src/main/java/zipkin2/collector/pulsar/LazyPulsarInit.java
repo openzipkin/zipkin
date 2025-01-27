@@ -11,7 +11,6 @@ import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 class LazyPulsarInit {
@@ -48,12 +47,10 @@ class LazyPulsarInit {
     try {
       client = PulsarClient.builder()
           .loadConf(clientProps)
-          .operationTimeout(6, TimeUnit.SECONDS)
-          .connectionTimeout(12, TimeUnit.SECONDS)
           .build();
     } catch (Exception e) {
       failure.set(CheckResult.failed(e));
-      throw new RuntimeException("Pulsar client creation failed" + e.getMessage(), e);
+      throw new RuntimeException("Pulsar client creation failed. " + e.getMessage(), e);
     }
 
     try {
