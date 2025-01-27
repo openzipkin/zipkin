@@ -62,7 +62,7 @@ class ZipkinPulsarCollectorConfigurationTest {
       failBecauseExceptionWasNotThrown(BeanCreationException.class);
     } catch (BeanCreationException e) {
       assertThat(e.getCause()).hasMessageContaining(
-          "Pulsar unable to subscribe the topic");
+          "Pulsar Client is unable to subscribe to the topic");
     }
   }
 

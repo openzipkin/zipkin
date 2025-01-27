@@ -57,6 +57,7 @@ public class PulsarSpanConsumer implements Closeable {
     try {
       if (consumer != null) {
         consumer.close();
+        consumer = null;
       }
     } catch (PulsarClientException e) {
       LOG.error("Failed to close Pulsar Consumer client", e);

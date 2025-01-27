@@ -53,7 +53,7 @@ class LazyPulsarInit {
           .build();
     } catch (Exception e) {
       failure.set(CheckResult.failed(e));
-      throw new RuntimeException("Pulsar client create failed" + e.getMessage(), e);
+      throw new RuntimeException("Pulsar client creation failed" + e.getMessage(), e);
     }
 
     try {
@@ -69,12 +69,15 @@ class LazyPulsarInit {
         // Nobody cares me.
       }
       failure.set(CheckResult.failed(e));
-      throw new RuntimeException("Pulsar unable to subscribe the topic(" + topic + "), please check the pulsar service.", e);
+      throw new RuntimeException("Pulsar Client is unable to subscribe to the topic(" + topic + "), please check the service.", e);
     }
   }
 
   void close() throws PulsarClientException {
     PulsarClient maybe = result;
-    if (maybe != null) result.close();
+    if (maybe != null) {
+      result.close();
+      result = null;
+    }
   }
 }

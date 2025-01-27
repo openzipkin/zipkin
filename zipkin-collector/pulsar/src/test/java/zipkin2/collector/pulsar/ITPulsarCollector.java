@@ -99,7 +99,7 @@ public class ITPulsarCollector {
       collector = builder().serviceUrl("@zixin").build();
       collector.start();
     });
-    assertThat(exception.getMessage()).contains("Pulsar client create failed");
+    assertThat(exception.getMessage()).contains("Pulsar client creation failed");
   }
 
   /**
