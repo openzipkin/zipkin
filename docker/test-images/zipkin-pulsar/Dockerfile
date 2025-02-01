@@ -30,6 +30,6 @@ HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthche
 # However, pulsar-server has to start as root even if permissions are dropped
 # later. So, we expose it in the Dockerfile instead.
 ENV HEALTHCHECK_PORT=8080
-ENV HEALTHCHECK_KIND=tcp
+ENV HEALTHCHECK_KIND=http
 EXPOSE 8080 6650
 CMD ["bin/pulsar", "standalone"]
