@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-
 # Use latest from https://hub.docker.com/r/apachepulsar/pulsar/tags
 ARG pulsar_version=4.0.2
 
@@ -31,5 +30,7 @@ HEALTHCHECK --interval=1s --start-period=30s --timeout=5s CMD ["docker-healthche
 # later. So, we expose it in the Dockerfile instead.
 ENV HEALTHCHECK_PORT=8080
 ENV HEALTHCHECK_KIND=http
+ENV HEALTHCHECK_PATH=/admin/v2/clusters/standalone
+ENV PULSAR_LOG_ROOT_LEVEL=WARN
 EXPOSE 8080 6650
 CMD ["bin/pulsar", "standalone"]
