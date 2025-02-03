@@ -22,6 +22,7 @@ base layer `openzipkin/zipkin`, and setting up schema where relevant.
 * [ghcr.io/openzipkin/zipkin-eureka](test-images/zipkin-eureka/README.md) - runs Eureka
 * [ghcr.io/openzipkin/zipkin-kafka](test-images/zipkin-kafka/README.md) - runs both Kafka+ZooKeeper
 * [ghcr.io/openzipkin/zipkin-mysql](test-images/zipkin-mysql/README.md) - runs MySQL initialized with Zipkin's schema
+* [ghcr.io/openzipkin/zipkin-pulsar](test-images/zipkin-pulsar/README.md) - runs Pulsar
 * [ghcr.io/openzipkin/zipkin-rabbitmq](test-images/zipkin-rabbitmq/README.md) - runs RabbitMQ
 * [ghcr.io/openzipkin/zipkin-ui](test-images/zipkin-ui/README.md) - serves the (Lens) UI directly with NGINX
 
