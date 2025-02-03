@@ -69,6 +69,7 @@ jobs:
           - name: zipkin-collector-activemq
           - name: zipkin-collector-kafka
           - name: zipkin-collector-rabbitmq
+          - name: zipkin-collector-pulsar
           - name: zipkin-storage-cassandra
           - name: zipkin-storage-elasticsearch
           - name: zipkin-storage-mysql-v1

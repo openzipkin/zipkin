@@ -50,8 +50,8 @@ public class PulsarSpanConsumer implements Closeable {
         .topic(topic)
         .subscriptionType(SubscriptionType.Shared)
         .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
-        .messageListener(new ZipkinMessageListener<>(collector, metrics))
         .loadConf(consumerProps)
+        .messageListener(new ZipkinMessageListener<>(collector, metrics))
         .subscribe();
   }
 
@@ -66,6 +66,10 @@ public class PulsarSpanConsumer implements Closeable {
     }
   }
 
+  /**
+   * A message listener implementation for processing messages in a Pulsar consumer,
+   * and it should not be overridden by loadConf as it ensures that zipkin could handle span correctly.
+   */
   record ZipkinMessageListener<T>(Collector collector, CollectorMetrics metrics) implements MessageListener<T> {
 
     @Override public void received(Consumer<T> consumer, Message<T> msg) {

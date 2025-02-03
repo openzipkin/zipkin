@@ -57,7 +57,7 @@ public class PulsarExtension implements BeforeAllCallback, AfterAllCallback {
 
   static final class PulsarContainer extends GenericContainer<PulsarContainer> {
     PulsarContainer() {
-      super(parse("apachepulsar/pulsar:4.0.2"));
+      super(parse("ghcr.io/openzipkin/zipkin-pulsar:3.4.3"));
       withExposedPorts(BROKER_PORT, BROKER_HTTP_PORT);
       String cmd = "/pulsar/bin/apply-config-from-env.py /pulsar/conf/standalone.conf " +
           "&& bin/pulsar standalone " +
