@@ -453,6 +453,60 @@ $ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
     java -Dzipkin.collector.kafka.overrides.auto.offset.reset=latest -jar zipkin.jar
 ```
 
+
+### Pulsar Collector
+The Pulsar collector is enabled when `PULSAR_SERVICE_URL` is set to
+a v4.x+ server. The following settings apply in this case.
+Some settings correspond to "New Client Configs" in [Pulsar client properties](https://github.com/apache/pulsar/blob/master/pulsar-client/src/main/java/org/apache/pulsar/client/impl/conf/ClientConfigurationData.java)
+and "New Consumer Configs" in [Pulsar consumer properties](https://github.com/apache/pulsar/blob/master/pulsar-client/src/main/java/org/apache/pulsar/client/impl/conf/ConsumerConfigurationData.java).
+
+| Variable                   | Property                                    | Description                                                                    |
+|----------------------------|---------------------------------------------|--------------------------------------------------------------------------------|
+| `COLLECTOR_PULSAR_ENABLED` | `zipkin.collector.pulsar.enabled`           | `false` disables the Pulsar collector. Defaults to `true`.                     |
+| `PULSAR_SERVICE_URL`       | `zipkin.collector.pulsar.service-url`       | The service URL for the Pulsar client ex. pulsar://my-broker:6650. No default. |
+| `PULSAR_TOPIC`             | `zipkin.collector.pulsar.topic`             | Queue zipkin spans will be consumed from. Defaults to "zipkin".                |
+| `PULSAR_SUBSCRIPTION_NAME` | `zipkin.collector.pulsar.subscription-name` | Specify the subscription name for this consumer. No default.                   |
+| `PULSAR_CONCURRENCY`       | `zipkin.collector.pulsar.concurrency`       | Count of concurrent message consumers on the topic. Defaults to 1              |
+
+Example usage:
+
+```bash
+$ PULSAR_SERVICE_URL=pulsar://localhost:6650 \
+    java -jar zipkin.jar
+```
+
+
+#### Other Pulsar client properties
+You may need to set other
+[Pulsar client properties](https://github.com/apache/pulsar/blob/master/pulsar-client/src/main/java/org/apache/pulsar/client/impl/conf/ClientConfigurationData.java), in
+addition to the ones with explicit properties defined by the collector. In this case, you need to
+prefix that property name with `zipkin.collector.pulsar.client-props` and pass it as a system property
+argument.
+
+For example, to set `num.io.threads`, you can set a system property named
+`zipkin.collector.pulsar.client-props.numIoThreads`:
+
+```bash
+$ PULSAR_SERVICE_URL=pulsar://localhost:6650 \
+    java -Dzipkin.collector.pulsar.client-props.numIoThreads=20 -jar zipkin.jar
+```
+
+
+#### Other Pulsar consumer properties
+You may need to set other
+[Pulsar consumer properties](https://github.com/apache/pulsar/blob/master/pulsar-client/src/main/java/org/apache/pulsar/client/impl/conf/ConsumerConfigurationData.java), in
+addition to the ones with explicit properties defined by the collector. In this case, you need to
+prefix that property name with `zipkin.collector.pulsar.consumer-props` and pass it as a system property
+argument.
+
+For example, to set `receiver.queue.size`, you can set a system property named
+`zipkin.collector.pulsar.consumer-props.receiverQueueSize`:
+
+```bash
+$ PULSAR_SERVICE_URL=pulsar://localhost:6650 \
+    java -Dzipkin.collector.pulsar.consumer-props.receiverQueueSize=2000 -jar zipkin.jar
+```
+
 #### Detailed examples
 
 Example targeting Kafka running in Docker:

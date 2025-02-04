@@ -59,6 +59,16 @@ zipkin:
       enabled: ${COLLECTOR_SCRIBE_ENABLED:${SCRIBE_ENABLED:false}}
       category: ${SCRIBE_CATEGORY:zipkin}
       port: ${COLLECTOR_PORT:9410}
+    pulsar:
+      enabled: ${COLLECTOR_PULSAR_ENABLED:true}
+      # The service URL for the Pulsar client ex. pulsar://my-broker:6650.
+      service-url: ${PULSAR_SERVICE_URL:}
+      # Queue zipkin spans will be consumed from.
+      topic: ${PULSAR_TOPIC:zipkin}
+      # Specify the subscription name for this consumer.
+      subscription-name: ${PULSAR_SUBSCRIPTION_NAME:zipkin}
+      # Number of concurrent span consumers.
+      concurrency: ${PULSAR_CONCURRENCY:1}
 
   discovery:
     eureka:

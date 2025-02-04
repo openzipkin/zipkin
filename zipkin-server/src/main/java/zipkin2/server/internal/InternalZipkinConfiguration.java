@@ -16,6 +16,7 @@ import zipkin2.server.internal.kafka.ZipkinKafkaCollectorConfiguration;
 import zipkin2.server.internal.mysql.ZipkinMySQLStorageConfiguration;
 import zipkin2.server.internal.prometheus.ZipkinMetricsController;
 import zipkin2.server.internal.prometheus.ZipkinPrometheusMetricsConfiguration;
+import zipkin2.server.internal.pulsar.ZipkinPulsarCollectorConfiguration;
 import zipkin2.server.internal.rabbitmq.ZipkinRabbitMQCollectorConfiguration;
 import zipkin2.server.internal.scribe.ZipkinScribeCollectorConfiguration;
 import zipkin2.server.internal.ui.ZipkinUiConfiguration;
@@ -35,7 +36,8 @@ import zipkin2.server.internal.ui.ZipkinUiConfiguration;
   ZipkinGrpcCollector.class,
   ZipkinActiveMQCollectorConfiguration.class,
   ZipkinKafkaCollectorConfiguration.class,
-  ZipkinRabbitMQCollectorConfiguration.class,
+  ZipkinRabbitMQCollectorConfiguration.class, 
+  ZipkinPulsarCollectorConfiguration.class,
   ZipkinMetricsController.class,
   ZipkinHealthController.class,
   ZipkinPrometheusMetricsConfiguration.class,
