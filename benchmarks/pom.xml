@@ -90,7 +90,7 @@
     <dependency>
       <groupId>com.squareup.moshi</groupId>
       <artifactId>moshi</artifactId>
-      <version>1.15.1</version>
+      <version>1.15.2</version>
       <exclusions>
         <!-- let wire control the okio version -->
         <exclusion>
@@ -111,7 +111,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.25.3</version>
+      <version>3.25.6</version>
       <scope>test</scope>
     </dependency>
 

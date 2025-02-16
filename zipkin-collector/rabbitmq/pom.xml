@@ -20,7 +20,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <amqp-client.version>5.21.0</amqp-client.version>
+    <amqp-client.version>5.25.0</amqp-client.version>
   </properties>
 
   <dependencies>

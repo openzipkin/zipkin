@@ -29,31 +29,28 @@ const renderUiConfig = async () => {
 
 describe('<UiConfig />', () => {
   it('fetches config, suspends until response, renders after response', async () => {
-    const config = { defaultLookback: 100 };
-    Object.keys(defaultConfig).forEach((key) => {
-      config[key] = config[key] || defaultConfig[key];
-    });
+    // Prepare the expected config object
+    const config = { ...defaultConfig, defaultLookback: 100 };
     const configJson = JSON.stringify(config);
 
+    // Create a promise that can be resolved later
     let resolve;
-    const configPromise = new Promise((r) => {
-      resolve = r;
-      return undefined;
-    });
+    const configPromise = new Promise((r) => (resolve = r));
     const fetchSpy = vi
       .spyOn(global, 'fetch')
       .mockImplementationOnce(() => configPromise);
 
+    // Render component and check suspension state
     await renderUiConfig();
-    expect(screen.getAllByText('Suspended')).length(1);
-
+    expect(screen.getByText('Suspended')).not.toBeNull();
     expect(fetchSpy).toHaveBeenCalledWith(UI_CONFIG);
 
     resolve(new Response(configJson));
     // We need to get off the processing loop to allow the promise to complete and resolve the
     // config.
-    await new Promise((resolve) => setTimeout(resolve, 1));
+    await new Promise((res) => setTimeout(res, 10));
 
-    expect(screen.getByText(JSON.stringify(config))).toBeDefined();
+    // Check that the expected JSON is rendered
+    expect(screen.getByText(configJson)).not.toBeNull();
   });
 });

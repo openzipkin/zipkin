@@ -42,35 +42,35 @@
 
     <!-- override to set exclusions per-project -->
     <errorprone.args />
-    <errorprone.version>2.29.2</errorprone.version>
+    <errorprone.version>2.36.0</errorprone.version>
 
     <zipkin-proto3.version>1.0.0</zipkin-proto3.version>
 
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
     <armeria.version>1.31.3</armeria.version>
     <!-- Match Armeria version to avoid conflicts including running tests in the IDE -->
-    <netty.version>4.1.116.Final</netty.version>
+    <netty.version>4.1.118.Final</netty.version>
 
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
     <jackson.version>2.18.2</jackson.version>
 
-    <java-driver.version>4.18.1</java-driver.version>
-    <micrometer.version>1.14.2</micrometer.version>
+    <java-driver.version>4.19.0</java-driver.version>
+    <micrometer.version>1.14.4</micrometer.version>
 
     <!-- Used for Generated annotations -->
     <javax-annotation-api.version>1.3.2</javax-annotation-api.version>
 
     <!-- update together -->
-    <spring-boot.version>3.4.1</spring-boot.version>
-    <spring.version>6.2.1</spring.version>
+    <spring-boot.version>3.4.2</spring-boot.version>
+    <spring.version>6.2.3</spring.version>
 
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
 
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
-    <mariadb-java-client.version>3.5.1</mariadb-java-client.version>
-    <HikariCP.version>5.1.0</HikariCP.version>
+    <mariadb-java-client.version>3.5.2</mariadb-java-client.version>
+    <HikariCP.version>6.2.1</HikariCP.version>
     <slf4j.version>2.0.16</slf4j.version>
     <auto-value.version>1.11.0</auto-value.version>
     <git-commit-id.version>4.9.10</git-commit-id.version>
@@ -78,14 +78,14 @@
     <!-- Test only dependencies -->
     <junit-jupiter.version>5.11.4</junit-jupiter.version>
     <mockito.version>5.15.2</mockito.version>
-    <assertj.version>3.27.2</assertj.version>
+    <assertj.version>3.27.3</assertj.version>
     <awaitility.version>4.2.2</awaitility.version>
-    <testcontainers.version>1.20.2</testcontainers.version>
+    <testcontainers.version>1.20.4</testcontainers.version>
     <okhttp.version>4.12.0</okhttp.version>
     <kryo.version>5.6.2</kryo.version>
     <!-- Only used for proto interop testing; wire-maven-plugin is usually behind latest. -->
     <wire.version>5.1.0</wire.version>
-    <gson.version>2.11.0</gson.version>
+    <gson.version>2.12.1</gson.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
     <license.skip>${skipTests}</license.skip>
@@ -95,22 +95,22 @@
     <!-- TODO: cleanup any redundant ignores now also in the 4.0 release (once final) -->
     <license-maven-plugin.version>4.6</license-maven-plugin.version>
     <maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
-    <maven-bundle-plugin.version>5.1.9</maven-bundle-plugin.version>
+    <maven-bundle-plugin.version>6.0.0</maven-bundle-plugin.version>
     <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
     <!-- Use same version as https://github.com/openzipkin/docker-java -->
     <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
-    <maven-enforcer-plugin.version>3.4.1</maven-enforcer-plugin.version>
+    <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
     <!-- Use same version as https://github.com/openzipkin/docker-java -->
     <maven-help-plugin.version>3.5.1</maven-help-plugin.version>
-    <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
-    <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
-    <maven-jar-plugin.version>3.4.1</maven-jar-plugin.version>
-    <maven-release-plugin.version>3.0.1</maven-release-plugin.version>
-    <maven-shade-plugin.version>3.5.3</maven-shade-plugin.version>
+    <maven-install-plugin.version>3.1.3</maven-install-plugin.version>
+    <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+    <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
+    <maven-release-plugin.version>3.1.1</maven-release-plugin.version>
+    <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
-    <maven-surefire-plugin.version>3.5.1</maven-surefire-plugin.version>
-    <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
+    <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
+    <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <wire-maven-plugin.version>1.3</wire-maven-plugin.version>
   </properties>
 
@@ -608,7 +608,7 @@
     <profile>
       <id>error-prone-17+</id>
       <activation>
-        <!-- Only LTS versions -->
+        <!-- Only LTS versions that work with errorprone -->
         <jdk>[17,18),[21,22)</jdk>
       </activation>
       <build>
@@ -633,8 +633,9 @@
                   <forceJavacCompilerUse>true</forceJavacCompilerUse>
                   <compilerArgs>
                     <arg>-XDcompilePolicy=simple</arg>
+                    <arg>--should-stop=ifError=FLOW</arg>
                     <arg>-Xplugin:ErrorProne ${errorprone.args}</arg>
-                    <!-- below needed for JDK16+ per https://errorprone.info/docs/installation -->
+                    <!-- below needed per https://errorprone.info/docs/installation -->
                     <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
                     <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
                     <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
