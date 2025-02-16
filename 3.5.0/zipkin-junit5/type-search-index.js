@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"zipkin2.junit5","l":"HttpFailure"},{"p":"zipkin2.junit5","l":"ZipkinExtension"}];updateSearchResults();
