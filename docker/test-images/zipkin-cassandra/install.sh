@@ -53,7 +53,7 @@ cat > pom.xml <<-'EOF'
       <artifactId>jna</artifactId>
       <version>5.16.0</version>
     </dependency>
-    <!-- Use latest to work with JRE 21 -->
+    <!-- Use latest to work with JRE 21 per CASSANDRA-18329 -->
     <dependency>
       <groupId>com.github.jbellis</groupId>
       <artifactId>jamm</artifactId>
@@ -73,10 +73,12 @@ mvn -q --batch-mode -DoutputDirectory=lib \
     org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy-dependencies
 rm pom.xml
 
-# Patch Cassandra 4.1's ObjectSizes.java to work with newer jamm.
+# Get a version of ObjectSizes.java that compiles with jamm 0.4.0
 wget --random-wait --tries=5 -qO ObjectSizes.java \
   https://raw.githubusercontent.com/apache/cassandra/refs/tags/cassandra-5.0.3/src/java/org/apache/cassandra/utils/ObjectSizes.java
+# Rename a public method back to the same name as used in Cassandra 4.1.
 sed -i 's/sizeOnHeapExcludingDataOf/sizeOnHeapExcludingData/g' ObjectSizes.java
+# Compile it into classes, which overrides the same class from Cassandra 4.1.
 javac -cp 'lib/*' -d classes ObjectSizes.java
 
 # Make sure you use relative paths in references like this, so that installation
