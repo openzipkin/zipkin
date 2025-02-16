@@ -8,7 +8,7 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/java
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG java_version=21.0.5_p11
+ARG java_version=21.0.6_p7
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -23,7 +23,7 @@ FROM ghcr.io/openzipkin/java:${java_version} as install
 WORKDIR /install
 
 # Use latest version from https://activemq.apache.org/components/classic/download/
-ARG activemq_version=6.1.4
+ARG activemq_version=6.1.5
 
 # Download the distribution
 RUN \
@@ -37,7 +37,7 @@ https://archive.apache.org/dist/activemq/${activemq_version}/apache-activemq-${a
 # which isn't in our JRE.
 FROM ghcr.io/openzipkin/java:${java_version} as zipkin-activemq
 LABEL org.opencontainers.image.description="ActiveMQ Classic on OpenJDK and Alpine Linux"
-ARG activemq_version=6.1.4
+ARG activemq_version=6.1.5
 LABEL activemq-version=$activemq_version
 
 # Add HEALTHCHECK and ENTRYPOINT scripts into the default search path
