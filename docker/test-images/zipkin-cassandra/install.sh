@@ -47,7 +47,7 @@ cat > pom.xml <<-'EOF'
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>5.15.0</version>
+      <version>5.16.0</version>
     </dependency>
     <!-- log4j not logback -->
     <dependency>
@@ -116,8 +116,8 @@ sed -i '/read_repair_chance/d' schema
 #
 # Merging makes adding Cassandra v5 easier and lets us share a common JRE 17+
 # with other test images even if Cassandra v4 will never officially support it.
-# https://github.com/apache/cassandra/blob/cassandra-4.0.11/conf/jvm11-server.options
-# https://github.com/apache/cassandra/blob/cassandra-5.0/conf/jvm17-server.options
+# https://github.com/apache/cassandra/blob/cassandra-4.1.7/conf/jvm11-server.options
+# https://github.com/apache/cassandra/blob/cassandra-5.0.3/conf/jvm17-server.options
 #
 # Finally, we allow security manager to prevent JRE 21 crashing when Cassandra
 # attempts ThreadAwareSecurityManager.install()
