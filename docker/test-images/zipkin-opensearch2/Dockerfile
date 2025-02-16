@@ -8,7 +8,7 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/java
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG java_version=21.0.5_p11
+ARG java_version=21.0.6_p7
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -26,7 +26,7 @@ WORKDIR /install
 # Use latest 2.x version from https://opensearch.org/downloads.html
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG opensearch2_version=2.18.0
+ARG opensearch2_version=2.19.0
 
 # Download only the OSS distribution (lacks X-Pack)
 RUN \
@@ -41,7 +41,7 @@ COPY --from=scratch /config/ ./config/
 # production -jre base layer used by zipkin and zipkin-slim.
 FROM ghcr.io/openzipkin/java:${java_version} as zipkin-opensearch2
 LABEL org.opencontainers.image.description="OpenSearch distribution on OpenJDK and Alpine Linux"
-ARG opensearch2_version=2.18.0
+ARG opensearch2_version=2.19.0
 LABEL opensearch-version=$opensearch2_version
 
 # The full license is also included in the image at /opensearch/LICENSE.txt.

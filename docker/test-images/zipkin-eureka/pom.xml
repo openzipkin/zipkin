@@ -29,7 +29,7 @@
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
-        <version>3.4.1</version>
+        <version>3.4.2</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -37,7 +37,7 @@
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>33.3.1-jre</version>
+        <version>33.4.0-jre</version>
       </dependency>
       <dependency>
         <groupId>com.thoughtworks.xstream</groupId>
@@ -73,7 +73,7 @@
     <dependency>
       <groupId>com.amazon.ion</groupId>
       <artifactId>ion-java</artifactId>
-      <version>1.11.9</version>
+      <version>1.11.10</version>
     </dependency>
 
     <!-- Get rid of log warning saying to use Caffeine -->

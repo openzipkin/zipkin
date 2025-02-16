@@ -14,7 +14,7 @@ services:
   # Use fixed service and container name 'sut; so our test script can copy/pasta
   sut:
     container_name: sut
-    image: ghcr.io/openzipkin/alpine:3.20.3
+    image: ghcr.io/openzipkin/alpine:3.21.2
     entrypoint: /bin/sh
     # Keep the container running until HEALTHCHECK passes
     command: "-c \"sleep 5m\""
