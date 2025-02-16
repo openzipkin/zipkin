@@ -76,7 +76,7 @@
     "redux-thunk": "^2.3.0",
     "shortid": "^2.2.14",
     "styled-components": "^5.1.1",
-    "vitest": "^1.2.2",
+    "vitest": "^1.6.1",
     "vizceral-react": "^4.6.5"
   },
   "scripts": {
