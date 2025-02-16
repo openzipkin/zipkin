@@ -34,6 +34,10 @@ cat > pom.xml <<-'EOF'
           <artifactId>*</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>com.github.jbellis</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>*</artifactId>
         </exclusion>
@@ -49,6 +53,12 @@ cat > pom.xml <<-'EOF'
       <artifactId>jna</artifactId>
       <version>5.16.0</version>
     </dependency>
+    <!-- Use latest to work with JRE 21 -->
+    <dependency>
+      <groupId>com.github.jbellis</groupId>
+      <artifactId>jamm</artifactId>
+      <version>0.4.0</version>
+    </dependency>
     <!-- log4j not logback -->
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -62,6 +72,12 @@ mvn -q --batch-mode -DoutputDirectory=lib \
     -Dcassandra.version=${CASSANDRA_VERSION} \
     org.apache.maven.plugins:maven-dependency-plugin:3.8.1:copy-dependencies
 rm pom.xml
+
+# Patch Cassandra 4.1's ObjectSizes.java to work with newer jamm.
+wget --random-wait --tries=5 -qO ObjectSizes.java \
+  https://raw.githubusercontent.com/apache/cassandra/refs/tags/cassandra-5.0.3/src/java/org/apache/cassandra/utils/ObjectSizes.java
+sed -i 's/sizeOnHeapExcludingDataOf/sizeOnHeapExcludingData/g' ObjectSizes.java
+javac -cp 'lib/*' -d classes ObjectSizes.java
 
 # Make sure you use relative paths in references like this, so that installation
 # is decoupled from runtime
@@ -116,7 +132,7 @@ sed -i '/read_repair_chance/d' schema
 #
 # Merging makes adding Cassandra v5 easier and lets us share a common JRE 17+
 # with other test images even if Cassandra v4 will never officially support it.
-# https://github.com/apache/cassandra/blob/cassandra-4.1.7/conf/jvm11-server.options
+# https://github.com/apache/cassandra/blob/cassandra-4.1.8/conf/jvm11-server.options
 # https://github.com/apache/cassandra/blob/cassandra-5.0.3/conf/jvm17-server.options
 #
 # Finally, we allow security manager to prevent JRE 21 crashing when Cassandra
