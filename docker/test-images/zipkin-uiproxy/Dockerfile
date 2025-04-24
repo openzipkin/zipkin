@@ -28,7 +28,7 @@ COPY docker/test-images/zipkin-uiproxy/nginx.conf /conf.d/zipkin.conf.template
 FROM ghcr.io/openzipkin/alpine:$alpine_version as zipkin-uiproxy
 LABEL org.opencontainers.image.description="NGINX on Alpine Linux proxying the Zipkin UI with proxy_pass"
 # Use latest from https://pkgs.alpinelinux.org/packages?name=nginx
-ARG nginx_version=1.26.3-r4
+ARG nginx_version=1.28.0-r0
 LABEL nginx-version=$nginx_version
 
 ENV ZIPKIN_UI_BASEPATH=/zipkin
