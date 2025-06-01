@@ -10,7 +10,7 @@
 
   <groupId>io.zipkin</groupId>
   <artifactId>zipkin-parent</artifactId>
-  <version>3.5.2-SNAPSHOT</version>
+  <version>3.6.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -55,14 +55,14 @@
     <jackson.version>2.18.3</jackson.version>
 
     <java-driver.version>4.19.0</java-driver.version>
-    <micrometer.version>1.14.5</micrometer.version>
+    <micrometer.version>1.15.0</micrometer.version>
 
     <!-- Used for Generated annotations -->
     <javax-annotation-api.version>1.3.2</javax-annotation-api.version>
 
     <!-- update together -->
-    <spring-boot.version>3.4.5</spring-boot.version>
-    <spring.version>6.2.6</spring.version>
+    <spring-boot.version>3.5.0</spring-boot.version>
+    <spring.version>6.2.7</spring.version>
 
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
@@ -76,11 +76,12 @@
     <git-commit-id.version>4.9.10</git-commit-id.version>
 
     <!-- Test only dependencies -->
-    <junit-jupiter.version>5.12.2</junit-jupiter.version>
-    <mockito.version>5.17.0</mockito.version>
+    <junit-jupiter.version>5.13.0</junit-jupiter.version>
+    <junit-platform-laucher.version>1.13.0</junit-platform-laucher.version>
+    <mockito.version>5.18.0</mockito.version>
     <assertj.version>3.27.3</assertj.version>
     <awaitility.version>4.3.0</awaitility.version>
-    <testcontainers.version>1.20.6</testcontainers.version>
+    <testcontainers.version>1.21.1</testcontainers.version>
     <okhttp.version>4.12.0</okhttp.version>
     <kryo.version>5.6.2</kryo.version>
     <!-- Only used for proto interop testing; wire-maven-plugin is usually behind latest. -->
@@ -189,7 +190,12 @@
       <version>${junit-jupiter.version}</version>
       <scope>test</scope>
     </dependency>
-
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <version>${junit-platform-laucher.version}</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
