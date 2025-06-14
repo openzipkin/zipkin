@@ -106,7 +106,6 @@ zipkin:
         - org.springframework.boot.actuate.autoconfigure.context.properties.ConfigurationPropertiesReportEndpointAutoConfiguration
         - org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration
         - org.springframework.boot.actuate.autoconfigure.env.EnvironmentEndpointAutoConfiguration
-        - org.springframework.boot.actuate.autoconfigure.management.HeapDumpWebEndpointAutoConfiguration
         - org.springframework.boot.actuate.autoconfigure.logging.LoggersEndpointAutoConfiguration
         - org.springframework.boot.actuate.autoconfigure.management.ThreadDumpEndpointAutoConfiguration
 
@@ -232,6 +231,7 @@ spring:
     # NOTE: These exclusions can drift between Spring Boot minor versions. Audit accordingly.
     # Ex. curl -s localhost:9411/actuator/beans|jq '.contexts.application.beans|keys_unsorted[]'|sort
     exclude:
+      - org.springframework.boot.actuate.autoconfigure.management.HeapDumpWebEndpointAutoConfiguration
       # JMX is disabled
       - org.springframework.boot.actuate.autoconfigure.endpoint.jmx.JmxEndpointAutoConfiguration
       # /health and /actuator/health served directly by Armeria
