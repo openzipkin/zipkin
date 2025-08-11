@@ -52,7 +52,7 @@ RUN if [ "${RELEASE_FROM_MAVEN_BUILD}" == "false" ]; then /build-bin/maybe_insta
 FROM ghcr.io/openzipkin/alpine:$alpine_version as zipkin-ui
 LABEL org.opencontainers.image.description="NGINX on Alpine Linux hosting the Zipkin UI with Zipkin API proxy_pass"
 # Use latest from https://pkgs.alpinelinux.org/packages?name=nginx
-ARG nginx_version=1.28.0-r4
+ARG nginx_version=1.28.0-r5
 LABEL nginx-version=$nginx_version
 
 ENV ZIPKIN_BASE_URL=http://zipkin:9411

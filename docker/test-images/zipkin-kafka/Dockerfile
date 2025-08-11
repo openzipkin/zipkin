@@ -25,7 +25,7 @@ FROM ghcr.io/openzipkin/java:${java_version} as install
 #
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG kafka_version=3.9.0
+ARG kafka_version=3.9.1
 ENV KAFKA_VERSION=$kafka_version
 # Note: Scala 2.13+ supports JRE 14
 ARG scala_version=2.13
