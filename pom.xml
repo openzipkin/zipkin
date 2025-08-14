@@ -47,9 +47,9 @@
     <zipkin-proto3.version>1.0.0</zipkin-proto3.version>
 
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>1.33.0</armeria.version>
+    <armeria.version>1.33.1</armeria.version>
     <!-- Match Armeria version to avoid conflicts including running tests in the IDE -->
-    <netty.version>4.2.3.Final</netty.version>
+    <netty.version>4.2.4.Final</netty.version>
 
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
     <jackson.version>2.19.2</jackson.version>
@@ -62,7 +62,7 @@
 
     <!-- update together -->
     <spring-boot.version>3.5.4</spring-boot.version>
-    <spring.version>6.2.9</spring.version>
+    <spring.version>6.2.10</spring.version>
 
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
