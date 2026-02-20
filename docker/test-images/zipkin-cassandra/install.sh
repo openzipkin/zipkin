@@ -205,12 +205,7 @@ python3 -m venv .venv
 . .venv/bin/activate
 python3 -m ensurepip --upgrade
 pip install --upgrade pip setuptools wheel
-# Download and patch cassandra-driver to remove broken ez_setup.py
-# Download and patch cassandra-driver to remove broken ez_setup.py
-git clone https://github.com/apache/cassandra-python-driver --branch 3.29.3
-sed -i '/^from ez_setup/d; /^import ez_setup/d; /^use_setuptools/d; /ez_setup\.use_setuptools/d' cassandra-python-driver/setup.py
-pip install --no-build-isolation cassandra-python-driver/
-rm -rf cassandra-python-driver
+pip install -Iq git+https://github.com/apache/cassandra-python-driver@trunk
 pip install cqlsh
 cql() {
   cqlsh "$@" 127.0.0.1 ${temp_native_transport_port}
