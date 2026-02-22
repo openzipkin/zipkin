@@ -205,6 +205,7 @@ python3 -m venv .venv
 . .venv/bin/activate
 python3 -m ensurepip --upgrade
 pip install --upgrade pip setuptools wheel
+# Installing from trunk since released versions have dependency on old setup tools
 pip install -Iq git+https://github.com/apache/cassandra-python-driver@trunk
 pip install cqlsh
 cql() {
