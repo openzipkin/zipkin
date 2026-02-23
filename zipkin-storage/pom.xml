@@ -27,6 +27,7 @@
     <module>cassandra</module>
     <module>mysql-v1</module>
     <module>elasticsearch</module>
+    <module>clickhouse</module>
   </modules>
 
   <dependencies>

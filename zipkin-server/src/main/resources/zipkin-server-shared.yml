@@ -164,6 +164,11 @@ zipkin:
         enabled: ${ES_HEALTH_CHECK_ENABLED:true}
         interval: ${ES_HEALTH_CHECK_INTERVAL:3s}
       template-priority: ${ES_TEMPLATE_PRIORITY:}
+    clickhouse:
+      host: ${CH_HOST:localhost}
+      port: ${CH_PORT:8123}
+      username: ${CH_USERNAME:zipkin}
+      password: ${CH_PASSWORD:zipkin}
     mysql:
       jdbc-url: ${MYSQL_JDBC_URL:}
       host: ${MYSQL_HOST:localhost}

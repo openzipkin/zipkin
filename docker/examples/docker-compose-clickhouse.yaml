@@ -1,0 +1,74 @@
+#
+# Copyright The OpenZipkin Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# This file uses the version 2 docker compose file format, described here:
+# https://docs.docker.com/compose/compose-file/#version-2
+#
+# This runs the zipkin and zipkin-mysql containers, using docker-compose's
+# default networking to wire the containers together.
+#
+# Note that this file is meant for learning Zipkin, not production deployments.
+
+version: '3.8'
+
+services:
+  clickho use:
+    image: clickhouse/clickhouse-server:latest
+    container_name: zipkin-clickhouse
+    ports:
+      - "8123:8123"   # HTTP interface
+      - "9000:9000"   # Native TCP
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./clickhouse/init:/docker-entrypoint-initdb.d
+    environment:
+      CLICKHOUSE_DB: zipkin
+      CLICKHOUSE_USER: zipkin
+      CLICKHOUSE_PASSWORD: zipkin
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+volumes:
+  clickhouse_data:
+
+#  storage:
+#    image: ghcr.io/openzipkin/zipkin-mysql:${TAG:-latest}
+#    container_name: mysql
+#    # Uncomment to expose the storage port for testing
+#    ports:
+#      - 3306:3306
+#
+#  # Use MySQL instead of in-memory storage
+#  zipkin:
+#    extends:
+#      file: docker-compose.yml
+#      service: zipkin
+#    # slim doesn't include MySQL support, so switch to the larger image
+#    image: ghcr.io/openzipkin/zipkin:${TAG:-latest}
+#    environment:
+#      - STORAGE_TYPE=mysql
+#      - MYSQL_HOST=storage
+#      # Add the baked-in username and password for the zipkin-mysql image
+#      - MYSQL_USER=zipkin
+#      - MYSQL_PASS=zipkin
+#    depends_on:
+#      storage:
+#        condition: service_healthy
+#
+#  dependencies:
+#    extends:
+#      file: docker-compose-dependencies.yml
+#      service: dependencies
+#    environment:
+#      - STORAGE_TYPE=mysql
+#      - MYSQL_HOST=storage
+#      # Add the baked-in username and password for the zipkin-mysql image
+#      - MYSQL_USER=zipkin
+#      - MYSQL_PASS=zipkin
+#    depends_on:
+#      storage:
+#        condition: service_healthy

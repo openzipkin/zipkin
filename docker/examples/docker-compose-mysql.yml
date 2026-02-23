@@ -18,8 +18,8 @@ services:
     image: ghcr.io/openzipkin/zipkin-mysql:${TAG:-latest}
     container_name: mysql
     # Uncomment to expose the storage port for testing
-    # ports:
-    #   - 3306:3306
+    ports:
+      - 3306:3306
 
   # Use MySQL instead of in-memory storage
   zipkin:
