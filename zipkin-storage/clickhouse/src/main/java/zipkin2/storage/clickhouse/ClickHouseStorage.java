@@ -46,8 +46,6 @@ public class ClickHouseStorage extends StorageComponent {
     return client;
   }
 
-
-
   public static class Builder {
 
     private String host;

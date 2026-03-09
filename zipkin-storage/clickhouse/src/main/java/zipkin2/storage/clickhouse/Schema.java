@@ -1,7 +1,6 @@
 package zipkin2.storage.clickhouse;
 
 import com.clickhouse.client.api.Client;
-import com.clickhouse.client.api.command.CommandSettings;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;

@@ -6,7 +6,6 @@ import zipkin2.storage.clickhouse.ClickHouseStorage;
 @ConfigurationProperties("zipkin.storage.clickhouse")
 class ZipkinClickhouseStorageProperties {
 
-  private String keyspace = "zipkin2";
   private String database = "zipkin";
   private String host = "localhost";
   private int port = 8123;
