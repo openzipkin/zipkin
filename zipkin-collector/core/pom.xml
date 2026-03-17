@@ -30,7 +30,7 @@
     <dependency>
       <groupId>com.github.valfirst</groupId>
       <artifactId>slf4j-test</artifactId>
-      <version>3.0.1</version>
+      <version>3.0.3</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

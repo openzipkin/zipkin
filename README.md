@@ -2,7 +2,7 @@
 
 [![Gitter chat](http://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin)
 [![Build Status](https://github.com/openzipkin/zipkin/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/openzipkin/zipkin/actions?query=workflow%3Atest+branch%3Amaster)
-[![Maven Central](https://img.shields.io/maven-central/v/io.zipkin/zipkin-server.svg)](https://search.maven.org/search?q=g:io.zipkin%20AND%20a:zipkin-server)
+[![Maven Central](https://img.shields.io/maven-central/v/io.zipkin/zipkin-server.svg)](https://central.sonatype.com/search?q=zipkin&namespace=io.zipkin&name=zipkin-server)
 
 [Zipkin](https://zipkin.io) is a distributed tracing system. It helps gather
 timing data needed to troubleshoot latency problems in service architectures.
@@ -30,7 +30,7 @@ Apache Cassandra or Elasticsearch.
 
 ## Quick-start
 
-The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin&a=zipkin-server&v=LATEST&c=exec) as a self-contained
+The quickest way to get started is to fetch the [latest released server](https://central.sonatype.com/search?q=zipkin&namespace=io.zipkin&name=zipkin-server&sort=published) as a self-contained
 executable jar. Note that the Zipkin server requires minimum JRE 17+. For example:
 
 ```bash
