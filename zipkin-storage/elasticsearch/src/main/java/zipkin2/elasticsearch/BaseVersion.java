@@ -69,10 +69,13 @@ public abstract class BaseVersion {
         if (enterPath(parser, "version") != null) {
           while (parser.nextToken() != null) {
             if (parser.currentToken() == JsonToken.VALUE_STRING) {
-              if (parser.currentName() == "distribution") {
-                distribution = parser.getText();
-              } else if (parser.currentName() == "number") {
-                version = parser.getText();
+              switch (parser.currentName()) {
+                case "distribution":
+                  distribution = parser.getText();
+                  break;
+                case "number":
+                  version = parser.getText();
+                  break;
               }
             }
           }
