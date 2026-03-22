@@ -6,14 +6,14 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/alpine
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG alpine_version=3.21.3
+ARG alpine_version=3.23.3
 
 # java_version is used during the installation process to build or download the zipkin-lens jar.
 #
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/java
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG java_version=21.0.7_p6
+ARG java_version=21.0.10_p7
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
@@ -52,7 +52,7 @@ RUN if [ "${RELEASE_FROM_MAVEN_BUILD}" == "false" ]; then /build-bin/maybe_insta
 FROM ghcr.io/openzipkin/alpine:$alpine_version as zipkin-ui
 LABEL org.opencontainers.image.description="NGINX on Alpine Linux hosting the Zipkin UI with Zipkin API proxy_pass"
 # Use latest from https://pkgs.alpinelinux.org/packages?name=nginx
-ARG nginx_version=1.28.2-r2
+ARG nginx_version=1.28.2
 LABEL nginx-version=$nginx_version
 
 ENV ZIPKIN_BASE_URL=http://zipkin:9411

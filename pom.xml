@@ -99,7 +99,7 @@
     <maven-bundle-plugin.version>6.0.0</maven-bundle-plugin.version>
     <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
     <!-- Use same version as https://github.com/openzipkin/docker-java -->
-    <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
+    <maven-dependency-plugin.version>3.10.0</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
     <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
     <!-- Use same version as https://github.com/openzipkin/docker-java -->
@@ -682,9 +682,6 @@
               <publishingServerId>central</publishingServerId>
               <autoPublish>true</autoPublish>
               <waitUntil>published</waitUntil>
-              <!-- Zipkin release is about ~100M mostly from the two server distributions. Default
-                   will timeout after 5 minutes, which can trigger fairly easily with this size. -->
-              <waitMaxTime>30</waitMaxTime>
             </configuration>
           </plugin>
 

@@ -3,9 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# uses 2.4 so we can use condition: service_healthy
-version: "2.4"
-
 services:
   zipkin:
     # Use last build of Zipkin instead of adding a matrix build dependency

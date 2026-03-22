@@ -3,9 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# uses 2.4 so we can use condition: service_healthy
-version: "2.4"
-
 services:
   zipkin:
     # Use last build of Zipkin instead of adding a matrix build dependency
@@ -14,7 +11,7 @@ services:
   # Use fixed service and container name 'sut; so our test script can copy/pasta
   sut:
     container_name: sut
-    image: ghcr.io/openzipkin/alpine:3.21.2
+    image: ghcr.io/openzipkin/alpine:3.23.3
     entrypoint: /bin/sh
     # Keep the container running until HEALTHCHECK passes
     command: "-c \"sleep 5m\""
