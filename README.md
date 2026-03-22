@@ -215,10 +215,10 @@ Server artifacts are under the maven group id `io.zipkin`
 Library artifacts are under the maven group id `io.zipkin.zipkin2`
 
 ### Library Releases
-Releases are at [Sonatype](https://oss.sonatype.org/content/repositories/releases) and [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.zipkin%22)
+Releases are at [Maven Central](https://central.sonatype.com/search?q=zipkin&namespace=io.zipkin)
 
 ### Library Snapshots
-Snapshots are uploaded to [Sonatype](https://oss.sonatype.org/content/repositories/snapshots) after
+Snapshots are uploaded to [Sonatype](https://central.sonatype.com/repository/maven-snapshots/) after
 commits to master.
 
 ### Docker Images

@@ -15,7 +15,7 @@
       <passphrase>${env.GPG_PASSPHRASE}</passphrase>
     </server>
     <server>
-      <id>ossrh</id>
+      <id>central</id>
       <username>${env.SONATYPE_USER}</username>
       <password>${env.SONATYPE_PASSWORD}</password>
     </server>

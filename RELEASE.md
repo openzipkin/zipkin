@@ -24,7 +24,7 @@ This repo uses semantic versions. Please keep this in mind when choosing version
    which creates commits, `MAJOR.MINOR.PATCH` tag, and increments the version (maven-release-plugin).
 
    The `MAJOR.MINOR.PATCH` tag triggers [`build-bin/deploy`](build-bin/deploy), which does the following:
-     * Publishes jars to https://oss.sonatype.org/content/repositories/releases [`build-bin/maven/maven_deploy`](build-bin/maven/maven_deploy)
+     * Publishes jars to Sonatype [`build-bin/maven/maven_deploy`](build-bin/maven/maven_deploy)
        * Later, the same jars synchronize to Maven Central
      * Publishes Javadoc to https://zipkin.io/brave into a versioned subdirectory
      * Pushes images to Docker registries [`build-bin/docker_push`](build-bin/docker_push)
@@ -39,7 +39,7 @@ look at the notes in [.github/workflows/deploy.yml] and check the [org secrets](
 
 ### Troubleshooting invalid credentials
 
-If you receive a '401 unauthorized' failure from OSSRH, it is likely
+If you receive a '401 unauthorized' failure from Sonatype, it is likely
 `SONATYPE_USER` or `SONATYPE_PASSWORD` entries are invalid, or possibly the
 user associated with them does not have rights to upload.
 
