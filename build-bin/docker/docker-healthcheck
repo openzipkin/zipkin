@@ -36,13 +36,11 @@ case ${kind} in
     path=${HEALTHCHECK_PATH:-/health}
     endpoint="http://${ip}:${port}${path}"
     # Use b3:0 to ensure health checks aren't traced
-    # Use timeout 1s (-T 1) as the health check interval is often 1s
-    out=$(wget -T 1 -qO- "${endpoint}" --header=b3:0 2>&1)
+    out=$(wget -qO- "${endpoint}" --header=b3:0 2>&1)
     rc=$?
     ;;
   tcp )
-    # Use timeout 1s (-w 1) as the health check interval is often 1s
-    out=$(nc -w 1 -z ${ip} ${port} 2>&1)
+    out=$(nc -z ${ip} ${port} 2>&1)
     rc=$?
     ;;
   * )

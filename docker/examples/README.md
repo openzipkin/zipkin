@@ -1,8 +1,7 @@
 # Zipkin Docker Examples
 
 This project is configured to run docker containers using
-[docker-compose](https://docs.docker.com/compose/). Note that the default
-configuration requires docker compose 1.6.0+ and docker-engine 1.10.0+.
+[docker-compose](https://docs.docker.com/compose/).
 
 To start the default docker compose configuration, run:
 

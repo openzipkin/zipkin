@@ -4,7 +4,7 @@
 #
 
 # Use latest from https://hub.docker.com/r/apachepulsar/pulsar/tags
-ARG pulsar_version=4.0.2
+ARG pulsar_version=4.0.9
 
 # We copy files from the context into a scratch container first to avoid a problem where docker and
 # docker compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.

@@ -3,9 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# uses 2.4 so we can use condition: service_healthy
-version: "2.4"
-
 # Test both authenticated and unauthenticated, as if there is a Spring problem,
 # the latter will crash. We only need to use HEALTHCHECK for this.
 services:

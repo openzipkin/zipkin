@@ -3,20 +3,16 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# This file uses the version 2 docker compose file format, described here:
-# https://docs.docker.com/compose/compose-file/#version-2
-#
 # This runs containers that collect data for our Grafana dashboard
 #
 # Note that this file is meant for learning Zipkin, not production deployments.
 
-version: '2.4'
 
 services:
   prometheus:
     # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     # Use latest from https://quay.io/repository/prometheus/prometheus?tab=tags
-    image: quay.io/prometheus/prometheus:v2.55.1
+    image: quay.io/prometheus/prometheus:v3.10.0
     container_name: prometheus
     ports:
       - 9090:9090
@@ -29,7 +25,7 @@ services:
   grafana:
     # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     # Use latest from https://quay.io/repository/giantswarm/grafana?tab=tags
-    image: quay.io/giantswarm/grafana:7.5.12
+    image: quay.io/giantswarm/grafana:11.6.7
     container_name: grafana
     ports:
       - 3000:3000
@@ -40,10 +36,9 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
 
   setup_grafana_datasource:
-    # This is an arbitrary small image that has curl installed
-    # Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
-    # Use latest from https://quay.io/repository/cilium/alpine-curl?tab=tags
-    image: quay.io/cilium/alpine-curl:v1.10.0
+    # This is a small Alpine-based image from the official curl project
+    # Use latest from https://quay.io/repository/curl/curl-base?tab=tags
+    image: quay.io/curl/curl-base:8.18.0
     container_name: setup_grafana_datasource
     depends_on:
       - grafana

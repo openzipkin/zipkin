@@ -12,13 +12,6 @@
 
 set -ue
 
-# Verify we are on an arch that can publish multi-arch images
-arch=$($(dirname "$0")/docker_arch)
-if [ "${arch}" != "amd64" ]; then
-  >&2 echo "multiarch/qemu-user-static doesn't support arch ${arch}"
-  exit 1
-fi
-
 # Enable experimental features on the server (multi-arch)
 echo '{ "experimental":true, "registry-mirrors": ["https://mirror.gcr.io"] }' | sudo tee /etc/docker/daemon.json
 
@@ -38,11 +31,9 @@ if [ -n "${DOCKERHUB_USER:-}" ]; then
 fi
 
 # Enable execution of different multi-architecture containers by QEMU and binfmt_misc
-# See https://github.com/multiarch/qemu-user-static
+# See https://github.com/tonistiigi/binfmt
 #
 # Mirrored image use to avoid docker.io pulls:
-# docker tag multiarch/qemu-user-static:7.2.0-1 ghcr.io/openzipkin/multiarch-qemu-user-static:latest
+# docker buildx imagetools create --tag ghcr.io/openzipkin/tonistiigi-binfmt-qemu:latest tonistiigi/binfmt:qemu-v10.2.1-65
 #
-# Note: This image only works on x86_64/amd64 architecture.
-# See: https://github.com/multiarch/qemu-user-static#supported-host-architectures
-docker run --rm --privileged ghcr.io/openzipkin/multiarch-qemu-user-static --reset -p yes
+docker run --privileged --rm ghcr.io/openzipkin/tonistiigi-binfmt-qemu --install all

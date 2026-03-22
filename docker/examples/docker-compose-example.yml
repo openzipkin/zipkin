@@ -5,7 +5,6 @@
 
 # Format version 2.1 was introduced with Docker Compose v1.9
 # We need Docker Compose v1.9+ for unset variable interpolation
-version: "2.1"
 
 services:
   # Generate traffic by hitting http://localhost:8081

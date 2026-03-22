@@ -3,15 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# This file uses the version 2 docker compose file format, described here:
-# https://docs.docker.com/compose/compose-file/#version-2
-#
 # This runs the zipkin slim container, using docker-compose's default networking
 # to wire other containers together.
 #
 # Note that this file is meant for learning Zipkin, not production deployments.
 
-version: '2.4'
 
 services:
   # The zipkin process services the UI, and also exposes a POST endpoint that

@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-version: '2.4'
 
 services:
   # Adds a cron to process spans since midnight every hour, and all spans each day
