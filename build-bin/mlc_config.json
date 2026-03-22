@@ -7,9 +7,6 @@
       "pattern": "https://stackoverflow.com/questions/tagged/spring-boot"
     },
     {
-      "pattern": "https://oss.sonatype.org/content/repositories/snapshots"
-    },
-    {
       "pattern": "http://localhost:9411/api/v[12]/spans"
     },
     {

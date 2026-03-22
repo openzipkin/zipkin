@@ -62,8 +62,8 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           # SONATYPE_USER=<sonatype account token>
           # * deploys snapshots and releases to Sonatype
-          # * needs access to io.zipkin via OSSRH-16669
-          # * generate via https://oss.sonatype.org/#profile;User%20Token
+          # * needs access to io.zipkin namespace
+          # * generate token at https://central.sonatype.com
           # * referenced in .settings.xml
           SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
           # SONATYPE_PASSWORD=<password to sonatype account token>

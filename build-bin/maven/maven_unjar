@@ -68,12 +68,6 @@ if ! test -f ${artifact_id}.jar && [ ${is_release} = "true" ]; then
   echo "*** Resolving ${qualified_jar} from Maven default repositories..."
   ${mvn_get} || true
 
-  # Don't add load to Sonatype releases repository except when central sync is delayed
-  if ! test -f ${local_repo_path}; then
-    echo "*** Resolving ${qualified_jar} from Maven Sonatype releases repository..."
-    ${mvn_get} -DremoteRepositories=https://oss.sonatype.org/content/repositories/releases
-  fi
-
   cp ${local_repo_path} ${artifact_id}.jar
 fi
 
