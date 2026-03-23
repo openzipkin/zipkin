@@ -4,7 +4,6 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -137,32 +136,20 @@ public final class SearchRequest {
     }
 
     static class Bounds {
-      final long from;
-      final Long to;
-      final boolean include_lower = true;
-      final boolean include_upper = true;
+      final long gte;
+      final Long lte;
 
-      Bounds(long from, Long to) {
-        this.from = from;
-        this.to = to;
+      Bounds(long gte, Long lte) {
+        this.gte = gte;
+        this.lte = lte;
       }
 
-      public long getFrom() {
-        return from;
+      public long getGte() {
+        return gte;
       }
 
-      public Long getTo() {
-        return to;
-      }
-
-      @JsonProperty("include_lower")
-      public boolean isIncludeLower() {
-        return include_lower;
-      }
-
-      @JsonProperty("include_upper")
-      public boolean isIncludeUpper() {
-        return include_upper;
+      public Long getLte() {
+        return lte;
       }
     }
   }

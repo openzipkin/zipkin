@@ -3,7 +3,7 @@
 This is a plugin to the Elasticsearch storage component, which uses
 HTTP by way of [Armeria](https://github.com/line/armeria) and
 [Jackson](https://github.com/FasterXML/jackson). This uses Elasticsearch 5+
-features, but is tested against Elasticsearch 7-8.x and OpenSearch 2.x.
+features, but is tested against Elasticsearch 8-9.x and OpenSearch 2.x.
 
 ## Multiple hosts
 Most users will supply a DNS name that's mapped to multiple A or AAAA
@@ -69,7 +69,7 @@ $ curl -s 'localhost:9200/zipkin*span-2017-08-11/_search?q=_q:error=500'
 The reason for special casing is around dotted name constraints. Tags
 are stored as a dictionary. Some keys include inconsistent number of dots
 (ex "error" and "error.message"). Elasticsearch / OpenSearch cannot index
-these as it inteprets them as fields, and dots in fields imply an object 
+these as it inteprets them as fields, and dots in fields imply an object
 path.
 
 ### Trace Identifiers

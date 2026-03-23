@@ -10,7 +10,7 @@ import static zipkin2.elasticsearch.ElasticsearchVersion.V6_0;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V6_7;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V7_0;
 import static zipkin2.elasticsearch.ElasticsearchVersion.V7_8;
-import static zipkin2.elasticsearch.ElasticsearchVersion.V9_0;
+import static zipkin2.elasticsearch.ElasticsearchVersion.V10_0;
 
 import zipkin2.internal.Nullable;
 
@@ -92,9 +92,9 @@ final class ElasticsearchSpecificTemplates extends VersionSpecificTemplates<Elas
   }
 
   @Override IndexTemplates get(ElasticsearchVersion version) {
-    if (version.compareTo(V5_0) < 0 || version.compareTo(V9_0) >= 0) {
+    if (version.compareTo(V5_0) < 0 || version.compareTo(V10_0) >= 0) {
       throw new IllegalArgumentException(
-        "Elasticsearch versions 5-8.x are supported, was: " + version);
+        "Elasticsearch versions 5-9.x are supported, was: " + version);
     }
     return IndexTemplates.newBuilder()
       .version(version)

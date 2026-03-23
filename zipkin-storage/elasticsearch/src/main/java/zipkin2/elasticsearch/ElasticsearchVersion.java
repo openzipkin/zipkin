@@ -13,7 +13,7 @@ public final class ElasticsearchVersion extends BaseVersion implements Comparabl
   public static final ElasticsearchVersion V6_7 = new ElasticsearchVersion(6, 7);
   public static final ElasticsearchVersion V7_0 = new ElasticsearchVersion(7, 0);
   public static final ElasticsearchVersion V7_8 = new ElasticsearchVersion(7, 8);
-  public static final ElasticsearchVersion V9_0 = new ElasticsearchVersion(9, 0);
+  public static final ElasticsearchVersion V10_0 = new ElasticsearchVersion(10, 0);
 
   ElasticsearchVersion(int major, int minor) {
     super(major, minor);

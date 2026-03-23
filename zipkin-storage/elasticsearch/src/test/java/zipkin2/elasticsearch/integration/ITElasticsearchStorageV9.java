@@ -15,9 +15,9 @@ import static zipkin2.elasticsearch.integration.ElasticsearchExtension.index;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Tag("docker")
-class ITElasticsearchStorageV7 extends ITElasticsearchStorage {
+class ITElasticsearchStorageV9 extends ITElasticsearchStorage {
 
-  @RegisterExtension static ElasticsearchExtension elasticsearch = new ElasticsearchExtension(7);
+  @RegisterExtension static ElasticsearchExtension elasticsearch = new ElasticsearchExtension(9);
 
   @Override ElasticsearchExtension elasticsearch() {
     return elasticsearch;

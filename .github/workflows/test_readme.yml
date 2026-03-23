@@ -136,13 +136,6 @@ jobs:
         env:
           DOCKER_TAG: openzipkin/zipkin-cassandra:test
           DOCKER_FILE: docker/test-images/zipkin-cassandra/Dockerfile
-      - name: docker/test-images/zipkin-elasticsearch7/README.md
-        run: |
-          build-bin/docker/docker_build ${DOCKER_TAG} &&
-          build-bin/docker/docker_test_image ${DOCKER_TAG}
-        env:
-          DOCKER_TAG: openzipkin/zipkin-elasticsearch7:test
-          DOCKER_FILE: docker/test-images/zipkin-elasticsearch7/Dockerfile
       - name: docker/test-images/zipkin-elasticsearch8/README.md
         run: |
           build-bin/docker/docker_build ${DOCKER_TAG} &&
@@ -150,6 +143,13 @@ jobs:
         env:
           DOCKER_TAG: openzipkin/zipkin-elasticsearch8:test
           DOCKER_FILE: docker/test-images/zipkin-elasticsearch8/Dockerfile
+      - name: docker/test-images/zipkin-elasticsearch9/README.md
+        run: |
+          build-bin/docker/docker_build ${DOCKER_TAG} &&
+          build-bin/docker/docker_test_image ${DOCKER_TAG}
+        env:
+          DOCKER_TAG: openzipkin/zipkin-elasticsearch9:test
+          DOCKER_FILE: docker/test-images/zipkin-elasticsearch9/Dockerfile
       - name: docker/test-images/zipkin-opensearch2/README.md
         run: |
           build-bin/docker/docker_build ${DOCKER_TAG} &&
