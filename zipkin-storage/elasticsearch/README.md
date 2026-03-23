@@ -33,7 +33,7 @@ spans. This is mapped to the Elasticsearch / OpenSearch date type, so can be use
 ## Indexes
 Spans are stored into daily indices, for example spans with a timestamp
 falling on 2016/03/19 will be stored in the index named 'zipkin:span-2016-03-19'
-or 'zipkin-span-2016-03-19' if using Elasticsearch version 7 or higher (8+ tested).
+or 'zipkin-span-2016-03-19' if using Elasticsearch version 7 or higher.
 There is no support for TTL through this SpanStore. It is recommended
 instead to use [Elastic Curator](https://www.elastic.co/guide/en/elasticsearch/client/curator/current/about.html)
 to remove indices older than the point you are interested in.
