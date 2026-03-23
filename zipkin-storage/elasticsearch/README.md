@@ -45,7 +45,7 @@ the date separator from '-' to something else.
 `ElasticsearchStorage.Builder.index` and `ElasticsearchStorage.Builder.dateSeparator`
 control the daily index format.
 
-For example, using Elasticsearch 8+, spans with a timestamp falling on
+For example, using Elasticsearch 7+, spans with a timestamp falling on
 2016/03/19 end up in the index 'zipkin-span-2016-03-19'. When the date
 separator is '.', the index would be 'zipkin-span-2016.03.19'.
 
@@ -69,7 +69,7 @@ $ curl -s 'localhost:9200/zipkin*span-2017-08-11/_search?q=_q:error=500'
 The reason for special casing is around dotted name constraints. Tags
 are stored as a dictionary. Some keys include inconsistent number of dots
 (ex "error" and "error.message"). Elasticsearch / OpenSearch cannot index
-these as it inteprets them as fields, and dots in fields imply an object 
+these as it inteprets them as fields, and dots in fields imply an object
 path.
 
 ### Trace Identifiers
