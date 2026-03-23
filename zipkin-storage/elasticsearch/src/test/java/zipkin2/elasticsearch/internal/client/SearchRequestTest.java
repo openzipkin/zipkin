@@ -24,4 +24,18 @@ class SearchRequestTest {
     assertThat(OBJECT_MAPPER.writeValueAsString(request))
       .isEqualTo("{\"size\":10000}");
   }
+
+  @Test void rangeSerializesAsGteLte() throws Exception {
+    request.filters(new SearchRequest.Filters().addRange("timestamp_millis", 1000L, 2000L));
+
+    assertThat(OBJECT_MAPPER.writeValueAsString(request)).isEqualTo("""
+      {"size":10000,"query":{"bool":{"filter":{"bool":{"must":[{"range":{"timestamp_millis":{"gte":1000,"lte":2000}}}]}}}}}""");
+  }
+
+  @Test void rangeOmitsNullLte() throws Exception {
+    request.filters(new SearchRequest.Filters().addRange("duration", 1000L, null));
+
+    assertThat(OBJECT_MAPPER.writeValueAsString(request)).isEqualTo("""
+      {"size":10000,"query":{"bool":{"filter":{"bool":{"must":[{"range":{"duration":{"gte":1000}}}]}}}}}""");
+  }
 }
