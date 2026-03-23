@@ -42,7 +42,7 @@
 
     <!-- override to set exclusions per-project -->
     <errorprone.args />
-    <errorprone.version>2.42.0</errorprone.version>
+    <errorprone.version>2.48.0</errorprone.version>
 
     <zipkin-proto3.version>1.0.0</zipkin-proto3.version>
 
@@ -248,6 +248,50 @@
             <fork>true</fork>
             <showWarnings>true</showWarnings>
           </configuration>
+          <executions>
+            <execution>
+              <!-- only use errorprone on main source tree -->
+              <id>default-compile</id>
+              <phase>compile</phase>
+              <goals>
+                <goal>compile</goal>
+              </goals>
+              <configuration>
+                <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                <compilerArgs>
+                  <arg>-XDcompilePolicy=simple</arg>
+                  <arg>--should-stop=ifError=FLOW</arg>
+                  <arg>-Xplugin:ErrorProne ${errorprone.args}</arg>
+                  <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
+                  <!-- below needed per https://errorprone.info/docs/installation -->
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+                  <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+                  <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+                </compilerArgs>
+                <annotationProcessorPaths>
+                  <processorPath>
+                    <groupId>com.google.errorprone</groupId>
+                    <artifactId>error_prone_core</artifactId>
+                    <version>${errorprone.version}</version>
+                  </processorPath>
+                  <!-- auto-value is placed here even though not needed for all projects as
+                       configuring along with errorprone is tricky in subprojects -->
+                  <processorPath>
+                    <groupId>com.google.auto.value</groupId>
+                    <artifactId>auto-value</artifactId>
+                    <version>${auto-value.version}</version>
+                  </processorPath>
+                </annotationProcessorPaths>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
 
         <!-- Uploads occur as a last step (which also adds checksums) -->
@@ -420,13 +464,13 @@
           </execution>
         </executions>
         <configuration>
-          <systemProperties>
+          <systemPropertyVariables>
             <!-- Gives better context when there's an exception such as AbortedStreamException.
                  Set globally as we have failures sometimes in storage-elasticsearch and sometimes
                  in zipkin-server tests (same code used two places).
             -->
             <com.linecorp.armeria.verboseExceptions>always</com.linecorp.armeria.verboseExceptions>
-          </systemProperties>
+          </systemPropertyVariables>
           <!-- workaround to SUREFIRE-1831 -->
           <useModulePath>false</useModulePath>
           <!-- Ensures root cause ends up in the console -->
@@ -448,7 +492,7 @@
                 <requireJavaVersion>
                   <!-- Change this to control LTS JDK versions allowed to build
                        the project. Keep in sync with .github/workflows -->
-                  <version>[17,18),[21,22)</version>
+                  <version>[21,22),[25,26)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -462,8 +506,6 @@
         <version>${license-maven-plugin.version}</version>
         <configuration>
           <skip>${license.skip}</skip>
-          <!-- session.executionRootDirectory resolves properly even with nested modules -->
-          <header>${main.basedir}/src/etc/header.txt</header>
           <mapping>
             <!-- Don't use javadoc style as this makes code formatters break it by adding tags! -->
             <java>SLASHSTAR_STYLE</java>
@@ -473,10 +515,13 @@
             <tsx>SLASHSTAR_STYLE</tsx>
             <bnd>SCRIPT_STYLE</bnd>
             <ejs>XML_STYLE</ejs>
+            <conf>SCRIPT_STYLE</conf>
             <css>SLASHSTAR_STYLE</css>
             <!-- build-bin non-trivial scripts -->
             <javadoc_to_gh_pages>SCRIPT_STYLE</javadoc_to_gh_pages>
             <maybe_install_npm>SCRIPT_STYLE</maybe_install_npm>
+            <configure_lint>SCRIPT_STYLE</configure_lint>
+            <lint>SCRIPT_STYLE</lint>
             <!-- build-bin/docker -->
             <docker_block_on_health>SCRIPT_STYLE</docker_block_on_health>
             <configure_docker>SCRIPT_STYLE</configure_docker>
@@ -507,58 +552,69 @@
             <start-kafka-zookeeper>SCRIPT_STYLE</start-kafka-zookeeper>
             <start-mysql>SCRIPT_STYLE</start-mysql>
             <start-nginx>SCRIPT_STYLE</start-nginx>
+            <start-opensearch>SCRIPT_STYLE</start-opensearch>
             <start-zipkin>SCRIPT_STYLE</start-zipkin>
             <!-- docker/**/docker-healthcheck -->
             <docker-healthcheck>SCRIPT_STYLE</docker-healthcheck>
           </mapping>
-          <excludes>
-            <exclude>**/simplelogger.properties</exclude>
-            <exclude>**/continuous-build.yml</exclude>
-            <exclude>**/*.dockerignore</exclude>
-            <exclude>.editorconfig</exclude>
-            <exclude>.gitattributes</exclude>
-            <exclude>.gitignore</exclude>
-            <exclude>.github/**</exclude>
-            <exclude>.mvn/**</exclude>
-            <exclude>mvnw*</exclude>
-            <exclude>etc/header.txt</exclude>
-            <exclude>**/nginx.conf</exclude>
-            <exclude>**/.idea/**</exclude>
-            <exclude>**/node_modules/**</exclude>
-            <exclude>**/build/**</exclude>
-            <exclude>**/dist/**</exclude>
-            <exclude>**/coverage/**</exclude>
-            <exclude>**/.babelrc</exclude>
-            <exclude>**/.bowerrc</exclude>
-            <exclude>**/.editorconfig</exclude>
-            <exclude>**/.env.development</exclude>
-            <exclude>**/.eslintignore</exclude>
-            <exclude>**/.eslintrc</exclude>
-            <exclude>**/.eslintrc</exclude>
-            <exclude>**/.eslintrc.js</exclude>
-            <exclude>**/.linguirc</exclude>
-            <exclude>**/testdata/**/*.json</exclude>
-            <exclude>**/test/data/**/*.json</exclude>
-            <exclude>**/src/translations/**</exclude>
-            <exclude>LICENSE</exclude>
-            <exclude>**/*.md</exclude>
-            <exclude>**/*.bnd</exclude>
-            <exclude>**/src/main/resources/zipkin.txt</exclude>
-            <exclude>**/src/main/resources/*.yml</exclude>
-            <exclude>**/spring.factories</exclude>
-            <!-- Cassandra integration tests break when license headers are present -->
-            <exclude>**/src/main/resources/*.cql</exclude>
-            <exclude>kafka_*/**</exclude>
-            <exclude>**/nohup.out</exclude>
-            <exclude>src/test/resources/**</exclude>
-            <exclude>**/generated/**</exclude>
-            <exclude>.dockerignore</exclude>
-            <!-- trivial build-bin scripts -->
-            <exclude>build-bin/configure_deploy</exclude>
-            <exclude>build-bin/configure_test</exclude>
-            <exclude>build-bin/deploy</exclude>
-            <exclude>build-bin/test</exclude>
-          </excludes>
+          <licenseSets>
+            <licenseSet>
+              <!-- session.executionRootDirectory resolves properly even with nested modules -->
+              <header>${main.basedir}/src/etc/header.txt</header>
+              <excludes>
+                <exclude>**/simplelogger.properties</exclude>
+                <exclude>**/continuous-build.yml</exclude>
+                <exclude>**/*.dockerignore</exclude>
+                <exclude>.editorconfig</exclude>
+                <exclude>.gitattributes</exclude>
+                <exclude>.gitignore</exclude>
+                <exclude>.github/**</exclude>
+                <exclude>.mvn/**</exclude>
+                <exclude>mvnw*</exclude>
+                <exclude>etc/header.txt</exclude>
+                <exclude>**/nginx.conf</exclude>
+                <exclude>**/.idea/**</exclude>
+                <exclude>**/node_modules/**</exclude>
+                <exclude>**/build/**</exclude>
+                <exclude>**/dist/**</exclude>
+                <exclude>**/coverage/**</exclude>
+                <exclude>**/.babelrc</exclude>
+                <exclude>**/.bowerrc</exclude>
+                <exclude>**/.editorconfig</exclude>
+                <exclude>**/.env.development</exclude>
+                <exclude>**/.eslintignore</exclude>
+                <exclude>**/.eslintrc</exclude>
+                <exclude>**/.eslintrc</exclude>
+                <exclude>**/.eslintrc.js</exclude>
+                <exclude>**/.linguirc</exclude>
+                <exclude>**/testdata/**/*.json</exclude>
+                <exclude>**/test/data/**/*.json</exclude>
+                <exclude>**/src/translations/**</exclude>
+                <exclude>LICENSE</exclude>
+                <exclude>**/*.md</exclude>
+                <exclude>**/*.bnd</exclude>
+                <exclude>**/src/main/resources/zipkin.txt</exclude>
+                <exclude>**/src/main/resources/*.yml</exclude>
+                <exclude>**/spring.factories</exclude>
+                <!-- Cassandra integration tests break when license headers are present -->
+                <exclude>**/src/main/resources/*.cql</exclude>
+                <exclude>kafka_*/**</exclude>
+                <exclude>**/nohup.out</exclude>
+                <exclude>src/test/resources/**</exclude>
+                <exclude>**/generated/**</exclude>
+                <exclude>.dockerignore</exclude>
+                <!-- config files without code -->
+                <exclude>**/*.conf</exclude>
+                <!-- trivial build-bin scripts -->
+                <exclude>build-bin/configure_deploy</exclude>
+                <exclude>build-bin/configure_lint</exclude>
+                <exclude>build-bin/configure_test</exclude>
+                <exclude>build-bin/deploy</exclude>
+                <exclude>build-bin/lint</exclude>
+                <exclude>build-bin/test</exclude>
+              </excludes>
+            </licenseSet>
+          </licenseSets>
           <strictCheck>true</strictCheck>
         </configuration>
         <dependencies>
@@ -604,70 +660,6 @@
       <modules>
         <module>benchmarks</module>
       </modules>
-    </profile>
-
-    <profile>
-      <id>error-prone-17+</id>
-      <activation>
-        <!-- Only LTS versions that work with errorprone -->
-        <jdk>[17,18),[21,22)</jdk>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>${maven-compiler-plugin.version}</version>
-            <inherited>true</inherited>
-            <configuration>
-              <fork>true</fork>
-              <showWarnings>true</showWarnings>
-            </configuration>
-            <executions>
-              <execution>
-                <!-- only use errorprone on main source tree -->
-                <id>default-compile</id>
-                <phase>compile</phase>
-                <goals>
-                  <goal>compile</goal>
-                </goals>
-                <configuration>
-                  <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                  <compilerArgs>
-                    <arg>-XDcompilePolicy=simple</arg>
-                    <arg>--should-stop=ifError=FLOW</arg>
-                    <arg>-Xplugin:ErrorProne ${errorprone.args}</arg>
-                    <!-- below needed per https://errorprone.info/docs/installation -->
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
-                    <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
-                    <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
-                  </compilerArgs>
-                  <annotationProcessorPaths>
-                    <processorPath>
-                      <groupId>com.google.errorprone</groupId>
-                      <artifactId>error_prone_core</artifactId>
-                      <version>${errorprone.version}</version>
-                    </processorPath>
-                    <!-- auto-value is placed here eventhough not needed for all projects as
-                         configuring along with errorprone is tricky in subprojects -->
-                    <processorPath>
-                      <groupId>com.google.auto.value</groupId>
-                      <artifactId>auto-value</artifactId>
-                      <version>${auto-value.version}</version>
-                    </processorPath>
-                  </annotationProcessorPaths>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
 
     <profile>
