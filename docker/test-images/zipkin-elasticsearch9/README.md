@@ -1,14 +1,14 @@
-## zipkin-elasticsearch7 Docker image
+## zipkin-elasticsearch9 Docker image
 
-The `zipkin-elasticsearch7` testing image runs Elasticsearch 7.x for [Elasticsearch storage](../../../zipkin-storage/elasticsearch)
+The `zipkin-elasticsearch9` testing image runs Elasticsearch 9.x for [Elasticsearch storage](../../../zipkin-storage/elasticsearch)
 integration.
 
-To build `openzipkin/zipkin-elasticsearch7:test`, from the top-level of the repository, run:
+To build `openzipkin/zipkin-elasticsearch9:test`, from the top-level of the repository, run:
 ```bash
-$ DOCKER_FILE=docker/test-images/zipkin-elasticsearch7/Dockerfile build-bin/docker/docker_build openzipkin/zipkin-elasticsearch7:test
+$ DOCKER_FILE=docker/test-images/zipkin-elasticsearch9/Dockerfile build-bin/docker/docker_build openzipkin/zipkin-elasticsearch9:test
 ```
 
-You can use the env variable `JAVA_OPTS` to change settings such as heap size for Elasticsearch.
+You can use the env variable `ES_JAVA_OPTS` to change settings such as heap size for Elasticsearch.
 
 #### Host setup
 

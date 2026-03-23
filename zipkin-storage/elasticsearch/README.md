@@ -3,7 +3,7 @@
 This is a plugin to the Elasticsearch storage component, which uses
 HTTP by way of [Armeria](https://github.com/line/armeria) and
 [Jackson](https://github.com/FasterXML/jackson). This uses Elasticsearch 5+
-features, but is tested against Elasticsearch 7-8.x and OpenSearch 2.x.
+features, but is tested against Elasticsearch 8-9.x and OpenSearch 2.x.
 
 ## Multiple hosts
 Most users will supply a DNS name that's mapped to multiple A or AAAA
@@ -33,7 +33,7 @@ spans. This is mapped to the Elasticsearch / OpenSearch date type, so can be use
 ## Indexes
 Spans are stored into daily indices, for example spans with a timestamp
 falling on 2016/03/19 will be stored in the index named 'zipkin:span-2016-03-19'
-or 'zipkin-span-2016-03-19' if using Elasticsearch version 7 or higher.
+or 'zipkin-span-2016-03-19' if using Elasticsearch version 7 or higher (8+ tested).
 There is no support for TTL through this SpanStore. It is recommended
 instead to use [Elastic Curator](https://www.elastic.co/guide/en/elasticsearch/client/curator/current/about.html)
 to remove indices older than the point you are interested in.
@@ -45,7 +45,7 @@ the date separator from '-' to something else.
 `ElasticsearchStorage.Builder.index` and `ElasticsearchStorage.Builder.dateSeparator`
 control the daily index format.
 
-For example, using Elasticsearch 7+, spans with a timestamp falling on
+For example, using Elasticsearch 8+, spans with a timestamp falling on
 2016/03/19 end up in the index 'zipkin-span-2016-03-19'. When the date
 separator is '.', the index would be 'zipkin-span-2016.03.19'.
 

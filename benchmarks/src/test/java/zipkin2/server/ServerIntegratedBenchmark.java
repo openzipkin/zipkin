@@ -81,7 +81,7 @@ class ServerIntegratedBenchmark {
 
   @Test void elasticsearch() throws Exception {
     GenericContainer<?> elasticsearch =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch7:3.5.1"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch9:3.5.1"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("elasticsearch")
         .withLabel("name", "elasticsearch")
