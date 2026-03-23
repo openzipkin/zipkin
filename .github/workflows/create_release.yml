@@ -13,18 +13,18 @@ jobs:
     runs-on: ubuntu-24.04  # newest available distribution, aka noble
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Prevent use of implicit GitHub Actions read-only GITHUB_TOKEN
           # because maven-release-plugin pushes commits to master.
           token: ${{ secrets.GH_TOKEN }}
       - name: Setup java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'  # zulu as it supports a wide version range
           java-version: '17'  # earliest LTS supported by Spring Boot 3
       - name: Cache local Maven repository
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-jdk-17-maven-${{ hashFiles('**/pom.xml') }}

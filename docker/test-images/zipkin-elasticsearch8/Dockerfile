@@ -8,7 +8,7 @@
 # Use latest version here: https://github.com/orgs/openzipkin/packages/container/package/java
 # This is defined in many places because Docker has no "env" script functionality unless you use
 # docker-compose: When updating, update everywhere.
-ARG java_version=21.0.10_p7
+ARG java_version=25.0.2_p10
 
 FROM ghcr.io/openzipkin/java:${java_version} AS install
 

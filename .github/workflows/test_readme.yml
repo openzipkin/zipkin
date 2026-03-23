@@ -38,15 +38,15 @@ jobs:
             os: windows-2022
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Setup java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'  # zulu as it supports a wide version range
-          java-version: '21'  # Most recent LTS
+          java-version: '25'  # Most recent LTS
           cache: 'maven'
       - name: Cache NPM Packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.npm
           # yamllint disable-line rule:line-length
@@ -63,7 +63,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       # Remove apt repos that are known to break from time to time.
       # See https://github.com/actions/virtual-environments/issues/323
       - name: Remove broken apt repos
@@ -72,16 +72,16 @@ jobs:
           do sudo rm $apt_file
           done
       - name: Setup java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'  # zulu as it supports a wide version range
-          java-version: '21'  # Most recent LTS
+          java-version: '25'  # Most recent LTS
           cache: 'maven'
       # Don't attempt to cache Docker. Sensitive information can be stolen
       # via forks, and login session ends up in ~/.docker. This is ok because
       # we publish DOCKER_PARENT_IMAGE to ghcr.io, hence local to the runner.
       - name: Cache NPM Packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.npm
           # yamllint disable-line rule:line-length

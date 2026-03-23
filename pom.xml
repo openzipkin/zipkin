@@ -420,13 +420,13 @@
           </execution>
         </executions>
         <configuration>
-          <systemProperties>
+          <systemPropertyVariables>
             <!-- Gives better context when there's an exception such as AbortedStreamException.
                  Set globally as we have failures sometimes in storage-elasticsearch and sometimes
                  in zipkin-server tests (same code used two places).
             -->
             <com.linecorp.armeria.verboseExceptions>always</com.linecorp.armeria.verboseExceptions>
-          </systemProperties>
+          </systemPropertyVariables>
           <!-- workaround to SUREFIRE-1831 -->
           <useModulePath>false</useModulePath>
           <!-- Ensures root cause ends up in the console -->
@@ -448,7 +448,7 @@
                 <requireJavaVersion>
                   <!-- Change this to control LTS JDK versions allowed to build
                        the project. Keep in sync with .github/workflows -->
-                  <version>[17,18),[21,22)</version>
+                  <version>[17,18),[21,22),[25,26)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -462,8 +462,6 @@
         <version>${license-maven-plugin.version}</version>
         <configuration>
           <skip>${license.skip}</skip>
-          <!-- session.executionRootDirectory resolves properly even with nested modules -->
-          <header>${main.basedir}/src/etc/header.txt</header>
           <mapping>
             <!-- Don't use javadoc style as this makes code formatters break it by adding tags! -->
             <java>SLASHSTAR_STYLE</java>
@@ -473,10 +471,13 @@
             <tsx>SLASHSTAR_STYLE</tsx>
             <bnd>SCRIPT_STYLE</bnd>
             <ejs>XML_STYLE</ejs>
+            <conf>SCRIPT_STYLE</conf>
             <css>SLASHSTAR_STYLE</css>
             <!-- build-bin non-trivial scripts -->
             <javadoc_to_gh_pages>SCRIPT_STYLE</javadoc_to_gh_pages>
             <maybe_install_npm>SCRIPT_STYLE</maybe_install_npm>
+            <configure_lint>SCRIPT_STYLE</configure_lint>
+            <lint>SCRIPT_STYLE</lint>
             <!-- build-bin/docker -->
             <docker_block_on_health>SCRIPT_STYLE</docker_block_on_health>
             <configure_docker>SCRIPT_STYLE</configure_docker>
@@ -507,58 +508,69 @@
             <start-kafka-zookeeper>SCRIPT_STYLE</start-kafka-zookeeper>
             <start-mysql>SCRIPT_STYLE</start-mysql>
             <start-nginx>SCRIPT_STYLE</start-nginx>
+            <start-opensearch>SCRIPT_STYLE</start-opensearch>
             <start-zipkin>SCRIPT_STYLE</start-zipkin>
             <!-- docker/**/docker-healthcheck -->
             <docker-healthcheck>SCRIPT_STYLE</docker-healthcheck>
           </mapping>
-          <excludes>
-            <exclude>**/simplelogger.properties</exclude>
-            <exclude>**/continuous-build.yml</exclude>
-            <exclude>**/*.dockerignore</exclude>
-            <exclude>.editorconfig</exclude>
-            <exclude>.gitattributes</exclude>
-            <exclude>.gitignore</exclude>
-            <exclude>.github/**</exclude>
-            <exclude>.mvn/**</exclude>
-            <exclude>mvnw*</exclude>
-            <exclude>etc/header.txt</exclude>
-            <exclude>**/nginx.conf</exclude>
-            <exclude>**/.idea/**</exclude>
-            <exclude>**/node_modules/**</exclude>
-            <exclude>**/build/**</exclude>
-            <exclude>**/dist/**</exclude>
-            <exclude>**/coverage/**</exclude>
-            <exclude>**/.babelrc</exclude>
-            <exclude>**/.bowerrc</exclude>
-            <exclude>**/.editorconfig</exclude>
-            <exclude>**/.env.development</exclude>
-            <exclude>**/.eslintignore</exclude>
-            <exclude>**/.eslintrc</exclude>
-            <exclude>**/.eslintrc</exclude>
-            <exclude>**/.eslintrc.js</exclude>
-            <exclude>**/.linguirc</exclude>
-            <exclude>**/testdata/**/*.json</exclude>
-            <exclude>**/test/data/**/*.json</exclude>
-            <exclude>**/src/translations/**</exclude>
-            <exclude>LICENSE</exclude>
-            <exclude>**/*.md</exclude>
-            <exclude>**/*.bnd</exclude>
-            <exclude>**/src/main/resources/zipkin.txt</exclude>
-            <exclude>**/src/main/resources/*.yml</exclude>
-            <exclude>**/spring.factories</exclude>
-            <!-- Cassandra integration tests break when license headers are present -->
-            <exclude>**/src/main/resources/*.cql</exclude>
-            <exclude>kafka_*/**</exclude>
-            <exclude>**/nohup.out</exclude>
-            <exclude>src/test/resources/**</exclude>
-            <exclude>**/generated/**</exclude>
-            <exclude>.dockerignore</exclude>
-            <!-- trivial build-bin scripts -->
-            <exclude>build-bin/configure_deploy</exclude>
-            <exclude>build-bin/configure_test</exclude>
-            <exclude>build-bin/deploy</exclude>
-            <exclude>build-bin/test</exclude>
-          </excludes>
+          <licenseSets>
+            <licenseSet>
+              <!-- session.executionRootDirectory resolves properly even with nested modules -->
+              <header>${main.basedir}/src/etc/header.txt</header>
+              <excludes>
+                <exclude>**/simplelogger.properties</exclude>
+                <exclude>**/continuous-build.yml</exclude>
+                <exclude>**/*.dockerignore</exclude>
+                <exclude>.editorconfig</exclude>
+                <exclude>.gitattributes</exclude>
+                <exclude>.gitignore</exclude>
+                <exclude>.github/**</exclude>
+                <exclude>.mvn/**</exclude>
+                <exclude>mvnw*</exclude>
+                <exclude>etc/header.txt</exclude>
+                <exclude>**/nginx.conf</exclude>
+                <exclude>**/.idea/**</exclude>
+                <exclude>**/node_modules/**</exclude>
+                <exclude>**/build/**</exclude>
+                <exclude>**/dist/**</exclude>
+                <exclude>**/coverage/**</exclude>
+                <exclude>**/.babelrc</exclude>
+                <exclude>**/.bowerrc</exclude>
+                <exclude>**/.editorconfig</exclude>
+                <exclude>**/.env.development</exclude>
+                <exclude>**/.eslintignore</exclude>
+                <exclude>**/.eslintrc</exclude>
+                <exclude>**/.eslintrc</exclude>
+                <exclude>**/.eslintrc.js</exclude>
+                <exclude>**/.linguirc</exclude>
+                <exclude>**/testdata/**/*.json</exclude>
+                <exclude>**/test/data/**/*.json</exclude>
+                <exclude>**/src/translations/**</exclude>
+                <exclude>LICENSE</exclude>
+                <exclude>**/*.md</exclude>
+                <exclude>**/*.bnd</exclude>
+                <exclude>**/src/main/resources/zipkin.txt</exclude>
+                <exclude>**/src/main/resources/*.yml</exclude>
+                <exclude>**/spring.factories</exclude>
+                <!-- Cassandra integration tests break when license headers are present -->
+                <exclude>**/src/main/resources/*.cql</exclude>
+                <exclude>kafka_*/**</exclude>
+                <exclude>**/nohup.out</exclude>
+                <exclude>src/test/resources/**</exclude>
+                <exclude>**/generated/**</exclude>
+                <exclude>.dockerignore</exclude>
+                <!-- config files without code -->
+                <exclude>**/*.conf</exclude>
+                <!-- trivial build-bin scripts -->
+                <exclude>build-bin/configure_deploy</exclude>
+                <exclude>build-bin/configure_lint</exclude>
+                <exclude>build-bin/configure_test</exclude>
+                <exclude>build-bin/deploy</exclude>
+                <exclude>build-bin/lint</exclude>
+                <exclude>build-bin/test</exclude>
+              </excludes>
+            </licenseSet>
+          </licenseSets>
           <strictCheck>true</strictCheck>
         </configuration>
         <dependencies>
@@ -610,7 +622,7 @@
       <id>error-prone-17+</id>
       <activation>
         <!-- Only LTS versions that work with errorprone -->
-        <jdk>[17,18),[21,22)</jdk>
+        <jdk>[17,18),[21,22),[25,26)</jdk>
       </activation>
       <build>
         <plugins>
