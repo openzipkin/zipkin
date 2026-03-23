@@ -52,16 +52,16 @@
     <netty.version>4.2.10.Final</netty.version>
 
     <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
-    <jackson.version>2.21.1</jackson.version>
+    <jackson.version>2.21.2</jackson.version>
 
-    <java-driver.version>4.19.0</java-driver.version>
+    <java-driver.version>4.19.2</java-driver.version>
     <micrometer.version>1.16.4</micrometer.version>
 
     <!-- Used for Generated annotations -->
     <javax-annotation-api.version>1.3.2</javax-annotation-api.version>
 
     <!-- update together -->
-    <spring-boot.version>3.5.11</spring-boot.version>
+    <spring-boot.version>3.5.12</spring-boot.version>
     <spring.version>6.2.17</spring.version>
 
     <!-- MySQL connector is GPL, even if it has an OSS exception.
@@ -69,10 +69,10 @@
 
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
-    <mariadb-java-client.version>3.5.3</mariadb-java-client.version>
-    <HikariCP.version>6.2.1</HikariCP.version>
+    <mariadb-java-client.version>3.5.7</mariadb-java-client.version>
+    <HikariCP.version>6.3.3</HikariCP.version>
     <slf4j.version>2.0.17</slf4j.version>
-    <auto-value.version>1.11.0</auto-value.version>
+    <auto-value.version>1.11.1</auto-value.version>
     <git-commit-id.version>9.0.2</git-commit-id.version>
 
     <!-- Test only dependencies -->
@@ -85,8 +85,8 @@
     <okhttp.version>4.12.0</okhttp.version>
     <kryo.version>5.6.2</kryo.version>
     <!-- Only used for proto interop testing; wire-maven-plugin is usually behind latest. -->
-    <wire.version>5.4.0</wire.version>
-    <gson.version>2.13.1</gson.version>
+    <wire.version>5.5.1</wire.version>
+    <gson.version>2.13.2</gson.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
     <license.skip>${skipTests}</license.skip>
@@ -100,7 +100,7 @@
     <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
     <!-- Use same version as https://github.com/openzipkin/docker-java -->
     <maven-dependency-plugin.version>3.10.0</maven-dependency-plugin.version>
-    <maven-deploy-plugin.version>3.1.3</maven-deploy-plugin.version>
+    <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
     <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
     <!-- Use same version as https://github.com/openzipkin/docker-java -->
     <maven-help-plugin.version>3.5.1</maven-help-plugin.version>

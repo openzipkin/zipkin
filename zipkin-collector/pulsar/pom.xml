@@ -19,7 +19,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <pulsar-client.version>4.0.2</pulsar-client.version>
+    <pulsar-client.version>4.1.3</pulsar-client.version>
   </properties>
 
   <dependencies>

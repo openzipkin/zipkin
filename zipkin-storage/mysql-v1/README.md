@@ -87,6 +87,6 @@ $ mysql -uroot -Dzipkin < zipkin-storage/mysql-v1/src/main/resources/mysql.sql
 ## Generating the schema types
 
 ```bash
-$ rm -rf rm -rf zipkin-storage/mysql-v1/src/main/java/zipkin2/storage/mysql/v1/internal/generated/
+$ rm -rf zipkin-storage/mysql-v1/src/main/java/zipkin2/storage/mysql/v1/internal/generated/
 $ ./mvnw -pl :zipkin-storage-mysql-v1 clean org.jooq:jooq-codegen-maven:generate com.mycila:license-maven-plugin:format
 ```
