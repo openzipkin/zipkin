@@ -10,10 +10,5 @@ docker_tag=${1?full docker_tag is required. Ex openzipkin/zipkin:test}
 version=${2:-}
 docker_args=$($(dirname "$0")/docker_args ${version})
 
-# We don't need build kit, but Docker 20.10 no longer accepts --platform
-# without it. It is simpler to always enable it vs require maintainers to use
-# alternate OCI tools. See https://github.com/moby/moby/issues/41552
-export DOCKER_BUILDKIT=1
-
 echo "Building image ${docker_tag}"
 docker build --network=host --pull ${docker_args} --tag ${docker_tag} .

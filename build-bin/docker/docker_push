@@ -10,19 +10,10 @@
 #
 # Note: In CI, `configure_docker_push` must be called before invoking this.
 #
-# Avoid buildx on push for reasons including:
-#  * Caching is more complex as builder instances must be considered
-#  * Platform builds run in parallel, leading to port conflict failures (ex in cassandra)
-#  * 0.4.2 multi-platform builds have failed due to picking the wrong image for a FROM instruction
 set -ue
 
 docker_image=${1?docker_image is required, notably without a tag. Ex openzipkin/zipkin}
 version=${2:-master}
-
-# We don't need build kit, but Docker 20.10 no longer accepts --platform
-# without it. It is simpler to always enable it vs require maintainers to use
-# alternate OCI tools. See https://github.com/moby/moby/issues/41552
-export DOCKER_BUILDKIT=1
 
 case ${version} in
   master )
