@@ -248,6 +248,49 @@
             <fork>true</fork>
             <showWarnings>true</showWarnings>
           </configuration>
+          <executions>
+            <execution>
+              <!-- only use errorprone on main source tree -->
+              <id>default-compile</id>
+              <phase>compile</phase>
+              <goals>
+                <goal>compile</goal>
+              </goals>
+              <configuration>
+                <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                <compilerArgs>
+                  <arg>-XDcompilePolicy=simple</arg>
+                  <arg>--should-stop=ifError=FLOW</arg>
+                  <arg>-Xplugin:ErrorProne ${errorprone.args}</arg>
+                  <!-- below needed per https://errorprone.info/docs/installation -->
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+                  <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+                  <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+                  <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+                </compilerArgs>
+                <annotationProcessorPaths>
+                  <processorPath>
+                    <groupId>com.google.errorprone</groupId>
+                    <artifactId>error_prone_core</artifactId>
+                    <version>${errorprone.version}</version>
+                  </processorPath>
+                  <!-- auto-value is placed here even though not needed for all projects as
+                       configuring along with errorprone is tricky in subprojects -->
+                  <processorPath>
+                    <groupId>com.google.auto.value</groupId>
+                    <artifactId>auto-value</artifactId>
+                    <version>${auto-value.version}</version>
+                  </processorPath>
+                </annotationProcessorPaths>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
 
         <!-- Uploads occur as a last step (which also adds checksums) -->
@@ -616,66 +659,6 @@
       <modules>
         <module>benchmarks</module>
       </modules>
-    </profile>
-
-    <profile>
-      <id>error-prone</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>${maven-compiler-plugin.version}</version>
-            <inherited>true</inherited>
-            <configuration>
-              <fork>true</fork>
-              <showWarnings>true</showWarnings>
-            </configuration>
-            <executions>
-              <execution>
-                <!-- only use errorprone on main source tree -->
-                <id>default-compile</id>
-                <phase>compile</phase>
-                <goals>
-                  <goal>compile</goal>
-                </goals>
-                <configuration>
-                  <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                  <compilerArgs>
-                    <arg>-XDcompilePolicy=simple</arg>
-                    <arg>--should-stop=ifError=FLOW</arg>
-                    <arg>-Xplugin:ErrorProne ${errorprone.args}</arg>
-                    <!-- below needed per https://errorprone.info/docs/installation -->
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
-                    <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
-                    <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
-                    <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
-                  </compilerArgs>
-                  <annotationProcessorPaths>
-                    <processorPath>
-                      <groupId>com.google.errorprone</groupId>
-                      <artifactId>error_prone_core</artifactId>
-                      <version>${errorprone.version}</version>
-                    </processorPath>
-                    <!-- auto-value is placed here eventhough not needed for all projects as
-                         configuring along with errorprone is tricky in subprojects -->
-                    <processorPath>
-                      <groupId>com.google.auto.value</groupId>
-                      <artifactId>auto-value</artifactId>
-                      <version>${auto-value.version}</version>
-                    </processorPath>
-                  </annotationProcessorPaths>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
 
     <profile>
