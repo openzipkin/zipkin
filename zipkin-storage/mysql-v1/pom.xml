@@ -20,8 +20,9 @@
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
 
-    <!-- 3.19 s last to work on JDK 17 https://www.jooq.org/download/support-matrix-jdk#oss -->
-    <jooq.version>3.19.30</jooq.version>
+    <!-- 3.19 is the last to work on JDK 17 https://www.jooq.org/download/support-matrix-jdk#oss -->
+    <!-- 3.19.30 generates "as excluded" which MariaDB doesn't support https://github.com/jooq/jooq/issues/19604 -->
+    <jooq.version>3.19.29</jooq.version>
 
     <!-- jOOQ doesn't add the Generated annotation, so we have to explicitly disable rules -->
     <errorprone.args>-Xep:InconsistentCapitalization:OFF</errorprone.args>
