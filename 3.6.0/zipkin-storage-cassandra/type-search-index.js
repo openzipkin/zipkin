@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"zipkin2.storage.cassandra","l":"CassandraStorage.Builder"},{"p":"zipkin2.storage.cassandra","l":"CassandraStorage"},{"p":"zipkin2.storage.cassandra","l":"CassandraStorage.SessionFactory"}];updateSearchResults();

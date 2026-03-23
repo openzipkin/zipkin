@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Created-By: Maven JAR Plugin 3.5.0
+Java-Version: 17
+Build-Jdk-Spec: 21
+

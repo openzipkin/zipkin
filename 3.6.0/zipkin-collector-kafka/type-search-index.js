@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"zipkin2.collector.kafka","l":"KafkaCollector.Builder"},{"p":"zipkin2.collector.kafka","l":"KafkaCollector"}];updateSearchResults();
