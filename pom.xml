@@ -262,6 +262,7 @@
                   <arg>-XDcompilePolicy=simple</arg>
                   <arg>--should-stop=ifError=FLOW</arg>
                   <arg>-Xplugin:ErrorProne ${errorprone.args}</arg>
+                  <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
                   <!-- below needed per https://errorprone.info/docs/installation -->
                   <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
                   <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
