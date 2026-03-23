@@ -42,7 +42,7 @@
 
     <!-- override to set exclusions per-project -->
     <errorprone.args />
-    <errorprone.version>2.42.0</errorprone.version>
+    <errorprone.version>2.48.0</errorprone.version>
 
     <zipkin-proto3.version>1.0.0</zipkin-proto3.version>
 
@@ -448,7 +448,7 @@
                 <requireJavaVersion>
                   <!-- Change this to control LTS JDK versions allowed to build
                        the project. Keep in sync with .github/workflows -->
-                  <version>[17,18),[21,22),[25,26)</version>
+                  <version>[21,22),[25,26)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -619,10 +619,10 @@
     </profile>
 
     <profile>
-      <id>error-prone-17+</id>
+      <id>error-prone-21+</id>
       <activation>
         <!-- Only LTS versions that work with errorprone -->
-        <jdk>[17,18),[21,22),[25,26)</jdk>
+        <jdk>[21,22),[25,26)</jdk>
       </activation>
       <build>
         <plugins>

@@ -30,7 +30,7 @@ jobs:
       fail-fast: false  # don't fail fast as some failures are LTS specific
       matrix:  # match with maven-enforcer-plugin rules in pom.xml
         include:
-          - java_version: 17  # earliest LTS supported by Spring Boot 3
+          - java_version: 21  # Earliest LTS that can compile Zipkin
             maven_args: -Prelease -Dgpg.skip
           - java_version: 25  # Most recent LTS
     steps:
