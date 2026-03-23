@@ -16,7 +16,7 @@ import zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans;
 /**
  * A class modelling indexes of tables in zipkin.
  */
-@SuppressWarnings({ "all", "unchecked", "rawtypes" })
+@SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Indexes {
 
     // -------------------------------------------------------------------------
