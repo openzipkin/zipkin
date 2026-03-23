@@ -81,7 +81,7 @@ class ServerIntegratedBenchmark {
 
   @Test void elasticsearch() throws Exception {
     GenericContainer<?> elasticsearch =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch7:3.4.3"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch7:3.5.1"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("elasticsearch")
         .withLabel("name", "elasticsearch")
@@ -95,7 +95,7 @@ class ServerIntegratedBenchmark {
 
   @Test void cassandra3() throws Exception {
     GenericContainer<?> cassandra =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-cassandra:3.4.3"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-cassandra:3.5.1"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("cassandra")
         .withLabel("name", "cassandra")
@@ -109,7 +109,7 @@ class ServerIntegratedBenchmark {
 
   @Test void mysql() throws Exception {
     GenericContainer<?> mysql =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:3.4.3"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:3.5.1"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("mysql")
         .withLabel("name", "mysql")
@@ -147,7 +147,7 @@ class ServerIntegratedBenchmark {
     // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     // Use same version as in docker/examples/docker-compose-prometheus.yml
     GenericContainer<?> prometheus =
-      new GenericContainer<>(parse("quay.io/prometheus/prometheus:v2.55.1"))
+      new GenericContainer<>(parse("quay.io/prometheus/prometheus:v3.10.0"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("prometheus")
         .withExposedPorts(9090)
@@ -157,7 +157,7 @@ class ServerIntegratedBenchmark {
 
     // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
     // Use same version as in docker/examples/docker-compose-prometheus.yml
-    GenericContainer<?> grafana = new GenericContainer<>(parse("quay.io/giantswarm/grafana:7.5.12"))
+    GenericContainer<?> grafana = new GenericContainer<>(parse("quay.io/giantswarm/grafana:11.6.7"))
       .withNetwork(Network.SHARED)
       .withNetworkAliases("grafana")
       .withExposedPorts(3000)
@@ -165,11 +165,11 @@ class ServerIntegratedBenchmark {
       .withEnv("GF_AUTH_ANONYMOUS_ORG_ROLE", "Admin");
     containers.add(grafana);
 
-    // This is an arbitrary small image that has curl installed
-    // Use a quay.io mirror to prevent build outages due to Docker Hub pull quotas
+    // This is a small Alpine-based image from the official curl project
+    // Use latest from https://quay.io/repository/curl/curl-base?tab=tags
     // Use same version as in docker/examples/docker-compose-prometheus.yml
     GenericContainer<?> grafanaDashboards =
-      new GenericContainer<>(parse("quay.io/cilium/alpine-curl:v1.10.0"))
+      new GenericContainer<>(parse("quay.io/curl/curl-base:8.18.0"))
         .withNetwork(Network.SHARED)
         .withWorkingDirectory("/tmp")
         .withLogConsumer(new Slf4jLogConsumer(LOG))
@@ -211,7 +211,7 @@ class ServerIntegratedBenchmark {
     System.out.println(wrk.getLogs().replace("\n\n", "\n"));
 
     WebClient prometheusClient = WebClient.of(
-      "h1c://" + prometheus.getContainerIpAddress() + ":" + prometheus.getFirstMappedPort());
+      "h1c://" + prometheus.getHost() + ":" + prometheus.getFirstMappedPort());
 
     System.out.printf("Messages received: %s%n", prometheusValue(
       prometheusClient, "sum(zipkin_collector_messages_total)"));
@@ -277,7 +277,7 @@ class ServerIntegratedBenchmark {
 
     final GenericContainer<?> zipkin;
     if (RELEASE_VERSION == null) {
-      zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/java:21.0.6_p7"));
+      zipkin = new GenericContainer<>(parse("ghcr.io/openzipkin/java:21.0.10_p7"));
       List<String> classpath = new ArrayList<>();
       for (String item : System.getProperty("java.class.path").split(File.pathSeparator)) {
         Path path = Paths.get(item);
@@ -326,7 +326,7 @@ class ServerIntegratedBenchmark {
       "Container %s ports exposed at %s%n", container.getDockerImageName(),
       container.getExposedPorts().stream()
         .map(port -> Map.entry(port,
-          "http://" + container.getContainerIpAddress() + ":" + container.getMappedPort(port)))
+          "http://" + container.getHost() + ":" + container.getMappedPort(port)))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
   }
 
