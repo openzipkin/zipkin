@@ -81,7 +81,7 @@ class ServerIntegratedBenchmark {
 
   @Test void elasticsearch() throws Exception {
     GenericContainer<?> elasticsearch =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch9:3.5.1"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-elasticsearch9:3.6.0"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("elasticsearch")
         .withLabel("name", "elasticsearch")
@@ -95,7 +95,7 @@ class ServerIntegratedBenchmark {
 
   @Test void cassandra3() throws Exception {
     GenericContainer<?> cassandra =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-cassandra:3.5.1"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-cassandra:3.6.0"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("cassandra")
         .withLabel("name", "cassandra")
@@ -109,7 +109,7 @@ class ServerIntegratedBenchmark {
 
   @Test void mysql() throws Exception {
     GenericContainer<?> mysql =
-      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:3.5.1"))
+      new GenericContainer<>(parse("ghcr.io/openzipkin/zipkin-mysql:3.6.0"))
         .withNetwork(Network.SHARED)
         .withNetworkAliases("mysql")
         .withLabel("name", "mysql")
