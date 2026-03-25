@@ -162,14 +162,6 @@
     <url>https://github.com/openzipkin/zipkin/issues</url>
   </issueManagement>
 
-  <dependencyManagement>
-    <!-- Be careful here, especially to not import BOMs as io.zipkin.zipkin2:zipkin has this parent.
-
-         For example, if you imported Netty's BOM here, using Brave would also download that BOM as
-         it depends indirectly on io.zipkin.zipkin2:zipkin. As Brave itself is indirectly used, this
-         can be extremely confusing when people are troubleshooting library version assignments. -->
-  </dependencyManagement>
-
   <dependencies>
     <!-- Do not add compile dependencies here. This can cause problems for libraries that depend on
          io.zipkin.zipkin2:zipkin difficult to unravel. -->
