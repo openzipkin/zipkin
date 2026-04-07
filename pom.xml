@@ -47,7 +47,7 @@
     <zipkin-proto3.version>1.0.0</zipkin-proto3.version>
 
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>1.37.0</armeria.version>
+    <armeria.version>1.38.0</armeria.version>
     <!-- Match Armeria version to avoid conflicts including running tests in the IDE -->
     <netty.version>4.2.12.Final</netty.version>
 
