@@ -203,9 +203,7 @@ is_cassandra_alive() {
 is_cassandra_alive || exit 1
 
 echo "*** Installing cqlsh"
-# cqlsh 4.x is not compatible with Python 3.12 by default.
-# See https://issues.apache.org/jira/browse/CASSANDRA-19206
-python3_version=3.12
+python3_version=3.14
 apk add --update --no-cache python3=~${python3_version}
 # Installing cqlsh requires cffi package. Normally this doesn't need
 # to be compiled, but something isn't right with aarch64 when installing
