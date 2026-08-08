@@ -6,6 +6,7 @@ package zipkin2.server.internal;
 
 import com.linecorp.armeria.client.encoding.StreamDecoderFactory;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.ContentTooLargeException;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpRequest;
@@ -224,19 +225,41 @@ final class CompletableCallback extends CompletableFuture<HttpResponse>
 }
 
 final class UnzippingBytesRequestConverter {
+  /**
+   * Hard cap on HTTP collector message size after gunzip (and for plain bodies).
+   * A small gzip payload can expand to gigabytes and OOM the JVM heap (#3834); Armeria's
+   * default max request length only bounds the wire size, not the decompressed size.
+   * 16 MiB is well above normal span-batch sizes while remaining safe for ~1 GiB heaps.
+   */
+  static final int MAX_MESSAGE_BYTES = 16 * 1024 * 1024; // 16 MiB
 
   static HttpData convertRequest(ServiceRequestContext ctx, AggregatedHttpRequest request) {
     ZipkinHttpCollector.metrics.incrementMessages();
     String encoding = request.headers().get(HttpHeaderNames.CONTENT_ENCODING);
     HttpData content = request.content();
     if (!content.isEmpty() && encoding != null && encoding.contains("gzip")) {
-      content = StreamDecoderFactory.gzip().newDecoder(ctx.alloc()).decode(content);
+      try {
+        content = StreamDecoderFactory.gzip()
+          .newDecoder(ctx.alloc(), MAX_MESSAGE_BYTES)
+          .decode(content);
+      } catch (ContentTooLargeException e) {
+        ZipkinHttpCollector.maybeLog("Gzip body too large", ctx, request);
+        throw new IllegalArgumentException(
+          "Gzip decompressed body exceeds limit of " + MAX_MESSAGE_BYTES + " bytes");
+      }
       // The implementation of the armeria decoder is to return an empty body on failure
       if (content.isEmpty()) {
         ZipkinHttpCollector.maybeLog("Malformed gzip body", ctx, request);
         content.close();
         throw new IllegalArgumentException("Cannot gunzip spans");
       }
+    }
+
+    if (content.length() > MAX_MESSAGE_BYTES) {
+      content.close();
+      ZipkinHttpCollector.maybeLog("POST body too large", ctx, request);
+      throw new IllegalArgumentException(
+        "Request body exceeds limit of " + MAX_MESSAGE_BYTES + " bytes");
     }
 
     if (content.isEmpty()) ZipkinHttpCollector.maybeLog("Empty POST body", ctx, request);
