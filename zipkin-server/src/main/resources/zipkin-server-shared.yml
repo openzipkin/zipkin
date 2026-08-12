@@ -28,6 +28,11 @@ zipkin:
     http:
       # Set false to disable creation of spans via HTTP collector API
       enabled: ${COLLECTOR_HTTP_ENABLED:${HTTP_COLLECTOR_ENABLED:true}}
+      # Ceiling in bytes on the inflated size of a gzip (Content-Encoding: gzip) request body.
+      # A small compressed payload can otherwise expand without bound and exhaust the JVM heap.
+      # Requests that inflate past this are rejected before the full body is allocated. 0 disables
+      # the ceiling. Default is 32 MiB.
+      max-decompressed-bytes: ${COLLECTOR_HTTP_MAX_DECOMPRESSED_BYTES:33554432}
     grpc:
       # Set false to disable the GRPC collector
       enabled: ${COLLECTOR_GRPC_ENABLED:true}

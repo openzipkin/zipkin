@@ -6,6 +6,7 @@ package zipkin2.server.internal;
 
 import com.linecorp.armeria.client.encoding.StreamDecoderFactory;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.ContentTooLargeException;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpRequest;
@@ -26,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import zipkin2.Callback;
 import zipkin2.Span;
@@ -44,15 +46,23 @@ import static zipkin2.Call.propagateIfFatal;
 public class ZipkinHttpCollector {
   static final Logger LOGGER = LoggerFactory.getLogger(ZipkinHttpCollector.class);
   static volatile CollectorMetrics metrics;
+  /**
+   * Ceiling on the number of bytes a gzip request body may inflate to. A small compressed payload
+   * can otherwise expand without bound and exhaust the JVM heap. Zero disables the ceiling.
+   * See https://github.com/openzipkin/zipkin/issues/3834.
+   */
+  static volatile int maxDecompressedBytes;
   final Collector collector;
 
   @SuppressWarnings("StaticAssignmentInConstructor")
   ZipkinHttpCollector(
-    StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics) {
+    StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics,
+    @Value("${zipkin.collector.http.max-decompressed-bytes:33554432}") int maxDecompressedBytes) {
     metrics = metrics.forTransport("http");
     collector =
       Collector.newBuilder(getClass()).storage(storage).sampler(sampler).metrics(metrics).build();
     ZipkinHttpCollector.metrics = metrics; // converter instances aren't injected by Spring
+    ZipkinHttpCollector.maxDecompressedBytes = maxDecompressedBytes;
   }
 
   @Post("/api/v2/spans")
@@ -230,7 +240,20 @@ final class UnzippingBytesRequestConverter {
     String encoding = request.headers().get(HttpHeaderNames.CONTENT_ENCODING);
     HttpData content = request.content();
     if (!content.isEmpty() && encoding != null && encoding.contains("gzip")) {
-      content = StreamDecoderFactory.gzip().newDecoder(ctx.alloc()).decode(content);
+      // Bound the inflated size so a small compressed payload cannot expand without limit and
+      // exhaust the heap. The decoder throws ContentTooLargeException once the running decoded
+      // total exceeds the ceiling, so it never allocates the full oversized body.
+      // See https://github.com/openzipkin/zipkin/issues/3834.
+      try {
+        content = StreamDecoderFactory.gzip()
+          .newDecoder(ctx.alloc(), ZipkinHttpCollector.maxDecompressedBytes)
+          .decode(content);
+      } catch (ContentTooLargeException e) {
+        ZipkinHttpCollector.maybeLog("Gzip body inflated past the decompressed-size ceiling", ctx,
+          request);
+        throw new IllegalArgumentException("Cannot gunzip spans: decompressed size exceeds "
+          + ZipkinHttpCollector.maxDecompressedBytes + " bytes");
+      }
       // The implementation of the armeria decoder is to return an empty body on failure
       if (content.isEmpty()) {
         ZipkinHttpCollector.maybeLog("Malformed gzip body", ctx, request);
