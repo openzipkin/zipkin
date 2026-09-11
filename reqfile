@@ -1,0 +1,13 @@
+on this code pom.xml and java version 25 is work for below error 
+
+
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-enforcer-plugin:3.6.2:enforce (enforce-java) on project zipkin-parent:
+[ERROR] Rule 0: org.apache.maven.enforcer.rules.version.RequireJavaVersion failed with message:
+### [ERROR] Detected JDK /usr/lib/jvm/java-17-openjdk-amd64 is version 17.0.20 which is not in the allowed range [21,22),[25,26).
+[ERROR] -> [Help 1]
+[ERROR]
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR]
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
