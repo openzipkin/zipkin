@@ -30,6 +30,48 @@ class ReadBufferTest {
       .isEqualTo("love");
   }
 
+  @Test void skip_bytes() {
+    byte[] bytes = {(byte) 0x01, (byte) 0x02, (byte) 0x03};
+
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes);
+
+    assertThat(readBuffer.skip(2)).isEqualTo(2);
+    assertThat(readBuffer.available()).isEqualTo(1);
+    assertThat(readBuffer.readByte()).isEqualTo((byte) 0x03);
+  }
+
+  @Test void skip_bytes_pastEnd() {
+    byte[] bytes = {(byte) 0x01, (byte) 0x02, (byte) 0x03};
+
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes);
+
+    assertThat(readBuffer.skip(8)).isEqualTo(3);
+    assertThat(readBuffer.available()).isZero();
+  }
+
+  @Test void skip_byteBuff() {
+    byte[] bytes = {(byte) 0x01, (byte) 0x02, (byte) 0x03};
+
+    ByteBuffer buffer = ByteBuffer.wrap(bytes).asReadOnlyBuffer();
+    ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(buffer);
+    assertThat(readBuffer).isInstanceOf(ReadBuffer.Buff.class);
+
+    assertThat(readBuffer.skip(2)).isEqualTo(2);
+    assertThat(readBuffer.available()).isEqualTo(1);
+    assertThat(readBuffer.readByte()).isEqualTo((byte) 0x03);
+  }
+
+  @Test void skip_byteBuff_pastEnd() {
+    byte[] bytes = {(byte) 0x01, (byte) 0x02, (byte) 0x03};
+
+    ByteBuffer buffer = ByteBuffer.wrap(bytes).asReadOnlyBuffer();
+    ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(buffer);
+    assertThat(readBuffer).isInstanceOf(ReadBuffer.Buff.class);
+
+    assertThat(readBuffer.skip(8)).isEqualTo(3);
+    assertThat(readBuffer.available()).isZero();
+  }
+
   @Test void readVarint32() {
     assertReadVarint32(0);
     assertReadVarint32(0b0011_1111_1111_1111);
