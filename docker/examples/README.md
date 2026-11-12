@@ -211,7 +211,7 @@ start exploring metrics (available on the `/prometheus` endpoint of Zipkin).
 `docker-compose-prometheus.yml` also starts a Grafana with authentication
 disabled, exposing it on port 3000. On startup it's configured with the
 Prometheus instance started by `docker-compose` as a data source, and imports
-the dashboard published at https://grafana.com/dashboards/1598. This means that,
+the dashboard published at https://grafana.com/grafana/dashboards/1598. This means that,
 after running `docker-compose  ... -f docker-compose-prometheus.yml up`, you
 can open `$DOCKER_IP:3000/dashboard/db/zipkin-prometheus` and play around with
 the dashboard.

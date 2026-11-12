@@ -33,7 +33,7 @@ jobs:
       matrix:
         include:  # Not ubuntu as already tested as a part of the docker job
           - name: macos
-            os: macos-14
+            os: macos-15
           - name: windows
             os: windows-2022
     steps:
