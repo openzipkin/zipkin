@@ -133,7 +133,7 @@ public abstract class ReadBuffer extends InputStream {
 
     // Encoding zipkin data is supported in JRE 6, but decoding isn't.
     @Override public long skip(long maxCount) {
-      int skipped = Math.max(available(), (int) maxCount);
+      int skipped = Math.min(available(), (int) maxCount);
       buf.position(buf.position() + skipped); // This is not Java 6
       return skipped;
     }
