@@ -19,7 +19,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <kafka.version>4.2.0</kafka.version>
+    <kafka.version>4.2.2</kafka.version>
   </properties>
 
   <dependencies>
@@ -41,6 +41,20 @@
       <artifactId>jackson-databind</artifactId>
       <version>${jackson.version}</version>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.xerial.snappy</groupId>
+      <artifactId>snappy-java</artifactId>
+      <version>1.1.10.9</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>at.yawk.lz4</groupId>
+      <artifactId>lz4-java</artifactId>
+      <version>1.11.4</version>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
 </project>

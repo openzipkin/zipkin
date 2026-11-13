@@ -25,7 +25,7 @@ the `API_BASE` environment variable, e.g., `API_BASE=http://tracing.company.com 
 ### `npm test`
 
 Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+See the section about [running tests](https://create-react-app.dev/docs/running-tests/) for more information.
 
 To get a coverage report as well, run `npm test -- --coverage`.
 
