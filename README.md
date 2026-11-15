@@ -1,6 +1,6 @@
 # zipkin
 
-[![Gitter chat](http://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin)
+
 [![Build Status](https://github.com/openzipkin/zipkin/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/openzipkin/zipkin/actions?query=workflow%3Atest+branch%3Amaster)
 [![Maven Central](https://img.shields.io/maven-central/v/io.zipkin/zipkin-server.svg)](https://central.sonatype.com/search?q=zipkin&namespace=io.zipkin&name=zipkin-server)
 
@@ -226,7 +226,6 @@ Released versions of zipkin-server are published to Docker Hub as `openzipkin/zi
 Container Registry as `ghcr.io/openzipkin/zipkin`. See [docker](docker) for details.
 
 ### Helm Charts
-Helm charts are available via `helm repo add zipkin https://zipkin.io/zipkin-helm`.
 See [zipkin-helm](https://github.com/openzipkin/zipkin-helm) for details.
 
 ### Javadocs
