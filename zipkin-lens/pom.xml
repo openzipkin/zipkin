@@ -299,6 +299,91 @@
       </build>
     </profile>
 
+    <!-- FreeBSD is not a supported platform for frontend-maven-plugin, which downloads
+         a Linux node binary that cannot execute on FreeBSD. Use the system npm instead. -->
+    <profile>
+      <id>exec-maven-plugin-freebsd</id>
+      <activation>
+        <os>
+          <name>FreeBSD</name>
+        </os>
+      </activation>
+      <build>
+        <plugins>
+          <!-- It isn't currently possible to disable frontend-maven-plugin.
+               Instead, we set each execution to none -->
+          <plugin>
+            <groupId>com.github.eirslett</groupId>
+            <artifactId>frontend-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>install node and npm</id>
+                <phase>none</phase>
+              </execution>
+              <execution>
+                <id>npm install</id>
+                <phase>none</phase>
+              </execution>
+              <execution>
+                <id>npm lint</id>
+                <phase>none</phase>
+              </execution>
+              <execution>
+                <id>npm run build</id>
+                <phase>none</phase>
+              </execution>
+              <execution>
+                <id>npm run test</id>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <!-- This duplicates exactly what we did in frontend-maven-plugin -->
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <configuration>
+              <environmentVariables>
+                <!--
+                create-react-app runs tests in watch mode unless this is defined. We define it here for running Maven locally.
+                -->
+                <CI>true</CI>
+              </environmentVariables>
+            </configuration>
+            <executions>
+              <execution>
+                <id>npm install</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>generate-resources</phase>
+                <configuration>
+                  <executable>npm</executable>
+                  <arguments>
+                    <argument>install</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+              <execution>
+                <id>npm run build</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>compile</phase>
+                <configuration>
+                  <executable>npm</executable>
+                  <arguments>
+                    <argument>run</argument>
+                    <argument>build</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
     <profile>
       <id>release</id>
       <build>
