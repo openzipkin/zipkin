@@ -4,6 +4,7 @@
  */
 package zipkin2.server.internal;
 
+import com.linecorp.armeria.common.ContentTooLargeException;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
@@ -15,6 +16,7 @@ import zipkin2.internal.ClosedComponentException;
 
 import static com.linecorp.armeria.common.HttpStatus.BAD_REQUEST;
 import static com.linecorp.armeria.common.HttpStatus.INTERNAL_SERVER_ERROR;
+import static com.linecorp.armeria.common.HttpStatus.REQUEST_ENTITY_TOO_LARGE;
 import static com.linecorp.armeria.common.MediaType.ANY_TEXT_TYPE;
 
 final class BodyIsExceptionMessage implements ExceptionHandlerFunction {
@@ -27,7 +29,10 @@ final class BodyIsExceptionMessage implements ExceptionHandlerFunction {
 
     String message = cause.getMessage();
     if (message == null) message = cause.getClass().getSimpleName();
-    if (cause instanceof IllegalArgumentException) {
+    if (cause instanceof ContentTooLargeException) {
+      // Wire or decompressed body exceeded a size limit (see UnzippingBytesRequestConverter).
+      return HttpResponse.of(REQUEST_ENTITY_TOO_LARGE, ANY_TEXT_TYPE, message);
+    } else if (cause instanceof IllegalArgumentException) {
       return HttpResponse.of(BAD_REQUEST, ANY_TEXT_TYPE, message);
     } else {
       // Don't fill logs with exceptions about closed components.
