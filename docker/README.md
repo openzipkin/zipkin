@@ -52,6 +52,11 @@ When in Docker, the following environment variables also apply
 
 * `JAVA_OPTS`: Use to set java arguments, such as heap size or trust store location.
   * By default, `openzipkin/zipkin` sets max heap to 64m while `openzipkin/zipkin-slim` 32m
+* `HEALTHCHECK_IP`: Host address used by the image `HEALTHCHECK` (`docker-healthcheck`).
+  Defaults to the first IP from `hostname -i`, else `127.0.0.1`. Set this when you need a
+  specific address (for example `HEALTHCHECK_IP=127.0.0.1` on multi-network compose/swarm
+  stacks). See also `HEALTHCHECK_KIND`, `HEALTHCHECK_PATH`, and `HEALTHCHECK_PORT` in
+  [`build-bin/docker/docker-healthcheck`](../build-bin/docker/docker-healthcheck).
 * `STORAGE_PORT_9042_TCP_ADDR` -- A Cassandra node listening on port 9042. This
   environment variable is typically set by linking a container running
   `zipkin-cassandra` as "storage" when you start the container.

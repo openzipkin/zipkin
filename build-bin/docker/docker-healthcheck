@@ -9,7 +9,10 @@
 # The following variables are read from ENV in the Dockerfile or env readable from pid 1.
 # * HEALTHCHECK_KIND - must be "http" or "tcp". Defaults to "http"
 #   * When "http" the GET path to check is /health unless overridden by HEALTHCHECK_PATH
-# * HEALTHCHECK_IP - Defaults to $(hostname -i || 127.0.0.1)
+# * HEALTHCHECK_IP - Defaults to the first address from $(hostname -i), else 127.0.0.1.
+#   * When the container is attached to multiple networks, hostname -i lists space-separated
+#     addresses. Only the first is used so wget/nc receive a single host (see #3465).
+#   * Override with HEALTHCHECK_IP=127.0.0.1 if you prefer loopback.
 # * HEALTHCHECK_PORT - Not always the service port, but in Zipkin it typically is. No default
 #
 # Setup like this:
@@ -28,7 +31,15 @@ export `cat /proc/1/environ| tr '\0' '\n'| \
   egrep '^(HEALTHCHECK_KIND|HEALTHCHECK_IP|HEALTHCHECK_PATH|HEALTHCHECK_PORT)='`
 
 kind=${HEALTHCHECK_KIND:-http}
-ip=${HEALTHCHECK_IP:-$(hostname -i || echo '127.0.0.1')}
+# hostname -i can return multiple space-separated IPs on multi-network containers; take the first
+# so wget/nc receive a single host (https://github.com/openzipkin/zipkin/issues/3465).
+if [ -n "${HEALTHCHECK_IP:-}" ]; then
+  ip=${HEALTHCHECK_IP}
+else
+  ip=$(hostname -i 2>/dev/null || true)
+  ip=${ip%% *}
+  ip=${ip:-127.0.0.1}
+fi
 port=${HEALTHCHECK_PORT?-is required}
 
 case ${kind} in
